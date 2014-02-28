@@ -49,17 +49,17 @@ public:
     /**
      * @brief  Validate a JSON document and optionally return the results.
      *
-     * When a ValidationResults object is provided via the \c results parameter, 
-     * validation will be performed against each constraint defined by the 
+     * When a ValidationResults object is provided via the \c results parameter,
+     * validation will be performed against each constraint defined by the
      * schema, even if validation fails for some or all constraints.
      *
      * If a pointer to a ValidationResults instance is not provided, validation
-     * will only continue for as long as the constraints are validated 
+     * will only continue for as long as the constraints are validated
      * successfully.
      *
      * @param  target   A rapidjson::Value to be validated.
      *
-     * @param  results  An optional pointer to a ValidationResults instance that 
+     * @param  results  An optional pointer to a ValidationResults instance that
      *                  will be used to report validation errors.
      *
      * @returns  true if validation succeeds, false otherwise.
@@ -70,7 +70,7 @@ public:
         // Construct a ValidationVisitor to perform validation at the root level
         ValidationVisitor<AdapterType> v(target, std::string(),
             strictTypes, results);
-        
+
         return v.validateSchema(*schema);
     }
 
@@ -78,7 +78,7 @@ private:
 
     /// Pointer to an internal copy of a schema to use for validation
     boost::scoped_ptr<const Schema> schema;
-    
+
     /// Flag indicating that strict type comparisons should be used
     bool strictTypes;
 

@@ -38,7 +38,7 @@ struct Constraint {
      * @returns  an owning-pointer to the new constraint.
      */
     virtual Constraint * clone() const = 0;
-  
+
 };
 
 inline Constraint * new_clone(const Constraint &constraint)

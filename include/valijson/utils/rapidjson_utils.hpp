@@ -25,7 +25,7 @@ inline bool loadDocument(const std::string &path, rapidjson::Document &document)
         std::cerr << "Near: " << file.substr(std::max(size_t(0), document.GetErrorOffset() - 20), 40) << std::endl;
         return false;
     }
-    
+
     return true;
 }
 

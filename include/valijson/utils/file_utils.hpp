@@ -26,12 +26,12 @@ inline bool loadFile(const std::string &path, std::string &dest)
     file.seekg(0, std::ios::end);
     dest.clear();
     dest.reserve(file.tellg());
-    
+
     // Assign file contents to destination string
     file.seekg(0, std::ios::beg);
     dest.assign(std::istreambuf_iterator<char>(file),
                 std::istreambuf_iterator<char>());
-    
+
     return true;
 }
 

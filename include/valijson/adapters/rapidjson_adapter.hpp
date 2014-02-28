@@ -15,7 +15,7 @@
  *  - RapidJsonObjectMemberIterator
  *  - RapidJsonValue
  *
- * Due to the dependencies that exist between these classes, the ordering of 
+ * Due to the dependencies that exist between these classes, the ordering of
  * class declarations and definitions may be a bit confusing. The best place to
  * start is RapidJsonAdapter. This class definition is actually very small,
  * since most of the functionality is inherited from the BasicAdapter class.
@@ -50,11 +50,11 @@ typedef std::pair<std::string, RapidJsonAdapter> RapidJsonObjectMember;
  * @brief   Light weight wrapper for a RapidJson array value.
  *
  * This class is light weight wrapper for a RapidJson array. It provides a
- * minimum set of container functions and typedefs that allow it to be used as 
+ * minimum set of container functions and typedefs that allow it to be used as
  * an iterable container.
  *
  * An instance of this class contains a single reference to an underlying
- * RapidJson value, assumed to be an array, so there is very little overhead 
+ * RapidJson value, assumed to be an array, so there is very little overhead
  * associated with copy construction and passing by value.
  */
 class RapidJsonArray
@@ -63,11 +63,11 @@ public:
 
     typedef RapidJsonArrayValueIterator const_iterator;
     typedef RapidJsonArrayValueIterator iterator;
-    
+
     /// Construct a RapidJsonArray referencing an empty array singleton.
     RapidJsonArray()
       : value(emptyArray()) { }
-    
+
     /**
      * @brief   Construct a RapidJsonArray referencing a specific RapidJson
      *          value.
@@ -84,19 +84,19 @@ public:
             throw std::runtime_error("Value is not an array.");
         }
     }
-    
+
     /// Return an iterator for the first element in the array.
     RapidJsonArrayValueIterator begin() const;
 
     /// Return an iterator for one-past the last element of the array.
     RapidJsonArrayValueIterator end() const;
-    
+
     /// Return the number of elements in the array
     size_t size() const
     {
         return value.Size();
     }
-       
+
 private:
 
     /**
@@ -118,11 +118,11 @@ private:
  * @brief  Light weight wrapper for a RapidJson object.
  *
  * This class is light weight wrapper for a RapidJson object. It provides a
- * minimum set of container functions and typedefs that allow it to be used as 
+ * minimum set of container functions and typedefs that allow it to be used as
  * an iterable container.
  *
  * An instance of this class contains a single reference to the underlying
- * RapidJson value, assumed to be an object, so there is very little overhead 
+ * RapidJson value, assumed to be an object, so there is very little overhead
  * associated with copy construction and passing by value.
  */
 class RapidJsonObject
@@ -152,7 +152,7 @@ public:
             throw std::runtime_error("Value is not an object.");
         }
     }
-    
+
     /**
      * @brief   Return an iterator for this first object member
      *
@@ -162,7 +162,7 @@ public:
     RapidJsonObjectMemberIterator begin() const;
 
     /**
-     * @brief   Return an iterator for an invalid object member that indicates 
+     * @brief   Return an iterator for an invalid object member that indicates
      *          the end of the collection.
      *
      * The iterator return by this function is effectively a wrapper around
@@ -180,13 +180,13 @@ public:
      * @param   property   property name to search for
      */
     RapidJsonObjectMemberIterator find(const std::string &property) const;
-    
+
     /// Returns the number of members belonging to this object.
     size_t size() const
     {
         return value.MemberEnd() - value.MemberBegin();
     }
-    
+
 private:
 
     /**
@@ -306,10 +306,10 @@ private:
 
         return false;
     }
-    
+
     /// Local memory allocator for RapidJson value
     rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator> allocator;
-    
+
     /// Local RapidJson value
     rapidjson::Value value;
 };
@@ -319,7 +319,7 @@ private:
  *
  * This class is passed as an argument to the BasicAdapter template class,
  * and is used to provide access to a RapidJson value. This class is responsible
- * for the mechanics of actually reading a RapidJson value, whereas the 
+ * for the mechanics of actually reading a RapidJson value, whereas the
  * BasicAdapter class is responsible for the semantics of type comparisons
  * and conversions.
  *
@@ -339,14 +339,14 @@ public:
     /// Construct a wrapper for a specific RapidJson value
     RapidJsonValue(const rapidjson::Value &value)
       : value(value) { }
-    
+
     /**
      * @brief   Create a new RapidJsonFrozenValue instance that contains the
      *          value referenced by this RapidJsonValue instance.
      *
-     * @returns pointer to a new RapidJsonFrozenValue instance, belonging to 
+     * @returns pointer to a new RapidJsonFrozenValue instance, belonging to
      *          the caller.
-     */    
+     */
     FrozenValue * freeze() const
     {
         return new RapidJsonFrozenValue(value);
@@ -366,15 +366,15 @@ public:
         if (value.IsArray()) {
             return boost::make_optional(RapidJsonArray(value));
         }
-        
+
         return boost::none;
     }
 
     /**
      * @brief   Retrieve the number of elements in the array
      *
-     * If the referenced RapidJson value is an array, this function will 
-     * retrieve the number of elements in the array and store it in the output 
+     * If the referenced RapidJson value is an array, this function will
+     * retrieve the number of elements in the array and store it in the output
      * variable provided.
      *
      * @param   result  reference to size_t to set with result
@@ -387,30 +387,30 @@ public:
             result = value.Size();
             return true;
         }
-        
+
         return false;
     }
-    
+
     bool getBool(bool &result) const
     {
         if (value.IsBool()) {
             result = value.GetBool();
             return true;
         }
-        
+
         return false;
     }
-    
+
     bool getDouble(double &result) const
     {
         if (value.IsDouble()) {
             result = value.GetDouble();
             return true;
         }
-    
+
         return false;
     }
-    
+
     bool getInteger(int64_t &result) const
     {
         if (value.IsInt()) {
@@ -426,10 +426,10 @@ public:
             result = static_cast<int64_t>(value.GetUint64());
             return true;
         }
-        
+
         return false;
     }
-    
+
     /**
      * @brief   Optionally return a RapidJsonObject instance.
      *
@@ -438,13 +438,13 @@ public:
      * object.
      *
      * Otherwise it will return boost::none.
-     */    
+     */
     boost::optional<RapidJsonObject> getObjectOptional() const
     {
         if (value.IsObject()) {
             return boost::make_optional(RapidJsonObject(value));
         }
-        
+
         return boost::none;
     }
 
@@ -465,7 +465,7 @@ public:
             result = value.MemberEnd() - value.MemberBegin();
             return true;
         }
-        
+
         return false;
     }
 
@@ -475,56 +475,56 @@ public:
             result.assign(value.GetString(), value.GetStringLength());
             return true;
         }
-    
+
         return false;
     }
-    
+
     static bool hasStrictTypes()
     {
         return true;
     }
-    
+
     bool isArray() const
     {
         return value.IsArray();
     }
-    
+
     bool isBool() const
     {
         return value.IsBool();
     }
-    
+
     bool isDouble() const
     {
         return value.IsDouble();
     }
-    
+
     bool isInteger() const
     {
         return value.IsInt() || value.IsInt64() || value.IsUint() ||
                value.IsUint64();
     }
-    
+
     bool isNull() const
     {
         return value.IsNull();
     }
-    
+
     bool isNumber() const
     {
         return value.IsNumber();
     }
-    
+
     bool isObject() const
     {
         return value.IsObject();
     }
-    
+
     bool isString() const
     {
         return value.IsString();
     }
-    
+
 private:
 
     /// Return a reference to an empty object singleton
@@ -571,7 +571,7 @@ public:
  * This class provides a JSON array iterator that dereferences as an instance of
  * RapidJsonAdapter representing a value stored in the array. It has been
  * implemented using the boost iterator_facade template.
- * 
+ *
  * @see RapidJsonArray
  */
 class RapidJsonArrayValueIterator:
@@ -599,7 +599,7 @@ public:
     {
         return RapidJsonAdapter(*itr);
     }
-    
+
     /**
      * @brief   Compare this iterator against another iterator.
      *
@@ -610,27 +610,27 @@ public:
      * @param   other  iterator to compare against
      *
      * @returns true if the iterators are equal, false otherwise.
-     */    
+     */
     bool equal(const RapidJsonArrayValueIterator &other) const
     {
         return itr == other.itr;
     }
-    
+
     void increment()
     {
         itr++;
     }
-    
+
     void decrement()
     {
         itr--;
     }
-    
+
     void advance(std::ptrdiff_t n)
     {
         itr += n;
     }
-    
+
     std::ptrdiff_t difference(const RapidJsonArrayValueIterator &other)
     {
         return std::distance(itr, other.itr);
@@ -647,7 +647,7 @@ private:
  * This class provides a JSON object iterator that dereferences as an instance
  * of RapidJsonObjectMember representing one of the members of the object. It
  * has been implemented using the boost iterator_facade template.
- * 
+ *
  * @see RapidJsonObject
  * @see RapidJsonObjectMember
  */
@@ -679,7 +679,7 @@ public:
             std::string(itr->name.GetString(), itr->name.GetStringLength()),
             itr->value);
     }
-    
+
     /**
      * @brief   Compare this iterator with another iterator.
      *
@@ -690,7 +690,7 @@ public:
      * @param   other  Iterator to compare with
      *
      * @returns true if the underlying iterators are equal, false otherwise
-     */    
+     */
     bool equal(const RapidJsonObjectMemberIterator &other) const
     {
         return itr == other.itr;
@@ -705,7 +705,7 @@ public:
     {
         itr--;
     }
-    
+
     std::ptrdiff_t difference(const RapidJsonObjectMemberIterator &other)
     {
         return std::distance(itr, other.itr);
@@ -720,9 +720,9 @@ private:
 /// RapidJson specialisation of the AdapterTraits template struct.
 template<>
 struct AdapterTraits<valijson::adapters::RapidJsonAdapter>
-{    
+{
     typedef rapidjson::Document DocumentType;
-    
+
     static std::string adapterName()
     {
         return "RapidJsonAdapter";
@@ -759,7 +759,7 @@ inline RapidJsonObjectMemberIterator RapidJsonObject::find(
 {
     const rapidjson::Value::ConstMemberIterator
         itr = value.FindMember(propertyName.c_str());
-    
+
     return itr ? itr : value.MemberEnd();
 }
 

@@ -31,10 +31,10 @@ TEST_F(TestRapidJsonAdapter, BasicArrayIteration)
     ASSERT_ANY_THROW( adapter.getDouble() );
     ASSERT_ANY_THROW( adapter.getObject() );
     ASSERT_ANY_THROW( adapter.getString() );
-    
+
     // Ensure that the array contains the expected number of elements
     EXPECT_EQ( numElements, adapter.getArray().size() );
-    
+
     // Ensure that the elements are returned in the order they were inserted
     unsigned int expectedValue = 0;
     BOOST_FOREACH( const valijson::adapters::RapidJsonAdapter value, adapter.getArray() ) {
@@ -42,7 +42,7 @@ TEST_F(TestRapidJsonAdapter, BasicArrayIteration)
         EXPECT_EQ( double(expectedValue), value.getDouble() );
         expectedValue++;
     }
-    
+
     // Ensure that the correct number of elements were iterated over
     EXPECT_EQ(numElements, expectedValue);
 }
@@ -70,10 +70,10 @@ TEST_F(TestRapidJsonAdapter, BasicObjectIteration)
     ASSERT_ANY_THROW( adapter.getBool() );
     ASSERT_ANY_THROW( adapter.getDouble() );
     ASSERT_ANY_THROW( adapter.getString() );
-    
+
     // Ensure that the object contains the expected number of members
     EXPECT_EQ( numElements, adapter.getObject().size() );
-    
+
     // Ensure that the members are returned in the order they were inserted
     unsigned int expectedValue = 0;
     BOOST_FOREACH( const valijson::adapters::RapidJsonAdapter::ObjectMember member, adapter.getObject() ) {
@@ -82,7 +82,7 @@ TEST_F(TestRapidJsonAdapter, BasicObjectIteration)
         EXPECT_EQ( double(expectedValue), member.second.getDouble() );
         expectedValue++;
     }
-    
+
     // Ensure that the correct number of elements were iterated over
     EXPECT_EQ( numElements, expectedValue );
 }

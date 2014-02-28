@@ -31,13 +31,13 @@ public:
     /// Typedef for callback function supplied to applyToObject.
     typedef boost::function<bool (const std::string &, const Adapter &)>
         ObjectMemberCallback;
-    
+
     /**
      * @brief   Virtual destructor defined to ensure deletion via base-class
      *          pointers is safe.
      */
     virtual ~Adapter() { };
-    
+
     /**
      * @brief   Apply a callback function to each value in an array.
      *
@@ -59,11 +59,11 @@ public:
      *
      * @param   fn  Callback function to invoke
      *
-     * @returns true if Adapter contains an object, and callback function 
+     * @returns true if Adapter contains an object, and callback function
      *          returns true for each member in the object, false otherwise.
      */
     virtual bool applyToObject(ObjectMemberCallback fn) const = 0;
-    
+
     /**
      * @brief   Return the boolean representation of the contained value.
      *
@@ -76,11 +76,11 @@ public:
      * @returns  Boolean representation of contained value.
      */
     virtual bool asBool() const = 0;
-    
+
     /**
      * @brief   Retrieve the boolean representation of the contained value.
      *
-     * This function shall retrieve a boolean value if the Adapter contains 
+     * This function shall retrieve a boolean value if the Adapter contains
      * either an actual boolean value, or one of the strings 'true' or 'false'.
      * The string comparison is case sensitive.
      *
@@ -89,27 +89,27 @@ public:
      * @param   result  reference to a bool to set with retrieved value.
      *
      * @returns true if the value could be retrieved, false otherwise
-     */    
+     */
     virtual bool asBool(bool &result) const = 0;
-    
+
     /**
      * @brief   Return the double representation of the contained value.
      *
      * This function shall return a double value if the Adapter contains either
-     * an actual double, an integer, or a string that contains a valid 
+     * an actual double, an integer, or a string that contains a valid
      * representation of a numeric value (according to the C++ Std Library).
      *
      * An exception shall be thrown if the value cannot be cast to a double.
      *
      * @returns  Double representation of contained value.
-     */    
+     */
     virtual double asDouble() const = 0;
-    
+
     /**
      * @brief   Retrieve the double representation of the contained value.
      *
      * This function shall retrieve a double value if the Adapter contains either
-     * an actual double, an integer, or a string that contains a valid 
+     * an actual double, an integer, or a string that contains a valid
      * representation of a numeric value (according to the C++ Std Library).
      *
      * The retrieved value is returned via reference.
@@ -117,9 +117,9 @@ public:
      * @param   result  reference to a double to set with retrieved value.
      *
      * @returns true if the value could be retrieved, false otherwise
-     */    
+     */
     virtual bool asDouble(double &result) const = 0;
-    
+
     /**
      * @brief   Return the int64_t representation of the contained value.
      *
@@ -130,14 +130,14 @@ public:
      * An exception shall be thrown if the value cannot be cast to an int64_t.
      *
      * @returns  int64_t representation of contained value.
-     */    
+     */
     virtual int64_t asInteger() const = 0;
-    
+
     /**
      * @brief   Retrieve the int64_t representation of the contained value.
      *
-     * This function shall retrieve an int64_t value if the Adapter contains 
-     * either an actual integer, or a string that contains a valid 
+     * This function shall retrieve an int64_t value if the Adapter contains
+     * either an actual integer, or a string that contains a valid
      * representation of an integer value (according to the C++ Std Library).
      *
      * The retrieved value is returned via reference.
@@ -147,7 +147,7 @@ public:
      * @returns true if the value could be retrieved, false otherwise
      */
     virtual bool asInteger(int64_t &result) const = 0;
-    
+
     /**
      * @brief   Return the string representation of the contained value.
      *
@@ -158,9 +158,9 @@ public:
      * An exception shall be thrown if the value cannot be cast to a string.
      *
      * @returns  string representation of contained value.
-     */    
+     */
     virtual std::string asString() const = 0;
-    
+
     /**
      * @brief   Retrieve the string representation of the contained value.
      *
@@ -212,14 +212,14 @@ public:
      * result value shall not be set. This applies even if the value could be
      * cast to an empty array. The calling code is expected to handles those
      * cases manually.
-     *     
+     *
      * @param   result  reference to size_t variable to set with result.
      *
      * @return  true if value retrieved successfully, false otherwise.
      */
     virtual bool getArraySize(size_t &result) const = 0;
 
-    /** 
+    /**
      * @brief   Return the contained boolean value.
      *
      * This function shall throw an exception if the contained value is not a
@@ -241,7 +241,7 @@ public:
      */
     virtual bool getBool(bool &result) const = 0;
 
-    /** 
+    /**
      * @brief   Return the contained double value.
      *
      * This function shall throw an exception if the contained value is not a
@@ -263,7 +263,7 @@ public:
      */
     virtual bool getDouble(double &result) const = 0;
 
-    /** 
+    /**
      * @brief   Return the contained integer value.
      *
      * This function shall throw an exception if the contained value is not a
@@ -285,7 +285,7 @@ public:
      */
     virtual bool getInteger(int64_t &result) const = 0;
 
-    /** 
+    /**
      * @brief   Return the contained numeric value as a double.
      *
      * This function shall throw an exception if the contained value is not a
@@ -298,14 +298,14 @@ public:
     /**
      * @brief   Retrieve the contained numeric value as a double.
      *
-     * This function shall retrieve the double or integral value contained by 
-     * this Adapter, and store it in the result variable that was passed by 
+     * This function shall retrieve the double or integral value contained by
+     * this Adapter, and store it in the result variable that was passed by
      * reference.
      *
      * @param   result  reference to double variable to set with result.
      *
      * @returns true if the value was retrieved, false otherwise.
-     */    
+     */
     virtual bool getNumber(double &result) const = 0;
 
     /**
@@ -314,7 +314,7 @@ public:
      * Throws an exception if the value is not an object.
      *
      * @return  number of members if value is an object
-     */    
+     */
     virtual size_t getObjectSize() const = 0;
 
     /**
@@ -329,7 +329,7 @@ public:
      * @param   result  reference to size_t variable to set with result.
      *
      * @return  true if value retrieved successfully, false otherwise.
-     */    
+     */
     virtual bool getObjectSize(size_t &result) const = 0;
 
     /**
@@ -354,7 +354,7 @@ public:
      * @returns true if string was retrieved, false otherwise
      */
     virtual bool getString(std::string &result) const = 0;
-    
+
     /**
      * @brief   Returns whether or not this Adapter supports strict types.
      *
@@ -365,17 +365,17 @@ public:
      * For example, the PropertyTreeAdapter implementation stores POD values as
      * strings, effectively discarding any other type information. If you were
      * to call isDouble() on a double stored by this Adapter, the result would
-     * be false. The maybeDouble(), asDouble() and various related functions 
+     * be false. The maybeDouble(), asDouble() and various related functions
      * are provided to perform type checking based on value rather than on type.
-     * 
+     *
      * The BasicAdapter template class provides implementations for the type-
-     * casting functions so that Adapter implementations are semantically 
+     * casting functions so that Adapter implementations are semantically
      * equivalent in their type-casting behaviour.
      *
      * @returns true if Adapter supports strict types, false otherwise
      */
     virtual bool hasStrictTypes() const = 0;
-    
+
     /// Returns true if the contained value is definitely an array.
     virtual bool isArray() const = 0;
 
@@ -399,11 +399,11 @@ public:
 
     /// Returns true if the contained value is definitely a string.
     virtual bool isString() const = 0;
-    
+
     /**
      * @brief   Returns true if the contained value can be cast to an array.
      *
-     * @returns true if the contained value is an array, an empty string, or an 
+     * @returns true if the contained value is an array, an empty string, or an
      *          empty object.
      */
     virtual bool maybeArray() const = 0;
@@ -411,8 +411,8 @@ public:
     /**
      * @brief   Returns true if the contained value can be cast to a boolean.
      *
-     * @returns true if the contained value is a boolean, or one of the strings 
-     *          'true' or 'false'. Note that numeric values are not to be cast 
+     * @returns true if the contained value is a boolean, or one of the strings
+     *          'true' or 'false'. Note that numeric values are not to be cast
      *          to boolean values.
      */
     virtual bool maybeBool() const = 0;

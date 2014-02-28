@@ -112,7 +112,7 @@ public:
     /**
      * @brief  Invoke a function on each constraint in the schema.
      *
-     * This is a stricter version of the apply() function that will return 
+     * This is a stricter version of the apply() function that will return
      * immediately if any of the invokations return false.
      *
      * @returns  true if all invokations of the callback function are
@@ -134,7 +134,7 @@ public:
         if (id) {
             return *id;
         }
-        
+
         throw std::runtime_error("id has not been set");
     }
 
@@ -142,7 +142,7 @@ public:
     {
         return std::string();
     }
-    
+
     std::string getUri() const
     {
         return std::string();
@@ -162,7 +162,7 @@ public:
         if (title) {
             return *title;
         }
-        
+
         throw std::runtime_error("Schema does not have a title.");
     }
 
@@ -178,7 +178,7 @@ public:
     }
 
     /**
-     * @brief  Returns a boolean value that indicates whether the schema title 
+     * @brief  Returns a boolean value that indicates whether the schema title
      *         has been set or not.
      *
      * @return  boolean value
@@ -219,10 +219,10 @@ private:
 
     /// Id to apply when resolving the schema URI.
     boost::optional<std::string> id;
-    
+
     /// Scope inherited from a parent schema, or an empty string by default
     boost::optional<std::string> parentScope;
-    
+
     /// Title string associated with the schema (optional).
     boost::optional<std::string> title;
 };

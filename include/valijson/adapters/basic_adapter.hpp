@@ -27,25 +27,25 @@ namespace adapters {
  * the exception throwing behaviour that is expected by other parts of the
  * Valijson library.
  *
- * @tparam  AdapterType       Self-referential name of the Adapter being 
+ * @tparam  AdapterType       Self-referential name of the Adapter being
  *                            specialised.
- * @tparam  ArrayType         Name of the type that will be returned by the 
+ * @tparam  ArrayType         Name of the type that will be returned by the
  *                            getArray() function. Instances of this type should
- *                            provide begin(), end() and size() functions so 
+ *                            provide begin(), end() and size() functions so
  *                            that it is possible to iterate over the values in
  *                            the array.
- * @tparam  ObjectMemberType  Name of the type exposed when iterating over the 
+ * @tparam  ObjectMemberType  Name of the type exposed when iterating over the
  *                            contents of an object returned by getObject().
- * @tparam  ObjectType        Name of the type that will be returned by the 
- *                            getObject() function. Instances of this type 
- *                            should provide begin(), end(), find() and size() 
- *                            functions so that it is possible to iterate over 
+ * @tparam  ObjectType        Name of the type that will be returned by the
+ *                            getObject() function. Instances of this type
+ *                            should provide begin(), end(), find() and size()
+ *                            functions so that it is possible to iterate over
  *                            the members of the object.
- * @tparam  ValueType         Name of the type that provides a consistent 
- *                            interface to a JSON value for a parser. For 
+ * @tparam  ValueType         Name of the type that provides a consistent
+ *                            interface to a JSON value for a parser. For
  *                            example, this type should provide the getDouble()
  *                            and isDouble() functions. But it does not need to
- *                            know how to cast values from one type to another - 
+ *                            know how to cast values from one type to another -
  *                            that functionality is provided by this template
  *                            class.
  */
@@ -101,7 +101,7 @@ protected:
             if (itr == end) {
                 return false;
             }
-        
+
             return AdapterType(*itr++).equalTo(adapter, strict);
         }
 
@@ -112,7 +112,7 @@ protected:
 
         /// Iterator for one-past the last element of the array
         typename ArrayType::const_iterator end;
-        
+
         /// Flag to use strict type comparison
         const bool strict;
     };
@@ -130,7 +130,7 @@ protected:
      * value provided to the () operator.
      *
      * This functor is designed to be passed to the applyToObject() function
-     * of an Adapter object.     
+     * of an Adapter object.
      */
     class ObjectComparisonFunctor
     {
@@ -146,7 +146,7 @@ protected:
             const ObjectType &object, bool strict)
           : object(object),
             strict(strict) { }
-        
+
         /**
          * @brief   Find a key in the object and compare its value.
          *
@@ -164,12 +164,12 @@ protected:
 
             return (*itr).second.equalTo(value, strict);
         }
-        
+
     private:
 
         /// Object to be used as a comparison baseline
         const ObjectType &object;
-        
+
         /// Flag to use strict type-checking
         bool strict;
     };
@@ -202,15 +202,15 @@ public:
      */
     BasicAdapter(const ValueType &value)
       : value(value) { }
-    
+
     virtual bool applyToArray(ArrayValueCallback fn) const
     {
         if (!maybeArray()) {
             return false;
         }
-        
+
         // Due to the fact that the only way a value can be 'maybe an array' is
-        // if it is an empty string or empty object, we only need to go to 
+        // if it is an empty string or empty object, we only need to go to
         // effort of constructing an ArrayType instance if the value is
         // definitely an array.
         if (value.isArray()) {
@@ -230,7 +230,7 @@ public:
         if (!maybeObject()) {
             return false;
         }
-        
+
         if (value.isObject()) {
             const boost::optional<Object> object = value.getObjectOptional();
             BOOST_FOREACH( const ObjectMemberType member, *object ) {
@@ -239,9 +239,9 @@ public:
                 }
             }
         }
-        
+
         return true;
-    }   
+    }
 
     /**
      * @brief   Return an ArrayType instance containing an array representation
@@ -273,7 +273,7 @@ public:
                 return ArrayType();
             }
         }
-        
+
         throw std::runtime_error("JSON value cannot be cast to an array.");
     }
 
@@ -283,7 +283,7 @@ public:
         if (asBool(result)) {
             return result;
         }
-        
+
         throw std::runtime_error("JSON value cannot be cast to a boolean.");
     }
 
@@ -303,20 +303,20 @@ public:
                 }
             }
         }
-        
+
         return false;
     }
-    
+
     virtual double asDouble() const
     {
         double result;
         if (asDouble(result)) {
             return result;
         }
-        
+
         throw std::runtime_error("JSON value cannot be cast to a double.");
     }
-      
+
     virtual bool asDouble(double &result) const
     {
         if (value.isDouble()) {
@@ -339,20 +339,20 @@ public:
                 }
             }
         }
-        
+
         return false;
     }
-    
+
     virtual int64_t asInteger() const
     {
         int64_t result;
         if (asInteger(result)) {
             return result;
         }
-    
+
         throw std::runtime_error("JSON value cannot be cast as an integer.");
     }
-    
+
     virtual bool asInteger(int64_t &result) const
     {
         if (value.isInteger()) {
@@ -369,10 +369,10 @@ public:
                 }
             }
         }
-        
+
         return false;
     }
-    
+
     /**
      * @brief   Return an ObjectType instance containing an array representation
      *          of the value held by this Adapter.
@@ -400,20 +400,20 @@ public:
                 return ObjectType();
             }
         }
-        
+
         throw std::runtime_error("JSON value cannot be cast to an object.");
     }
-    
+
     virtual std::string asString() const
     {
         std::string result;
         if (asString(result)) {
             return result;
         }
-        
+
         throw std::runtime_error("JSON value cannot be cast to a string.");
     }
-    
+
     virtual bool asString(std::string &result) const
     {
         if (value.isString()) {
@@ -456,10 +456,10 @@ public:
                 } catch (boost::bad_lexical_cast &) { }
             }
         }
-        
+
         return false;
     }
-    
+
     virtual bool equalTo(const Adapter &other, bool strict) const
     {
         if (isNull() || (!strict && maybeNull())) {
@@ -470,10 +470,10 @@ public:
         } else if (isNumber() && strict) {
             return other.isNumber() && other.getNumber() == getNumber();
         } else if (!strict && maybeDouble()) {
-            return (other.maybeDouble() && 
+            return (other.maybeDouble() &&
                     other.asDouble() == asDouble());
         } else if (!strict && maybeInteger()) {
-            return (other.maybeInteger() && 
+            return (other.maybeInteger() &&
                     other.asInteger() == asInteger());
         } else if (isString() || (!strict && maybeString())) {
             return (other.isString() || (!strict && other.maybeString())) &&
@@ -499,10 +499,10 @@ public:
                 return true;
             }
         }
-        
+
         return false;
     }
-    
+
     /**
      * @brief   Return an ArrayType instance representing the array contained
      *          by this Adapter instance.
@@ -523,20 +523,20 @@ public:
         if (arrayValue) {
             return *arrayValue;
         }
-    
+
         throw std::runtime_error("JSON value is not an array.");
     }
-    
+
     virtual size_t getArraySize() const
     {
         size_t result;
         if (value.getArraySize(result)) {
             return result;
         }
-        
+
         throw std::runtime_error("JSON value is not an array.");
     }
-    
+
     virtual bool getArraySize(size_t &result) const
     {
         return value.getArraySize(result);
@@ -548,7 +548,7 @@ public:
         if (getBool(result)) {
             return result;
         }
-        
+
         throw std::runtime_error("JSON value is not a boolean.");
     }
 
@@ -563,22 +563,22 @@ public:
         if (getDouble(result)) {
             return result;
         }
-        
+
         throw std::runtime_error("JSON value is not a double.");
     }
-    
+
     virtual bool getDouble(double &result) const
     {
         return value.getDouble(result);
     }
-    
+
     virtual int64_t getInteger() const
     {
         int64_t result;
         if (getInteger(result)) {
             return result;
         }
-        
+
         throw std::runtime_error("JSON value is not an integer.");
     }
 
@@ -586,17 +586,17 @@ public:
     {
         return value.getInteger(result);
     }
-    
+
     virtual double getNumber() const
     {
         double result;
         if (getNumber(result)) {
             return result;
         }
-        
+
         throw std::runtime_error("JSON value is not a number.");
     }
-    
+
     virtual bool getNumber(double &result) const
     {
         if (isDouble()) {
@@ -608,10 +608,10 @@ public:
                 return true;
             }
         }
-        
+
         return false;
     }
-    
+
     /**
      * @brief   Return an ObjectType instance representing the object contained
      *          by this Adapter instance.
@@ -632,32 +632,32 @@ public:
         if (objectValue) {
             return *objectValue;
         }
-        
+
         throw std::runtime_error("JSON value is not an object.");
     }
-    
+
     virtual size_t getObjectSize() const
     {
         size_t result;
         if (getObjectSize(result)) {
             return result;
         }
-        
+
         throw std::runtime_error("JSON value is not an object.");
     }
-    
+
     virtual bool getObjectSize(size_t &result) const
     {
         return value.getObjectSize(result);
     }
-    
+
     virtual std::string getString() const
     {
         std::string result;
         if (getString(result)) {
             return result;
         }
-        
+
         throw std::runtime_error("JSON value is not a string.");
     }
 
@@ -665,52 +665,52 @@ public:
     {
         return value.getString(result);
     }
-    
+
     virtual FrozenValue * freeze() const
     {
         return value.freeze();
     }
-    
+
     virtual bool hasStrictTypes() const
     {
         return ValueType::hasStrictTypes();
     }
-    
+
     virtual bool isArray() const
     {
         return value.isArray();
     }
-    
+
     virtual bool isBool() const
     {
         return value.isBool();
     }
-    
+
     virtual bool isDouble() const
     {
         return value.isDouble();
     }
-    
+
     virtual bool isInteger() const
     {
         return value.isInteger();
     }
-    
+
     virtual bool isNull() const
     {
         return value.isNull();
     }
-    
+
     virtual bool isNumber() const
     {
         return value.isInteger() || value.isDouble();
     }
-    
+
     virtual bool isObject() const
     {
         return value.isObject();
     }
-    
+
     virtual bool isString() const
     {
         return value.isString();
@@ -726,7 +726,7 @@ public:
                 return true;
             }
         }
-        
+
         return false;
     }
 
@@ -742,7 +742,7 @@ public:
                 }
             }
         }
-        
+
         return false;
     }
 
@@ -798,8 +798,8 @@ public:
                 }
             }
         }
-        
-        return false;    
+
+        return false;
     }
 
     virtual bool maybeObject() const
@@ -812,10 +812,10 @@ public:
                 return true;
             }
         }
-        
+
         return true;
     }
-    
+
     virtual bool maybeString() const
     {
         if (value.isString() || value.isBool() || value.isInteger() ||
@@ -835,11 +835,11 @@ public:
 
         return false;
     }
-    
+
 private:
 
     const ValueType value;
-    
+
 };
 
 }  // namespace adapters

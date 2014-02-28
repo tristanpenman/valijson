@@ -24,17 +24,17 @@ protected:
           : path(path),
             strictGroup(strictGroup),
             looseGroup(looseGroup) { }
-        
+
         const std::string path;
-        
+
         int strictGroup;
         int looseGroup;
     };
 
     static void SetUpTestCase() {
-        
+
         const std::string testDataDir(TEST_DATA_DIR);
-        
+
         //
         // Each test is allocated to two groups. The first group is the strict
         // comparison group. All test files that have been assigned to the same
@@ -50,11 +50,11 @@ protected:
         jsonFiles.push_back(JsonFile(testDataDir + "array_doubles_1_2_3.json",        1,  1));
         jsonFiles.push_back(JsonFile(testDataDir + "array_integers_1_2_3.json",       1,  1));
         jsonFiles.push_back(JsonFile(testDataDir + "array_strings_1_2_3.json",        2,  1));
-        
+
         jsonFiles.push_back(JsonFile(testDataDir + "array_doubles_1_2_3_4.json",      3,  2));
         jsonFiles.push_back(JsonFile(testDataDir + "array_integers_1_2_3_4.json",     3,  2));
         jsonFiles.push_back(JsonFile(testDataDir + "array_strings_1_2_3_4.json",      4,  2));
-        
+
         jsonFiles.push_back(JsonFile(testDataDir + "array_doubles_10_20_30_40.json",  5,  3));
         jsonFiles.push_back(JsonFile(testDataDir + "array_integers_10_20_30_40.json", 5,  3));
         jsonFiles.push_back(JsonFile(testDataDir + "array_strings_10_20_30_40.json",  6,  3));
@@ -64,13 +64,13 @@ protected:
     static void testComparison()
     {
         std::vector<JsonFile>::const_iterator outerItr, innerItr;
-        
+
         for(outerItr = jsonFiles.begin(); outerItr != jsonFiles.end() - 1; ++outerItr) {
             for(innerItr = outerItr; innerItr != jsonFiles.end(); ++innerItr) {
-            
+
                 const bool expectedStrict = (outerItr->strictGroup == innerItr->strictGroup);
                 const bool expectedLoose = (outerItr->looseGroup == innerItr->looseGroup);
-            
+
                 typename AdapterTraits<Adapter1>::DocumentType document1;
                 ASSERT_TRUE( valijson::utils::loadDocument(outerItr->path, document1) );
                 const Adapter1 adapter1(document1);
@@ -96,7 +96,7 @@ protected:
                         << outerItr->path << "' "
                         << "with strict comparison enabled";
                 }
-                
+
                 EXPECT_EQ(expectedLoose, adapter1.equalTo(adapter2, false))
                     << "Comparing '" << outerItr->path << "' to '"
                     << innerItr->path << "' "
@@ -108,7 +108,7 @@ protected:
             }
         }
     }
-    
+
     static std::vector<JsonFile> jsonFiles;
 };
 

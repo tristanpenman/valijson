@@ -52,7 +52,7 @@ public:
      * with error descriptions added to the ValidationResults object.
      *
      * If a pointer to a ValidationResults instance is not provided, validation
-     * will only continue for as long as the constraints are validated 
+     * will only continue for as long as the constraints are validated
      * successfully.
      *
      * @param  schema  Schema that the target must validate against
@@ -108,11 +108,11 @@ public:
     {
         // Flag used to track validation status if errors are non-fatal
         bool validated = true;
-    
+
         // Validate against each child schema
         unsigned int index = 0;
         BOOST_FOREACH( const Schema &schema, constraint.schemas ) {
-            
+
             // Ensure that the target validates against child schema
             if (!validateSchema(schema)) {
                 if (results) {
@@ -124,7 +124,7 @@ public:
                     return false;
                 }
             }
-            
+
             index++;
         }
 
@@ -136,10 +136,10 @@ public:
      *          AnyOfConstraint object.
      *
      * An anyOf constraint provides a set of child schemas, any of which the
-     * target may be validated against in order for the constraint to the 
+     * target may be validated against in order for the constraint to the
      * satifisfied.
      *
-     * Because an anyOf constraint does not require the target to validate 
+     * Because an anyOf constraint does not require the target to validate
      * against all child schemas, if validation against a single schema fails,
      * the results will not be added to a ValidationResults object. Only if
      * validation fails for all child schemas will an error be added to the
@@ -155,20 +155,20 @@ public:
         // passed a reference to a constraint (_1), and a reference to the
         // visitor (*this).
         Schema::ApplyFunction fn(boost::bind(validationCallback, _1, *this));
-    
+
         BOOST_FOREACH( const Schema &schema, constraint.schemas ) {
             if (schema.apply(fn)) {
                 return true;
             }
         }
-    
+
         if (results) {
             results->pushError(context, "Failed to validate against any child schemas.");
         }
-    
+
         return false;
     }
-    
+
     /**
      * @brief   Validate against the dependencies constraint represented by a
      *          DependenciesConstraint object.
@@ -191,7 +191,7 @@ public:
         // Typedef and reference for conciseness in nested loops
         typedef DependenciesConstraint::PropertyDependenciesMap PDM;
         const PDM &deps = constraint.dependencies;
-        
+
         typedef DependenciesConstraint::PropertyDependentSchemasMap PDSM;
         const PDSM &depSchemas = constraint.dependentSchemas;
 
@@ -200,12 +200,12 @@ public:
 
         // Flag used to track validation status if errors are non-fatal
         bool validated = true;
-    
+
         // For each property in the object, check for a list of dependencies in
         // the constraint object and verify that the dependencies have been
         // satisfied.
         BOOST_FOREACH( const typename AdapterType::ObjectMember m, object ) {
-        
+
             // Check for this property in the dependency map. If it is not
             // present, we can move on to the next one...
             PDM::const_iterator itr = deps.find(m.first);
@@ -220,7 +220,7 @@ public:
                     }
                 }
             }
-            
+
             // Check for this property in the dependent schemas map. If it is
             // present then we need to validate the current target against the
             // dependent schema.
@@ -237,7 +237,7 @@ public:
                 }
             }
         }
-    
+
         return validated;
     }
 
@@ -260,16 +260,16 @@ public:
                 return true;
             }
         }
-        
+
         if (results) {
             results->pushError(context, "Failed to match against any enum values.");
         }
 
         return false;
     }
-    
+
     /**
-     * @brief   Validate against the items and additionalItems constraints 
+     * @brief   Validate against the items and additionalItems constraints
      *          represented by an ItemsConstraint object.
      *
      * An items constraint restricts the values in array to those that match a
@@ -279,7 +279,7 @@ public:
      * validate all items.
      *
      * If a list of child schemas is used, then the additionalItems constraint
-     * will also be considered. If present, the schema derived from the 
+     * will also be considered. If present, the schema derived from the
      * additionalItems constraint will  be used to validate items that do not
      * have a corresponding child schema in the items constraint. If the
      * items constraint was not provided, then the additionalItems schema will
@@ -295,11 +295,11 @@ public:
         if (!target.isArray()) {
             return true;
         }
-    
+
         bool validated = true;
-    
+
         if (constraint.itemSchema) {
-        
+
             // Validate all items against single schema
             unsigned int index = 0;
             BOOST_FOREACH( const AdapterType arrayItem, target.getArray() ) {
@@ -317,9 +317,9 @@ public:
                 }
                 ++index;
             }
-        
+
         } else if (constraint.itemSchemas) {
-        
+
             if (!constraint.additionalItemsSchema) {
                 // Check that the array length is <= length of the itemsSchema list
                 if (target.getArray().size() > constraint.itemSchemas->size()) {
@@ -331,7 +331,7 @@ public:
                     }
                 }
             }
-            
+
             // Validate items against the schema with the same index, or
             // additionalItems schema
             unsigned int index = 0;
@@ -367,10 +367,10 @@ public:
                 }
                 ++index;
             }
-        
-            
+
+
         } else if (constraint.additionalItemsSchema) {
-        
+
             // Validate each item against additional items schema
             BOOST_FOREACH( const AdapterType arrayItem, target.getArray() ) {
                 ValidationVisitor<AdapterType> v(arrayItem,
@@ -387,14 +387,14 @@ public:
                     }
                 }
             }
-        
+
         }
-    
+
         return validated;
     }
-    
+
     /**
-     * @brief   Validate against the maximum and exclusiveMaximum constraints 
+     * @brief   Validate against the maximum and exclusiveMaximum constraints
      *          represented by a MaximumConstraint object.
      *
      * @param   constraint  Constraint that the target must validate against.
@@ -426,10 +426,10 @@ public:
                 return false;
             }
         }
-    
+
         return true;
     }
-    
+
     /**
      * @brief   Validate against the maxItems constraint represented by a
      *          MaxItemsConstraint object.
@@ -449,10 +449,10 @@ public:
             }
             return false;
         }
-        
+
         return true;
     }
-    
+
     /**
      * @brief   Validate against the maxLength constraint represented by a
      *          MaxLengthConstraint object.
@@ -472,10 +472,10 @@ public:
             }
             return false;
         }
-        
+
         return true;
     }
-    
+
     /**
      * @brief   Validate against the maxProperties constraint represented by a
      *          MaxPropertiesConstraint object.
@@ -498,7 +498,7 @@ public:
 
         return true;
     }
-    
+
     /**
      * @brief   Validate against the minimum constraint represented by a
      *          MinimumConstraint object.
@@ -533,10 +533,10 @@ public:
                 return false;
             }
         }
-    
+
         return true;
     }
-    
+
     /**
      * @brief   Validate against the minItems constraint represented by a
      *          MinItemsConstraint object.
@@ -556,10 +556,10 @@ public:
             }
             return false;
         }
-        
+
         return true;
-    }    
-    
+    }
+
     /**
      * @brief   Validate against the minLength constraint represented by a
      *          MinLengthConstraint object.
@@ -579,10 +579,10 @@ public:
             }
             return false;
         }
-        
+
         return true;
     }
-    
+
     /**
      * @brief   Validate against the minProperties constraint represented by a
      *          MinPropertiesConstraint object.
@@ -605,9 +605,9 @@ public:
 
         return true;
     }
-    
+
     /**
-     * @brief   Validate against the multipleOf or divisibleBy constraints 
+     * @brief   Validate against the multipleOf or divisibleBy constraints
      *          represented by a MultipleOfConstraint object.
      *
      * @todo    Not implemented.
@@ -620,15 +620,15 @@ public:
     {
         return true;
     }
-   
+
     /**
-     * @brief   Validate against the not constraint represented by a 
+     * @brief   Validate against the not constraint represented by a
      *          NotConstraint object.
      *
      * @param   constraint  Constraint that the target must validate against.
      *
      * @return  true if the constraint is satisfied, false otherwise.
-     */   
+     */
     virtual bool visit(const NotConstraint &constraint)
     {
         ValidationVisitor<AdapterType> v(target, context, strictTypes, NULL);
@@ -639,12 +639,12 @@ public:
             }
             return false;
         }
-        
+
         return true;
     }
 
     /**
-     * @brief   Validate against the oneOf constraint represented by a 
+     * @brief   Validate against the oneOf constraint represented by a
      *          OneOfConstraint object.
      *
      * @param   constraint  Constraint that the target must validate against.
@@ -654,13 +654,13 @@ public:
     virtual bool visit(const OneOfConstraint &constraint)
     {
         unsigned int numValidated = 0;
-        
+
         BOOST_FOREACH( const Schema &schema, constraint.schemas ) {
             if (validateSchema(schema)) {
                 numValidated++;
             }
         }
-    
+
         if (numValidated != 1) {
             if (results) {
                 results->pushError(context, "Failed to validate against exactly one child schema.");
@@ -670,9 +670,9 @@ public:
 
         return true;
     }
-    
+
     /**
-     * @brief   Validate against the pattern constraint represented by a 
+     * @brief   Validate against the pattern constraint represented by a
      *          PatternConstraint object.
      *
      * @param   constraint  Constraint that the target must validate against.
@@ -684,7 +684,7 @@ public:
         if (!target.isString()) {
             return true;
         }
-        
+
         const boost::regex r(constraint.pattern, boost::regex::perl);
         if (!boost::regex_search(target.getString(), r)) {
             if (results) {
@@ -692,10 +692,10 @@ public:
             }
             return false;
         }
-        
+
         return true;
     }
-    
+
     /**
      * @brief   Validate against the properties, patternProperties, and
      *          additionalProperties constraints represented by a
@@ -710,17 +710,17 @@ public:
         if (!target.isObject()) {
             return true;
         }
-    
+
         bool validated = true;
-    
+
         // Validate each property in the target object
         BOOST_FOREACH( const typename AdapterType::ObjectMember m, target.getObject() ) {
-        
+
             const std::string propertyName = m.first;
             bool propertyNameMatched = false;
 
             ValidationVisitor<AdapterType> v(m.second, context + "." + m.first, strictTypes, results);
-        
+
             // Search for matching property name
             PropertiesConstraint::PropertySchemaMap::const_iterator itr =
                 constraint.properties.find(propertyName);
@@ -737,7 +737,7 @@ public:
                     }
                 }
             }
-            
+
             // Search for a regex that matches the property name
             for (itr = constraint.patternProperties.begin(); itr != constraint.patternProperties.end(); ++itr) {
                 const boost::regex r(itr->first, boost::regex::perl);
@@ -763,7 +763,7 @@ public:
             if (propertyNameMatched) {
                 continue;
             }
-        
+
             // If an additionalProperties schema has been provided, the values
             // associated with unmatched property names should be validated
             // against that schema.
@@ -784,10 +784,10 @@ public:
                 return false;
             }
         }
-    
+
         return validated;
     }
-    
+
     /**
      * @brief   Validate against the required constraint represented by a
      *          RequiredConstraint object.
@@ -820,10 +820,10 @@ public:
                 }
             }
         }
-        
+
         return validated;
     }
-    
+
     /**
      * @brief   Validate against the type constraint represented by a
      *          TypeConstraint object.
@@ -878,25 +878,25 @@ public:
                 break;
             }
         }
-        
+
         BOOST_FOREACH( const Schema &schema, constraint.schemas ) {
             if (validateSchema(schema)) {
                 return true;
             }
         }
-        
+
         if (results) {
             results->pushError(context, "Value type not permitted by 'type' constraint.");
         }
-        
+
         return false;
     }
-    
+
     /**
      * @brief   Validate the uniqueItems constraint represented by a
      *          UniqueItems object.
      *
-     * A uniqueItems constraint requires that each of the values in an array 
+     * A uniqueItems constraint requires that each of the values in an array
      * are unique. Comparison is performed recursively.
      *
      * @param   constraint  Constraint that the target must validate against
@@ -908,9 +908,9 @@ public:
         if (!target.isArray()) {
             return true;
         }
-        
+
         bool validated = true;
-    
+
         const typename AdapterType::Array targetArray = target.getArray();
         const typename AdapterType::Array::const_iterator end = targetArray.end();
         const typename AdapterType::Array::const_iterator secondLast = end - 1;
@@ -932,10 +932,10 @@ public:
             }
             ++outerIndex;
         }
-    
+
         return validated;
     }
-    
+
 private:
 
     /**
@@ -960,7 +960,7 @@ private:
 
     /// Optional pointer to a ValidationResults object to be populated
     ValidationResults *results;
-    
+
     /// Option to use strict type comparison
     const bool strictTypes;
 

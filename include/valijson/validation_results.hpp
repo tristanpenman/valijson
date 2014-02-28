@@ -29,17 +29,17 @@ public:
          * @brief  Construct an Error object with no context or description.
          */
         Error() { }
-        
+
         /**
          * @brief  Construct an Error object using a context and description.
-         * 
+         *
          * @param  context      Context string to use
          * @param  description  Description string to use
          */
         Error(const std::string &context, const std::string &description)
           : context(context),
             description(description) { }
-    
+
         /// Path to the node that failed validation.
         std::string context;
 
@@ -76,10 +76,10 @@ public:
     {
         errors.push_back(Error(context, description));
     }
-    
+
     /**
      * @brief  Pop an error from the front of the queue.
-     * 
+     *
      * @param  error  Reference to an Error object to populate.
      *
      * @returns  true if an Error was popped, false otherwise.
@@ -90,7 +90,7 @@ public:
         if (errors.empty()) {
             return false;
         }
-        
+
         error = errors.front();
         errors.pop_front();
         return true;

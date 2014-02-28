@@ -13,7 +13,7 @@
  *  - PropertiesConstraint
  *  - RequiredConstraint
  *  - TypeConstraint
- * 
+ *
  * The MinimumConstraint class provides support for the exclusiveMinimum and
  * minimum keywords in JSON Schema. And the PropertiesConstraint class provides
  * support for the properties, patternProperties, and additionalProperties
@@ -88,10 +88,10 @@ using valijson::constraints::TypeConstraint;
 
 void addPropertiesConstraint(Schema &schema)
 {
-    
+
     PropertiesConstraint::PropertySchemaMap propertySchemaMap;
     PropertiesConstraint::PropertySchemaMap patternPropertiesSchemaMap;
-    
+
     {
         // Create a child schema for the 'category' property that requires one
         // of several possible values.
@@ -103,14 +103,14 @@ void addPropertiesConstraint(Schema &schema)
         enumConstraintValues.push_back(new RapidJsonFrozenValue("video"));
         propertySchema.addConstraint(new EnumConstraint(enumConstraintValues));
     }
-    
+
     {
         // Create a child schema for the 'description' property that requires
         // a string, but does not enforce any length constraints.
         Schema &propertySchema = propertySchemaMap["description"];
         propertySchema.addConstraint(new TypeConstraint(TypeConstraint::kString));
     }
-    
+
     {
         // Create a child schema for the 'price' property, that requires a
         // number with a value greater than zero.
@@ -118,7 +118,7 @@ void addPropertiesConstraint(Schema &schema)
         propertySchema.addConstraint(new MinimumConstraint(0.0, true));
         propertySchema.addConstraint(new TypeConstraint(TypeConstraint::kNumber));
     }
-    
+
     {
         // Create a child schema for the 'title' property that requires a string
         // that is between 1 and 200 characters in length.
@@ -148,7 +148,7 @@ void addRequiredConstraint(Schema &schema)
 
 void addTypeConstraint(Schema &schema)
 {
-    // Add a TypeConstraint to the schema, specifying that the root of the 
+    // Add a TypeConstraint to the schema, specifying that the root of the
     // document must be an object.
     schema.addConstraint(new TypeConstraint(TypeConstraint::kObject));
 }
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
     addPropertiesConstraint(schema);
     addRequiredConstraint(schema);
     addTypeConstraint(schema);
-    
+
     // Perform validation
     Validator validator(schema);
     ValidationResults results;

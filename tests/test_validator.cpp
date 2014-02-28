@@ -32,21 +32,21 @@ protected:
     {
         std::string currentTestCase;
         std::string currentTest;
-    
+
         try {
-        
+
             // Load test document
             typename AdapterTraits<AdapterType>::DocumentType document;
             ASSERT_TRUE( valijson::utils::loadDocument(testFile, document) );
             AdapterType testCases(document);
             ASSERT_TRUE( testCases.isArray() );
-            
+
             // Process each test case in the file
             BOOST_FOREACH( const AdapterType testCase, testCases.getArray() ) {
-            
+
                 currentTestCase.clear();
                 currentTest.clear();
-            
+
                 // Ensure that testCase is an object
                 ASSERT_TRUE( testCase.isObject() );
                 const typename AdapterType::Object object = testCase.getObject();
@@ -55,24 +55,24 @@ protected:
                 typename AdapterType::Object::const_iterator itr = object.find("description");
                 ASSERT_NE( object.end(), itr );
                 currentTestCase = itr->second.getString();
-                
+
                 // Ensure that 'schema' property is present
                 itr = object.find("schema");
                 ASSERT_NE( object.end(), itr );
-                
+
                 // Parse schema
                 Schema schema;
                 SchemaParser parser(version);
                 parser.populateSchema(itr->second, schema);
-                
+
                 // For each test in the 'tests' array
                 itr = object.find("tests");
                 ASSERT_NE( object.end(), itr );
                 ASSERT_TRUE( itr->second.isArray() );
                 BOOST_FOREACH( const AdapterType test, itr->second.getArray() ) {
-                    
+
                     const bool strict = itr->second.hasStrictTypes();
-                    
+
                     ASSERT_TRUE( test.isObject() );
                     const typename AdapterType::Object testObject = test.getObject();
 
@@ -84,12 +84,12 @@ protected:
                     testItr = testObject.find("description");
                     ASSERT_NE( testObject.end(), testItr );
                     currentTest = testItr->second.getString();
-                    
+
                     testItr = testObject.find("data");
                     ASSERT_NE( testObject.end(), testItr );
                     Validator validator(schema);
                     validator.setStrict(strict);
-                    
+
                     EXPECT_EQ( shouldValidate, validator.validate(testItr->second, NULL) )
                         << "Failed while testing validate() function in '"
                         << currentTest << "' of test case '"
@@ -97,7 +97,7 @@ protected:
                         << AdapterTraits<AdapterType>::adapterName() << "'";
                 }
             }
-            
+
         } catch (const std::exception &e) {
             FAIL() << "Exception thrown with message '" << e.what()
                    << "' in '" << currentTest << "' of test case '"
@@ -105,19 +105,19 @@ protected:
                    << AdapterTraits<AdapterType>::adapterName() << "'";
         }
     }
-    
+
     void processTestFile(const std::string &testFile,
                          const SchemaParser::Version version)
     {
         processTestFile<valijson::adapters::JsonCppAdapter>(testFile, version);
         processTestFile<valijson::adapters::RapidJsonAdapter>(testFile, version);
     }
-    
+
     void processDraft3TestFile(const std::string &testFile)
     {
         return processTestFile(testFile, SchemaParser::kDraft3);
     }
-    
+
     void processDraft4TestFile(const std::string &testFile)
     {
         return processTestFile(testFile, SchemaParser::kDraft4);

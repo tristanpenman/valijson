@@ -15,7 +15,7 @@
  *  - JsonCppObjectMemberIterator
  *  - JsonCppValue
  *
- * Due to the dependencies that exist between these classes, the ordering of 
+ * Due to the dependencies that exist between these classes, the ordering of
  * class declarations and definitions may be a bit confusing. The best place to
  * start is JsonCppAdapter. This class definition is actually very small,
  * since most of the functionality is inherited from the BasicAdapter class.
@@ -50,11 +50,11 @@ typedef std::pair<std::string, JsonCppAdapter> JsonCppObjectMember;
  * @brief  Light weight wrapper for a JsonCpp array value.
  *
  * This class is light weight wrapper for a JsonCpp array. It provides a
- * minimum set of container functions and typedefs that allow it to be used as 
+ * minimum set of container functions and typedefs that allow it to be used as
  * an iterable container.
  *
  * An instance of this class contains a single reference to the underlying
- * JsonCpp value, assumed to be an array, so there is very little overhead 
+ * JsonCpp value, assumed to be an array, so there is very little overhead
  * associated with copy construction and passing by value.
  */
 class JsonCppArray
@@ -68,7 +68,7 @@ public:
     JsonCppArray()
       : value(emptyArray()) { }
 
-    /** 
+    /**
      * @brief   Construct a JsonCppArray referencing a specific JsonCpp value.
      *
      * @param   value   reference to a JsonCpp value
@@ -83,7 +83,7 @@ public:
             throw std::runtime_error("Value is not an array.");
         }
     }
-    
+
     /**
      * @brief   Return an iterator for the first element of the array.
      *
@@ -91,7 +91,7 @@ public:
      * returned by the underlying JsonCpp implementation.
      */
     JsonCppArrayValueIterator begin() const;
-    
+
     /**
      * @brief   Return an iterator for one-past the last element of the array.
      *
@@ -99,13 +99,13 @@ public:
      * returned by the underlying JsonCpp implementation.
      */
     JsonCppArrayValueIterator end() const;
-    
+
     /// Return the number of elements in the array.
     size_t size() const
     {
         return value.size();
     }
-       
+
 private:
 
     /**
@@ -120,7 +120,7 @@ private:
     }
 
     /// Reference to the contained array
-    const Json::Value &value;   
+    const Json::Value &value;
 
 };
 
@@ -128,7 +128,7 @@ private:
  * @brief  Light weight wrapper for a JsonCpp object.
  *
  * This class is light weight wrapper for a JsonCpp object. It provides a
- * minimum set of container functions and typedefs that allow it to be used as 
+ * minimum set of container functions and typedefs that allow it to be used as
  * an iterable container.
  *
  * An instance of this class contains a single reference to the underlying
@@ -161,24 +161,24 @@ public:
             throw std::runtime_error("Value is not an object.");
         }
     }
-    
+
     /**
      * @brief   Return an iterator for this first object member
      *
      * The iterator return by this function is effectively a wrapper around
      * the iterator value returned by the underlying JsonCpp implementation.
-     */    
+     */
     JsonCppObjectMemberIterator begin() const;
 
     /**
-     * @brief   Return an iterator for an invalid object member that indicates 
+     * @brief   Return an iterator for an invalid object member that indicates
      *          the end of the collection.
      *
      * The iterator return by this function is effectively a wrapper around
      * the iterator value returned by the underlying JsonCpp implementation.
      */
     JsonCppObjectMemberIterator end() const;
-    
+
     /**
      * @brief   Return an iterator for a member/property with the given name
      *
@@ -187,13 +187,13 @@ public:
      * @returns a valid iterator if found, or an invalid iterator if not found
      */
     JsonCppObjectMemberIterator find(const std::string &propertyName) const;
-    
+
     /// Return the number of members in the object
     size_t size() const
     {
         return value.size();
     }
-    
+
 private:
 
     /// Return a reference to an empty JsonCpp object
@@ -246,9 +246,9 @@ private:
  *
  * This class is passed as an argument to the BasicAdapter template class,
  * and is used to provide access to a JsonCpp value. This class is responsible
- * for the mechanics of actually reading a JsonCpp value, whereas the 
+ * for the mechanics of actually reading a JsonCpp value, whereas the
  * BasicAdapter class is responsible for the semantics of type comparisons
- * and conversions. 
+ * and conversions.
  *
  * The functions that need to be provided by this class are defined implicitly
  * by the implementation of the BasicAdapter template class.
@@ -266,19 +266,19 @@ public:
     /// Construct a wrapper for a specific JsonCpp value
     JsonCppValue(const Json::Value &value)
       : value(value) { }
-   
+
     /**
      * @brief   Create a new JsonCppFrozenValue instance that contains the
      *          value referenced by this JsonCppValue instance.
      *
-     * @returns pointer to a new JsonCppFrozenValue instance, belonging to the 
+     * @returns pointer to a new JsonCppFrozenValue instance, belonging to the
      *          caller.
      */
     FrozenValue * freeze() const
     {
         return new JsonCppFrozenValue(value);
     }
-    
+
     /**
      * @brief   Optionally return a JsonCppArray instance.
      *
@@ -293,10 +293,10 @@ public:
         if (value.isArray()) {
             return boost::make_optional(JsonCppArray(value));
         }
-        
+
         return boost::none;
     }
-    
+
     /**
      * @brief   Retrieve the number of elements in the array
      *
@@ -314,40 +314,40 @@ public:
             result = value.size();
             return true;
         }
-        
+
         return false;
     }
-    
+
     bool getBool(bool &result) const
     {
         if (value.isBool()) {
             result = value.asBool();
             return true;
         }
-        
+
         return false;
     }
-    
+
     bool getDouble(double &result) const
     {
         if (value.isDouble()) {
             result = value.asDouble();
             return true;
         }
-    
+
         return false;
     }
-    
+
     bool getInteger(int64_t &result) const
     {
         if (value.isIntegral()) {
             result = static_cast<int64_t>(value.asInt());
             return true;
         }
-            
+
         return false;
     }
-    
+
     /**
      * @brief   Optionally return a JsonCppObject instance.
      *
@@ -362,7 +362,7 @@ public:
         if (value.isObject()) {
             return boost::make_optional(JsonCppObject(value));
         }
-        
+
         return boost::none;
     }
 
@@ -383,7 +383,7 @@ public:
             result = value.size();
             return true;
         }
-        
+
         return false;
     }
 
@@ -393,50 +393,50 @@ public:
             result = value.asString();
             return true;
         }
-        
+
         return false;
     }
-    
+
     static bool hasStrictTypes()
     {
         return true;
     }
-    
+
     bool isArray() const
     {
         return value.isArray() && !value.isNull();
     }
-    
+
     bool isBool() const
     {
         return value.isBool();
     }
-    
+
     bool isDouble() const
     {
         return value.isDouble();
     }
-    
+
     bool isInteger() const
     {
         return value.isIntegral() && !value.isBool();
     }
-    
+
     bool isNull() const
     {
         return value.isNull();
     }
-    
+
     bool isNumber() const
     {
         return value.isNumeric()  && !value.isBool();
     }
-    
+
     bool isObject() const
     {
         return value.isObject() && !value.isNull();
     }
-    
+
     bool isString() const
     {
         return value.isString();
@@ -488,7 +488,7 @@ public:
  * This class provides a JSON array iterator that dereferences as an instance of
  * JsonCppAdapter representing a value stored in the array. It has been
  * implemented using the boost iterator_facade template.
- * 
+ *
  * @see JsonCppArray
  */
 class JsonCppArrayValueIterator:
@@ -509,12 +509,12 @@ public:
     JsonCppArrayValueIterator(const Json::Value::const_iterator &itr)
       : itr(itr) { }
 
-    /// Returns a JsonCppAdapter that contains the value of the current element. 
+    /// Returns a JsonCppAdapter that contains the value of the current element.
     JsonCppAdapter dereference() const
     {
         return JsonCppAdapter(*itr);
     }
-    
+
     /**
      * @brief   Compare this iterator against another iterator.
      *
@@ -530,17 +530,17 @@ public:
     {
         return itr == rhs.itr;
     }
-    
+
     void increment()
     {
         itr++;
     }
-    
+
     void decrement()
     {
         itr--;
     }
-    
+
     void advance(std::ptrdiff_t n)
     {
         if (n > 0) {
@@ -565,7 +565,7 @@ private:
  * This class provides a JSON object iterator that dereferences as an instance
  * of JsonCppObjectMember representing one of the members of the object. It has
  * been implemented using the boost iterator_facade template.
- * 
+ *
  * @see JsonCppObject
  * @see JsonCppObjectMember
  */
@@ -594,7 +594,7 @@ public:
     {
         return JsonCppObjectMember(itr.key().asString(), *itr);
     }
-    
+
     /**
      * @brief   Compare this iterator with another iterator.
      *
@@ -610,12 +610,12 @@ public:
     {
         return itr == rhs.itr;
     }
-    
+
     void increment()
     {
         itr++;
     }
-    
+
     void decrement()
     {
         itr--;
@@ -632,7 +632,7 @@ template<>
 struct AdapterTraits<valijson::adapters::JsonCppAdapter>
 {
     typedef Json::Value DocumentType;
-    
+
     static std::string adapterName()
     {
         return "JsonCppAdapter";

@@ -24,7 +24,7 @@ inline bool loadDocument(const std::string &path, Json::Value &document)
                   << reader.getFormatedErrorMessages();
         return false;
     }
-    
+
     return true;
 }
 

@@ -15,7 +15,7 @@
  *  - PropertyTreeObjectMemberIterator
  *  - PropertyTreeValue
  *
- * Due to the dependencies that exist between these classes, the ordering of 
+ * Due to the dependencies that exist between these classes, the ordering of
  * class declarations and definitions may be a bit confusing. The best place to
  * start is PropertyTreeAdapter. This class definition is actually very small,
  * since most of the functionality is inherited from the BasicAdapter class.
@@ -49,7 +49,7 @@ typedef std::pair<std::string, PropertyTreeAdapter> PropertyTreeObjectMember;
  *          array-like data.
  *
  * This class is light weight wrapper for a Boost property tree. It provides a
- * minimum set of container functions and typedefs that allow it to be used as 
+ * minimum set of container functions and typedefs that allow it to be used as
  * an iterable container.
  *
  * An instance of this class contains a single reference to a Boost property
@@ -76,22 +76,22 @@ public:
      *
      * It is assumed that this value contains array-like data, but this is not
      * checked due to runtime cost.
-     */    
+     */
     PropertyTreeArray(const boost::property_tree::ptree &array)
       : array(array) { }
-    
+
     /// Return an iterator for the first element in the array.
     PropertyTreeArrayValueIterator begin() const;
 
     /// Return an iterator for one-past the last element of the array.
     PropertyTreeArrayValueIterator end() const;
-    
+
     /// Return the number of elements in the array
     size_t size() const
     {
         return array.size();
     }
-       
+
 private:
 
     /**
@@ -115,11 +115,11 @@ private:
  *         object-like data.
  *
  * This class is light weight wrapper for a Boost property tree. It provides a
- * minimum set of container functions and typedefs that allow it to be used as 
+ * minimum set of container functions and typedefs that allow it to be used as
  * an iterable container.
  *
  * An instance of this class contains a single reference to the underlying
- * property tree value, assumed to be object-like, so there is very little  
+ * property tree value, assumed to be object-like, so there is very little
  * overhead associated with copy construction and passing by value.
  */
 class PropertyTreeObject
@@ -144,22 +144,22 @@ public:
      */
     PropertyTreeObject(const boost::property_tree::ptree &object)
       : object(object) { }
-    
+
     /**
      * @brief   Return an iterator for this first object member
      *
      * The iterator return by this function is effectively a wrapper around
-     * the iterator value returned by the underlying property tree 
+     * the iterator value returned by the underlying property tree
      * implementation.
-     */    
+     */
     PropertyTreeObjectMemberIterator begin() const;
 
     /**
-     * @brief   Return an iterator for an invalid object member that indicates 
+     * @brief   Return an iterator for an invalid object member that indicates
      *          the end of the collection.
      *
      * The iterator return by this function is effectively a wrapper around
-     * the pointer value returned by the underlying property tree 
+     * the pointer value returned by the underlying property tree
      * implementation.
      */
     PropertyTreeObjectMemberIterator end() const;
@@ -172,15 +172,15 @@ public:
      * returned will be the same as the iterator returned by the end() function.
      *
      * @param   property   property name to search for
-     */    
+     */
     PropertyTreeObjectMemberIterator find(const std::string &property) const;
-    
+
     /// Returns the number of members belonging to this object.
     size_t size() const
     {
         return object.size();
     }
-    
+
 private:
 
     /**
@@ -196,13 +196,13 @@ private:
 
     /// Reference to the contained object
     const boost::property_tree::ptree &object;
-    
+
 };
 
 /**
  * @brief   Stores an independent copy of a Boost property tree.
  *
- * This class allows a property tree value to be stored independent of its 
+ * This class allows a property tree value to be stored independent of its
  * original 'document'. Boost property trees make this easy to do, as they do
  * not perform any custom memory management.
  *
@@ -245,10 +245,10 @@ private:
  * @brief   Light weight wrapper for a Boost property tree.
  *
  * This class is passed as an argument to the BasicAdapter template class,
- * and is used to provide access to a Boost property tree value. This class 
+ * and is used to provide access to a Boost property tree value. This class
  * is responsible for the mechanics of actually reading a property tree, whereas
  * BasicAdapter class is responsible for the semantics of type comparisons
- * and conversions. 
+ * and conversions.
  *
  * The functions that need to be provided by this class are defined implicitly
  * by the implementation of the BasicAdapter template class.
@@ -290,7 +290,7 @@ public:
                         break;
                     }
                 }
-                
+
                 if (isArray) {
                     array = tree;
                 } else {
@@ -323,8 +323,8 @@ public:
     /**
      * @brief  Return an instance of PropertyTreeArrayAdapter.
      *
-     * If the referenced property tree value is an array, this function will 
-     * return a boost::optional containing a PropertyTreeArray instance 
+     * If the referenced property tree value is an array, this function will
+     * return a boost::optional containing a PropertyTreeArray instance
      * referencing the array.
      *
      * Otherwise it will return boost::none.
@@ -334,46 +334,46 @@ public:
         if (array) {
             return boost::make_optional(PropertyTreeArray(*array));
         }
-        
+
         return boost::none;
     }
-    
+
     /**
      * @brief   Retrieve the number of elements in the array
      *
-     * If the referenced property tree value is an array, this function will 
-     * retrieve the number of elements in the array and store it in the output 
+     * If the referenced property tree value is an array, this function will
+     * retrieve the number of elements in the array and store it in the output
      * variable provided.
      *
      * @param   result  reference to size_t to set with result
      *
      * @returns true if the number of elements was retrieved, false otherwise.
-     */    
+     */
     bool getArraySize(size_t &result) const
     {
         if (array) {
             result = array->size();
             return true;
         }
-        
+
         return false;
     }
-    
+
     bool getBool(bool &result) const
     {
         return false;
     }
-    
+
     bool getDouble(double &result) const
     {
         return false;
     }
-    
+
     bool getInteger(int64_t &result) const
     {
         return false;
     }
-    
+
     /**
      * @brief   Optionally return a PropertyTreeObject instance.
      *
@@ -382,16 +382,16 @@ public:
      * object.
      *
      * Otherwise it will return boost::none.
-     */    
+     */
     boost::optional<PropertyTreeObject> getObjectOptional() const
     {
         if (object) {
             return boost::make_optional(PropertyTreeObject(*object));
         }
-        
+
         return boost::none;
     }
-    
+
     /**
      * @brief   Retrieve the number of members in the object
      *
@@ -409,7 +409,7 @@ public:
             result = object->size();
             return true;
         }
-        
+
         return false;
     }
 
@@ -419,55 +419,55 @@ public:
             result = *value;
             return true;
         }
-    
+
         return false;
     }
-    
+
     static bool hasStrictTypes()
     {
         return false;
     }
-    
+
     bool isArray() const
     {
         return array != boost::none;
     }
-    
+
     bool isBool() const
     {
         return false;
     }
-    
+
     bool isDouble() const
     {
         return false;
     }
-    
+
     bool isInteger() const
     {
         return false;
     }
-    
+
     bool isNull() const
     {
         return false;
     }
-    
+
     bool isNumber() const
     {
         return false;
     }
-    
+
     bool isObject() const
     {
         return object != boost::none;
     }
-    
+
     bool isString() const
     {
         return value != boost::none;
     }
-    
+
 private:
 
     static const boost::property_tree::ptree & emptyTree()
@@ -520,7 +520,7 @@ public:
  * This class provides a JSON array iterator that dereferences as an instance of
  * PropertyTreeAdapter representing a value stored in the array. It has been
  * implemented using the boost iterator_facade template.
- * 
+ *
  * @see PropertyTreeArray
  */
 class PropertyTreeArrayValueIterator:
@@ -542,13 +542,13 @@ public:
         const boost::property_tree::ptree::const_iterator &itr)
       : itr(itr) { }
 
-    /// Returns a PropertyTreeAdapter that contains the value of the current 
-    /// element. 
+    /// Returns a PropertyTreeAdapter that contains the value of the current
+    /// element.
     PropertyTreeAdapter dereference() const
     {
         return PropertyTreeAdapter(itr->second);
     }
-    
+
     /**
      * @brief   Compare this iterator against another iterator.
      *
@@ -559,22 +559,22 @@ public:
      * @param   rhs  iterator to compare against
      *
      * @returns true if the iterators are equal, false otherwise.
-     */    
+     */
     bool equal(const PropertyTreeArrayValueIterator &rhs) const
     {
         return itr == rhs.itr;
     }
-    
+
     void increment()
     {
         itr++;
     }
-    
+
     void decrement()
     {
         itr--;
     }
-    
+
     void advance(std::ptrdiff_t n)
     {
         if (n > 0) {
@@ -599,7 +599,7 @@ private:
  * This class provides a JSON object iterator that dereferences as an instance
  * of PropertyTreeObjectMember representing one of the members of the object.
  * It has been implemented using the boost iterator_facade template.
- * 
+ *
  * @see PropertyTreeObject
  * @see PropertyTreeObjectMember
  */
@@ -622,14 +622,14 @@ public:
       : itr(itr) { }
 
     /**
-     * @brief   Returns a PropertyTreeObjectMember that contains the key and 
+     * @brief   Returns a PropertyTreeObjectMember that contains the key and
      *          value belonging to the object member identified by the iterator.
      */
     PropertyTreeObjectMember dereference() const
     {
         return PropertyTreeObjectMember(itr->first, itr->second);
     }
-    
+
     /**
      * @brief   Compare this iterator with another iterator.
      *
@@ -640,17 +640,17 @@ public:
      * @param   rhs  Iterator to compare with
      *
      * @returns true if the underlying iterators are equal, false otherwise
-     */    
+     */
     bool equal(const PropertyTreeObjectMemberIterator &rhs) const
     {
         return itr == rhs.itr;
     }
-    
+
     void increment()
     {
         itr++;
     }
-    
+
     void decrement()
     {
         itr--;
@@ -666,7 +666,7 @@ template<>
 struct AdapterTraits<valijson::adapters::PropertyTreeAdapter>
 {
     typedef boost::property_tree::ptree DocumentType;
-    
+
     static std::string adapterName()
     {
         return "PropertyTreeAdapter";
@@ -703,7 +703,7 @@ inline PropertyTreeObjectMemberIterator PropertyTreeObject::find(
 {
     const boost::property_tree::ptree::const_assoc_iterator
         itr = object.find(propertyName);
-    
+
     if (itr != object.not_found()) {
         return itr;
     }
@@ -715,4 +715,3 @@ inline PropertyTreeObjectMemberIterator PropertyTreeObject::find(
 }  // namespace valijson
 
 #endif
- 

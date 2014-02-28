@@ -9,7 +9,7 @@ namespace adapters {
 /**
  * @brief   An interface that provides minimal access to a stored JSON value.
  *
- * The main reason that this interface exists is to support the 'enum' 
+ * The main reason that this interface exists is to support the 'enum'
  * constraint. Each Adapter type is expected to provide an implementation of
  * this interface. That class should be able to maintain its own copy of a
  * JSON value, independent of the original document.
@@ -35,7 +35,7 @@ public:
      *          object containing the value.
      */
     virtual FrozenValue *clone() const = 0;
-    
+
     /**
      * @brief   Return true if the stored value is equal to the value contained
      *          by an Adapter instance.

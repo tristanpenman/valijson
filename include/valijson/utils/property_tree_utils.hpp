@@ -22,7 +22,7 @@ inline bool loadDocument(const std::string &path, boost::property_tree::ptree &d
         std::cerr << "Failed to load json from file '" << path << "'." << std::endl;
         return false;
     }
-    
+
     std::istringstream is(file);
     try {
         boost::property_tree::read_json(is, document);
@@ -31,7 +31,7 @@ inline bool loadDocument(const std::string &path, boost::property_tree::ptree &d
         std::cerr << e.what() << std::endl;
         return false;
     }
-    
+
     return true;
 }
 

@@ -11,5 +11,5 @@ class TestDereferenceCallback : public ::testing::Test
 
 TEST_F(TestDereferenceCallback, Basics)
 {
-    
+
 }

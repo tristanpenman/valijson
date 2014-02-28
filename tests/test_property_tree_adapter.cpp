@@ -30,10 +30,10 @@ TEST_F(TestPropertyTreeAdapter, BasicArrayIteration)
     ASSERT_ANY_THROW( adapter.getDouble() );
     ASSERT_ANY_THROW( adapter.getObject() );
     ASSERT_ANY_THROW( adapter.getString() );
-    
+
     // Ensure that the array contains the expected number of elements
     EXPECT_EQ( numElements, adapter.getArray().size() );
-    
+
     // Ensure that the elements are returned in the order they were inserted
     unsigned int expectedValue = 0;
     BOOST_FOREACH( const valijson::adapters::PropertyTreeAdapter value, adapter.getArray() ) {
@@ -43,7 +43,7 @@ TEST_F(TestPropertyTreeAdapter, BasicArrayIteration)
         EXPECT_EQ( double(expectedValue), value.asDouble() );
         expectedValue++;
     }
-    
+
     // Ensure that the correct number of elements were iterated over
     EXPECT_EQ(numElements, expectedValue);
 }
@@ -69,10 +69,10 @@ TEST_F(TestPropertyTreeAdapter, BasicObjectIteration)
     ASSERT_ANY_THROW( adapter.getBool() );
     ASSERT_ANY_THROW( adapter.getDouble() );
     ASSERT_ANY_THROW( adapter.getString() );
-    
+
     // Ensure that the object contains the expected number of members
     EXPECT_EQ( numElements, adapter.getObject().size() );
-    
+
     // Ensure that the members are returned in the order they were inserted
     unsigned int expectedValue = 0;
     BOOST_FOREACH( const valijson::adapters::PropertyTreeAdapter::ObjectMember member, adapter.getObject() ) {
@@ -83,7 +83,7 @@ TEST_F(TestPropertyTreeAdapter, BasicObjectIteration)
         EXPECT_EQ( double(expectedValue), member.second.asDouble() );
         expectedValue++;
     }
-    
+
     // Ensure that the correct number of elements were iterated over
     EXPECT_EQ( numElements, expectedValue );
 }

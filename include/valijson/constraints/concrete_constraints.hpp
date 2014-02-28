@@ -80,7 +80,7 @@ struct DependenciesConstraint: BasicConstraint<DependenciesConstraint>
     // A mapping from property names to the set of names of their dependencies
     typedef std::set<std::string> Dependencies;
     typedef std::map<std::string, Dependencies> PropertyDependenciesMap;
-    
+
     // A mapping from property names to dependent schemas
     typedef boost::ptr_map<std::string, Schema> PropertyDependentSchemasMap;
 
@@ -103,40 +103,40 @@ struct DependenciesConstraint: BasicConstraint<DependenciesConstraint>
 struct EnumConstraint: BasicConstraint<EnumConstraint>
 {
     typedef boost::ptr_vector<adapters::FrozenValue> Values;
-    
+
     EnumConstraint(const Values &values)   // Copy each of the frozen values
       : values(values) { }
-    
+
     const Values values;
 };
 
 /**
- * @brief  Represents a pair of 'items' and 'additionalItems' constraints. 
+ * @brief  Represents a pair of 'items' and 'additionalItems' constraints.
  */
 struct ItemsConstraint: BasicConstraint<ItemsConstraint>
 {
     typedef boost::ptr_vector<Schema> Schemas;
-    
+
     /**
-     * @brief  Construct a singular item constraint that allows no additional 
+     * @brief  Construct a singular item constraint that allows no additional
      *         items
      *
      * @param  itemSchema
      */
     ItemsConstraint(const Schema &itemSchema)
       : itemSchema(new Schema(itemSchema)) { }
-    
+
     /**
      * @brief  Construct a singular item schema that allows additional items
      *
-     * @param  itemSchema  
+     * @param  itemSchema
      * @param  additionalItemsSchema
      */
     ItemsConstraint(const Schema &itemSchema,
                     const Schema &additionalItemsSchema)
       : itemSchema(new Schema(itemSchema)),
         additionalItemsSchema(new Schema(additionalItemsSchema)) { }
-    
+
     /**
      * @brief  Construct a plural items constraint that does not allow for
      *         additional item schemas
@@ -145,7 +145,7 @@ struct ItemsConstraint: BasicConstraint<ItemsConstraint>
      */
     ItemsConstraint(const Schemas &itemSchemas)
       : itemSchemas(new Schemas(itemSchemas)) { }
-    
+
     /**
      * @brief  Construct a plural items constraint that allows additional items
      *
@@ -156,7 +156,7 @@ struct ItemsConstraint: BasicConstraint<ItemsConstraint>
                     const Schema &additionalItemsSchema)
       : itemSchemas(new Schemas(itemSchemas)),
         additionalItemsSchema(new Schema(additionalItemsSchema)) { }
-    
+
     /**
      * @brief  Copy constructor
      */
@@ -164,7 +164,7 @@ struct ItemsConstraint: BasicConstraint<ItemsConstraint>
       : itemSchema(other.itemSchema ? new Schema(*other.itemSchema.get()) : NULL),
         itemSchemas(other.itemSchemas ? new Schemas(*other.itemSchemas.get()) : NULL),
         additionalItemsSchema(other.additionalItemsSchema ? new Schema(*other.additionalItemsSchema.get()) : NULL) { }
-    
+
     const boost::scoped_ptr<const Schema> itemSchema;
     const boost::scoped_ptr<const Schemas> itemSchemas;
     const boost::scoped_ptr<const Schema> additionalItemsSchema;
@@ -212,7 +212,7 @@ struct MaxPropertiesConstraint: BasicConstraint<MaxPropertiesConstraint>
 {
     MaxPropertiesConstraint(int64_t maxProperties)
       : maxProperties(maxProperties) { }
-    
+
     const int64_t maxProperties;
 };
 
@@ -258,7 +258,7 @@ struct MinPropertiesConstraint: BasicConstraint<MinPropertiesConstraint>
 {
     MinPropertiesConstraint(int64_t minProperties)
       : minProperties(minProperties) { }
-    
+
     const int64_t minProperties;
 };
 
@@ -282,10 +282,10 @@ struct NotConstraint: BasicConstraint<NotConstraint>
 {
     NotConstraint(const Schema &schema)
       : schema(new Schema(schema)) { }
-    
+
     NotConstraint(const NotConstraint &other)
       : schema(other.schema ? new Schema(*other.schema) : NULL) { }
-    
+
     const boost::scoped_ptr<const Schema> schema;
 };
 
@@ -322,7 +322,7 @@ struct PropertiesConstraint: BasicConstraint<PropertiesConstraint> {
 
     typedef boost::ptr_map<std::string, Schema> PropertySchemaMap;
 
-    PropertiesConstraint(const PropertySchemaMap &properties, 
+    PropertiesConstraint(const PropertySchemaMap &properties,
                          const PropertySchemaMap &patternProperties)
       : properties(properties),
         patternProperties(patternProperties) { }
@@ -343,7 +343,7 @@ struct PropertiesConstraint: BasicConstraint<PropertiesConstraint> {
     const PropertySchemaMap properties;
     const PropertySchemaMap patternProperties;
     const boost::scoped_ptr<const Schema> additionalProperties;
-    
+
 };
 
 /**
@@ -379,7 +379,7 @@ struct TypeConstraint: BasicConstraint<TypeConstraint>
     };
 
     typedef std::set<JsonType> JsonTypes;
-    
+
     typedef boost::ptr_vector<Schema> Schemas;
 
     TypeConstraint(const JsonType jsonType)
@@ -387,7 +387,7 @@ struct TypeConstraint: BasicConstraint<TypeConstraint>
 
     TypeConstraint(const JsonTypes jsonTypes)
       : jsonTypes(jsonTypes) { }
-    
+
     TypeConstraint(const JsonTypes jsonTypes,
                    const Schemas &schemas)
       : jsonTypes(jsonTypes),
@@ -419,7 +419,7 @@ struct TypeConstraint: BasicConstraint<TypeConstraint>
         } else if (typeName.compare("string") == 0) {
             return kString;
         }
-        
+
         throw std::runtime_error("Unrecognised JSON type name '" + typeName + "'");
     }
 
