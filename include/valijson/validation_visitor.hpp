@@ -372,6 +372,7 @@ public:
         } else if (constraint.additionalItemsSchema) {
 
             // Validate each item against additional items schema
+            unsigned int index = 0;
             BOOST_FOREACH( const AdapterType arrayItem, target.getArray() ) {
                 ValidationVisitor<AdapterType> v(arrayItem,
                     context + "[" + boost::lexical_cast<std::string>(index) + "]",
@@ -386,6 +387,7 @@ public:
                         return false;
                     }
                 }
+                ++index;
             }
 
         }
