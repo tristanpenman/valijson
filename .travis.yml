@@ -14,6 +14,7 @@ before_script:
   - mkdir -p build
 
 script:
+  - export CXXFLAGS="-std=c++0x"
   - pushd build
   - cmake ..
   - make
