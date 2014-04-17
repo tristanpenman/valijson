@@ -88,8 +88,10 @@ public:
         }
 
         if ((itr = object.find("allOf")) != object.end()) {
-            const AdapterType &childNode = resolveReference<AdapterType>(deref, schema, itr->second);
-            schema.addConstraint(makeAllOfConstraint(childNode, deref));
+            const AdapterType originalChildNode = itr->second;
+            const AdapterType &actualChildNode = resolveReference<AdapterType>(deref, schema,
+                originalChildNode);
+            schema.addConstraint(makeAllOfConstraint(actualChildNode, deref));
         }
 
         if ((itr = object.find("anyOf")) != object.end()) {
