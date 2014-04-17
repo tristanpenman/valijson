@@ -1,7 +1,7 @@
 #ifndef __VALIJSON_ADAPTERS_BASIC_ADAPTER_HPP
 #define __VALIJSON_ADAPTERS_BASIC_ADAPTER_HPP
 
-#include <cstdint>
+#include <stdint.h>
 #include <sstream>
 
 #include <boost/foreach.hpp>

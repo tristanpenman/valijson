@@ -26,7 +26,7 @@
 #ifndef __VALIJSON_ADAPTERS_JSONCPP_ADAPTER_HPP
 #define __VALIJSON_ADAPTERS_JSONCPP_ADAPTER_HPP
 
-#include <cstdint>
+#include <stdint.h>
 #include <string>
 #include <boost/bind.hpp>
 #include <boost/iterator/iterator_facade.hpp>

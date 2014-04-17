@@ -25,7 +25,7 @@ protected:
             strictGroup(strictGroup),
             looseGroup(looseGroup) { }
 
-        const std::string path;
+        std::string path;
 
         int strictGroup;
         int looseGroup;
