@@ -29,6 +29,11 @@ using valijson::adapters::RapidJsonAdapter;
 
 int main(int argc, char *argv[])
 {
+    if (argc != 3) {
+        cerr << "Usage: " << argv[0] << " <schema document> <test/target document>" << endl;
+        return 1;
+    }
+
     // Load the document containing the schema
     rapidjson::Document schemaDocument;
     if (!valijson::utils::loadDocument(argv[1], schemaDocument)) {

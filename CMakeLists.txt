@@ -20,6 +20,11 @@ add_subdirectory(thirdparty/gtest-1.7.0)
 # Include path
 include_directories(include thirdparty/gtest-1.7.0/include thirdparty/jsoncpp-0.5.0/include thirdparty/rapidjson-0.1/include)
 
+# External schema validation example
+add_executable(external_schema
+    examples/external_schema.cpp
+)
+
 # Unit tests executable
 add_executable(test_suite
     tests/test_adapter_comparison.cpp
@@ -35,3 +40,5 @@ add_executable(test_suite
 set(TEST_LIBS gtest gtest_main jsoncpp)
 
 target_link_libraries(test_suite ${TEST_LIBS} ${Boost_LIBRARIES})
+
+target_link_libraries(external_schema ${Boost_LIBRARIES})
