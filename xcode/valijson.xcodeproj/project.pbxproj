@@ -121,6 +121,7 @@
 		6A869A2517CD8641006864FA /* type.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = type.json; sourceTree = "<group>"; };
 		6A869A2617CD8641006864FA /* uniqueItems.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = uniqueItems.json; sourceTree = "<group>"; };
 		6A869A3017CD8A92006864FA /* rapidjson_utils.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = rapidjson_utils.hpp; sourceTree = "<group>"; };
+		6A9E1855194D486C003F1C4C /* utf8_utils.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = utf8_utils.hpp; sourceTree = "<group>"; };
 		6A9F49F117D344DE005EBA4F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = text; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 		6AA8A5DA17F8BDCA002728A0 /* test_dereference_callback.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_dereference_callback.cpp; sourceTree = "<group>"; };
 		6AB8FE8617E6A56F0028E147 /* external_schema.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = external_schema.cpp; sourceTree = "<group>"; };
@@ -151,39 +152,6 @@
 		6AC18C1517C861D600FE0EC9 /* validation_visitor.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = validation_visitor.hpp; sourceTree = "<group>"; };
 		6AC18C1717CC1BE100FE0EC9 /* frozen_value.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = frozen_value.hpp; sourceTree = "<group>"; };
 		6AC18C1917CC2DDC00FE0EC9 /* adapter.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; lineEnding = 0; path = adapter.hpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
-		6AC18C3E17CC850F00FE0EC9 /* gtest-death-test.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-death-test.h"; sourceTree = "<group>"; };
-		6AC18C3F17CC850F00FE0EC9 /* gtest-message.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-message.h"; sourceTree = "<group>"; };
-		6AC18C4017CC850F00FE0EC9 /* gtest-param-test.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-param-test.h"; sourceTree = "<group>"; };
-		6AC18C4117CC850F00FE0EC9 /* gtest-param-test.h.pump */ = {isa = PBXFileReference; lastKnownFileType = text; path = "gtest-param-test.h.pump"; sourceTree = "<group>"; };
-		6AC18C4217CC850F00FE0EC9 /* gtest-printers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-printers.h"; sourceTree = "<group>"; };
-		6AC18C4317CC850F00FE0EC9 /* gtest-spi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-spi.h"; sourceTree = "<group>"; };
-		6AC18C4417CC850F00FE0EC9 /* gtest-test-part.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-test-part.h"; sourceTree = "<group>"; };
-		6AC18C4517CC850F00FE0EC9 /* gtest-typed-test.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-typed-test.h"; sourceTree = "<group>"; };
-		6AC18C4617CC850F00FE0EC9 /* gtest.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gtest.h; sourceTree = "<group>"; };
-		6AC18C4717CC850F00FE0EC9 /* gtest_pred_impl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gtest_pred_impl.h; sourceTree = "<group>"; };
-		6AC18C4817CC850F00FE0EC9 /* gtest_prod.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gtest_prod.h; sourceTree = "<group>"; };
-		6AC18C4A17CC850F00FE0EC9 /* gtest-death-test-internal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-death-test-internal.h"; sourceTree = "<group>"; };
-		6AC18C4B17CC850F00FE0EC9 /* gtest-filepath.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-filepath.h"; sourceTree = "<group>"; };
-		6AC18C4C17CC850F00FE0EC9 /* gtest-internal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-internal.h"; sourceTree = "<group>"; };
-		6AC18C4D17CC850F00FE0EC9 /* gtest-linked_ptr.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-linked_ptr.h"; sourceTree = "<group>"; };
-		6AC18C4E17CC850F00FE0EC9 /* gtest-param-util-generated.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-param-util-generated.h"; sourceTree = "<group>"; };
-		6AC18C4F17CC850F00FE0EC9 /* gtest-param-util-generated.h.pump */ = {isa = PBXFileReference; lastKnownFileType = text; path = "gtest-param-util-generated.h.pump"; sourceTree = "<group>"; };
-		6AC18C5017CC850F00FE0EC9 /* gtest-param-util.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-param-util.h"; sourceTree = "<group>"; };
-		6AC18C5117CC850F00FE0EC9 /* gtest-port.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-port.h"; sourceTree = "<group>"; };
-		6AC18C5217CC850F00FE0EC9 /* gtest-string.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-string.h"; sourceTree = "<group>"; };
-		6AC18C5317CC850F00FE0EC9 /* gtest-tuple.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-tuple.h"; sourceTree = "<group>"; };
-		6AC18C5417CC850F00FE0EC9 /* gtest-tuple.h.pump */ = {isa = PBXFileReference; lastKnownFileType = text; path = "gtest-tuple.h.pump"; sourceTree = "<group>"; };
-		6AC18C5517CC850F00FE0EC9 /* gtest-type-util.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-type-util.h"; sourceTree = "<group>"; };
-		6AC18C5617CC850F00FE0EC9 /* gtest-type-util.h.pump */ = {isa = PBXFileReference; lastKnownFileType = text; path = "gtest-type-util.h.pump"; sourceTree = "<group>"; };
-		6AC18C8B17CC850F00FE0EC9 /* gtest-death-test.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "gtest-death-test.cc"; sourceTree = "<group>"; };
-		6AC18C8C17CC850F00FE0EC9 /* gtest-filepath.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "gtest-filepath.cc"; sourceTree = "<group>"; };
-		6AC18C8D17CC850F00FE0EC9 /* gtest-internal-inl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-internal-inl.h"; sourceTree = "<group>"; };
-		6AC18C8E17CC850F00FE0EC9 /* gtest-port.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "gtest-port.cc"; sourceTree = "<group>"; };
-		6AC18C8F17CC850F00FE0EC9 /* gtest-printers.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "gtest-printers.cc"; sourceTree = "<group>"; };
-		6AC18C9017CC850F00FE0EC9 /* gtest-test-part.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "gtest-test-part.cc"; sourceTree = "<group>"; };
-		6AC18C9117CC850F00FE0EC9 /* gtest-typed-test.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "gtest-typed-test.cc"; sourceTree = "<group>"; };
-		6AC18C9217CC850F00FE0EC9 /* gtest.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = gtest.cc; sourceTree = "<group>"; };
-		6AC18C9317CC850F00FE0EC9 /* gtest_main.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = gtest_main.cc; sourceTree = "<group>"; };
 		6AC18CEF17CC851000FE0EC9 /* allocators.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = allocators.h; sourceTree = "<group>"; };
 		6AC18CF017CC851000FE0EC9 /* document.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = document.h; sourceTree = "<group>"; };
 		6AC18CF117CC851000FE0EC9 /* encodedstream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = encodedstream.h; sourceTree = "<group>"; };
@@ -492,6 +460,7 @@
 				6AB8FEBC17E6EF9A0028E147 /* jsoncpp_utils.hpp */,
 				6AB8FEBD17E77C360028E147 /* property_tree_utils.hpp */,
 				6A869A3017CD8A92006864FA /* rapidjson_utils.hpp */,
+				6A9E1855194D486C003F1C4C /* utf8_utils.hpp */,
 			);
 			path = utils;
 			sourceTree = "<group>";
@@ -564,7 +533,6 @@
 			isa = PBXGroup;
 			children = (
 				6AF70AC218FE71F600342325 /* gtest-1.7.0 */,
-				6AC18C1E17CC850F00FE0EC9 /* gtest-1.6.0 */,
 				6AB8FE9417E6C08D0028E147 /* jsoncpp-0.5.0 */,
 				6A8699E517CD8641006864FA /* JSON-Schema-Test-Suite */,
 				6AC18CEC17CC851000FE0EC9 /* rapidjson-0.1 */,
@@ -572,78 +540,6 @@
 			);
 			name = thirdparty;
 			path = ../thirdparty;
-			sourceTree = "<group>";
-		};
-		6AC18C1E17CC850F00FE0EC9 /* gtest-1.6.0 */ = {
-			isa = PBXGroup;
-			children = (
-				6AC18C3C17CC850F00FE0EC9 /* include */,
-				6AC18C8917CC850F00FE0EC9 /* src */,
-			);
-			path = "gtest-1.6.0";
-			sourceTree = "<group>";
-		};
-		6AC18C3C17CC850F00FE0EC9 /* include */ = {
-			isa = PBXGroup;
-			children = (
-				6AC18C3D17CC850F00FE0EC9 /* gtest */,
-			);
-			path = include;
-			sourceTree = "<group>";
-		};
-		6AC18C3D17CC850F00FE0EC9 /* gtest */ = {
-			isa = PBXGroup;
-			children = (
-				6AC18C3E17CC850F00FE0EC9 /* gtest-death-test.h */,
-				6AC18C3F17CC850F00FE0EC9 /* gtest-message.h */,
-				6AC18C4017CC850F00FE0EC9 /* gtest-param-test.h */,
-				6AC18C4117CC850F00FE0EC9 /* gtest-param-test.h.pump */,
-				6AC18C4217CC850F00FE0EC9 /* gtest-printers.h */,
-				6AC18C4317CC850F00FE0EC9 /* gtest-spi.h */,
-				6AC18C4417CC850F00FE0EC9 /* gtest-test-part.h */,
-				6AC18C4517CC850F00FE0EC9 /* gtest-typed-test.h */,
-				6AC18C4617CC850F00FE0EC9 /* gtest.h */,
-				6AC18C4717CC850F00FE0EC9 /* gtest_pred_impl.h */,
-				6AC18C4817CC850F00FE0EC9 /* gtest_prod.h */,
-				6AC18C4917CC850F00FE0EC9 /* internal */,
-			);
-			path = gtest;
-			sourceTree = "<group>";
-		};
-		6AC18C4917CC850F00FE0EC9 /* internal */ = {
-			isa = PBXGroup;
-			children = (
-				6AC18C4A17CC850F00FE0EC9 /* gtest-death-test-internal.h */,
-				6AC18C4B17CC850F00FE0EC9 /* gtest-filepath.h */,
-				6AC18C4C17CC850F00FE0EC9 /* gtest-internal.h */,
-				6AC18C4D17CC850F00FE0EC9 /* gtest-linked_ptr.h */,
-				6AC18C4E17CC850F00FE0EC9 /* gtest-param-util-generated.h */,
-				6AC18C4F17CC850F00FE0EC9 /* gtest-param-util-generated.h.pump */,
-				6AC18C5017CC850F00FE0EC9 /* gtest-param-util.h */,
-				6AC18C5117CC850F00FE0EC9 /* gtest-port.h */,
-				6AC18C5217CC850F00FE0EC9 /* gtest-string.h */,
-				6AC18C5317CC850F00FE0EC9 /* gtest-tuple.h */,
-				6AC18C5417CC850F00FE0EC9 /* gtest-tuple.h.pump */,
-				6AC18C5517CC850F00FE0EC9 /* gtest-type-util.h */,
-				6AC18C5617CC850F00FE0EC9 /* gtest-type-util.h.pump */,
-			);
-			path = internal;
-			sourceTree = "<group>";
-		};
-		6AC18C8917CC850F00FE0EC9 /* src */ = {
-			isa = PBXGroup;
-			children = (
-				6AC18C8B17CC850F00FE0EC9 /* gtest-death-test.cc */,
-				6AC18C8C17CC850F00FE0EC9 /* gtest-filepath.cc */,
-				6AC18C8D17CC850F00FE0EC9 /* gtest-internal-inl.h */,
-				6AC18C8E17CC850F00FE0EC9 /* gtest-port.cc */,
-				6AC18C8F17CC850F00FE0EC9 /* gtest-printers.cc */,
-				6AC18C9017CC850F00FE0EC9 /* gtest-test-part.cc */,
-				6AC18C9117CC850F00FE0EC9 /* gtest-typed-test.cc */,
-				6AC18C9217CC850F00FE0EC9 /* gtest.cc */,
-				6AC18C9317CC850F00FE0EC9 /* gtest_main.cc */,
-			);
-			path = src;
 			sourceTree = "<group>";
 		};
 		6AC18CEC17CC851000FE0EC9 /* rapidjson-0.1 */ = {

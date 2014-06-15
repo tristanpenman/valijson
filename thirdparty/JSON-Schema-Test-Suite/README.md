@@ -1,4 +1,4 @@
-JSON Schema Test Suite
+JSON Schema Test Suite [![Build Status](https://travis-ci.org/json-schema/JSON-Schema-Test-Suite.png?branch=develop)](https://travis-ci.org/json-schema/JSON-Schema-Test-Suite)
 ======================
 
 This repository contains a set of JSON objects that implementors of JSON Schema
@@ -67,9 +67,14 @@ This suite is being used by:
   * [jsonschema (javascript)](https://github.com/tdegrunt/jsonschema)
   * [JaySchema (javascript)](https://github.com/natesilva/jayschema)
   * [z-schema (javascript)](https://github.com/zaggino/z-schema)
+  * [jassi (javascript)](https://github.com/iclanzan/jassi)
+  * [json-schema-valid (javascript)](https://github.com/ericgj/json-schema-valid)
   * [jesse (Erlang)](https://github.com/klarna/jesse)
   * [json-schema (PHP)](https://github.com/justinrainbow/json-schema)
   * [gojsonschema (Go)](https://github.com/sigu-399/gojsonschema) 
+  * [json_schema (Dart)](https://github.com/patefacio/json_schema) 
+  * [tv4 (JavaScript)](https://github.com/geraintluff/tv4)
+  * [Jsonary (JavaScript)](https://github.com/jsonary-js/jsonary)
 
 If you use it as well, please fork and send a pull request adding yourself to
 the list :).
@@ -78,3 +83,7 @@ Contributing
 ------------
 
 If you see something missing or incorrect, a pull request is most welcome!
+
+There are some sanity checks in place for testing the test suite. You can run
+them with `bin/jsonschema_suite check`. They will be run automatically by
+[Travis CI](https://travis-ci.org/) as well.

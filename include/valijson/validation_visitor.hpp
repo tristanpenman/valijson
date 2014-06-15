@@ -8,6 +8,8 @@
 #include <valijson/constraints/constraint_visitor.hpp>
 #include <valijson/validation_results.hpp>
 
+#include <valijson/utils/utf8_utils.hpp>
+
 namespace valijson {
 
 class ValidationResults;
@@ -465,14 +467,17 @@ public:
      */
     virtual bool visit(const MaxLengthConstraint &constraint)
     {
-        if (target.isString() &&
-            target.getString().size() > constraint.maxLength) {
-            if (results) {
-                results->pushError(context, "String should be no more than " +
-                    boost::lexical_cast<std::string>(constraint.maxLength) +
-                    " characters in length.");
+        if (target.isString()) {
+            const std::string s = target.getString();
+            const int len = utils::u8_strlen(s.c_str());
+            if (len > constraint.maxLength) {
+                if (results) {
+                    results->pushError(context, "String should be no more than " +
+                        boost::lexical_cast<std::string>(constraint.maxLength) +
+                        " characters in length.");
+                }
+                return false;
             }
-            return false;
         }
 
         return true;
@@ -572,14 +577,17 @@ public:
      */
     virtual bool visit(const MinLengthConstraint &constraint)
     {
-        if (target.isString() &&
-            target.getString().size() < constraint.minLength) {
-            if (results) {
-                results->pushError(context, "String should be no fewer than " +
-                    boost::lexical_cast<std::string>(constraint.minLength) +
-                    " characters in length.");
+        if (target.isString()) {
+            const std::string s = target.getString();
+            const int len = utils::u8_strlen(s.c_str());
+            if (len < constraint.minLength) {
+                if (results) {
+                    results->pushError(context, "String should be no fewer than " +
+                        boost::lexical_cast<std::string>(constraint.minLength) +
+                        " characters in length.");
+                }
+                return false;
             }
-            return false;
         }
 
         return true;
