@@ -3,6 +3,7 @@
 
 #include <deque>
 #include <string>
+#include <vector>
 
 namespace valijson {
 
@@ -36,12 +37,12 @@ public:
          * @param  context      Context string to use
          * @param  description  Description string to use
          */
-        Error(const std::string &context, const std::string &description)
+        Error(const std::vector<std::string> &context, const std::string &description)
           : context(context),
             description(description) { }
 
         /// Path to the node that failed validation.
-        std::string context;
+        std::vector<std::string> context;
 
         /// A detailed description of the validation error.
         std::string description;
@@ -72,7 +73,7 @@ public:
      * @param  description  Description of the validation error.
      */
     void
-    pushError(const std::string &context, const std::string &description)
+    pushError(const std::vector<std::string> &context, const std::string &description)
     {
         errors.push_back(Error(context, description));
     }

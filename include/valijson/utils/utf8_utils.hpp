@@ -41,8 +41,9 @@ inline int u8_strlen(const char *s)
     int count = 0;
     int i = 0;
 
-    while (u8_nextchar(s, &i) != 0)
+    while (s[i] != 0 && u8_nextchar(s, &i) != 0) {
         count++;
+    }
 
     return count;
 }

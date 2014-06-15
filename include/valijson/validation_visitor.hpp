@@ -38,7 +38,7 @@ public:
      *                      stop immediately.
      */
     ValidationVisitor(const AdapterType &target,
-                      const std::string &context,
+                      const std::vector<std::string> &context,
                       const bool strictTypes,
                       ValidationResults *results)
       : target(target),
@@ -120,7 +120,7 @@ public:
                 if (results) {
                     validated = false;
                     results->pushError(context,
-                        std::string("Failed to validate against child schema at index #") +
+                        std::string("Failed to validate against child schema #") +
                         boost::lexical_cast<std::string>(index) + " of allOf constraint.");
                 } else {
                     return false;
@@ -165,7 +165,7 @@ public:
         }
 
         if (results) {
-            results->pushError(context, "Failed to validate against any child schemas.");
+            results->pushError(context, "Failed to validate against any child schemas allowed by anyOf constraint.");
         }
 
         return false;
@@ -305,10 +305,10 @@ public:
             // Validate all items against single schema
             unsigned int index = 0;
             BOOST_FOREACH( const AdapterType arrayItem, target.getArray() ) {
+                std::vector<std::string> newContext = context;
+                newContext.push_back("[" + boost::lexical_cast<std::string>(index) + "]");
                 ValidationVisitor<AdapterType> v(arrayItem,
-                    context + "[" + boost::lexical_cast<std::string>(index) + "]",
-                    strictTypes,
-                    results);
+                    newContext, strictTypes, results);
                 if (!v.validateSchema(*constraint.itemSchema)) {
                     if (results) {
                         results->pushError(context, "Failed to validate item #" + boost::lexical_cast<std::string>(index) + " in array.");
@@ -338,10 +338,10 @@ public:
             // additionalItems schema
             unsigned int index = 0;
             BOOST_FOREACH( const AdapterType arrayItem, target.getArray() ) {
+                std::vector<std::string> newContext = context;
+                newContext.push_back("[" + boost::lexical_cast<std::string>(index) + "]");
                 ValidationVisitor<AdapterType> v(arrayItem,
-                    context + "[" + boost::lexical_cast<std::string>(index) + "]",
-                    strictTypes,
-                    results);
+                    newContext, strictTypes, results);
                 if (index >= constraint.itemSchemas->size()) {
                     if (constraint.additionalItemsSchema) {
                         if (!v.validateSchema(*constraint.additionalItemsSchema)) {
@@ -376,10 +376,10 @@ public:
             // Validate each item against additional items schema
             unsigned int index = 0;
             BOOST_FOREACH( const AdapterType arrayItem, target.getArray() ) {
+                std::vector<std::string> newContext = context;
+                newContext.push_back("[" + boost::lexical_cast<std::string>(index) + "]");
                 ValidationVisitor<AdapterType> v(arrayItem,
-                    context + "[" + boost::lexical_cast<std::string>(index) + "]",
-                    strictTypes,
-                    results);
+                    newContext, strictTypes, results);
                 if (!v.validateSchema(*constraint.additionalItemsSchema)) {
                     if (results) {
                         results->pushError(context, "Failed to validate item #" +
@@ -729,7 +729,11 @@ public:
             const std::string propertyName = m.first;
             bool propertyNameMatched = false;
 
-            ValidationVisitor<AdapterType> v(m.second, context + "." + m.first, strictTypes, results);
+            std::vector<std::string> newContext = context;
+            newContext.push_back("[\"" + m.first + "\"]");
+
+            ValidationVisitor<AdapterType> v(m.second,
+                newContext, strictTypes, results);
 
             // Search for matching property name
             PropertiesConstraint::PropertySchemaMap::const_iterator itr =
@@ -739,8 +743,8 @@ public:
                 if (!v.validateSchema(*itr->second)) {
                     if (results) {
                         results->pushError(context,
-                            "Failed to validate against 'properties' schema associated with property name '" +
-                            propertyName + "'.");
+                            "Failed to validate against schema associated with property name '" +
+                            propertyName + "' in properties constraint.");
                         validated = false;
                     } else {
                         return false;
@@ -757,8 +761,8 @@ public:
                     if (!v.validateSchema(*itr->second)) {
                         if (results) {
                             results->pushError(context,
-                                "Failed to validate against 'patternProperties' schema associated with regex '" +
-                                itr->first + "'.");
+                                "Failed to validate against schema associated with regex '" +
+                                itr->first + "' in patternProperties constraint.");
                             validated = false;
                         } else {
                             return false;
@@ -782,7 +786,7 @@ public:
                     continue;
                 } else if (results) {
                     results->pushError(context, "Failed to validate property '" +
-                        propertyName + "' against additionalProperties schema.");
+                        propertyName + "' against schema in additionalProperties constraint.");
                     validated = false;
                 } else {
                     return false;
@@ -965,8 +969,8 @@ private:
     /// Reference to the JSON value being validated
     const AdapterType &target;
 
-    /// String describing the current object context
-    const std::string context;
+    /// Vector of strings describing the current object context
+    const std::vector<std::string> context;
 
     /// Optional pointer to a ValidationResults object to be populated
     ValidationResults *results;

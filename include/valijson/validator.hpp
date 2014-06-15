@@ -18,8 +18,8 @@ class ValidationResults;
  * This class wraps a Schema object, and encapsulates the logic required to
  * validate rapidjson values aginst the schema.
  */
-class Validator {
-
+class Validator
+{
 public:
 
     /**
@@ -68,7 +68,7 @@ public:
     bool validate(const AdapterType &target, ValidationResults *results)
     {
         // Construct a ValidationVisitor to perform validation at the root level
-        ValidationVisitor<AdapterType> v(target, std::string(),
+        ValidationVisitor<AdapterType> v(target, std::vector<std::string>(1, "<root>"),
             strictTypes, results);
 
         return v.validateSchema(*schema);

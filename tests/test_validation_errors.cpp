@@ -53,37 +53,47 @@ TEST_F(TestValidationErrors, AllOfConstraintFailure)
     ValidationResults::Error error;
 
     EXPECT_TRUE( results.popError(error) );
-    EXPECT_EQ( "[0]", error.context );
+    EXPECT_EQ( 2, error.context.size() );
+    EXPECT_EQ( "<root>", error.context[0] );
+    EXPECT_EQ( "[0]", error.context[1] );
     EXPECT_EQ( "Value type not permitted by 'type' constraint.", error.description );
 
     EXPECT_TRUE( results.popError(error) );
-    EXPECT_EQ( "", error.context );
+    EXPECT_EQ( 1, error.context.size() );
+    EXPECT_EQ( "<root>", error.context[0] );
     EXPECT_EQ( "Failed to validate item #0 in array.", error.description );
 
     EXPECT_TRUE( results.popError(error) );
-    EXPECT_EQ( "[1]", error.context );
+    EXPECT_EQ( 2, error.context.size() );
+    EXPECT_EQ( "<root>", error.context[0] );
+    EXPECT_EQ( "[1]", error.context[1] );
     EXPECT_EQ( "Value type not permitted by 'type' constraint.", error.description );
 
     EXPECT_TRUE( results.popError(error) );
-    EXPECT_EQ( "", error.context );
+    EXPECT_EQ( 1, error.context.size() );
+    EXPECT_EQ( "<root>", error.context[0] );
     EXPECT_EQ( "Failed to validate item #1 in array.", error.description );
 
     EXPECT_TRUE( results.popError(error) );
-    EXPECT_EQ( "[2]", error.context );
+    EXPECT_EQ( 2, error.context.size() );
+    EXPECT_EQ( "<root>", error.context[0] );
+    EXPECT_EQ( "[2]", error.context[1] );
     EXPECT_EQ( "Value type not permitted by 'type' constraint.", error.description );
 
     EXPECT_TRUE( results.popError(error) );
-    EXPECT_EQ( "", error.context );
+    EXPECT_EQ( 1, error.context.size() );
+    EXPECT_EQ( "<root>", error.context[0] );
     EXPECT_EQ( "Failed to validate item #2 in array.", error.description );
 
     EXPECT_TRUE( results.popError(error) );
-    EXPECT_EQ( "", error.context );
-    EXPECT_EQ( "Failed to validate against child schema at index #0 of allOf constraint.", error.description );
+    EXPECT_EQ( 1, error.context.size() );
+    EXPECT_EQ( "<root>", error.context[0] );
+    EXPECT_EQ( "Failed to validate against child schema #0 of allOf constraint.", error.description );
 
     EXPECT_FALSE( results.popError(error) );
 
     while (results.popError(error)) {
-        std::cerr << error.context << std::endl;
+        //std::cerr << error.context << std::endl;
         std::cerr << error.description << std::endl;
     }
 }

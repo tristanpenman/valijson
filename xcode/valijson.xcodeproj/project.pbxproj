@@ -16,7 +16,7 @@
 		6A725F4917F6404100D6B2FF /* test_rapidjson_adapter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AC18D3917CC874100FE0EC9 /* test_rapidjson_adapter.cpp */; };
 		6A725F4A17F6404100D6B2FF /* test_validator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AC18D3517CC86E000FE0EC9 /* test_validator.cpp */; };
 		6A725F4D17F8964B00D6B2FF /* test_uri_resolution.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6A725F4B17F8956A00D6B2FF /* test_uri_resolution.cpp */; };
-		6AA8A5DB17F8BDCA002728A0 /* test_dereference_callback.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AA8A5DA17F8BDCA002728A0 /* test_dereference_callback.cpp */; };
+		6A9E1856194DC44B003F1C4C /* test_dereference_callback.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AA8A5DA17F8BDCA002728A0 /* test_dereference_callback.cpp */; };
 		6AB8FE8717E6A56F0028E147 /* external_schema.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AB8FE8617E6A56F0028E147 /* external_schema.cpp */; };
 		6AB8FE8D17E6A57E0028E147 /* libboost_regex-mt.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 6A477F8417D6BCBB0013571C /* libboost_regex-mt.dylib */; };
 		6AB8FEAD17E6C0D70028E147 /* json_reader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AB8FEA717E6C08D0028E147 /* json_reader.cpp */; };
@@ -845,7 +845,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6AA8A5DB17F8BDCA002728A0 /* test_dereference_callback.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -855,6 +854,7 @@
 			files = (
 				6AB8FEAD17E6C0D70028E147 /* json_reader.cpp in Sources */,
 				6AB8FEAE17E6C0D70028E147 /* json_value.cpp in Sources */,
+				6A9E1856194DC44B003F1C4C /* test_dereference_callback.cpp in Sources */,
 				6AB8FEAF17E6C0D70028E147 /* json_writer.cpp in Sources */,
 				6A725F4517F61D7000D6B2FF /* test_validation_errors.cpp in Sources */,
 				6AF70BB018FE728800342325 /* gtest-all.cc in Sources */,
