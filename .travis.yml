@@ -10,7 +10,7 @@ before_install:
   - sudo apt-get update -qq
 
 install:
-  - sudo apt-get install libboost1.55-dev libboost-regex1.55-dev
+  - sudo apt-get install -y --force-yes libboost1.55-dev libboost-regex1.55-dev
 
 before_script:
   - mkdir -p build
