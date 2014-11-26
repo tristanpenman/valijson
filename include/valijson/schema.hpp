@@ -174,7 +174,7 @@ public:
      */
     bool hasId() const
     {
-        return id;
+        return id != boost::none;
     }
 
     /**
@@ -185,7 +185,7 @@ public:
      */
     bool hasTitle() const
     {
-        return title;
+        return title != boost::none;
     }
 
     std::string resolveUri(const std::string &relative) const
