@@ -18,7 +18,13 @@ add_library(jsoncpp
 add_subdirectory(thirdparty/gtest-1.7.0)
 
 # Include path
-include_directories(include thirdparty/gtest-1.7.0/include thirdparty/jsoncpp-0.5.0/include thirdparty/rapidjson-0.1/include)
+include_directories(
+  include
+  thirdparty/gtest-1.7.0/include
+  thirdparty/jsoncpp-0.5.0/include
+  thirdparty/rapidjson-0.1/include
+  ${Boost_INCLUDE_DIRS}
+)
 
 # External schema validation example
 add_executable(external_schema
