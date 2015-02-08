@@ -927,11 +927,12 @@ public:
 
         const typename AdapterType::Array targetArray = target.getArray();
         const typename AdapterType::Array::const_iterator end = targetArray.end();
-        const typename AdapterType::Array::const_iterator secondLast = end - 1;
+        const typename AdapterType::Array::const_iterator secondLast = --targetArray.end();
         unsigned int outerIndex = 0;
         for (typename AdapterType::Array::const_iterator outerItr = targetArray.begin(); outerItr != secondLast; ++outerItr) {
             unsigned int innerIndex = 0;
-            for (typename AdapterType::Array::const_iterator innerItr = outerItr + 1; innerItr != end; ++innerItr) {
+            typename AdapterType::Array::const_iterator innerItr(outerItr);
+            for (++innerItr; innerItr != end; ++innerItr) {
                 if (outerItr->equalTo(*innerItr, true)) {
                     if (results) {
                         results->pushError(context, "Elements at indexes #" +
