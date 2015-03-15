@@ -26,6 +26,11 @@ include_directories(
   ${Boost_INCLUDE_DIRS}
 )
 
+# Custom schema validation example
+add_executable(custom_schema
+    examples/custom_schema.cpp
+)
+
 # External schema validation example
 add_executable(external_schema
     examples/external_schema.cpp
@@ -46,5 +51,6 @@ add_executable(test_suite
 set(TEST_LIBS gtest gtest_main jsoncpp)
 
 target_link_libraries(test_suite ${TEST_LIBS} ${Boost_LIBRARIES})
-
+target_link_libraries(custom_schema ${Boost_LIBRARIES})
 target_link_libraries(external_schema ${Boost_LIBRARIES})
+

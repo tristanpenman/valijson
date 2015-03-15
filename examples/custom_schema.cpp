@@ -155,6 +155,13 @@ void addTypeConstraint(Schema &schema)
 
 int main(int argc, char *argv[])
 {
+    if (argc != 2) {
+        cerr << "Usage:" << endl;
+        cerr << "  ./custom_schema <document>" << endl;
+        cerr << endl;
+        return 1;
+    }
+
     // Load the document that is to be validated
     rapidjson::Document targetDocument;
     if (!valijson::utils::loadDocument(argv[1], targetDocument)) {
@@ -177,9 +184,13 @@ int main(int argc, char *argv[])
         ValidationResults::Error error;
         unsigned int errorNum = 1;
         while (results.popError(error)) {
-            cerr << "Error #" << errorNum << std::endl
-                 << "  context: " << error.context << endl
-                 << "  desc:    " << error.description << endl;
+            cerr << "Error #" << errorNum << std::endl;
+            cerr << "  ";
+            BOOST_FOREACH( const std::string contextElement, error.context ) {
+                cerr << contextElement << " ";
+            }
+            cerr << endl;
+            cerr << "    - " << error.description << endl;
             ++errorNum;
         }
         return 1;
