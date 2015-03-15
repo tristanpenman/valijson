@@ -17,17 +17,28 @@
 		6A725F4A17F6404100D6B2FF /* test_validator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AC18D3517CC86E000FE0EC9 /* test_validator.cpp */; };
 		6A725F4D17F8964B00D6B2FF /* test_uri_resolution.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6A725F4B17F8956A00D6B2FF /* test_uri_resolution.cpp */; };
 		6A9E1856194DC44B003F1C4C /* test_dereference_callback.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AA8A5DA17F8BDCA002728A0 /* test_dereference_callback.cpp */; };
-		6AA334971AB5106200F1928B /* json_reader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AA334901AB5103C00F1928B /* json_reader.cpp */; };
-		6AA334981AB5106200F1928B /* json_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AA334921AB5103C00F1928B /* json_value.cpp */; };
-		6AA334991AB5106200F1928B /* json_writer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AA334941AB5103C00F1928B /* json_writer.cpp */; };
 		6AB8FE8717E6A56F0028E147 /* external_schema.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AB8FE8617E6A56F0028E147 /* external_schema.cpp */; };
 		6AB8FE8D17E6A57E0028E147 /* libboost_regex-mt.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 6A477F8417D6BCBB0013571C /* libboost_regex-mt.dylib */; };
 		6AD3490118FF56FB004BDEE7 /* gtest_main.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6AF70B3718FE71F700342325 /* gtest_main.cc */; };
+		6AEFECCC1AB53F3400275614 /* json_reader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AA334901AB5103C00F1928B /* json_reader.cpp */; };
+		6AEFECCD1AB53F3400275614 /* json_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AA334921AB5103C00F1928B /* json_value.cpp */; };
+		6AEFECCE1AB53F3400275614 /* json_writer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AA334941AB5103C00F1928B /* json_writer.cpp */; };
+		6AEFECD11AB53F7600275614 /* libjsoncpp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6AEFECC81AB53F1000275614 /* libjsoncpp.a */; };
+		6AEFECD21AB540CD00275614 /* custom_schema.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AE1D76617E3F993008CF38C /* custom_schema.cpp */; };
 		6AF70BB018FE728800342325 /* gtest-all.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6AF70B2E18FE71F700342325 /* gtest-all.cc */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		6AEFECCF1AB53F6D00275614 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6AC78AC517C5FBBC00674114 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6AEFECC71AB53F1000275614;
+			remoteInfo = jsoncpp;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
-		6A17209F17EA79B600CC2C07 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
 		6A477F8417D6BCBB0013571C /* libboost_regex-mt.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libboost_regex-mt.dylib"; path = "/usr/local/lib/libboost_regex-mt.dylib"; sourceTree = "<absolute>"; };
 		6A725F3617F61A4400D6B2FF /* array_doubles_10_20_30_40.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = array_doubles_10_20_30_40.json; sourceTree = "<group>"; };
 		6A725F3717F61A4400D6B2FF /* array_doubles_1_2_3.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = array_doubles_1_2_3.json; sourceTree = "<group>"; };
@@ -122,7 +133,6 @@
 		6A869A2617CD8641006864FA /* uniqueItems.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = uniqueItems.json; sourceTree = "<group>"; };
 		6A869A3017CD8A92006864FA /* rapidjson_utils.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = rapidjson_utils.hpp; sourceTree = "<group>"; };
 		6A9E1855194D486C003F1C4C /* utf8_utils.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = utf8_utils.hpp; sourceTree = "<group>"; };
-		6A9F49F117D344DE005EBA4F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = text; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 		6AA334841AB5102C00F1928B /* assertions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = assertions.h; sourceTree = "<group>"; };
 		6AA334851AB5102C00F1928B /* autolink.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = autolink.h; sourceTree = "<group>"; };
 		6AA334861AB5102C00F1928B /* config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
@@ -182,7 +192,7 @@
 		6AC78BEC17C5FC6A00674114 /* validation_results.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = validation_results.hpp; sourceTree = "<group>"; };
 		6AC78BEE17C5FC6A00674114 /* validator.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = validator.hpp; sourceTree = "<group>"; };
 		6AE1D76617E3F993008CF38C /* custom_schema.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = custom_schema.cpp; sourceTree = "<group>"; };
-		6AF70AC118FE718B00342325 /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = CMakeLists.txt; path = ../CMakeLists.txt; sourceTree = "<group>"; };
+		6AEFECC81AB53F1000275614 /* libjsoncpp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libjsoncpp.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		6AF70AE118FE71F600342325 /* gtest-death-test.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-death-test.h"; sourceTree = "<group>"; };
 		6AF70AE218FE71F600342325 /* gtest-message.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-message.h"; sourceTree = "<group>"; };
 		6AF70AE318FE71F600342325 /* gtest-param-test.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-param-test.h"; sourceTree = "<group>"; };
@@ -232,6 +242,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6AEFECD11AB53F7600275614 /* libjsoncpp.a in Frameworks */,
 				6A477F8517D6BCBB0013571C /* libboost_regex-mt.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -241,6 +252,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				6A477F8617D6EA000013571C /* libboost_regex-mt.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6AEFECC51AB53F1000275614 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -608,9 +626,6 @@
 		6AC78AC417C5FBBC00674114 = {
 			isa = PBXGroup;
 			children = (
-				6AF70AC118FE718B00342325 /* CMakeLists.txt */,
-				6A17209F17EA79B600CC2C07 /* LICENSE */,
-				6A9F49F117D344DE005EBA4F /* README.md */,
 				6AC78AEC17C5FC0700674114 /* examples */,
 				6AC78BDC17C5FC5F00674114 /* include */,
 				6AC18D3217CC869D00FE0EC9 /* tests */,
@@ -626,6 +641,7 @@
 				6AC78ACD17C5FBBC00674114 /* external_schema */,
 				6AC18D4117CC899800FE0EC9 /* test_suite */,
 				6AB8FE9117E6A57E0028E147 /* custom_schema */,
+				6AEFECC81AB53F1000275614 /* libjsoncpp.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -763,6 +779,16 @@
 		};
 /* End PBXGroup section */
 
+/* Begin PBXHeadersBuildPhase section */
+		6AEFECC61AB53F1000275614 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
 /* Begin PBXNativeTarget section */
 		6AB8FE8817E6A57E0028E147 /* custom_schema */ = {
 			isa = PBXNativeTarget;
@@ -790,6 +816,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				6AEFECD01AB53F6D00275614 /* PBXTargetDependency */,
 			);
 			name = test_suite;
 			productName = tests;
@@ -812,6 +839,23 @@
 			productReference = 6AC78ACD17C5FBBC00674114 /* external_schema */;
 			productType = "com.apple.product-type.tool";
 		};
+		6AEFECC71AB53F1000275614 /* jsoncpp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6AEFECC91AB53F1000275614 /* Build configuration list for PBXNativeTarget "jsoncpp" */;
+			buildPhases = (
+				6AEFECC41AB53F1000275614 /* Sources */,
+				6AEFECC51AB53F1000275614 /* Frameworks */,
+				6AEFECC61AB53F1000275614 /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = jsoncpp;
+			productName = jsoncpp;
+			productReference = 6AEFECC81AB53F1000275614 /* libjsoncpp.a */;
+			productType = "com.apple.product-type.library.static";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -820,6 +864,11 @@
 			attributes = {
 				LastUpgradeCheck = 0620;
 				ORGANIZATIONNAME = "Tristan Penman";
+				TargetAttributes = {
+					6AEFECC71AB53F1000275614 = {
+						CreatedOnToolsVersion = 6.2;
+					};
+				};
 			};
 			buildConfigurationList = 6AC78AC817C5FBBC00674114 /* Build configuration list for PBXProject "valijson" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -836,6 +885,7 @@
 				6AB8FE8817E6A57E0028E147 /* custom_schema */,
 				6AC78ACC17C5FBBC00674114 /* external_schema */,
 				6AC18D4017CC899800FE0EC9 /* test_suite */,
+				6AEFECC71AB53F1000275614 /* jsoncpp */,
 			);
 		};
 /* End PBXProject section */
@@ -845,6 +895,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6AEFECD21AB540CD00275614 /* custom_schema.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -852,12 +903,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6AA334971AB5106200F1928B /* json_reader.cpp in Sources */,
 				6A9E1856194DC44B003F1C4C /* test_dereference_callback.cpp in Sources */,
 				6A725F4517F61D7000D6B2FF /* test_validation_errors.cpp in Sources */,
-				6AA334991AB5106200F1928B /* json_writer.cpp in Sources */,
 				6AF70BB018FE728800342325 /* gtest-all.cc in Sources */,
-				6AA334981AB5106200F1928B /* json_value.cpp in Sources */,
 				6A725F4617F6404100D6B2FF /* test_adapter_comparison.cpp in Sources */,
 				6A725F4717F6404100D6B2FF /* test_jsoncpp_adapter.cpp in Sources */,
 				6A725F4817F6404100D6B2FF /* test_property_tree_adapter.cpp in Sources */,
@@ -876,7 +924,25 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		6AEFECC41AB53F1000275614 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6AEFECCC1AB53F3400275614 /* json_reader.cpp in Sources */,
+				6AEFECCE1AB53F3400275614 /* json_writer.cpp in Sources */,
+				6AEFECCD1AB53F3400275614 /* json_value.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		6AEFECD01AB53F6D00275614 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6AEFECC71AB53F1000275614 /* jsoncpp */;
+			targetProxy = 6AEFECCF1AB53F6D00275614 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		6AB8FE8F17E6A57E0028E147 /* Debug */ = {
@@ -1035,6 +1101,66 @@
 			};
 			name = Release;
 		};
+		6AEFECCA1AB53F1000275614 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				EXECUTABLE_PREFIX = lib;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					"../thirdparty/jsoncpp-0.9.4/include",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WARNING_CFLAGS = "-Wno-shorten-64-to-32";
+			};
+			name = Debug;
+		};
+		6AEFECCB1AB53F1000275614 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				COPY_PHASE_STRIP = NO;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				EXECUTABLE_PREFIX = lib;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					"../thirdparty/jsoncpp-0.9.4/include",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WARNING_CFLAGS = "-Wno-shorten-64-to-32";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1073,6 +1199,14 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		6AEFECC91AB53F1000275614 /* Build configuration list for PBXNativeTarget "jsoncpp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6AEFECCA1AB53F1000275614 /* Debug */,
+				6AEFECCB1AB53F1000275614 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 /* End XCConfigurationList section */
 	};
