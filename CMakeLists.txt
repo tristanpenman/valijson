@@ -9,9 +9,9 @@ find_package(Boost 1.55.0 COMPONENTS regex REQUIRED)
 
 # jsoncpp library
 add_library(jsoncpp
-    thirdparty/jsoncpp-0.5.0/src/lib_json/json_reader.cpp
-    thirdparty/jsoncpp-0.5.0/src/lib_json/json_value.cpp
-    thirdparty/jsoncpp-0.5.0/src/lib_json/json_writer.cpp
+    thirdparty/jsoncpp-0.9.4/src/lib_json/json_reader.cpp
+    thirdparty/jsoncpp-0.9.4/src/lib_json/json_value.cpp
+    thirdparty/jsoncpp-0.9.4/src/lib_json/json_writer.cpp
 )
 
 # Build local gtest
@@ -21,7 +21,7 @@ add_subdirectory(thirdparty/gtest-1.7.0)
 include_directories(
   include
   thirdparty/gtest-1.7.0/include
-  thirdparty/jsoncpp-0.5.0/include
+  thirdparty/jsoncpp-0.9.4/include
   thirdparty/rapidjson-0.1/include
   ${Boost_INCLUDE_DIRS}
 )
