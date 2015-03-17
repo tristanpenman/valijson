@@ -263,16 +263,25 @@ struct MinPropertiesConstraint: BasicConstraint<MinPropertiesConstraint>
 };
 
 /**
- * @brief  Represents a 'multipleOf' or 'divisibleBy' constraint.
+ * @brief  Represents a 'multipleOf' or 'divisibleBy' constraint for decimals
  */
-struct MultipleOfConstraint: BasicConstraint<MultipleOfConstraint>
+struct MultipleOfDecimalConstraint: BasicConstraint<MultipleOfDecimalConstraint>
 {
-    MultipleOfConstraint(double multipleOf)
-      : multipleOf(multipleOf),
-        epsilon(std::numeric_limits<double>::epsilon()) { }
+    MultipleOfDecimalConstraint(double multipleOf)
+      : multipleOf(multipleOf) { }
 
     const double multipleOf;
-    const double epsilon;
+};
+
+/**
+ * @brief  Represents a 'multipleOf' or 'divisibleBy' constraint for int64_t
+ */
+struct MultipleOfIntegerConstraint: BasicConstraint<MultipleOfIntegerConstraint>
+{
+    MultipleOfIntegerConstraint(int64_t multipleOf)
+      : multipleOf(multipleOf) { }
+
+    const int64_t multipleOf;
 };
 
 /**

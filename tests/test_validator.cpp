@@ -284,6 +284,11 @@ TEST_F(TestValidator, Draft4_MinProperties)
     processDraft4TestFile(TEST_SUITE_DIR "draft4/minProperties.json");
 }
 
+TEST_F(TestValidator, Draft4_MultipleOf)
+{
+    processDraft4TestFile(TEST_SUITE_DIR "draft4/multipleOf.json");
+}
+
 TEST_F(TestValidator, Draft4_Not)
 {
     processDraft4TestFile(TEST_SUITE_DIR "draft4/not.json");

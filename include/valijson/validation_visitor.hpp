@@ -1,6 +1,8 @@
 #ifndef __VALIJSON_VALIDATION_VISITOR_HPP
 #define __VALIJSON_VALIDATION_VISITOR_HPP
 
+#include <numeric>
+
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
 
@@ -618,7 +620,7 @@ public:
 
     /**
      * @brief   Validate against the multipleOf or divisibleBy constraints
-     *          represented by a MultipleOfConstraint object.
+     *          represented by a MultipleOfDecimalConstraint object.
      *
      * @todo    Not implemented.
      *
@@ -626,8 +628,97 @@ public:
      *
      * @return  true if the constraint is satisfied, false otherwise.
      */
-    virtual bool visit(const MultipleOfConstraint &constraint)
+    virtual bool visit(const MultipleOfDecimalConstraint &constraint)
     {
+        double d = 0.;
+
+        if (target.maybeDouble()) {
+            if (!target.asDouble(d)) {
+                if (results) {
+                    results->pushError(context, "Value could not be converted "
+                        "to a number for multipleOf check");
+                }
+                return false;
+            }
+        } else if (target.maybeInteger()) {
+            int64_t i = 0;
+            if (!target.asInteger(i)) {
+                if (results) {
+                    results->pushError(context, "Value could not be converted "
+                        "to a number for multipleOf check");
+                }
+                return false;
+            }
+            d = i;
+        } else {
+            return true;
+        }
+
+        if (d == 0) {
+            return true;
+        }
+
+        const double r = std::remainder(d, constraint.multipleOf);
+
+        if (fabs(r) > std::numeric_limits<double>::epsilon()) {
+            if (results) {
+                results->pushError(context, "Value should be a multiple of " +
+                    boost::lexical_cast<std::string>(constraint.multipleOf));
+            }
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @brief   Validate against the multipleOf or divisibleBy constraints
+     *          represented by a MultipleOfIntegerConstraint object.
+     *
+     * @todo    Not implemented.
+     *
+     * @param   constraint  Constraint that the target must validate against.
+     *
+     * @return  true if the constraint is satisfied, false otherwise.
+     */
+    virtual bool visit(const MultipleOfIntegerConstraint &constraint)
+    {
+        int64_t i = 0;
+
+        if (target.maybeInteger()) {
+            if (!target.asInteger(i)) {
+                if (results) {
+                    results->pushError(context, "Value could not be converted "
+                        "to an integer for multipleOf check");
+                }
+                return false;
+            }
+        } else if (target.maybeDouble()) {
+            double d;
+            if (!target.asDouble(d)) {
+                if (results) {
+                    results->pushError(context, "Value could not be converted "
+                        "to a double for multipleOf check");
+                }
+                return false;
+            }
+            i = static_cast<int64_t>(d);
+        } else {
+            return true;
+        }
+
+        if (i == 0) {
+            return true;
+        }
+
+        if (i % constraint.multipleOf != 0) {
+            if (results) {
+                results->pushError(context, "Value should be a multiple of " +
+                    boost::lexical_cast<std::string>(constraint.multipleOf));
+            }
+            return false;
+        }
+
         return true;
     }
 

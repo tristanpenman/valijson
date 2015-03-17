@@ -167,6 +167,10 @@ public:
             schema.addConstraint(makeMinPropertiesConstraint(itr->second));
         }
 
+        if ((itr = object.find("multipleOf")) != object.end()) {
+            schema.addConstraint(makeMultipleOfConstraint(itr->second));
+        }
+
         if ((itr = object.find("not")) != object.end()) {
             schema.addConstraint(makeNotConstraint(itr->second, deref));
         }
@@ -776,6 +780,31 @@ private:
         }
 
         throw std::runtime_error("Expected a positive integer for 'minProperties' constraint.");
+    }
+
+    /**
+     * @brief   Make a new MultipleOfConstraint object.
+     *
+     * @param   node  JSON node containing an integer value that a value must
+     *                be divisible by.
+     *
+     * @return  pointer to a new MultipleOfConstraint that belongs to the
+     *          caller
+     */
+    template<typename AdapterType>
+    constraints::Constraint* makeMultipleOfConstraint(
+        const AdapterType &node)
+    {
+        // Allow both integral and double types to be provided
+        if (node.maybeInteger()) {
+            return new constraints::MultipleOfIntegerConstraint(
+                node.asInteger());
+        } else if (node.maybeDouble()) {
+            return new constraints::MultipleOfDecimalConstraint(
+                node.asDouble());
+        }
+
+        throw std::runtime_error("Expected an numeric value for 'multipleOf' constraint.");
     }
 
     /**
