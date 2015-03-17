@@ -6,7 +6,12 @@
 #include <json/json.h>
 
 #include <boost/property_tree/ptree.hpp>
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshorten-64-to-32"
 #include <boost/property_tree/json_parser.hpp>
+#pragma clang diagnostic pop
+
 #include <boost/property_tree/detail/json_parser_error.hpp>
 
 #include <valijson/utils/file_utils.hpp>
