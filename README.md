@@ -80,6 +80,8 @@ An Xcode project has also been provided, in the 'xcode' directory. Note that in 
 
 The Xcode project has been configured so that /usr/local/include is in the include path, and /usr/local/lib is in the library path. These are the locations that homebrew installed Boost on my test system.
 
+## Documentation ##
+
 Doxygen documentation can be built by running 'doxygen' from the project root directory. Generated documentation will be placed in 'doc/html'. Other relevant documentation such as schemas and specifications have been included in the 'doc' directory.
 
 ## Testing ##
