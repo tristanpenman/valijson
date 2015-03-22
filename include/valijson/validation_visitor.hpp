@@ -622,8 +622,6 @@ public:
      * @brief   Validate against the multipleOf or divisibleBy constraints
      *          represented by a MultipleOfDecimalConstraint object.
      *
-     * @todo    Not implemented.
-     *
      * @param   constraint  Constraint that the target must validate against.
      *
      * @return  true if the constraint is satisfied, false otherwise.
@@ -674,8 +672,6 @@ public:
     /**
      * @brief   Validate against the multipleOf or divisibleBy constraints
      *          represented by a MultipleOfIntegerConstraint object.
-     *
-     * @todo    Not implemented.
      *
      * @param   constraint  Constraint that the target must validate against.
      *
