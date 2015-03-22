@@ -51,13 +51,10 @@ The exceptions for Draft 4 are:
 
  - definitions
  - format (optional)
- - multipleOf
  - ref
  - refRemote
 
 Support for JSON References is in development.
-
-Support for multipleOf and divisibleBy constraints is also in development, but likely to depend on a third-party library such as [GMP](https://gmplib.org).
 
 ## Build instructions ##
 
