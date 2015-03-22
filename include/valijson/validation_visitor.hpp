@@ -1,7 +1,7 @@
 #ifndef __VALIJSON_VALIDATION_VISITOR_HPP
 #define __VALIJSON_VALIDATION_VISITOR_HPP
 
-#include <numeric>
+#include <cmath>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
@@ -658,7 +658,7 @@ public:
             return true;
         }
 
-        const double r = std::remainder(d, constraint.multipleOf);
+        const double r = remainder(d, constraint.multipleOf);
 
         if (fabs(r) > std::numeric_limits<double>::epsilon()) {
             if (results) {
