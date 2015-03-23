@@ -219,6 +219,11 @@ class RapidJsonFrozenValue: public FrozenValue
 {
 public:
 
+    RapidJsonFrozenValue(const char *str)
+    {
+        value.SetString(str, allocator);
+    }
+
     RapidJsonFrozenValue(const std::string &str)
     {
         value.SetString(str.c_str(), (unsigned int)str.length(), allocator);
