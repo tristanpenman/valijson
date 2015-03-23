@@ -229,7 +229,7 @@ public:
      *
      * @param   source  the RapidJson value to be copied
      */
-    RapidJsonFrozenValue(const rapidjson::Value &source)
+    explicit RapidJsonFrozenValue(const rapidjson::Value &source)
     {
         if (!copy(source, value, allocator)) {
             throw std::runtime_error("Failed to copy rapidjson::Value");
