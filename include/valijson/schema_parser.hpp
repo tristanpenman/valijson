@@ -26,7 +26,7 @@ public:
 
     /// Supported versions of JSON Schema
     enum Version {
-        kDraft3,      /// @deprecated
+        kDraft3,      ///< @deprecated JSON Schema v3 has been superseded by v4
         kDraft4
     };
 
