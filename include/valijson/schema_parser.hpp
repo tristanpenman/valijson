@@ -102,6 +102,14 @@ public:
             schema.addConstraint(makeDependenciesConstraint(itr->second, deref));
         }
 
+        if ((itr = object.find("divisibleBy")) != object.end()) {
+            if (version == kDraft3) {
+                schema.addConstraint(makeMultipleOfConstraint(itr->second));
+            } else {
+                throw std::runtime_error("'divisibleBy' constraint not valid after draft 3");
+            }
+        }
+
         if ((itr = object.find("enum")) != object.end()) {
             schema.addConstraint(makeEnumConstraint(itr->second));
         }
@@ -168,7 +176,11 @@ public:
         }
 
         if ((itr = object.find("multipleOf")) != object.end()) {
-            schema.addConstraint(makeMultipleOfConstraint(itr->second));
+            if (version == kDraft3) {
+                throw std::runtime_error("'multipleOf' constraint not available in draft 3");
+            } else {
+                schema.addConstraint(makeMultipleOfConstraint(itr->second));
+            }
         }
 
         if ((itr = object.find("not")) != object.end()) {
@@ -785,7 +797,7 @@ private:
     /**
      * @brief   Make a new MultipleOfConstraint object.
      *
-     * @param   node  JSON node containing an integer value that a value must
+     * @param   node  JSON node containing an numeric value that a value must
      *                be divisible by.
      *
      * @return  pointer to a new MultipleOfConstraint that belongs to the

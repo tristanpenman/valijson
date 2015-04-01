@@ -634,7 +634,9 @@ public:
             if (!target.asDouble(d)) {
                 if (results) {
                     results->pushError(context, "Value could not be converted "
-                        "to a number for multipleOf check");
+                        "to a number to check if it is a multiple of " +
+                        boost::lexical_cast<std::string>(
+                                constraint.multipleOf));
                 }
                 return false;
             }
@@ -643,7 +645,9 @@ public:
             if (!target.asInteger(i)) {
                 if (results) {
                     results->pushError(context, "Value could not be converted "
-                        "to a number for multipleOf check");
+                        "to a number to check if it is a multiple of " +
+                        boost::lexical_cast<std::string>(
+                                constraint.multipleOf));
                 }
                 return false;
             }

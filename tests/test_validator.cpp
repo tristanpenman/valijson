@@ -139,6 +139,11 @@ TEST_F(TestValidator, Draft3_Dependencies)
     processDraft3TestFile(TEST_SUITE_DIR "draft3/dependencies.json");
 }
 
+TEST_F(TestValidator, Draft3_DivisibleBy)
+{
+    processDraft3TestFile(TEST_SUITE_DIR "draft3/divisibleBy.json");
+}
+
 TEST_F(TestValidator, Draft3_Enum)
 {
     processDraft3TestFile(TEST_SUITE_DIR "draft3/enum.json");
