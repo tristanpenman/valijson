@@ -40,7 +40,6 @@ Valijson supports most of the constraints defined in [Draft 3](http://tools.ietf
 The exceptions for Draft 3 are:
 
  - disallow
- - divisibleBy
  - extends
  - format (optional)
  - readonly
