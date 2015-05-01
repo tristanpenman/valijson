@@ -5,7 +5,10 @@
 #include <iostream>
 
 #include <boost/foreach.hpp>
+#include <boost/static_assert.hpp>
+#include <boost/type_traits.hpp>
 
+#include <valijson/adapters/adapter.hpp>
 #include <valijson/constraints/concrete_constraints.hpp>
 #include <valijson/schema.hpp>
 
@@ -46,7 +49,8 @@ public:
      *         multiple Adapter types.
      */
     template<typename AdapterType>
-    struct DereferenceFunction: boost::function<const AdapterType & (const std::string &uri)> { };
+    struct DereferenceFunction:
+            boost::function<AdapterType (const std::string &uri)> { };
 
     /**
      * @brief  Populate a Schema object from JSON Schema document.
@@ -72,6 +76,11 @@ public:
         Schema *parentSchema = NULL,
         const std::string *ownName = NULL)
     {
+        BOOST_STATIC_ASSERT_MSG((boost::is_convertible<AdapterType,
+            const valijson::adapters::Adapter &>::value),
+            "SchemaParser::populateSchema must be invoked with an "
+            "appropriate Adapter implementation");
+
         if ((isReference(node))) {
             const AdapterType &childNode = resolveReference<AdapterType>(deref, schema, node);
             populateSchema<AdapterType>(childNode, schema, deref, parentSchema, ownName);
@@ -280,7 +289,7 @@ private:
      * @param   node
      */
     template<typename AdapterType>
-    const AdapterType & resolveReference(
+    AdapterType resolveReference(
         boost::optional<DereferenceFunction<AdapterType> > deref,
         const Schema &schema,
         const AdapterType &node)
@@ -292,13 +301,15 @@ private:
             const typename Object::const_iterator itr = object.find("$ref");
             if (itr != object.end()) {
                 if (itr->second.maybeString()) {
-                    if (deref) {
+                    if (!deref) {
                         return (*deref)(schema.resolveUri(itr->second.asString()));
                     } else {
-                        throw std::runtime_error("Dereferencing of JSON References not enabled.");
+                        throw std::runtime_error(
+                                "Support for JSON References not enabled.");
                     }
                 } else {
-                    throw std::runtime_error("$ref property expected to contain string value.");
+                    throw std::runtime_error(
+                            "$ref property expected to contain string value.");
                 }
             }
         }
