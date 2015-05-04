@@ -39,7 +39,7 @@ add_executable(external_schema
 # Unit tests executable
 add_executable(test_suite
     tests/test_adapter_comparison.cpp
-    tests/test_dereference_callback.cpp
+    tests/test_fetch_document_callback.cpp
     tests/test_jsoncpp_adapter.cpp
     tests/test_property_tree_adapter.cpp
     tests/test_rapidjson_adapter.cpp
