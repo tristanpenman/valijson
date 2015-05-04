@@ -16,7 +16,7 @@
 		6A725F4917F6404100D6B2FF /* test_rapidjson_adapter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AC18D3917CC874100FE0EC9 /* test_rapidjson_adapter.cpp */; };
 		6A725F4A17F6404100D6B2FF /* test_validator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AC18D3517CC86E000FE0EC9 /* test_validator.cpp */; };
 		6A725F4D17F8964B00D6B2FF /* test_uri_resolution.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6A725F4B17F8956A00D6B2FF /* test_uri_resolution.cpp */; };
-		6A9E1856194DC44B003F1C4C /* test_dereference_callback.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AA8A5DA17F8BDCA002728A0 /* test_dereference_callback.cpp */; };
+		6A9E1856194DC44B003F1C4C /* test_fetch_document_callback.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AA8A5DA17F8BDCA002728A0 /* test_fetch_document_callback.cpp */; };
 		6AB8FE8717E6A56F0028E147 /* external_schema.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AB8FE8617E6A56F0028E147 /* external_schema.cpp */; };
 		6AB8FE8D17E6A57E0028E147 /* libboost_regex-mt.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 6A477F8417D6BCBB0013571C /* libboost_regex-mt.dylib */; };
 		6AD3490118FF56FB004BDEE7 /* gtest_main.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6AF70B3718FE71F700342325 /* gtest_main.cc */; };
@@ -148,7 +148,7 @@
 		6AA334921AB5103C00F1928B /* json_value.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = json_value.cpp; sourceTree = "<group>"; };
 		6AA334931AB5103C00F1928B /* json_valueiterator.inl */ = {isa = PBXFileReference; lastKnownFileType = text; path = json_valueiterator.inl; sourceTree = "<group>"; };
 		6AA334941AB5103C00F1928B /* json_writer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = json_writer.cpp; sourceTree = "<group>"; };
-		6AA8A5DA17F8BDCA002728A0 /* test_dereference_callback.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_dereference_callback.cpp; sourceTree = "<group>"; };
+		6AA8A5DA17F8BDCA002728A0 /* test_fetch_document_callback.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_fetch_document_callback.cpp; sourceTree = "<group>"; };
 		6AB8FE8617E6A56F0028E147 /* external_schema.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = external_schema.cpp; sourceTree = "<group>"; };
 		6AB8FE9117E6A57E0028E147 /* custom_schema */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = custom_schema; sourceTree = BUILT_PRODUCTS_DIR; };
 		6AB8FE9217E6BE770028E147 /* test_jsoncpp_adapter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_jsoncpp_adapter.cpp; sourceTree = "<group>"; };
@@ -611,7 +611,7 @@
 			children = (
 				6AB8FEB417E6E53D0028E147 /* data */,
 				6AB8FEB117E6DF9A0028E147 /* test_adapter_comparison.cpp */,
-				6AA8A5DA17F8BDCA002728A0 /* test_dereference_callback.cpp */,
+				6AA8A5DA17F8BDCA002728A0 /* test_fetch_document_callback.cpp */,
 				6AB8FE9217E6BE770028E147 /* test_jsoncpp_adapter.cpp */,
 				6AB8FEC417E92B100028E147 /* test_property_tree_adapter.cpp */,
 				6AC18D3917CC874100FE0EC9 /* test_rapidjson_adapter.cpp */,
@@ -862,7 +862,7 @@
 		6AC78AC517C5FBBC00674114 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0620;
+				LastUpgradeCheck = 0630;
 				ORGANIZATIONNAME = "Tristan Penman";
 				TargetAttributes = {
 					6AEFECC71AB53F1000275614 = {
@@ -903,7 +903,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6A9E1856194DC44B003F1C4C /* test_dereference_callback.cpp in Sources */,
+				6A9E1856194DC44B003F1C4C /* test_fetch_document_callback.cpp in Sources */,
 				6A725F4517F61D7000D6B2FF /* test_validation_errors.cpp in Sources */,
 				6AF70BB018FE728800342325 /* gtest-all.cc in Sources */,
 				6A725F4617F6404100D6B2FF /* test_adapter_comparison.cpp in Sources */,
@@ -1110,6 +1110,7 @@
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
+				COMBINE_HIDPI_IMAGES = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				EXECUTABLE_PREFIX = lib;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -1141,6 +1142,7 @@
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
+				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -1207,6 +1209,7 @@
 				6AEFECCB1AB53F1000275614 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
