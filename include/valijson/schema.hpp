@@ -190,7 +190,7 @@ public:
 
     std::string resolveUri(const std::string &relative) const
     {
-        return std::string();
+        return relative;
     }
 
     void setId(const std::string &id)
