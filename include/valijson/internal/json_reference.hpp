@@ -33,15 +33,6 @@ inline AdapterType resolveJsonPointer(
 
     const std::string::const_iterator jsonPointerEnd = jsonPointer.end();
 
-    // Check for leading forward slash
-    if (std::find(jsonPointerItr, jsonPointerEnd, '/') == jsonPointerEnd) {
-        throw std::runtime_error(
-                "Expected '/' while parsing JSON Pointer.");
-    }
-
-    // Proceed past leading slash
-    jsonPointerItr++;
-
     // Recursion bottoms out here
     if (jsonPointerItr == jsonPointerEnd) {
         return node;
@@ -149,7 +140,12 @@ inline AdapterType resolveJsonPointer(
         const AdapterType &rootNode,
         const std::string &jsonPointer)
 {
-    return ::resolveJsonPointer(rootNode, jsonPointer, jsonPointer.begin());
+    if (jsonPointer.find("/") != 0) {
+        throw std::runtime_error(
+                "Expected leading '/' while parsing JSON Pointer.");
+    }
+
+    return ::resolveJsonPointer(rootNode, jsonPointer, jsonPointer.begin() + 1);
 }
 
 } // namespace json_reference
