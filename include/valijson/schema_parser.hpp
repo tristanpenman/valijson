@@ -11,6 +11,7 @@
 
 #include <valijson/adapters/adapter.hpp>
 #include <valijson/constraints/concrete_constraints.hpp>
+#include <valijson/internal/json_reference.hpp>
 #include <valijson/schema.hpp>
 
 namespace valijson {
@@ -275,44 +276,16 @@ private:
      *
      * @return  Optional string containing URI
      */
-    static boost::optional<std::string> getJsonReferenceUri(
+    inline boost::optional<std::string> getJsonReferenceUri(
         const std::string &jsonRef,
         const Schema &schema)
     {
-        return schema.resolveUri(jsonRef);
-    }
-
-    /**
-     * @brief   Extract JSON Pointer portion of a JSON Reference
-     *
-     * @param   jsonRef  JSON Reference to extract from
-     *
-     * @return  Optional string containing JSON Pointer
-     */
-    static boost::optional<std::string> getJsonReferencePointer(
-        const std::string &jsonRef)
-    {
-        return std::string();
-    }
-
-    /**
-     * @brief   Return reference to part of document referenced by JSON Pointer
-     *
-     * @param   node         node to use as root for JSON Pointer resolution
-     * @param   jsonPointer  string containing JSON Pointer
-     *
-     * @return  reference to an instance AdapterType in the specified document
-     */
-    template<typename AdapterType>
-    const AdapterType & resolveJsonPointer(
-        const AdapterType &node,
-        const std::string &jsonPointer)
-    {
-        // TODO: Complete functionality
-        // TODO: This function will probably need to implement support for
-        // fetching documents referenced by JSON Pointers, similar to the
-        // populateSchema function.
-        return node;
+        const size_t ptrPos = jsonRef.find("#");
+        if (ptrPos != std::string::npos) {
+            return schema.resolveUri(jsonRef.substr(0, ptrPos));
+        } else {
+            return schema.resolveUri(jsonRef);
+        }
     }
 
     /**
@@ -346,12 +319,8 @@ private:
                 getJsonReferenceUri(jsonRef, schema);
 
         // Extract JSON Pointer from JSON Reference
-        const boost::optional<std::string> jsonPointer =
-                getJsonReferencePointer(jsonRef);
-        if (!jsonPointer) {
-            throw std::runtime_error(
-                    "Failed to parse JSON pointer");
-        }
+        const std::string jsonPointer =
+                internal::json_reference::getJsonReferencePointer(jsonRef);
 
         if (documentUri) {
             // Resolve reference against remote document
@@ -372,14 +341,20 @@ private:
                         "Failed to fetch referenced schema document.");
             }
 
+            const AdapterType &ref =
+                    internal::json_reference::resolveJsonPointer(*docPtr,
+                            jsonPointer);
+
             // Resolve reference against retrieved document
-            const AdapterType &ref = resolveJsonPointer(*docPtr, *jsonPointer);
             populateSchema<AdapterType>(ref, schema, fetchDoc, parentSchema,
                     ownName);
 
         } else {
+            const AdapterType &ref =
+                    internal::json_reference::resolveJsonPointer(node,
+                            jsonPointer);
+
             // Resolve reference against current document
-            const AdapterType &ref = resolveJsonPointer(node, *jsonPointer);
             populateSchema<AdapterType>(ref, schema, fetchDoc, parentSchema,
                     ownName);
         }
@@ -990,7 +965,8 @@ private:
         const AdapterType *properties,
         const AdapterType *patternProperties,
         const AdapterType *additionalProperties,
-        boost::optional<typename FetchDocumentFunction<AdapterType>::Type > fetchDoc,
+        boost::optional<typename FetchDocumentFunction<AdapterType>::Type >
+                fetchDoc,
         Schema *parentSchema)
     {
         typedef typename AdapterType::ObjectMember Member;

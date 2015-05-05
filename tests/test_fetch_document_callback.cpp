@@ -31,9 +31,7 @@ class TestFetchDocumentCallback : public ::testing::Test
 
 boost::shared_ptr<const RapidJsonAdapter> fetchDocument(const std::string &uri)
 {
-    if (uri.compare("test") != 0) {
-        throw std::runtime_error("Could not resolve reference");
-    }
+    EXPECT_STREQ("test", uri.c_str());
 
     rapidjson::Value valueOfTypeAttribute;
     valueOfTypeAttribute.SetString("string", allocator);
@@ -60,7 +58,7 @@ TEST_F(TestFetchDocumentCallback, Basics)
     rapidjson::Document schemaDocument;
     RapidJsonAdapter schemaDocumentAdapter(schemaDocument);
     schemaDocument.SetObject();
-    schemaDocument.AddMember("$ref", "test", allocator);
+    schemaDocument.AddMember("$ref", "test#/", allocator);
 
     // Parse schema document
     Schema schema;
