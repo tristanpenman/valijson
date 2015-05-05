@@ -44,3 +44,20 @@ TEST_F(TestJsonReference, RootPointer)
     const RapidJsonAdapter::Object object = resultAdapter.asObject();
     EXPECT_NE(object.end(), object.find("test"));
 }
+
+TEST_F(TestJsonReference, SingleLevelObjectPointer)
+{
+    // Given an Adapter for a JSON object containing one attribute
+    rapidjson::Value value;
+    value.SetObject();
+    value.AddMember("test", "test", allocator);
+    const RapidJsonAdapter rootAdapter(value);
+
+    // When a JSON Pointer that points to the only member is resolved
+    const RapidJsonAdapter resultAdapter =
+            resolveJsonPointer(rootAdapter, "/test");
+
+    // Then the returned Adapter should refer to the value of that member
+    EXPECT_TRUE(resultAdapter.isString());
+    EXPECT_STREQ("test", resultAdapter.getString().c_str());
+}
