@@ -104,20 +104,73 @@ std::vector<boost::shared_ptr<JsonPointerTestCase> >
     testCase->expectedValue = NULL;
     testCases.push_back(testCase);
 
-    rapidjson::Value testArray;
-    testArray.SetArray();
-    testArray.PushBack("test0", allocator);
-    testArray.PushBack("test1", allocator);
-    testArray.PushBack("test2", allocator);
+    {
+        rapidjson::Value testArray;
+        testArray.SetArray();
+        testArray.PushBack("test0", allocator);
+        testArray.PushBack("test1", allocator);
+        testArray.PushBack("test2", allocator);
 
-    testCase = boost::make_shared<JsonPointerTestCase>(
-            "Resolve '/test/1' in object containing one member containing "
-            "an array with 3 elements");
-    testCase->value.SetObject();
-    testCase->value.AddMember("test", testArray, allocator);
-    testCase->jsonPointer = "/test/1";
-    testCase->expectedValue = &testCase->value.FindMember("test")->value[1];
-    testCases.push_back(testCase);
+        testCase = boost::make_shared<JsonPointerTestCase>(
+                "Resolve '/test/0' in object containing one member containing "
+                "an array with 3 elements");
+        testCase->value.SetObject();
+        testCase->value.AddMember("test", testArray, allocator);
+        testCase->jsonPointer = "/test/0";
+        testCase->expectedValue = &testCase->value.FindMember("test")->value[size_t(0)];
+        testCases.push_back(testCase);
+    }
+
+    {
+        rapidjson::Value testArray;
+        testArray.SetArray();
+        testArray.PushBack("test0", allocator);
+        testArray.PushBack("test1", allocator);
+        testArray.PushBack("test2", allocator);
+
+        testCase = boost::make_shared<JsonPointerTestCase>(
+                "Resolve '/test/1' in object containing one member containing "
+                "an array with 3 elements");
+        testCase->value.SetObject();
+        testCase->value.AddMember("test", testArray, allocator);
+        testCase->jsonPointer = "/test/1";
+        testCase->expectedValue = &testCase->value.FindMember("test")->value[1];
+        testCases.push_back(testCase);
+    }
+
+    {
+        rapidjson::Value testArray;
+        testArray.SetArray();
+        testArray.PushBack("test0", allocator);
+        testArray.PushBack("test1", allocator);
+        testArray.PushBack("test2", allocator);
+
+        testCase = boost::make_shared<JsonPointerTestCase>(
+                "Resolve '/test/2' in object containing one member containing "
+                "an array with 3 elements");
+        testCase->value.SetObject();
+        testCase->value.AddMember("test", testArray, allocator);
+        testCase->jsonPointer = "/test/2";
+        testCase->expectedValue = &testCase->value.FindMember("test")->value[2];
+        testCases.push_back(testCase);
+    }
+
+    {
+        rapidjson::Value testArray;
+        testArray.SetArray();
+        testArray.PushBack("test0", allocator);
+        testArray.PushBack("test1", allocator);
+        testArray.PushBack("test2", allocator);
+
+        testCase = boost::make_shared<JsonPointerTestCase>(
+                "Resolveing '/test/3' in object containing one member containing "
+                "an array with 3 elements should throw an exception");
+        testCase->value.SetObject();
+        testCase->value.AddMember("test", testArray, allocator);
+        testCase->jsonPointer = "/test/3";
+        testCase->expectedValue = NULL;
+        testCases.push_back(testCase);
+    }
 
     return testCases;
 }

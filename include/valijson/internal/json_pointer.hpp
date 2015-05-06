@@ -83,7 +83,12 @@ inline AdapterType resolveJsonPointer(
             typedef typename AdapterType::Array Array;
             typename Array::const_iterator itr = node.asArray().begin();
 
-            // TODO: Check for array bounds
+            if (index > node.asArray().size() - 1) {
+                throw std::runtime_error("Expected reference token to identify "
+                        "an element in the current array, but array index is "
+                        "out of bounds; actual token: " + referenceToken);
+            }
+
             itr.advance(index);
 
             // Recursively process the remaining tokens
