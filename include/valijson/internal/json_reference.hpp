@@ -14,12 +14,28 @@ namespace {
 /**
  * @brief   Recursively locate the value referenced by a JSON Pointer
  *
+ * This function takes both a string reference and an iterator to the beginning
+ * of the substring that is being resolved. This iterator is expected to point
+ * to the beginning of a reference token, whose length will be determined by
+ * searching for the next delimiter ('/' or '\0'). A reference token must be
+ * at least one character in length to be considered valid.
+ *
+ * Once the next reference token has been identified, it will be used either as
+ * an array index or as an the name an object member. The validity of a
+ * reference token depends on the type of the node currently being traversed,
+ * and the applicability of the token to that node. For example, an array can
+ * only be dereferenced by a non-negative integral index.
+ *
+ * Once the next node has been identified, the length of the remaining portion
+ * of the JSON Pointer will be used to determine whether recursion should
+ * terminate.
+ *
  * @param   node            current node in recursive evaluation of JSON Pointer
  * @param   jsonPointer     string containing complete JSON Pointer
- * @param   jsonPointerItr  string iterator pointing the part of the string
- *                          currently being evaluated
+ * @param   jsonPointerItr  string iterator pointing the beginning of the next
+ *                          reference token
  *
- * @return  an instance AdapterType in the specified document
+ * @return  an instance of AdapterType that wraps the dereferenced node
  */
 template<typename AdapterType>
 inline AdapterType resolveJsonPointer(
@@ -32,9 +48,8 @@ inline AdapterType resolveJsonPointer(
     // populateSchema function.
 
     const std::string::const_iterator jsonPointerEnd = jsonPointer.end();
-
-    // Recursion bottoms out here
     if (jsonPointerItr == jsonPointerEnd) {
+        // Bottom out recursion
         return node;
     }
 
@@ -42,11 +57,12 @@ inline AdapterType resolveJsonPointer(
     const std::string::const_iterator jsonPointerNext =
             std::find(jsonPointerItr, jsonPointerEnd, '/');
 
-    // Extract the next 'directive'
-    const std::string directive(jsonPointerItr, jsonPointerNext);
-    if (directive.empty()) {
+    // Extract the next reference token
+    const std::string referenceToken(jsonPointerItr, jsonPointerNext);
+    if (referenceToken.empty()) {
         throw std::runtime_error(
-                "Expected at least one non-delimiting character in directive.");
+                "Expected at least one non-delimiting character in the next "
+                "reference token.");
     }
 
     if (node.isArray()) {
@@ -59,43 +75,32 @@ inline AdapterType resolveJsonPointer(
             // TODO: Check for array bounds
             itr.advance(index);
 
-            if (jsonPointerNext == jsonPointerEnd) {
-                // Bottom out recursion since this is the last directive
-                return *itr;
-            } else {
-                // Recursively process the next directive in the JSON Pointer
-                return resolveJsonPointer(*itr, jsonPointer, jsonPointerNext);
-            }
+            // Recursively process the remaining tokens
+            return resolveJsonPointer(*itr, jsonPointer, jsonPointerNext);
 
         } catch (boost::bad_lexical_cast &) {
-            throw std::runtime_error("Expected directive to contain "
-                    "non-negative integer to allow for array indexing; "
-                    "actual value: " + directive);
+            throw std::runtime_error("Expected reference token to contain a "
+                    "non-negative integer to identify an element in the "
+                    "current array; actual token: " + referenceToken);
         }
 
     } else if (node.maybeObject()) {
         // Fragment must identify a member of the candidate object
         typedef typename AdapterType::Object Object;
-        typename Object::const_iterator itr = node.asObject().find(directive);
+        typename Object::const_iterator itr = node.asObject().find(referenceToken);
         if (itr == node.asObject().end()) {
-            throw std::runtime_error("Expected directive to identify an "
+            throw std::runtime_error("Expected reference token to identify an "
                     "element in the current object; "
-                    "actual value: " + directive);
+                    "actual token: " + referenceToken);
         }
 
-        if (jsonPointerNext == jsonPointerEnd) {
-            // Bottom out recursion since this is the last directive
-            return itr->second;
-        } else {
-            // Recursively process the next directive in the JSON Pointer
-            return resolveJsonPointer(itr->second, jsonPointer,
-                    jsonPointerNext);
-        }
+        // Recursively process the remaining tokens
+        return resolveJsonPointer(itr->second, jsonPointer, jsonPointerNext);
     }
 
     throw std::runtime_error("Expected end of JSON Pointer, but at least "
-            "one directive has not been processed; "
-            "actual directive: " + directive);
+            "one reference token has not been processed; remaining tokens: " +
+            std::string(jsonPointerNext, jsonPointerEnd));
 }
 
 } // end anonymous namespace
