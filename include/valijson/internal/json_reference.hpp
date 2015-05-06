@@ -41,31 +41,39 @@ template<typename AdapterType>
 inline AdapterType resolveJsonPointer(
         const AdapterType &node,
         const std::string &jsonPointer,
-        std::string::const_iterator jsonPointerItr)
+        const std::string::const_iterator jsonPointerItr)
 {
     // TODO: This function will probably need to implement support for
     // fetching documents referenced by JSON Pointers, similar to the
     // populateSchema function.
 
     const std::string::const_iterator jsonPointerEnd = jsonPointer.end();
+
+    // Terminate recursion if all reference tokens have been consumed
     if (jsonPointerItr == jsonPointerEnd) {
-        // Bottom out recursion
         return node;
     }
 
-    // Find iterator that points to next slash, or end of string
-    const std::string::const_iterator jsonPointerNext =
-            std::find(jsonPointerItr, jsonPointerEnd, '/');
-
-    // Extract the next reference token
-    const std::string referenceToken(jsonPointerItr, jsonPointerNext);
-    if (referenceToken.empty()) {
-        throw std::runtime_error(
-                "Expected at least one non-delimiting character in the next "
-                "reference token.");
+    // Reference tokens must begin with a leading slash
+    if (*jsonPointerItr != '/') {
+        throw std::runtime_error("Expected reference token to begin with "
+                "leading slash; remaining tokens: " +
+                std::string(jsonPointerItr, jsonPointerEnd));
     }
 
-    if (node.isArray()) {
+    // Find iterator that points to next slash or newline character; this is
+    // one character past the end of the current reference token
+    std::string::const_iterator jsonPointerNext =
+            std::find(jsonPointerItr + 1, jsonPointerEnd, '/');
+
+    // Extract the next reference token
+    const std::string referenceToken(jsonPointerItr + 1, jsonPointerNext);
+
+    // Empty reference tokens should be ignored
+    if (referenceToken.empty()) {
+        return resolveJsonPointer(node, jsonPointer, jsonPointerNext);
+
+    } else if (node.isArray()) {
         try {
             // Fragment must be non-negative integer
             const uint64_t index = boost::lexical_cast<uint64_t>(jsonPointer);
@@ -87,7 +95,8 @@ inline AdapterType resolveJsonPointer(
     } else if (node.maybeObject()) {
         // Fragment must identify a member of the candidate object
         typedef typename AdapterType::Object Object;
-        typename Object::const_iterator itr = node.asObject().find(referenceToken);
+        typename Object::const_iterator itr = node.asObject().find(
+                referenceToken);
         if (itr == node.asObject().end()) {
             throw std::runtime_error("Expected reference token to identify an "
                     "element in the current object; "
@@ -145,12 +154,7 @@ inline AdapterType resolveJsonPointer(
         const AdapterType &rootNode,
         const std::string &jsonPointer)
 {
-    if (jsonPointer.find("/") != 0) {
-        throw std::runtime_error(
-                "Expected leading '/' while parsing JSON Pointer.");
-    }
-
-    return ::resolveJsonPointer(rootNode, jsonPointer, jsonPointer.begin() + 1);
+    return ::resolveJsonPointer(rootNode, jsonPointer, jsonPointer.begin());
 }
 
 } // namespace json_reference

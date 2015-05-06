@@ -52,10 +52,24 @@ std::vector<boost::shared_ptr<JsonPointerTestCase> >
     testCases.push_back(testCase);
 
     testCase = boost::make_shared<JsonPointerTestCase>(
-            "Resolving an empty string should cause an exception to be thrown");
+            "Resolving an empty string should return the root node");
     testCase->value.SetNull();
     testCase->jsonPointer = "";
-    testCase->expectedValue = NULL;
+    testCase->expectedValue = &testCase->value;
+    testCases.push_back(testCase);
+
+    testCase = boost::make_shared<JsonPointerTestCase>(
+            "Resolving '/' should return the root node");
+    testCase->value.SetNull();
+    testCase->jsonPointer = "/";
+    testCase->expectedValue = &testCase->value;
+    testCases.push_back(testCase);
+
+    testCase = boost::make_shared<JsonPointerTestCase>(
+            "Resolving '//' should return the root node");
+    testCase->value.SetNull();
+    testCase->jsonPointer = "//";
+    testCase->expectedValue = &testCase->value;
     testCases.push_back(testCase);
 
     testCase = boost::make_shared<JsonPointerTestCase>(
@@ -67,12 +81,19 @@ std::vector<boost::shared_ptr<JsonPointerTestCase> >
     testCases.push_back(testCase);
 
     testCase = boost::make_shared<JsonPointerTestCase>(
-            "Resolve '/test/' in object containing one member named 'test' "
-            "should cause an exception to be thrown");
+            "Resolve '/test/' in object containing one member named 'test'");
     testCase->value.SetObject();
     testCase->value.AddMember("test", "test", allocator);
     testCase->jsonPointer = "/test/";
-    testCase->expectedValue = NULL;
+    testCase->expectedValue = &testCase->value.FindMember("test")->value;
+    testCases.push_back(testCase);
+
+    testCase = boost::make_shared<JsonPointerTestCase>(
+            "Resolve '//test//' in object containing one member named 'test'");
+    testCase->value.SetObject();
+    testCase->value.AddMember("test", "test", allocator);
+    testCase->jsonPointer = "//test//";
+    testCase->expectedValue = &testCase->value.FindMember("test")->value;
     testCases.push_back(testCase);
 
     testCase = boost::make_shared<JsonPointerTestCase>(
@@ -108,7 +129,8 @@ TEST_F(TestJsonReference, JsonPointerTestCases)
         } else {
             EXPECT_THROW(
                     resolveJsonPointer(valueAdapter, jsonPointer),
-                    std::runtime_error);
+                    std::runtime_error) <<
+                    (*itr)->description;
         }
     }
 }
