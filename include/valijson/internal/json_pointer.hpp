@@ -78,7 +78,8 @@ inline AdapterType resolveJsonPointer(
     } else if (node.isArray()) {
         try {
             // Fragment must be non-negative integer
-            const uint64_t index = boost::lexical_cast<uint64_t>(jsonPointer);
+            const uint64_t index = boost::lexical_cast<uint64_t>(
+                    referenceToken);
             typedef typename AdapterType::Array Array;
             typename Array::const_iterator itr = node.asArray().begin();
 
