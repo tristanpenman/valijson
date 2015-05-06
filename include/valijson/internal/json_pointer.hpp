@@ -9,7 +9,9 @@
 
 #include <valijson/adapters/adapter.hpp>
 
-namespace {
+namespace valijson {
+namespace internal {
+namespace json_pointer {
 
 /**
  * @brief   Recursively locate the value referenced by a JSON Pointer
@@ -112,35 +114,6 @@ inline AdapterType resolveJsonPointer(
             std::string(jsonPointerNext, jsonPointerEnd));
 }
 
-} // end anonymous namespace
-
-namespace valijson {
-namespace internal {
-namespace json_reference {
-
-/**
- * @brief   Extract JSON Pointer portion of a JSON Reference
- *
- * @param   jsonRef  JSON Reference to extract from
- *
- * @return  string containing JSON Pointer
- *
- * @throw   std::runtime_error if the string does not contain a JSON Pointer
- */
-inline std::string getJsonReferencePointer(const std::string &jsonRef)
-{
-    // Attempt to extract JSON Pointer if '#' character is present. Note
-    // that a valid pointer would contain at least a leading forward
-    // slash character.
-    const size_t ptrPos = jsonRef.find("#");
-    if (ptrPos != std::string::npos) {
-        return jsonRef.substr(ptrPos + 1);
-    }
-
-    throw std::runtime_error(
-            "JSON Reference value does not contain a valid JSON Pointer");
-}
-
 /**
  * @brief   Return the JSON Value referenced by a JSON Pointer
  *
@@ -154,7 +127,7 @@ inline AdapterType resolveJsonPointer(
         const AdapterType &rootNode,
         const std::string &jsonPointer)
 {
-    return ::resolveJsonPointer(rootNode, jsonPointer, jsonPointer.begin());
+    return resolveJsonPointer(rootNode, jsonPointer, jsonPointer.begin());
 }
 
 } // namespace json_reference

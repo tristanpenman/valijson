@@ -3,17 +3,17 @@
 
 #include <gtest/gtest.h>
 
-#include <valijson/internal/json_reference.hpp>
+#include <valijson/internal/json_pointer.hpp>
 
 #include <valijson/adapters/rapidjson_adapter.hpp>
 
 using valijson::adapters::RapidJsonAdapter;
-using valijson::internal::json_reference::resolveJsonPointer;
+using valijson::internal::json_pointer::resolveJsonPointer;
 
 typedef rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>
         RapidJsonCrtAllocator;
 
-class TestJsonReference : public testing::Test
+class TestJsonPointer : public testing::Test
 {
 
 };
@@ -107,7 +107,7 @@ std::vector<boost::shared_ptr<JsonPointerTestCase> >
     return testCases;
 }
 
-TEST_F(TestJsonReference, JsonPointerTestCases)
+TEST_F(TestJsonPointer, JsonPointerTestCases)
 {
     typedef std::vector<boost::shared_ptr<JsonPointerTestCase> > TestCases;
 

@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		6A477F8517D6BCBB0013571C /* libboost_regex-mt.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 6A477F8417D6BCBB0013571C /* libboost_regex-mt.dylib */; };
 		6A477F8617D6EA000013571C /* libboost_regex-mt.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 6A477F8417D6BCBB0013571C /* libboost_regex-mt.dylib */; };
-		6A506D201AF88E5D00C2C818 /* test_json_reference.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6A506D1F1AF88E5D00C2C818 /* test_json_reference.cpp */; };
+		6A506D201AF88E5D00C2C818 /* test_json_pointer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6A506D1F1AF88E5D00C2C818 /* test_json_pointer.cpp */; };
 		6A725F4517F61D7000D6B2FF /* test_validation_errors.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6A725F4317F61B5100D6B2FF /* test_validation_errors.cpp */; };
 		6A725F4617F6404100D6B2FF /* test_adapter_comparison.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AB8FEB117E6DF9A0028E147 /* test_adapter_comparison.cpp */; };
 		6A725F4717F6404100D6B2FF /* test_jsoncpp_adapter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AB8FE9217E6BE770028E147 /* test_jsoncpp_adapter.cpp */; };
@@ -51,8 +51,8 @@
 		6A506D1A1AF884E100C2C818 /* rfc3986-uri.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "rfc3986-uri.txt"; sourceTree = "<group>"; };
 		6A506D1B1AF884E100C2C818 /* rfc4627-json.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "rfc4627-json.txt"; sourceTree = "<group>"; };
 		6A506D1C1AF884E100C2C818 /* rfc6901-json-pointer.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "rfc6901-json-pointer.txt"; sourceTree = "<group>"; };
-		6A506D1E1AF88D8700C2C818 /* json_reference.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = json_reference.hpp; path = internal/json_reference.hpp; sourceTree = "<group>"; };
-		6A506D1F1AF88E5D00C2C818 /* test_json_reference.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_json_reference.cpp; sourceTree = "<group>"; };
+		6A506D1E1AF88D8700C2C818 /* json_pointer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = json_pointer.hpp; path = internal/json_pointer.hpp; sourceTree = "<group>"; };
+		6A506D1F1AF88E5D00C2C818 /* test_json_pointer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_json_pointer.cpp; sourceTree = "<group>"; };
 		6A725F3617F61A4400D6B2FF /* array_doubles_10_20_30_40.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = array_doubles_10_20_30_40.json; sourceTree = "<group>"; };
 		6A725F3717F61A4400D6B2FF /* array_doubles_1_2_3.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = array_doubles_1_2_3.json; sourceTree = "<group>"; };
 		6A725F3817F61A4400D6B2FF /* array_doubles_1_2_3_4.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = array_doubles_1_2_3_4.json; sourceTree = "<group>"; };
@@ -324,7 +324,7 @@
 		6A506D1D1AF88D5E00C2C818 /* internal */ = {
 			isa = PBXGroup;
 			children = (
-				6A506D1E1AF88D8700C2C818 /* json_reference.hpp */,
+				6A506D1E1AF88D8700C2C818 /* json_pointer.hpp */,
 			);
 			name = internal;
 			sourceTree = "<group>";
@@ -668,7 +668,7 @@
 				6AB8FEB417E6E53D0028E147 /* data */,
 				6AB8FEB117E6DF9A0028E147 /* test_adapter_comparison.cpp */,
 				6AA8A5DA17F8BDCA002728A0 /* test_fetch_document_callback.cpp */,
-				6A506D1F1AF88E5D00C2C818 /* test_json_reference.cpp */,
+				6A506D1F1AF88E5D00C2C818 /* test_json_pointer.cpp */,
 				6AB8FE9217E6BE770028E147 /* test_jsoncpp_adapter.cpp */,
 				6AB8FEC417E92B100028E147 /* test_property_tree_adapter.cpp */,
 				6AC18D3917CC874100FE0EC9 /* test_rapidjson_adapter.cpp */,
@@ -969,7 +969,7 @@
 				6A725F4717F6404100D6B2FF /* test_jsoncpp_adapter.cpp in Sources */,
 				6A725F4817F6404100D6B2FF /* test_property_tree_adapter.cpp in Sources */,
 				6AD3490118FF56FB004BDEE7 /* gtest_main.cc in Sources */,
-				6A506D201AF88E5D00C2C818 /* test_json_reference.cpp in Sources */,
+				6A506D201AF88E5D00C2C818 /* test_json_pointer.cpp in Sources */,
 				6A725F4917F6404100D6B2FF /* test_rapidjson_adapter.cpp in Sources */,
 				6A725F4A17F6404100D6B2FF /* test_validator.cpp in Sources */,
 				6A725F4D17F8964B00D6B2FF /* test_uri_resolution.cpp in Sources */,

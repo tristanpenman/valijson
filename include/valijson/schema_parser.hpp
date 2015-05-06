@@ -11,7 +11,7 @@
 
 #include <valijson/adapters/adapter.hpp>
 #include <valijson/constraints/concrete_constraints.hpp>
-#include <valijson/internal/json_reference.hpp>
+#include <valijson/internal/json_pointer.hpp>
 #include <valijson/schema.hpp>
 
 namespace valijson {
@@ -289,6 +289,29 @@ private:
     }
 
     /**
+     * @brief   Extract JSON Pointer portion of a JSON Reference
+     *
+     * @param   jsonRef  JSON Reference to extract from
+     *
+     * @return  string containing JSON Pointer
+     *
+     * @throw   std::runtime_error if the string does not contain a JSON Pointer
+     */
+    inline std::string getJsonReferencePointer(const std::string &jsonRef)
+    {
+        // Attempt to extract JSON Pointer if '#' character is present. Note
+        // that a valid pointer would contain at least a leading forward
+        // slash character.
+        const size_t ptrPos = jsonRef.find("#");
+        if (ptrPos != std::string::npos) {
+            return jsonRef.substr(ptrPos + 1);
+        }
+
+        throw std::runtime_error(
+                "JSON Reference value does not contain a valid JSON Pointer");
+    }
+
+    /**
      * @brief  Populate a schema using a JSON Reference
      *
      * Allows JSON references to be used with minimal changes to the parser
@@ -319,8 +342,7 @@ private:
                 getJsonReferenceUri(jsonRef, schema);
 
         // Extract JSON Pointer from JSON Reference
-        const std::string jsonPointer =
-                internal::json_reference::getJsonReferencePointer(jsonRef);
+        const std::string jsonPointer = getJsonReferencePointer(jsonRef);
 
         if (documentUri) {
             // Resolve reference against remote document
@@ -342,7 +364,7 @@ private:
             }
 
             const AdapterType &ref =
-                    internal::json_reference::resolveJsonPointer(*docPtr,
+                    internal::json_pointer::resolveJsonPointer(*docPtr,
                             jsonPointer);
 
             // Resolve reference against retrieved document
@@ -351,7 +373,7 @@ private:
 
         } else {
             const AdapterType &ref =
-                    internal::json_reference::resolveJsonPointer(node,
+                    internal::json_pointer::resolveJsonPointer(node,
                             jsonPointer);
 
             // Resolve reference against current document
