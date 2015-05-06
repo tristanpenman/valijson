@@ -40,6 +40,7 @@ add_executable(external_schema
 add_executable(test_suite
     tests/test_adapter_comparison.cpp
     tests/test_fetch_document_callback.cpp
+    tests/test_json_reference.cpp
     tests/test_jsoncpp_adapter.cpp
     tests/test_property_tree_adapter.cpp
     tests/test_rapidjson_adapter.cpp
