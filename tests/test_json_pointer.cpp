@@ -117,7 +117,7 @@ std::vector<boost::shared_ptr<JsonPointerTestCase> >
         testCase->value.SetObject();
         testCase->value.AddMember("test", testArray, allocator);
         testCase->jsonPointer = "/test/0";
-        testCase->expectedValue = &testCase->value.FindMember("test")->value[size_t(0)];
+        testCase->expectedValue = &testCase->value.FindMember("test")->value[rapidjson::SizeType(0)];
         testCases.push_back(testCase);
     }
 
@@ -134,7 +134,7 @@ std::vector<boost::shared_ptr<JsonPointerTestCase> >
         testCase->value.SetObject();
         testCase->value.AddMember("test", testArray, allocator);
         testCase->jsonPointer = "/test/1";
-        testCase->expectedValue = &testCase->value.FindMember("test")->value[1];
+        testCase->expectedValue = &testCase->value.FindMember("test")->value[rapidjson::SizeType(1)];
         testCases.push_back(testCase);
     }
 
@@ -151,7 +151,7 @@ std::vector<boost::shared_ptr<JsonPointerTestCase> >
         testCase->value.SetObject();
         testCase->value.AddMember("test", testArray, allocator);
         testCase->jsonPointer = "/test/2";
-        testCase->expectedValue = &testCase->value.FindMember("test")->value[2];
+        testCase->expectedValue = &testCase->value.FindMember("test")->value[rapidjson::SizeType(2)];
         testCases.push_back(testCase);
     }
 
