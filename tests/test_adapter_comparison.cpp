@@ -6,9 +6,11 @@
 #include <valijson/adapters/jsoncpp_adapter.hpp>
 #include <valijson/adapters/property_tree_adapter.hpp>
 #include <valijson/adapters/rapidjson_adapter.hpp>
+#include <valijson/adapters/picojson_adapter.hpp>
 #include <valijson/utils/jsoncpp_utils.hpp>
 #include <valijson/utils/property_tree_utils.hpp>
 #include <valijson/utils/rapidjson_utils.hpp>
+#include <valijson/utils/picojson_utils.hpp>
 
 #define TEST_DATA_DIR "../tests/data/documents/"
 
@@ -135,6 +137,13 @@ TEST_F(TestAdapterComparison, JsonCppVsRapidJson)
         valijson::adapters::RapidJsonAdapter>();
 }
 
+TEST_F(TestAdapterComparison, JsonCppVsPicoJson)
+{
+    testComparison<
+        valijson::adapters::JsonCppAdapter,
+        valijson::adapters::PicoJsonAdapter>();
+}
+
 TEST_F(TestAdapterComparison, PropertyTreeVsPropertyTree)
 {
     testComparison<
@@ -149,9 +158,30 @@ TEST_F(TestAdapterComparison, PropertyTreeVsRapidJson)
         valijson::adapters::RapidJsonAdapter>();
 }
 
+TEST_F(TestAdapterComparison, PropertyTreeVsPicoJson)
+{
+    testComparison<
+        valijson::adapters::PropertyTreeAdapter,
+        valijson::adapters::PicoJsonAdapter>();
+}
+
 TEST_F(TestAdapterComparison, RapidJsonVsRapidJson)
 {
     testComparison<
         valijson::adapters::RapidJsonAdapter,
         valijson::adapters::RapidJsonAdapter>();
+}
+
+TEST_F(TestAdapterComparison, RapidJsonVsPicoJson)
+{
+    testComparison<
+        valijson::adapters::RapidJsonAdapter,
+        valijson::adapters::PicoJsonAdapter>();
+}
+
+TEST_F(TestAdapterComparison, PicoJsonVsPicoJson)
+{
+    testComparison<
+        valijson::adapters::PicoJsonAdapter,
+        valijson::adapters::PicoJsonAdapter>();
 }

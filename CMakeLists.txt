@@ -23,6 +23,7 @@ include_directories(
   thirdparty/gtest-1.7.0/include
   thirdparty/jsoncpp-0.9.4/include
   thirdparty/rapidjson-0.1/include
+  thirdparty/picojson-1.3.0
   ${Boost_INCLUDE_DIRS}
 )
 
@@ -44,9 +45,15 @@ add_executable(test_suite
     tests/test_jsoncpp_adapter.cpp
     tests/test_property_tree_adapter.cpp
     tests/test_rapidjson_adapter.cpp
+    tests/test_picojson_adapter.cpp
     tests/test_uri_resolution.cpp
     tests/test_validation_errors.cpp
     tests/test_validator.cpp
+)
+
+# Definition for using picojson
+set_target_properties(test_suite
+    PROPERTIES COMPILE_DEFINITIONS "PICOJSON_USE_INT64"
 )
 
 set(TEST_LIBS gtest gtest_main jsoncpp)
