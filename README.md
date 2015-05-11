@@ -32,6 +32,8 @@ Valijson supports JSON documents loaded using JsonCpp, RapidJson, Boost Property
 
 Version of JsonCpp going back to 0.5.0 should also work correctly, but versions from 1.0 onwards have not yet been tested.
 
+Also note that when using PicoJSON, it may be necessary to include the `picojson.h` before other headers to ensure that the appropriate macros have been enabled.
+
 Other versions of these libraries may work, but have not been tested.
 
 ## JSON Schema Support ##

@@ -1,3 +1,5 @@
+#include <picojson.h>
+
 #include <iostream>
 
 #include <boost/foreach.hpp>
