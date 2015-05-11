@@ -23,11 +23,12 @@ Required:
 
 Later versions of boost (up to 1.57) are also known to work correctly.
 
-Valijson supports JSON documents loaded using JsonCpp, RapidJson and Boost Property Tree. It has been tested against the following versions of these libraries:
+Valijson supports JSON documents loaded using JsonCpp, RapidJson, Boost Property Tree and PicoJSON. It has been tested against the following versions of these libraries:
 
  - [boost::property_tree 1.54](http://www.boost.org/doc/libs/1_54_0/doc/html/boost_propertytree/synopsis.html)
  - [jsoncpp 0.9.4](https://github.com/open-source-parsers/jsoncpp/archive/0.9.4.tar.gz)
  - [rapidjson 0.1](https://code.google.com/p/rapidjson/downloads/detail?name=rapidjson-0.1.zip)
+ - [PicoJSON 1.3.0](https://github.com/kazuho/picojson/archive/v1.3.0.tar.gz)
 
 Version of JsonCpp going back to 0.5.0 should also work correctly, but versions from 1.0 onwards have not yet been tested.
 
