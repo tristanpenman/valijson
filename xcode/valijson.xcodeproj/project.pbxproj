@@ -204,6 +204,8 @@
 		6AC78BEA17C5FC6A00674114 /* schema_parser.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = schema_parser.hpp; sourceTree = "<group>"; };
 		6AC78BEC17C5FC6A00674114 /* validation_results.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = validation_results.hpp; sourceTree = "<group>"; };
 		6AC78BEE17C5FC6A00674114 /* validator.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = validator.hpp; sourceTree = "<group>"; };
+		6AD030F41B03FD9000B957E5 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
+		6AD030F51B03FD9900B957E5 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
 		6AE1D76617E3F993008CF38C /* custom_schema.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = custom_schema.cpp; sourceTree = "<group>"; };
 		6AEFECC81AB53F1000275614 /* libjsoncpp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libjsoncpp.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		6AF70AE118FE71F600342325 /* gtest-death-test.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-death-test.h"; sourceTree = "<group>"; };
@@ -683,6 +685,8 @@
 		6AC78AC417C5FBBC00674114 = {
 			isa = PBXGroup;
 			children = (
+				6AD030F51B03FD9900B957E5 /* LICENSE */,
+				6AD030F41B03FD9000B957E5 /* README.md */,
 				6A506D101AF884D700C2C818 /* doc */,
 				6AC78AEC17C5FC0700674114 /* examples */,
 				6AC78BDC17C5FC5F00674114 /* include */,
