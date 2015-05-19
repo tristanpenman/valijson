@@ -9,7 +9,7 @@
 namespace valijson {
 namespace utils {
 
-static const u_int32_t offsetsFromUTF8[6] = {
+static const uint32_t offsetsFromUTF8[6] = {
     0x00000000UL, 0x00003080UL, 0x000E2080UL,
     0x03C82080UL, 0xFA082080UL, 0x82082080UL
 };
@@ -20,9 +20,9 @@ inline bool isutf(char c) {
 }
 
 /* reads the next utf-8 sequence out of a string, updating an index */
-inline u_int32_t u8_nextchar(const char *s, int *i)
+inline uint32_t u8_nextchar(const char *s, int *i)
 {
-    u_int32_t ch = 0;
+    uint32_t ch = 0;
     int sz = 0;
 
     do {
