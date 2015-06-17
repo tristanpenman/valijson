@@ -163,12 +163,69 @@ std::vector<boost::shared_ptr<JsonPointerTestCase> >
         testArray.PushBack("test2", allocator);
 
         testCase = boost::make_shared<JsonPointerTestCase>(
-                "Resolveing '/test/3' in object containing one member containing "
+                "Resolving '/test/3' in object containing one member containing "
                 "an array with 3 elements should throw an exception");
         testCase->value.SetObject();
         testCase->value.AddMember("test", testArray, allocator);
         testCase->jsonPointer = "/test/3";
         testCase->expectedValue = NULL;
+        testCases.push_back(testCase);
+    }
+
+    //
+    // The following tests ensure that escape sequences are handled correctly.
+    //
+    // From the JSON Pointer specification (RFC 6901, April 2013):
+    //
+    //    Evaluation of each reference token begins by decoding any escaped
+    //    character sequence.  This is performed by first transforming any
+    //    occurrence of the sequence '~1' to '/', and then transforming any
+    //    occurrence of the sequence '~0' to '~'.  By performing the
+    //    substitutions in this order, an implementation avoids the error of
+    //    turning '~01' first into '~1' and then into '/', which would be
+    //    incorrect (the string '~01' correctly becomes '~1' after
+    //    transformation).
+    //
+
+    {
+        rapidjson::Value value;
+        value.SetDouble(10.);
+
+        testCase = boost::make_shared<JsonPointerTestCase>(
+                "Resolving '/hello~1world' in object containing one member named "
+                "'hello/world' should return the associated value");
+        testCase->value.SetObject();
+        testCase->value.AddMember("hello/world", value, allocator);
+        testCase->jsonPointer = "/hello~1world";
+        testCase->expectedValue = &testCase->value.FindMember("hello/world")->value;
+        testCases.push_back(testCase);
+    }
+
+    {
+        rapidjson::Value value;
+        value.SetDouble(10.);
+
+        testCase = boost::make_shared<JsonPointerTestCase>(
+                "Resolving '/hello~0world' in object containing one member named "
+                "'hello~world' should return the associated value");
+        testCase->value.SetObject();
+        testCase->value.AddMember("hello~world", value, allocator);
+        testCase->jsonPointer = "/hello~0world";
+        testCase->expectedValue = &testCase->value.FindMember("hello~world")->value;
+        testCases.push_back(testCase);
+    }
+
+    {
+        rapidjson::Value value;
+        value.SetDouble(10.);
+
+        testCase = boost::make_shared<JsonPointerTestCase>(
+                "Resolving '/hello~01world' in object containing one member named "
+                "'hello~1world' should return the associated value");
+        testCase->value.SetObject();
+        testCase->value.AddMember("hello~1world", value, allocator);
+        testCase->jsonPointer = "/hello~01world";
+        testCase->expectedValue = &testCase->value.FindMember("hello~1world")->value;
         testCases.push_back(testCase);
     }
 

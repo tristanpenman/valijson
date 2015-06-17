@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <string>
 
+#include <boost/algorithm/string/replace.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/optional.hpp>
 
@@ -12,6 +13,42 @@
 namespace valijson {
 namespace internal {
 namespace json_pointer {
+
+/**
+ * @brief   Extract and transform the token between two iterators
+ *
+ * This function is responsible for extracting a JSON Reference token from
+ * between two iterators, and performing any necessary transformations, before
+ * returning the resulting string. Its main purpose is to replace escaped
+ * character sequences.
+ *
+ * From the JSON Pointer specification (RFC 6901, April 2013):
+ *
+ *    Evaluation of each reference token begins by decoding any escaped
+ *    character sequence.  This is performed by first transforming any
+ *    occurrence of the sequence '~1' to '/', and then transforming any
+ *    occurrence of the sequence '~0' to '~'.  By performing the
+ *    substitutions in this order, an implementation avoids the error of
+ *    turning '~01' first into '~1' and then into '/', which would be
+ *    incorrect (the string '~01' correctly becomes '~1' after
+ *    transformation).
+ * 
+ * @param   begin  iterator pointing to beginning of a token
+ * @param   end    iterator pointing to one character past the end of the token
+ *
+ * @return  string with escaped character sequences replaced
+ *
+ */
+inline std::string extractReferenceToken(std::string::const_iterator begin,
+        std::string::const_iterator end)
+{
+    std::string token(begin, end);
+
+    boost::replace_all(token, "~1", "/");
+    boost::replace_all(token, "~0", "~");
+
+    return token;
+}
 
 /**
  * @brief   Recursively locate the value referenced by a JSON Pointer
@@ -69,7 +106,8 @@ inline AdapterType resolveJsonPointer(
             std::find(jsonPointerItr + 1, jsonPointerEnd, '/');
 
     // Extract the next reference token
-    const std::string referenceToken(jsonPointerItr + 1, jsonPointerNext);
+    const std::string referenceToken = extractReferenceToken(
+            jsonPointerItr + 1, jsonPointerNext);
 
     // Empty reference tokens should be ignored
     if (referenceToken.empty()) {
