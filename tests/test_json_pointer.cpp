@@ -173,6 +173,36 @@ std::vector<boost::shared_ptr<JsonPointerTestCase> >
     }
 
     //
+    // Allow the "-" character is not useful within the context of this library,
+    // there is an explicit check for it, so that a custom error message can
+    // be included in the exception that is thrown.
+    //
+    // From the JSON Pointer specification (RFC 6901, April 2013):
+    //
+    //    Note that the use of the "-" character to index an array will always
+    //    result in such an error condition because by definition it refers to
+    //    a nonexistent array element.  Thus, applications of JSON Pointer need
+    //    to specify how that character is to be handled, if it is to be
+    //    useful.
+    //
+
+    {
+        rapidjson::Value testArray;
+        testArray.SetArray();
+        testArray.PushBack("test0", allocator);
+        testArray.PushBack("test1", allocator);
+        testArray.PushBack("test2", allocator);
+
+        testCase = boost::make_shared<JsonPointerTestCase>(
+                "Resolving '/test/-' in object containing one member containing "
+                "an array with 3 elements should throw an exception");
+        testCase->value.SetNull();
+        testCase->jsonPointer = "/test/-";
+        testCase->expectedValue = NULL;
+        testCases.push_back(testCase);
+    }
+
+    //
     // The following tests ensure that escape sequences are handled correctly.
     //
     // From the JSON Pointer specification (RFC 6901, April 2013):

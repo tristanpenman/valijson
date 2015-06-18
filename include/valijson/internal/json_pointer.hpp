@@ -114,6 +114,11 @@ inline AdapterType resolveJsonPointer(
         return resolveJsonPointer(node, jsonPointer, jsonPointerNext);
 
     } else if (node.isArray()) {
+        if (referenceToken.compare("-") == 0) {
+            throw std::runtime_error("Hyphens cannot be used as array indices "
+                    "since the requested array element does not yet exist");
+        }
+
         try {
             // Fragment must be non-negative integer
             const uint64_t index = boost::lexical_cast<uint64_t>(
