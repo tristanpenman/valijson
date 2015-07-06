@@ -755,14 +755,26 @@ public:
     virtual bool visit(const OneOfConstraint &constraint)
     {
         unsigned int numValidated = 0;
+        ValidationResults newResults;
+        ValidationResults *childResults = (results) ? &newResults : NULL;
 
         BOOST_FOREACH( const Schema &schema, constraint.schemas ) {
-            if (validateSchema(schema)) {
+            ValidationVisitor<AdapterType> v(target, context, strictTypes, childResults);
+            if (v.validateSchema(schema)) {
                 numValidated++;
             }
         }
 
-        if (numValidated != 1) {
+        if (numValidated == 0) {
+            if (results) {
+                ValidationResults::Error childError;
+                while (childResults->popError(childError)) {
+                    results->pushError(childError.context, childError.description);
+                }
+                results->pushError(context, "Failed to validate against any child schemas allowed by oneOf constraint.");
+            }
+            return false;
+        } else if (numValidated != 1) {
             if (results) {
                 results->pushError(context, "Failed to validate against exactly one child schema.");
             }
