@@ -162,6 +162,7 @@
 		6AA334931AB5103C00F1928B /* json_valueiterator.inl */ = {isa = PBXFileReference; lastKnownFileType = text; path = json_valueiterator.inl; sourceTree = "<group>"; };
 		6AA334941AB5103C00F1928B /* json_writer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = json_writer.cpp; sourceTree = "<group>"; };
 		6AA8A5DA17F8BDCA002728A0 /* test_fetch_document_callback.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_fetch_document_callback.cpp; sourceTree = "<group>"; };
+		6AAF16D21BC744BE002CB1AF /* picojson_adapter.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = picojson_adapter.hpp; sourceTree = "<group>"; };
 		6AB8FE8617E6A56F0028E147 /* external_schema.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = external_schema.cpp; sourceTree = "<group>"; };
 		6AB8FE9117E6A57E0028E147 /* custom_schema */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = custom_schema; sourceTree = BUILT_PRODUCTS_DIR; };
 		6AB8FE9217E6BE770028E147 /* test_jsoncpp_adapter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_jsoncpp_adapter.cpp; sourceTree = "<group>"; };
@@ -750,6 +751,7 @@
 				6AB8FEBE17E7F9420028E147 /* basic_adapter.hpp */,
 				6AC18C1717CC1BE100FE0EC9 /* frozen_value.hpp */,
 				6AC78BE017C5FC6A00674114 /* jsoncpp_adapter.hpp */,
+				6AAF16D21BC744BE002CB1AF /* picojson_adapter.hpp */,
 				6AC78BE117C5FC6A00674114 /* property_tree_adapter.hpp */,
 				6AC78BE217C5FC6A00674114 /* rapidjson_adapter.hpp */,
 			);
