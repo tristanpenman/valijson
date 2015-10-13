@@ -895,7 +895,9 @@ public:
                     return false;
                 }
             } else if (results) {
-                results->pushError(context, "Failed to match property name to any names in 'properties' or regexes in 'patternProperties'");
+                results->pushError(context, "Failed to match property name '" +
+                        propertyName + "' to any names in 'properties' or "
+                        "regexes in 'patternProperties'");
                 validated = false;
             } else {
                 return false;
