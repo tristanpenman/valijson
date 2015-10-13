@@ -54,8 +54,8 @@ int main(int argc, char *argv[])
     RapidJsonAdapter schemaDocumentAdapter(schemaDocument);
     try {
         parser.populateSchema(schemaDocumentAdapter, schema);
-    } catch (...) {
-        cerr << "Failed to parse schema." << endl;
+    } catch (std::exception &e) {
+        cerr << "Failed to parse schema: " << e.what() << endl;
         return 1;
     }
 
