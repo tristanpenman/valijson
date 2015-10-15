@@ -1,5 +1,5 @@
-#ifndef __VALIJSON_JSON_REFERENCE_HPP
-#define __VALIJSON_JSON_REFERENCE_HPP
+#ifndef __VALIJSON_INTERNAL_JSON_POINTER_HPP
+#define __VALIJSON_INTERNAL_JSON_POINTER_HPP
 
 #include <stdexcept>
 #include <string>
@@ -179,7 +179,7 @@ inline AdapterType resolveJsonPointer(
     return resolveJsonPointer(rootNode, jsonPointer, jsonPointer.begin());
 }
 
-} // namespace json_reference
+} // namespace json_pointer
 } // namespace internal
 } // namespace valijson
 
