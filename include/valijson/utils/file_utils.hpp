@@ -24,8 +24,13 @@ inline bool loadFile(const std::string &path, std::string &dest)
 
     // Allocate space for file contents
     file.seekg(0, std::ios::end);
+    const std::streamoff offset = file.tellg();
+    if (offset < 0 || offset > std::numeric_limits<unsigned int>::max()) {
+        return false;
+    }
+
     dest.clear();
-    dest.reserve(file.tellg());
+    dest.reserve(static_cast<unsigned int>(offset));
 
     // Assign file contents to destination string
     file.seekg(0, std::ios::beg);

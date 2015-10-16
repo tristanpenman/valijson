@@ -21,7 +21,7 @@ inline bool loadDocument(const std::string &path, Json::Value &document)
     bool parsingSuccessful = reader.parse(file, document);
     if (!parsingSuccessful) {
         std::cerr << "Jsoncpp parser failed to parse the document:" << std::endl
-                  << reader.getFormatedErrorMessages();
+                  << reader.getFormattedErrorMessages();
         return false;
     }
 

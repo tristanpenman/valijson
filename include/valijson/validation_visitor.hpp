@@ -651,7 +651,7 @@ public:
                 }
                 return false;
             }
-            d = i;
+            d = static_cast<double>(i);
         } else {
             return true;
         }

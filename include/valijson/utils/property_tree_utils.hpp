@@ -7,10 +7,14 @@
 
 #include <boost/property_tree/ptree.hpp>
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wshorten-64-to-32"
-#include <boost/property_tree/json_parser.hpp>
-#pragma clang diagnostic pop
+#if defined(__clang__)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wshorten-64-to-32"
+# include <boost/property_tree/json_parser.hpp>
+# pragma clang diagnostic pop
+#else
+# include <boost/property_tree/json_parser.hpp>
+#endif
 
 #include <boost/property_tree/detail/json_parser_error.hpp>
 

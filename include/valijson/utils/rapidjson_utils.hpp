@@ -22,7 +22,7 @@ inline bool loadDocument(const std::string &path, rapidjson::Document &document)
     if (document.HasParseError()) {
         std::cerr << "RapidJson failed to parse the document:" << std::endl;
         std::cerr << "Parse error: " << document.GetParseError() << std::endl;
-        std::cerr << "Near: " << file.substr(std::max(size_t(0), document.GetErrorOffset() - 20), 40) << std::endl;
+        std::cerr << "Near: " << file.substr((std::max)(size_t(0), document.GetErrorOffset() - 20), 40) << std::endl;
         return false;
     }
 

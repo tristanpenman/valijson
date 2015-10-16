@@ -1,6 +1,7 @@
 cmake_minimum_required (VERSION 2.6)
 project (valijson)
 
+add_definitions(-DBOOST_ALL_DYN_LINK)
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
@@ -15,6 +16,7 @@ add_library(jsoncpp
 )
 
 # Build local gtest
+set(gtest_force_shared_crt ON)
 add_subdirectory(thirdparty/gtest-1.7.0)
 
 # Include path
