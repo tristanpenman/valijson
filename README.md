@@ -8,7 +8,13 @@ Valijson provides a simple validation API that allows you load JSON Schemas, and
 
 ## Project Goals ##
 
-The goal of this project is to support validation of all constraints available in JSON Schema v4, while being competitive with the performance of hand-written JSON validators. The library is intended to include support for remote JSON References via a callback interface.
+The goal of this project is to support validation of all constraints available in JSON Schema v4, while being competitive with the performance of hand-written JSON validators.
+
+### JSON References ###
+
+The library is intended to include support for both local and remote JSON References. This feature is currently a work in progress and is subject to change. The current implementation attempts to resolve JSON References while parsing a JSON Schema, but this has proven ineffective for several use cases and loses some of the flexibility intended by the JSON Reference and JSON Schema specifications.
+
+There is a branch of the project that is intended to fix these issues by implementing a two phase schema parser. This parser would first build a graph from a JSON document by resolving any references, then load a JSON Schema model by traversing that graph. This will hopefully be complete in the near future.
 
 ## Usage ##
 
