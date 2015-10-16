@@ -40,6 +40,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		6A34698C1BD109A900C97DA2 /* json_reference.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = json_reference.hpp; path = internal/json_reference.hpp; sourceTree = "<group>"; };
 		6A477F8417D6BCBB0013571C /* libboost_regex-mt.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libboost_regex-mt.dylib"; path = "/usr/local/lib/libboost_regex-mt.dylib"; sourceTree = "<absolute>"; };
 		6A506D121AF884E100C2C818 /* draft-03.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "draft-03.json"; sourceTree = "<group>"; };
 		6A506D131AF884E100C2C818 /* draft-04.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "draft-04.json"; sourceTree = "<group>"; };
@@ -328,6 +329,7 @@
 			isa = PBXGroup;
 			children = (
 				6A506D1E1AF88D8700C2C818 /* json_pointer.hpp */,
+				6A34698C1BD109A900C97DA2 /* json_reference.hpp */,
 			);
 			name = internal;
 			sourceTree = "<group>";

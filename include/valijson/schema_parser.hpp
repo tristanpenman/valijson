@@ -12,6 +12,7 @@
 #include <valijson/adapters/adapter.hpp>
 #include <valijson/constraints/concrete_constraints.hpp>
 #include <valijson/internal/json_pointer.hpp>
+#include <valijson/internal/json_reference.hpp>
 #include <valijson/schema.hpp>
 
 namespace valijson {
@@ -306,55 +307,6 @@ private:
     }
 
     /**
-     * @brief   Extract URI from JSON Reference relative to the current schema
-     *
-     * @param   jsonRef  JSON Reference to extract from
-     * @param   schema   Schema that JSON Reference URI is relative to
-     *
-     * @return  Optional string containing URI
-     */
-    inline boost::optional<std::string> getJsonReferenceUri(
-        const std::string &jsonRef,
-        const Schema &schema)
-    {
-        const size_t ptrPos = jsonRef.find("#");
-        if (ptrPos == 0) {
-            // The JSON Reference does not contain a URI, but might contain a
-            // JSON Pointer that refers to the current document
-            return boost::none;
-        } else if (ptrPos != std::string::npos) {
-            // The JSON Reference contains a URI and possibly a JSON Pointer
-            return schema.resolveUri(jsonRef.substr(0, ptrPos));
-        }
-
-        // The entire JSON Reference should be treated as a URI
-        return schema.resolveUri(jsonRef);
-    }
-
-    /**
-     * @brief   Extract JSON Pointer portion of a JSON Reference
-     *
-     * @param   jsonRef  JSON Reference to extract from
-     *
-     * @return  string containing JSON Pointer
-     *
-     * @throw   std::runtime_error if the string does not contain a JSON Pointer
-     */
-    inline std::string getJsonReferencePointer(const std::string &jsonRef)
-    {
-        // Attempt to extract JSON Pointer if '#' character is present. Note
-        // that a valid pointer would contain at least a leading forward
-        // slash character.
-        const size_t ptrPos = jsonRef.find("#");
-        if (ptrPos != std::string::npos) {
-            return jsonRef.substr(ptrPos + 1);
-        }
-
-        throw std::runtime_error(
-                "JSON Reference value does not contain a valid JSON Pointer");
-    }
-
-    /**
      * @brief  Populate a schema using a JSON Reference
      *
      * Allows JSON references to be used with minimal changes to the parser
@@ -386,10 +338,11 @@ private:
         // Returns a document URI if the reference points somewhere
         // other than the current document
         const boost::optional<std::string> documentUri =
-                getJsonReferenceUri(jsonRef, schema);
+                internal::json_reference::getJsonReferenceUri(jsonRef);
 
         // Extract JSON Pointer from JSON Reference
-        const std::string jsonPointer = getJsonReferencePointer(jsonRef);
+        const std::string jsonPointer =
+                internal::json_reference::getJsonReferencePointer(jsonRef);
 
         if (documentUri) {
             // Resolve reference against remote document
