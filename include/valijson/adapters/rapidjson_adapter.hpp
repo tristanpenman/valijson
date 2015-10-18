@@ -767,29 +767,35 @@ inline RapidJsonObjectMemberIterator RapidJsonObject::end() const
 inline RapidJsonObjectMemberIterator RapidJsonObject::find(
     const std::string &propertyName) const
 {
-    const rapidjson::Value::ConstMemberIterator foundItr =
-            value.FindMember(propertyName.c_str());
-
-    // Hack to support older versions of rapidjson that use pointers as the
-    // built in iterator type. In those versions, the FindMember function
+    // Hack to support older versions of rapidjson where pointers are used as
+    // the built in iterator type. In those versions, the FindMember function
     // would return a null pointer when the requested member could not be
     // found. After calling FindMember on an empty object, we compare the
     // result against what we would expect if a non-null-pointer iterator was
     // returned.
-    //
-    // Note that this value cannot be stored statically, as that would not be
-    // thread-safe. If there were performance measurements to justify it, this
-    // could be cached in the RapidJsonObject instance.
-    //
     const rapidjson::Value empty(rapidjson::kObjectType);
     const rapidjson::Value::ConstMemberIterator maybeEnd = empty.FindMember("");
     if (maybeEnd != empty.MemberBegin() + 1) {
-        // At this point, we assume that a null pointer iterator has been
-        // returned by FindMember for any member that cannot be found.
-        return foundItr == maybeEnd ? value.MemberEnd() : foundItr;
+        // In addition to the pointer-based iterator issue, RapidJson's internal
+        // string comparison code seemed to rely on the query string being
+        // initialised to a length greater than or equal to that of the
+        // properties being compared. We get around this by implementing our
+        // own linear scan.
+        const size_t propertyNameLength = propertyName.length();
+        for (rapidjson::Value::ConstMemberIterator itr = value.MemberBegin();
+                itr != value.MemberEnd(); ++itr) {
+            const size_t memberNameLength = itr->name.GetStringLength();
+            if (memberNameLength == propertyNameLength &&
+                    strncmp(itr->name.GetString(), propertyName.c_str(),
+                        itr->name.GetStringLength()) == 0) {
+                return itr;
+            }
+        }
+
+        return value.MemberEnd();
     }
 
-    return foundItr;
+    return value.FindMember(propertyName.c_str());      // Times are good.
 }
 
 }  // namespace adapters
