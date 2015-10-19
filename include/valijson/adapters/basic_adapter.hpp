@@ -330,13 +330,14 @@ public:
         } else if (value.isString()) {
             std::string s;
             if (value.getString(s)) {
-                std::istringstream i(s);
-                double x;
-                char c;
-                if (!(!(i >> x) || i.get(c))) {
-                    result = x;
-                    return true;
+                const char *b = s.c_str();
+                char *e = NULL;
+                double x = strtod(b, &e);
+                if (e == b || e != b + s.length()) {
+                    return false;
                 }
+                result = x;
+                return true;
             }
         }
 
@@ -753,13 +754,10 @@ public:
         } else if (value.isString()) {
             std::string s;
             if (value.getString(s)) {
-                std::istringstream i(s);
-                double x;
-                char c;
-                if (!(i >> x) || i.get(c)) {
-                    return false;
-                }
-                return true;
+                const char *b = s.c_str();
+                char *e = NULL;
+                strtod(b, &e);
+                return e != b && e == b + s.length();
             }
         }
 
