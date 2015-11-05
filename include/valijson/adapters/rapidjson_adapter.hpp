@@ -40,11 +40,13 @@
 namespace valijson {
 namespace adapters {
 
-class RapidJsonAdapter;
-class RapidJsonArrayValueIterator;
-class RapidJsonObjectMemberIterator;
+template<class ValueType = rapidjson::Value> class RapidJsonAdapter;
+template<class ValueType = rapidjson::Value> class RapidJsonArrayValueIterator;
+template<class ValueType = rapidjson::Value> class RapidJsonObjectMemberIterator;
 
-typedef std::pair<std::string, RapidJsonAdapter> RapidJsonObjectMember;
+template<class ValueType = rapidjson::Value>
+class RapidJsonObjectMember : public std::pair<std::string, RapidJsonAdapter<ValueType> >
+{ };
 
 /**
  * @brief   Light weight wrapper for a RapidJson array value.
@@ -57,12 +59,13 @@ typedef std::pair<std::string, RapidJsonAdapter> RapidJsonObjectMember;
  * RapidJson value, assumed to be an array, so there is very little overhead
  * associated with copy construction and passing by value.
  */
+template<class ValueType = rapidjson::Value>
 class RapidJsonArray
 {
 public:
 
-    typedef RapidJsonArrayValueIterator const_iterator;
-    typedef RapidJsonArrayValueIterator iterator;
+    typedef RapidJsonArrayValueIterator<ValueType> const_iterator;
+    typedef RapidJsonArrayValueIterator<ValueType> iterator;
 
     /// Construct a RapidJsonArray referencing an empty array singleton.
     RapidJsonArray()
@@ -77,7 +80,7 @@ public:
      * Note that this constructor will throw an exception if the value is not
      * an array.
      */
-    RapidJsonArray(const rapidjson::Value &value)
+    RapidJsonArray(const ValueType &value)
       : value(value)
     {
         if (!value.IsArray()) {
@@ -86,10 +89,10 @@ public:
     }
 
     /// Return an iterator for the first element in the array.
-    RapidJsonArrayValueIterator begin() const;
+    iterator begin() const;
 
     /// Return an iterator for one-past the last element of the array.
-    RapidJsonArrayValueIterator end() const;
+    iterator end() const;
 
     /// Return the number of elements in the array
     size_t size() const
@@ -104,14 +107,14 @@ private:
      *
      * Note that the value returned by this function is a singleton.
      */
-    static const rapidjson::Value & emptyArray()
+    static const ValueType & emptyArray()
     {
-        static const rapidjson::Value array(rapidjson::kArrayType);
+        static const ValueType array(rapidjson::kArrayType);
         return array;
     }
 
     /// Reference to the contained value
-    const rapidjson::Value &value;
+    const ValueType &value;
 };
 
 /**
@@ -125,12 +128,13 @@ private:
  * RapidJson value, assumed to be an object, so there is very little overhead
  * associated with copy construction and passing by value.
  */
+template <class ValueType = rapidjson::Value>
 class RapidJsonObject
 {
 public:
 
-    typedef RapidJsonObjectMemberIterator const_iterator;
-    typedef RapidJsonObjectMemberIterator iterator;
+    typedef RapidJsonObjectMemberIterator<ValueType> const_iterator;
+    typedef RapidJsonObjectMemberIterator<ValueType> iterator;
 
     /// Construct a RapidJsonObject referencing an empty object singleton.
     RapidJsonObject()
@@ -145,7 +149,7 @@ public:
      * Note that this constructor will throw an exception if the value is not
      * an object.
      */
-    RapidJsonObject(const rapidjson::Value &value)
+    RapidJsonObject(const ValueType &value)
       : value(value)
     {
         if (!value.IsObject()) {
@@ -159,7 +163,7 @@ public:
      * The iterator return by this function is effectively a wrapper around
      * the pointer value returned by the underlying RapidJson implementation.
      */
-    RapidJsonObjectMemberIterator begin() const;
+    iterator begin() const;
 
     /**
      * @brief   Return an iterator for an invalid object member that indicates
@@ -168,7 +172,7 @@ public:
      * The iterator return by this function is effectively a wrapper around
      * the pointer value returned by the underlying RapidJson implementation.
      */
-    RapidJsonObjectMemberIterator end() const;
+    iterator end() const;
 
     /**
      * @brief   Return an iterator for the object member with the specified
@@ -179,7 +183,7 @@ public:
      *
      * @param   property   property name to search for
      */
-    RapidJsonObjectMemberIterator find(const std::string &property) const;
+    iterator find(const std::string &property) const;
 
     /// Returns the number of members belonging to this object.
     size_t size() const
@@ -194,14 +198,14 @@ private:
      *
      * Note that the value returned by this function is a singleton.
      */
-    static const rapidjson::Value & emptyObject()
+    static const ValueType & emptyObject()
     {
-        static rapidjson::Value object(rapidjson::kObjectType);
+        static ValueType object(rapidjson::kObjectType);
         return object;
     }
 
     /// Reference to the contained object
-    const rapidjson::Value &value;
+    const ValueType &value;
 };
 
 /**
@@ -215,6 +219,7 @@ private:
  *
  * @see FrozenValue
  */
+template<class ValueType = rapidjson::Value>
 class RapidJsonFrozenValue: public FrozenValue
 {
 public:
@@ -234,10 +239,10 @@ public:
      *
      * @param   source  the RapidJson value to be copied
      */
-    explicit RapidJsonFrozenValue(const rapidjson::Value &source)
+    explicit RapidJsonFrozenValue(const ValueType &source)
     {
         if (!copy(source, value, allocator)) {
-            throw std::runtime_error("Failed to copy rapidjson::Value");
+            throw std::runtime_error("Failed to copy ValueType");
         }
     }
 
@@ -262,8 +267,8 @@ private:
      * @returns true if copied successfully, false otherwise.
      */
     template<typename Allocator>
-    static bool copy(const rapidjson::Value &source,
-                     rapidjson::Value &dest,
+    static bool copy(const ValueType &source,
+                     ValueType &dest,
                      Allocator &allocator)
     {
         switch (source.GetType()) {
@@ -278,18 +283,18 @@ private:
             return true;
         case rapidjson::kObjectType:
             dest.SetObject();
-            for (rapidjson::Value::ConstMemberIterator itr = source.MemberBegin();
+            for (typename ValueType::ConstMemberIterator itr = source.MemberBegin();
                 itr != source.MemberEnd(); ++itr) {
-                rapidjson::Value name(itr->name.GetString(), itr->name.GetStringLength(), allocator);
-                rapidjson::Value value;
+                ValueType name(itr->name.GetString(), itr->name.GetStringLength(), allocator);
+                ValueType value;
                 copy(itr->value, value, allocator);
                 dest.AddMember(name, value, allocator);
             }
             return true;
         case rapidjson::kArrayType:
             dest.SetArray();
-            for (rapidjson::Value::ConstValueIterator itr = source.Begin(); itr != source.End(); ++itr) {
-                rapidjson::Value value;
+            for (typename ValueType::ConstValueIterator itr = source.Begin(); itr != source.End(); ++itr) {
+                ValueType value;
                 copy(*itr, value, allocator);
                 dest.PushBack(value, allocator);
             }
@@ -318,10 +323,10 @@ private:
     }
 
     /// Local memory allocator for RapidJson value
-    rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator> allocator;
+    typename ValueType::AllocatorType allocator;
 
     /// Local RapidJson value
-    rapidjson::Value value;
+    ValueType value;
 };
 
 /**
@@ -338,6 +343,7 @@ private:
  *
  * @see BasicAdapter
  */
+template<class ValueType = rapidjson::Value>
 class RapidJsonValue
 {
 public:
@@ -347,7 +353,7 @@ public:
       : value(emptyObject()) { }
 
     /// Construct a wrapper for a specific RapidJson value
-    RapidJsonValue(const rapidjson::Value &value)
+    RapidJsonValue(const ValueType &value)
       : value(value) { }
 
     /**
@@ -359,7 +365,7 @@ public:
      */
     FrozenValue * freeze() const
     {
-        return new RapidJsonFrozenValue(value);
+        return new RapidJsonFrozenValue<ValueType>(value);
     }
 
     /**
@@ -371,10 +377,10 @@ public:
      *
      * Otherwise it will return boost::none.
      */
-    boost::optional<RapidJsonArray> getArrayOptional() const
+    boost::optional<RapidJsonArray<ValueType> > getArrayOptional() const
     {
         if (value.IsArray()) {
-            return boost::make_optional(RapidJsonArray(value));
+            return boost::make_optional(RapidJsonArray<ValueType>(value));
         }
 
         return boost::none;
@@ -449,10 +455,10 @@ public:
      *
      * Otherwise it will return boost::none.
      */
-    boost::optional<RapidJsonObject> getObjectOptional() const
+    boost::optional<RapidJsonObject<ValueType> > getObjectOptional() const
     {
         if (value.IsObject()) {
-            return boost::make_optional(RapidJsonObject(value));
+            return boost::make_optional(RapidJsonObject<ValueType>(value));
         }
 
         return boost::none;
@@ -538,14 +544,14 @@ public:
 private:
 
     /// Return a reference to an empty object singleton
-    static const rapidjson::Value & emptyObject()
+    static const ValueType & emptyObject()
     {
-        static const rapidjson::Value object(rapidjson::kObjectType);
+        static const ValueType object(rapidjson::kObjectType);
         return object;
     }
 
     /// Reference to the contained RapidJson value.
-    const rapidjson::Value &value;
+    const ValueType &value;
 };
 
 /**
@@ -557,22 +563,31 @@ private:
  * @see Adapter
  * @see BasicAdapter
  */
+template<class ValueType>
 class RapidJsonAdapter:
-    public BasicAdapter<RapidJsonAdapter,
-                        RapidJsonArray,
-                        RapidJsonObjectMember,
-                        RapidJsonObject,
-                        RapidJsonValue>
+    public BasicAdapter<RapidJsonAdapter<ValueType>,
+                        RapidJsonArray<ValueType>,
+                        RapidJsonObjectMember<ValueType>,
+                        RapidJsonObject<ValueType>,
+                        RapidJsonValue<ValueType> >
 {
 public:
 
     /// Construct a RapidJsonAdapter that contains an empty object
     RapidJsonAdapter()
-      : BasicAdapter() { }
+      : BasicAdapter<RapidJsonAdapter<ValueType>,
+                        RapidJsonArray<ValueType>,
+                        RapidJsonObjectMember<ValueType>,
+                        RapidJsonObject<ValueType>,
+                        RapidJsonValue<ValueType> >() { }
 
     /// Construct a RapidJsonAdapter containing a specific RapidJson value
-    RapidJsonAdapter(const rapidjson::Value &value)
-      : BasicAdapter(value) { }
+    RapidJsonAdapter(const ValueType &value)
+      : BasicAdapter<RapidJsonAdapter<ValueType>,
+                        RapidJsonArray<ValueType>,
+                        RapidJsonObjectMember<ValueType>,
+                        RapidJsonObject<ValueType>,
+                        RapidJsonValue<ValueType> >(value) { }
 };
 
 /**
@@ -584,12 +599,13 @@ public:
  *
  * @see RapidJsonArray
  */
+template<class ValueType>
 class RapidJsonArrayValueIterator:
     public boost::iterator_facade<
-        RapidJsonArrayValueIterator,         // name of derived type
-        RapidJsonAdapter,                    // value type
-        boost::bidirectional_traversal_tag,  // bi-directional iterator
-        RapidJsonAdapter>                    // type returned when dereferenced
+        RapidJsonArrayValueIterator<ValueType>, // name of derived type
+        RapidJsonAdapter<ValueType>,            // value type
+        boost::bidirectional_traversal_tag,     // bi-directional iterator
+        RapidJsonAdapter<ValueType> >           // type returned when dereferenced
 {
 public:
 
@@ -600,14 +616,14 @@ public:
      * @param   itr  RapidJson iterator to store
      */
     RapidJsonArrayValueIterator(
-        const rapidjson::Value::ConstValueIterator &itr)
+        const typename ValueType::ConstValueIterator &itr)
       : itr(itr) { }
 
     /// Returns a RapidJsonAdapter that contains the value of the current
     /// element.
-    RapidJsonAdapter dereference() const
+    RapidJsonAdapter<ValueType> dereference() const
     {
-        return RapidJsonAdapter(*itr);
+        return RapidJsonAdapter<ValueType>(*itr);
     }
 
     /**
@@ -648,7 +664,7 @@ public:
 
 private:
 
-    rapidjson::Value::ConstValueIterator itr;
+    typename ValueType::ConstValueIterator itr;
 };
 
 /**
@@ -661,12 +677,13 @@ private:
  * @see RapidJsonObject
  * @see RapidJsonObjectMember
  */
+template<class ValueType>
 class RapidJsonObjectMemberIterator:
     public boost::iterator_facade<
-        RapidJsonObjectMemberIterator,       // name of derived type
-        RapidJsonObjectMember,               // value type
-        boost::bidirectional_traversal_tag,  // bi-directional iterator
-        RapidJsonObjectMember>               // type returned when dereferenced
+        RapidJsonObjectMemberIterator<ValueType>, // name of derived type
+        RapidJsonObjectMember<ValueType>,         // value type
+        boost::bidirectional_traversal_tag,       // bi-directional iterator
+        RapidJsonObjectMember<ValueType> >        // type returned when dereferenced
 {
 public:
 
@@ -676,16 +693,16 @@ public:
      * @param   itr  RapidJson iterator to store
      */
     RapidJsonObjectMemberIterator(
-        const rapidjson::Value::ConstMemberIterator &itr)
+        const typename ValueType::ConstMemberIterator &itr)
       : itr(itr) { }
 
     /**
      * @brief   Returns a RapidJsonObjectMember that contains the key and value
      *          belonging to the object member identified by the iterator.
      */
-    RapidJsonObjectMember dereference() const
+    RapidJsonObjectMember<ValueType> dereference() const
     {
-        return RapidJsonObjectMember(
+        return RapidJsonObjectMember<ValueType>(
             std::string(itr->name.GetString(), itr->name.GetStringLength()),
             itr->value);
     }
@@ -724,12 +741,12 @@ public:
 private:
 
     /// Iternal copy of the original RapidJson iterator
-    rapidjson::Value::ConstMemberIterator itr;
+    typename ValueType::ConstMemberIterator itr;
 };
 
 /// RapidJson specialisation of the AdapterTraits template struct.
 template<>
-struct AdapterTraits<valijson::adapters::RapidJsonAdapter>
+struct AdapterTraits<valijson::adapters::RapidJsonAdapter<rapidjson::Value> >
 {
     typedef rapidjson::Document DocumentType;
 
@@ -739,32 +756,38 @@ struct AdapterTraits<valijson::adapters::RapidJsonAdapter>
     }
 };
 
-inline bool RapidJsonFrozenValue::equalTo(const Adapter &other, bool strict) const
+template<class ValueType>
+inline bool RapidJsonFrozenValue<ValueType>::equalTo(const Adapter &other, bool strict) const
 {
-    return RapidJsonAdapter(value).equalTo(other, strict);
+    return RapidJsonAdapter<ValueType>(value).equalTo(other, strict);
 }
 
-inline RapidJsonArrayValueIterator RapidJsonArray::begin() const
+template<class ValueType>
+inline typename RapidJsonArray<ValueType>::iterator RapidJsonArray<ValueType>::begin() const
 {
     return value.Begin();
 }
 
-inline RapidJsonArrayValueIterator RapidJsonArray::end() const
+template<class ValueType>
+inline typename RapidJsonArray<ValueType>::iterator RapidJsonArray<ValueType>::end() const
 {
     return value.End();
 }
 
-inline RapidJsonObjectMemberIterator RapidJsonObject::begin() const
+template<class ValueType>
+inline typename RapidJsonObject<ValueType>::iterator RapidJsonObject<ValueType>::begin() const
 {
     return value.MemberBegin();
 }
 
-inline RapidJsonObjectMemberIterator RapidJsonObject::end() const
+template<class ValueType>
+inline typename RapidJsonObject<ValueType>::iterator RapidJsonObject<ValueType>::end() const
 {
     return value.MemberEnd();
 }
 
-inline RapidJsonObjectMemberIterator RapidJsonObject::find(
+template<class ValueType>
+inline typename RapidJsonObject<ValueType>::iterator RapidJsonObject<ValueType>::find(
     const std::string &propertyName) const
 {
     // Hack to support older versions of rapidjson where pointers are used as
@@ -773,8 +796,8 @@ inline RapidJsonObjectMemberIterator RapidJsonObject::find(
     // found. After calling FindMember on an empty object, we compare the
     // result against what we would expect if a non-null-pointer iterator was
     // returned.
-    const rapidjson::Value empty(rapidjson::kObjectType);
-    const rapidjson::Value::ConstMemberIterator maybeEnd = empty.FindMember("");
+    const ValueType empty(rapidjson::kObjectType);
+    const typename ValueType::ConstMemberIterator maybeEnd = empty.FindMember("");
     if (maybeEnd != empty.MemberBegin() + 1) {
         // In addition to the pointer-based iterator issue, RapidJson's internal
         // string comparison code seemed to rely on the query string being
@@ -782,7 +805,7 @@ inline RapidJsonObjectMemberIterator RapidJsonObject::find(
         // properties being compared. We get around this by implementing our
         // own linear scan.
         const size_t propertyNameLength = propertyName.length();
-        for (rapidjson::Value::ConstMemberIterator itr = value.MemberBegin();
+        for (typename ValueType::ConstMemberIterator itr = value.MemberBegin();
                 itr != value.MemberEnd(); ++itr) {
             const size_t memberNameLength = itr->name.GetStringLength();
             if (memberNameLength == propertyNameLength &&
