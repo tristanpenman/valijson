@@ -811,7 +811,7 @@ public:
             }
         }
 
-        return true;
+        return false;
     }
 
     virtual bool maybeString() const
