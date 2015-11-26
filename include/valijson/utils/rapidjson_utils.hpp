@@ -8,8 +8,8 @@
 namespace valijson {
 namespace utils {
 
-template<class DocumentType>
-inline bool loadDocument(const std::string &path, DocumentType &document)
+template<typename Encoding, typename Allocator>
+inline bool loadDocument(const std::string &path, rapidjson::GenericDocument<Encoding, Allocator> &document)
 {
     // Load schema JSON from file
     std::string file;
@@ -19,7 +19,7 @@ inline bool loadDocument(const std::string &path, DocumentType &document)
     }
 
     // Parse schema
-    document.Parse<0>(file.c_str());
+    document.template Parse<0>(file.c_str());
     if (document.HasParseError()) {
         std::cerr << "RapidJson failed to parse the document:" << std::endl;
         std::cerr << "Parse error: " << document.GetParseError() << std::endl;
