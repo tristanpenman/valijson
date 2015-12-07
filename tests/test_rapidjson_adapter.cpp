@@ -10,7 +10,8 @@ class TestRapidJsonAdapter : public testing::Test
 
 };
 
-TEST_F(TestRapidJsonAdapter, BasicArrayIteration)
+template<class ValueType>
+void testBasicArrayIteration()
 {
     const unsigned int numElements = 10;
 
@@ -47,7 +48,8 @@ TEST_F(TestRapidJsonAdapter, BasicArrayIteration)
     EXPECT_EQ(numElements, expectedValue);
 }
 
-TEST_F(TestRapidJsonAdapter, BasicObjectIteration)
+template<typename ValueType>
+void testBasicObjectIteration()
 {
     const unsigned int numElements = 10;
 
@@ -85,4 +87,24 @@ TEST_F(TestRapidJsonAdapter, BasicObjectIteration)
 
     // Ensure that the correct number of elements were iterated over
     EXPECT_EQ( numElements, expectedValue );
+}
+
+TEST_F(TestRapidJsonAdapter, BasicArrayIteration)
+{
+    // Test using default RapidJson value type, which uses MemoryPoolAllocator
+    testBasicArrayIteration<rapidjson::Value>();
+
+    // Test using value type based on CrtAllocator
+    testBasicArrayIteration<rapidjson::GenericValue<rapidjson::UTF8<>,
+            rapidjson::CrtAllocator> >();
+}
+
+TEST_F(TestRapidJsonAdapter, BasicObjectIteration)
+{
+    // Test using default RapidJson value type, which uses MemoryPoolAllocator
+    testBasicObjectIteration<rapidjson::Value>();
+
+    // Test using value type based on CrtAllocator
+    testBasicObjectIteration<rapidjson::GenericValue<rapidjson::UTF8<>,
+            rapidjson::CrtAllocator> >();
 }

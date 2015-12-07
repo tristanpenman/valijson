@@ -125,6 +125,13 @@ TEST_F(TestAdapterComparison, JsonCppVsJsonCpp)
         valijson::adapters::JsonCppAdapter>();
 }
 
+TEST_F(TestAdapterComparison, JsonCppVsPicoJson)
+{
+    testComparison<
+        valijson::adapters::JsonCppAdapter,
+        valijson::adapters::PicoJsonAdapter>();
+}
+
 TEST_F(TestAdapterComparison, JsonCppVsPropertyTree)
 {
     testComparison<
@@ -139,10 +146,19 @@ TEST_F(TestAdapterComparison, JsonCppVsRapidJson)
         valijson::adapters::RapidJsonAdapter>();
 }
 
-TEST_F(TestAdapterComparison, JsonCppVsPicoJson)
+TEST_F(TestAdapterComparison, JsonCppVsRapidJsonCrtAlloc)
 {
     testComparison<
         valijson::adapters::JsonCppAdapter,
+        valijson::adapters::GenericRapidJsonAdapter<
+            rapidjson::GenericValue<rapidjson::UTF8<>,
+            rapidjson::CrtAllocator> > >();
+}
+
+TEST_F(TestAdapterComparison, PropertyTreeVsPicoJson)
+{
+    testComparison<
+        valijson::adapters::PropertyTreeAdapter,
         valijson::adapters::PicoJsonAdapter>();
 }
 
@@ -160,11 +176,13 @@ TEST_F(TestAdapterComparison, PropertyTreeVsRapidJson)
         valijson::adapters::RapidJsonAdapter>();
 }
 
-TEST_F(TestAdapterComparison, PropertyTreeVsPicoJson)
+TEST_F(TestAdapterComparison, PropertyTreeVsRapidJsonCrtAlloc)
 {
     testComparison<
         valijson::adapters::PropertyTreeAdapter,
-        valijson::adapters::PicoJsonAdapter>();
+        valijson::adapters::GenericRapidJsonAdapter<
+            rapidjson::GenericValue<rapidjson::UTF8<>,
+            rapidjson::CrtAllocator> > >();
 }
 
 TEST_F(TestAdapterComparison, RapidJsonVsRapidJson)
@@ -172,6 +190,15 @@ TEST_F(TestAdapterComparison, RapidJsonVsRapidJson)
     testComparison<
         valijson::adapters::RapidJsonAdapter,
         valijson::adapters::RapidJsonAdapter>();
+}
+
+TEST_F(TestAdapterComparison, RapidJsonVsRapidJsonCrtAlloc)
+{
+    testComparison<
+        valijson::adapters::RapidJsonAdapter,
+        valijson::adapters::GenericRapidJsonAdapter<
+            rapidjson::GenericValue<rapidjson::UTF8<>,
+            rapidjson::CrtAllocator> > >();
 }
 
 TEST_F(TestAdapterComparison, RapidJsonVsPicoJson)
@@ -186,4 +213,24 @@ TEST_F(TestAdapterComparison, PicoJsonVsPicoJson)
     testComparison<
         valijson::adapters::PicoJsonAdapter,
         valijson::adapters::PicoJsonAdapter>();
+}
+
+TEST_F(TestAdapterComparison, PicoJsonVsRapidJsonCrtAlloc)
+{
+    testComparison<
+        valijson::adapters::PicoJsonAdapter,
+        valijson::adapters::GenericRapidJsonAdapter<
+            rapidjson::GenericValue<rapidjson::UTF8<>,
+            rapidjson::CrtAllocator> > >();
+}
+
+TEST_F(TestAdapterComparison, RapidJsonCrtAllocVsRapidJsonCrtAlloc)
+{
+    testComparison<
+        valijson::adapters::GenericRapidJsonAdapter<
+            rapidjson::GenericValue<rapidjson::UTF8<>,
+            rapidjson::CrtAllocator> >,
+        valijson::adapters::GenericRapidJsonAdapter<
+            rapidjson::GenericValue<rapidjson::UTF8<>,
+            rapidjson::CrtAllocator> > >();
 }

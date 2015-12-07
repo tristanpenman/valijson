@@ -868,6 +868,19 @@ struct AdapterTraits<valijson::adapters::RapidJsonAdapter>
     }
 };
 
+template<>
+struct AdapterTraits<valijson::adapters::GenericRapidJsonAdapter<
+    rapidjson::GenericValue<rapidjson::UTF8<>, rapidjson::CrtAllocator> > >
+{
+    typedef rapidjson::GenericDocument<rapidjson::UTF8<>,
+        rapidjson::CrtAllocator> DocumentType;
+
+    static std::string adapterName()
+    {
+        return "GenericRapidJsonAdapter (using CrtAllocator)";
+    }
+};
+
 }  // namespace adapters
 }  // namespace valijson
 
