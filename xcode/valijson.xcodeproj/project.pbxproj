@@ -54,6 +54,9 @@
 		6A506D1C1AF884E100C2C818 /* rfc6901-json-pointer.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "rfc6901-json-pointer.txt"; sourceTree = "<group>"; };
 		6A506D1E1AF88D8700C2C818 /* json_pointer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = json_pointer.hpp; path = internal/json_pointer.hpp; sourceTree = "<group>"; };
 		6A506D1F1AF88E5D00C2C818 /* test_json_pointer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_json_pointer.cpp; sourceTree = "<group>"; };
+		6A6962F81C1C113F00089239 /* folderInteger.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = folderInteger.json; sourceTree = "<group>"; };
+		6A6962F91C1C113F00089239 /* integer.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = integer.json; sourceTree = "<group>"; };
+		6A6962FA1C1C113F00089239 /* subSchemas.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = subSchemas.json; sourceTree = "<group>"; };
 		6A725F3617F61A4400D6B2FF /* array_doubles_10_20_30_40.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = array_doubles_10_20_30_40.json; sourceTree = "<group>"; };
 		6A725F3717F61A4400D6B2FF /* array_doubles_1_2_3.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = array_doubles_1_2_3.json; sourceTree = "<group>"; };
 		6A725F3817F61A4400D6B2FF /* array_doubles_1_2_3_4.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = array_doubles_1_2_3_4.json; sourceTree = "<group>"; };
@@ -334,6 +337,24 @@
 			name = internal;
 			sourceTree = "<group>";
 		};
+		6A6962F61C1C113F00089239 /* remotes */ = {
+			isa = PBXGroup;
+			children = (
+				6A6962F71C1C113F00089239 /* folder */,
+				6A6962F91C1C113F00089239 /* integer.json */,
+				6A6962FA1C1C113F00089239 /* subSchemas.json */,
+			);
+			path = remotes;
+			sourceTree = "<group>";
+		};
+		6A6962F71C1C113F00089239 /* folder */ = {
+			isa = PBXGroup;
+			children = (
+				6A6962F81C1C113F00089239 /* folderInteger.json */,
+			);
+			path = folder;
+			sourceTree = "<group>";
+		};
 		6A725F3517F61A4400D6B2FF /* documents */ = {
 			isa = PBXGroup;
 			children = (
@@ -431,6 +452,7 @@
 		6A8699E517CD8641006864FA /* JSON-Schema-Test-Suite */ = {
 			isa = PBXGroup;
 			children = (
+				6A6962F61C1C113F00089239 /* remotes */,
 				6A8699EA17CD8641006864FA /* tests */,
 			);
 			path = "JSON-Schema-Test-Suite";
