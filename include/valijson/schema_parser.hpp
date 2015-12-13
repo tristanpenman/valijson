@@ -68,21 +68,15 @@ public:
      * @param  node          Reference to node to parse
      * @param  schema        Reference to Schema to populate
      * @param  fetchDoc      Function to fetch remote JSON documents (optional)
-     * @param  parentSchema  Optional pointer to the parent schema, used to
-     *                       support required keyword in Draft 3.
-     * @param  ownName       Optional pointer to a node name, used to support
-     *                       the 'required' keyword in Draft 3.
      */
     template<typename AdapterType>
     void populateSchema(
         const AdapterType &node,
         Schema &schema,
         boost::optional<typename FetchDocumentFunction<AdapterType>::Type>
-                fetchDoc = boost::none,
-        Schema *parentSchema = NULL,
-        const std::string *ownName = NULL)
+                fetchDoc = boost::none)
     {
-        populateSchema(node, node, schema, fetchDoc, parentSchema, ownName);
+        populateSchema(node, node, schema, boost::none, fetchDoc, NULL, NULL);
     }
 
 private:
