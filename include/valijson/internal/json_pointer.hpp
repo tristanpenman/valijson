@@ -1,6 +1,7 @@
 #ifndef __VALIJSON_INTERNAL_JSON_POINTER_HPP
 #define __VALIJSON_INTERNAL_JSON_POINTER_HPP
 
+#include <cerrno>
 #include <stdexcept>
 #include <string>
 
@@ -15,14 +16,45 @@ namespace internal {
 namespace json_pointer {
 
 /**
+ * @brief   Return the char value corresponding to a 2-digit hexadecimal string
+ *
+ * @throws  std::runtime_error for strings that are not exactly two characters
+ *          in length and for strings that contain non-hexadecimal characters
+ *
+ * @return  decoded char value corresponding to the hexadecimal string
+ */
+inline char decodePercentEncodedChar(const std::string &digits)
+{
+    if (digits.length() != 2) {
+        throw std::runtime_error("Failed to decode %-encoded character '" +
+                digits + "' due to unexpected number of characters; "
+                "expected two characters");
+    }
+
+    errno = 0;
+    const char *begin = digits.c_str();
+    char *end = NULL;
+    const unsigned long value = strtoul(begin, &end, 16);
+    if (end != begin && *end != '\0') {
+        throw std::runtime_error("Failed to decode %-encoded character '" +
+                digits + "'");
+    }
+
+    return char(value);
+}
+
+/**
  * @brief   Extract and transform the token between two iterators
  *
  * This function is responsible for extracting a JSON Reference token from
  * between two iterators, and performing any necessary transformations, before
- * returning the resulting string. Its main purpose is to replace escaped
- * character sequences.
+ * returning the resulting string. Its main purpose is to replace the escaped
+ * character sequences defined in the RFC-6901 (JSON Pointer), and to decode
+ * %-encoded character sequences defined in RFC-3986 (URI).
  *
- * From the JSON Pointer specification (RFC 6901, April 2013):
+ * The encoding used in RFC-3986 should be familiar to many developers, but
+ * the escaped character sequences used in JSON Pointers may be less so. From
+ * the JSON Pointer specification (RFC 6901, April 2013):
  *
  *    Evaluation of each reference token begins by decoding any escaped
  *    character sequence.  This is performed by first transforming any
@@ -44,8 +76,23 @@ inline std::string extractReferenceToken(std::string::const_iterator begin,
 {
     std::string token(begin, end);
 
+    // Replace JSON Pointer-specific escaped character sequences
     boost::replace_all(token, "~1", "/");
     boost::replace_all(token, "~0", "~");
+
+    // Replace %-encoded character sequences with their actual characters
+    for (size_t n = token.find('%'); n != std::string::npos;
+            n = token.find('%', n + 1)) {
+
+        try {
+            const char c = decodePercentEncodedChar(token.substr(n + 1, 2));
+            token.replace(n, 3, &c, 1);
+
+        } catch (const std::runtime_error &e) {
+            throw std::runtime_error(
+                    std::string(e.what()) + "; in token: " + token);
+        }
+    }
 
     return token;
 }
