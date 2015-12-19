@@ -64,6 +64,7 @@ class GenericRapidJsonArrayValueIterator;
 template<class ValueType = rapidjson::Value>
 class GenericRapidJsonObjectMemberIterator;
 
+/// Container for a property name and an associated RapidJson value
 template<class ValueType = rapidjson::Value>
 class GenericRapidJsonObjectMember :
         public std::pair<std::string, GenericRapidJsonAdapter<ValueType> >
@@ -854,8 +855,8 @@ typedef GenericRapidJsonObjectMemberIterator<> RapidJsonObjectMemberIterator;
 typedef GenericRapidJsonValue<> RapidJsonValue;
 
 /**
- * RapidJson specialisation of the AdapterTraits template struct, used
- * primarily for producing better error messages in tests.
+ * @brief  Specialisation of the AdapterTraits template struct for a
+ *         RapidJsonAdapter that uses a pool allocator
  */
 template<>
 struct AdapterTraits<valijson::adapters::RapidJsonAdapter>
@@ -868,9 +869,15 @@ struct AdapterTraits<valijson::adapters::RapidJsonAdapter>
     }
 };
 
+typedef rapidjson::GenericValue<rapidjson::UTF8<>, rapidjson::CrtAllocator>
+        RapidJsonCrt;
+
+/**
+ * @brief  Specialisation of the AdapterTraits template struct for a
+ *         RapidJsonAdapter that uses the default CRT allocator
+ */
 template<>
-struct AdapterTraits<valijson::adapters::GenericRapidJsonAdapter<
-    rapidjson::GenericValue<rapidjson::UTF8<>, rapidjson::CrtAllocator> > >
+struct AdapterTraits<valijson::adapters::GenericRapidJsonAdapter<RapidJsonCrt> >
 {
     typedef rapidjson::GenericDocument<rapidjson::UTF8<>,
         rapidjson::CrtAllocator> DocumentType;

@@ -188,7 +188,7 @@ public:
      * If an object member with the specified name does not exist, the iterator
      * returned will be the same as the iterator returned by the end() function.
      *
-     * @param   property   property name to search for
+     * @param   propertyName  property name to search for
      */
     PicoJsonObjectMemberIterator find(const std::string &propertyName) const;
 
@@ -539,9 +539,9 @@ public:
      * values, and assumes that two identical iterators will point to the same
      * underlying object.
      *
-     * @param   rhs  iterator to compare against
+     * @param   other  iterator to compare against
      *
-     * @returns true if the iterators are equal, false otherwise.
+     * @returns true   if the iterators are equal, false otherwise.
      */
     bool equal(const PicoJsonArrayValueIterator &other) const
     {
@@ -612,7 +612,7 @@ public:
      * values, and assumes that two identical iterators will point to the same
      * underlying object.
      *
-     * @param   rhs  Iterator to compare with
+     * @param   other  Iterator to compare with
      *
      * @returns true if the underlying iterators are equal, false otherwise
      */

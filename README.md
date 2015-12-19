@@ -122,7 +122,7 @@ Required:
 
  - boost 1.54
 
-Later versions of boost (up to 1.57) are also known to work correctly.
+Later versions of boost (up to 1.59) are also known to work correctly.
 
 ## Supported Parsers ##
 

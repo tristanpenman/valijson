@@ -28,6 +28,7 @@ struct RequiredConstraint;
 struct TypeConstraint;
 struct UniqueItemsConstraint;
 
+/// Interface to allow usage of the visitor pattern with Constraints
 class ConstraintVisitor
 {
 protected:
