@@ -16,7 +16,6 @@
 		6A725F4817F6404100D6B2FF /* test_property_tree_adapter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AB8FEC417E92B100028E147 /* test_property_tree_adapter.cpp */; };
 		6A725F4917F6404100D6B2FF /* test_rapidjson_adapter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AC18D3917CC874100FE0EC9 /* test_rapidjson_adapter.cpp */; };
 		6A725F4A17F6404100D6B2FF /* test_validator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AC18D3517CC86E000FE0EC9 /* test_validator.cpp */; };
-		6A725F4D17F8964B00D6B2FF /* test_uri_resolution.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6A725F4B17F8956A00D6B2FF /* test_uri_resolution.cpp */; };
 		6A9E1856194DC44B003F1C4C /* test_fetch_document_callback.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AA8A5DA17F8BDCA002728A0 /* test_fetch_document_callback.cpp */; };
 		6AB8FE8717E6A56F0028E147 /* external_schema.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AB8FE8617E6A56F0028E147 /* external_schema.cpp */; };
 		6AB8FE8D17E6A57E0028E147 /* libboost_regex-mt.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 6A477F8417D6BCBB0013571C /* libboost_regex-mt.dylib */; };
@@ -40,6 +39,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		6A309D2D1C28C1FD00EF761C /* subschema.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = subschema.hpp; sourceTree = "<group>"; };
 		6A34698C1BD109A900C97DA2 /* json_reference.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = json_reference.hpp; path = internal/json_reference.hpp; sourceTree = "<group>"; };
 		6A477F8417D6BCBB0013571C /* libboost_regex-mt.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libboost_regex-mt.dylib"; path = "/usr/local/lib/libboost_regex-mt.dylib"; sourceTree = "<absolute>"; };
 		6A506D121AF884E100C2C818 /* draft-03.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "draft-03.json"; sourceTree = "<group>"; };
@@ -70,7 +70,6 @@
 		6A725F4017F61A4400D6B2FF /* object_empty.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = object_empty.json; sourceTree = "<group>"; };
 		6A725F4217F61AC200D6B2FF /* allof_integers_and_numbers.schema.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = allof_integers_and_numbers.schema.json; sourceTree = "<group>"; };
 		6A725F4317F61B5100D6B2FF /* test_validation_errors.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_validation_errors.cpp; sourceTree = "<group>"; };
-		6A725F4B17F8956A00D6B2FF /* test_uri_resolution.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_uri_resolution.cpp; sourceTree = "<group>"; };
 		6A725F6617F89CD500D6B2FF /* abi_prefix.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = abi_prefix.hpp; sourceTree = "<group>"; };
 		6A725F6717F89CD500D6B2FF /* abi_suffix.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = abi_suffix.hpp; sourceTree = "<group>"; };
 		6A725F6817F89CD500D6B2FF /* config.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = config.hpp; sourceTree = "<group>"; };
@@ -699,7 +698,6 @@
 				6AB8FE9217E6BE770028E147 /* test_jsoncpp_adapter.cpp */,
 				6AB8FEC417E92B100028E147 /* test_property_tree_adapter.cpp */,
 				6AC18D3917CC874100FE0EC9 /* test_rapidjson_adapter.cpp */,
-				6A725F4B17F8956A00D6B2FF /* test_uri_resolution.cpp */,
 				6A725F4317F61B5100D6B2FF /* test_validation_errors.cpp */,
 				6AC18D3517CC86E000FE0EC9 /* test_validator.cpp */,
 			);
@@ -761,6 +759,7 @@
 				6A869A2F17CD8A81006864FA /* utils */,
 				6AC78BE917C5FC6A00674114 /* schema.hpp */,
 				6AC78BEA17C5FC6A00674114 /* schema_parser.hpp */,
+				6A309D2D1C28C1FD00EF761C /* subschema.hpp */,
 				6AC78BEC17C5FC6A00674114 /* validation_results.hpp */,
 				6AC18C1517C861D600FE0EC9 /* validation_visitor.hpp */,
 				6AC78BEE17C5FC6A00674114 /* validator.hpp */,
@@ -1002,7 +1001,6 @@
 				6A506D201AF88E5D00C2C818 /* test_json_pointer.cpp in Sources */,
 				6A725F4917F6404100D6B2FF /* test_rapidjson_adapter.cpp in Sources */,
 				6A725F4A17F6404100D6B2FF /* test_validator.cpp in Sources */,
-				6A725F4D17F8964B00D6B2FF /* test_uri_resolution.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

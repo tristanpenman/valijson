@@ -50,7 +50,6 @@ add_executable(test_suite
     tests/test_property_tree_adapter.cpp
     tests/test_rapidjson_adapter.cpp
     tests/test_picojson_adapter.cpp
-    tests/test_uri_resolution.cpp
     tests/test_validation_errors.cpp
     tests/test_validator.cpp
 )
