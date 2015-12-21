@@ -129,6 +129,22 @@ public:
         return true;
     }
 
+    /**
+     * @brief  Get the description for this schema
+     *
+     * @throw std::runtime_error if the description has not been set
+     *
+     * @return  schema description
+     */
+    std::string getDescription() const
+    {
+        if (description) {
+            return *description;
+        }
+
+        throw std::runtime_error("Schema does not have a description");
+    }
+
     std::string getId() const
     {
         if (id) {
@@ -167,6 +183,17 @@ public:
     }
 
     /**
+     * @brief  Returns a boolean value that indicates whether the description
+     *         has been set or not
+     *
+     * @return boolean value
+     */
+    bool hasDescription() const
+    {
+        return description != boost::none;
+    }
+
+    /**
      * @brief  Returns a boolean value that indicates whether the id has been
      *         set or not.
      *
@@ -193,6 +220,19 @@ public:
         return relative;
     }
 
+    /**
+     * @brief  Set the description for this schema
+     *
+     * The description will not be used for validation, but may be used as part
+     * of the user interface used to interact with a schema.
+     *
+     * @param  description  new description
+     */
+    void setDescription(const std::string &description)
+    {
+        this->description = description;
+    }
+
     void setId(const std::string &id)
     {
         this->id = id;
@@ -216,6 +256,9 @@ private:
 
     /// List of pointers to constraints that apply to this schema.
     boost::ptr_vector<Constraint> constraints;
+
+    /// Schema description (optional)
+    boost::optional<std::string> description;
 
     /// Id to apply when resolving the schema URI.
     boost::optional<std::string> id;

@@ -162,6 +162,15 @@ private:
                     itr->second, fetchDoc));
         }
 
+        if ((itr = object.find("description")) != object.end()) {
+            if (itr->second.maybeString()) {
+                schema.setDescription(itr->second.asString());
+            } else {
+                throw std::runtime_error(
+                        "'description' attribute should have a string value");
+            }
+        }
+
         if ((itr = object.find("divisibleBy")) != object.end()) {
             if (version == kDraft3) {
                 schema.addConstraint(makeMultipleOfConstraint(itr->second));
@@ -290,7 +299,12 @@ private:
         }
 
         if ((itr = object.find("title")) != object.end()) {
-
+            if (itr->second.maybeString()) {
+                schema.setTitle(itr->second.asString());
+            } else {
+                throw std::runtime_error(
+                        "'title' attribute should have a string value");
+            }
         }
 
         if ((itr = object.find("type")) != object.end()) {
