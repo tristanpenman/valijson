@@ -38,21 +38,6 @@ public:
     Subschema() { }
 
     /**
-     * @brief  Copy an existing Subschema
-     *
-     * The constructed Subschema instance will contain a copy of each constraint
-     * defined in the referenced Subschemas. Constraints will be copied only
-     * as deep as references to other Subschemas - e.g. copies of constraints
-     * that refer to sub-schemas, will continue to refer to the same Subschema
-     * instances.
-     *
-     * @param  subschema  Subschema instance to copy constraints from
-     */
-    Subschema(const Subschema &subschema)
-      : constraints(subschema.constraints),
-        title(subschema.title) { }
-
-    /**
      * @brief  Clean up and free all memory managed by the Subschema
      */
     virtual ~Subschema()
@@ -255,6 +240,12 @@ public:
     }
 
 private:
+
+    // Disable copy construction
+    Subschema(const Subschema &);
+
+    // Disable copy assignment
+    Subschema & operator=(const Subschema &);
 
     /// List of pointers to constraints that apply to this schema.
     std::vector<const Constraint *> constraints;
