@@ -70,12 +70,12 @@ TEST_F(TestFetchDocumentCallback, Basics)
     rapidjson::Document validDocument;
     validDocument.SetObject();
     validDocument.AddMember("test", "valid", allocator);
-    Validator validator(schema);
-    EXPECT_TRUE(validator.validate(RapidJsonAdapter(validDocument), NULL));
+    Validator validator;
+    EXPECT_TRUE(validator.validate(schema, RapidJsonAdapter(validDocument), NULL));
 
     // Test resulting schema with an invalid document
     rapidjson::Document invalidDocument;
     invalidDocument.SetObject();
     invalidDocument.AddMember("test", 123, allocator);
-    EXPECT_FALSE(validator.validate(RapidJsonAdapter(invalidDocument), NULL));
+    EXPECT_FALSE(validator.validate(schema, RapidJsonAdapter(invalidDocument), NULL));
 }

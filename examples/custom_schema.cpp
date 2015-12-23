@@ -74,6 +74,7 @@ using std::endl;
 
 using valijson::Schema;
 using valijson::SchemaParser;
+using valijson::Subschema;
 using valijson::Validator;
 using valijson::ValidationResults;
 using valijson::adapters::RapidJsonAdapter;
@@ -90,49 +91,64 @@ void addPropertiesConstraint(Schema &schema)
 {
 
     PropertiesConstraint::PropertySchemaMap propertySchemaMap;
-    PropertiesConstraint::PropertySchemaMap patternPropertiesSchemaMap;
 
     {
-        // Create a child schema for the 'category' property that requires one
-        // of several possible values.
-        Schema &propertySchema = propertySchemaMap["category"];
+        // Prepare an enum constraint requires a document to be equal to at
+        // least one of a set of possible values
         EnumConstraint::Values enumConstraintValues;
         enumConstraintValues.push_back(new RapidJsonFrozenValue("album"));
         enumConstraintValues.push_back(new RapidJsonFrozenValue("book"));
         enumConstraintValues.push_back(new RapidJsonFrozenValue("other"));
         enumConstraintValues.push_back(new RapidJsonFrozenValue("video"));
-        propertySchema.addConstraint(new EnumConstraint(enumConstraintValues));
+
+        // Create a subschema, owned by the root schema, with a constraint
+        const Subschema *subschema = schema.createSubschema();
+        schema.addConstraintToSubschema(EnumConstraint(enumConstraintValues),
+                subschema);
+
+        // Include subschema in properties constraint
+        propertySchemaMap["category"] = subschema;
     }
 
     {
         // Create a child schema for the 'description' property that requires
         // a string, but does not enforce any length constraints.
-        Schema &propertySchema = propertySchemaMap["description"];
-        propertySchema.addConstraint(new TypeConstraint(TypeConstraint::kString));
+        const Subschema *subschema = schema.createSubschema();
+        schema.addConstraintToSubschema(TypeConstraint(TypeConstraint::kString),
+                subschema);
+
+        // Include subschema in properties constraint
+        propertySchemaMap["description"] = subschema;
     }
 
     {
         // Create a child schema for the 'price' property, that requires a
         // number with a value greater than zero.
-        Schema &propertySchema = propertySchemaMap["price"];
-        propertySchema.addConstraint(new MinimumConstraint(0.0, true));
-        propertySchema.addConstraint(new TypeConstraint(TypeConstraint::kNumber));
+        const Subschema *subschema = schema.createSubschema();
+        schema.addConstraintToSubschema(MinimumConstraint(0.0, true), subschema);
+        schema.addConstraintToSubschema(TypeConstraint(TypeConstraint::kNumber),
+                subschema);
+
+        // Include subschema in properties constraint
+        propertySchemaMap["price"] = subschema;
     }
 
     {
         // Create a child schema for the 'title' property that requires a string
         // that is between 1 and 200 characters in length.
-        Schema &propertySchema = propertySchemaMap["title"];
-        propertySchema.addConstraint(new MaxLengthConstraint(200));
-        propertySchema.addConstraint(new MinLengthConstraint(1));
-        propertySchema.addConstraint(new TypeConstraint(TypeConstraint::kString));
+        const Subschema *subschema = schema.createSubschema();
+        schema.addConstraintToSubschema(MaxLengthConstraint(200), subschema);
+        schema.addConstraintToSubschema(MinLengthConstraint(1), subschema);
+        schema.addConstraintToSubschema(TypeConstraint(TypeConstraint::kString),
+                subschema);
+
+        // Include subschema in properties constraint
+        propertySchemaMap["title"] = subschema;
     }
 
     // Add a PropertiesConstraint to the schema, with the properties defined
-    // above, no pattern properties, and with additional property schemas
-    // prohibited.
-    schema.addConstraint(new PropertiesConstraint(
-        propertySchemaMap, patternPropertiesSchemaMap));
+    // above, no pattern properties or additional property schemas
+    schema.addConstraint(PropertiesConstraint(propertySchemaMap));
 }
 
 void addRequiredConstraint(Schema &schema)
@@ -176,10 +192,10 @@ int main(int argc, char *argv[])
     addTypeConstraint(schema);
 
     // Perform validation
-    Validator validator(schema);
+    Validator validator;
     ValidationResults results;
     RapidJsonAdapter targetDocumentAdapter(targetDocument);
-    if (!validator.validate(targetDocumentAdapter, &results)) {
+    if (!validator.validate(schema, targetDocumentAdapter, &results)) {
         std::cerr << "Validation failed." << endl;
         ValidationResults::Error error;
         unsigned int errorNum = 1;

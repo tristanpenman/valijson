@@ -46,9 +46,9 @@ TEST_F(TestValidationErrors, AllOfConstraintFailure)
     ASSERT_TRUE( loadDocument(TEST_DATA_DIR "/documents/array_doubles_1_2_3.json", testDocument) );
     RapidJsonAdapter testAdapter(testDocument);
 
-    Validator validator(schema);
+    Validator validator;
     ValidationResults results;
-    EXPECT_FALSE( validator.validate(testAdapter, &results) );
+    EXPECT_FALSE( validator.validate(schema, testAdapter, &results) );
 
     ValidationResults::Error error;
 

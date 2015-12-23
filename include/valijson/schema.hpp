@@ -21,7 +21,8 @@ public:
     /**
      * @brief  Construct a new Schema instance with no constraints
      */
-    Schema() {}
+    Schema()
+      : sharedEmptySubschema(newSubschema()) { }
 
     /**
      * @brief  Clean up and free all memory managed by the Schema
@@ -31,11 +32,14 @@ public:
      */
     virtual ~Schema()
     {
+        sharedEmptySubschema->~Subschema();
+        ::operator delete((void*)(sharedEmptySubschema));
+        sharedEmptySubschema = NULL;
+
         try {
-            while (!subschemaSet.empty()) {
-                std::set<Subschema*>::iterator itr = subschemaSet.begin();
+            for (std::set<Subschema *>::iterator itr = subschemaSet.begin();
+                    itr != subschemaSet.end(); ++itr) {
                 Subschema *subschema = *itr;
-                subschemaSet.erase(itr);
                 subschema->~Subschema();
                 // TODO: Replace with custom free function
                 ::operator delete(subschema);
@@ -60,20 +64,9 @@ public:
     void addConstraintToSubschema(const Constraint &constraint,
             const Subschema *subschema)
     {
-        if (subschema == this) {
-            addConstraint(constraint);
-            return;
-        }
-
-        Subschema *noConst = const_cast<Subschema*>(subschema);
-        if (subschemaSet.find(noConst) == subschemaSet.end()) {
-            throw std::runtime_error(
-                    "Subschema pointer is not owned by this Schema instance");
-        }
-
         // TODO: Check heirarchy for subschemas that do not belong...
 
-        noConst->addConstraint(constraint);
+        mutableSubschema(subschema)->addConstraint(constraint);
     }
 
     /**
@@ -83,25 +76,7 @@ public:
      */
     const Subschema * createSubschema()
     {
-        // TODO: Replace with custom malloc function
-        void *ptr = ::operator new(sizeof(Subschema));
-        if (!ptr) {
-            throw std::runtime_error(
-                    "Failed to allocate memory for sub-schema");
-        }
-
-        Subschema *subschema = NULL;
-        try {
-            subschema = new (ptr) Subschema();
-            if (!subschema) {
-                throw std::runtime_error("Failed to construct sub-schema");
-            }
-            ptr = NULL;
-        } catch (...) {
-            // TODO: Replace with custom free function
-            ::operator delete(ptr);
-            throw;
-        }
+        Subschema *subschema = newSubschema();
 
         try {
             if (!subschemaSet.insert(subschema).second) {
@@ -111,11 +86,19 @@ public:
         } catch (...) {
             subschema->~Subschema();
             // TODO: Replace with custom free function
-            ::operator delete(ptr);
+            ::operator delete(subschema);
             throw;
         }
 
         return subschema;
+    }
+
+    /**
+     * @brief  Return a pointer to the shared empty schema
+     */
+    const Subschema * emptySubschema() const
+    {
+        return sharedEmptySubschema;
     }
 
     /**
@@ -126,10 +109,102 @@ public:
         return this;
     }
 
+    /**
+     * @brief  Update the description for one of the sub-schemas owned by this
+     *         Schema instance
+     *
+     * @param  subschema    sub-schema to update
+     * @param  description  new description
+     */
+    void setSubschemaDescription(const Subschema *subschema,
+            const std::string &description)
+    {
+        mutableSubschema(subschema)->setDescription(description);
+    }
+
+    /**
+     * @brief  Update the ID for one of the sub-schemas owned by this Schema
+     *         instance
+     *
+     * @param  subschema  sub-schema to update
+     * @param  id         new ID
+     */
+    void setSubschemaId(const Subschema *subschema, const std::string &id)
+    {
+        mutableSubschema(subschema)->setId(id);
+    }
+
+    /**
+     * @brief  Update the title for one of the sub-schemas owned by this Schema
+     *         instance
+     *
+     * @param  subschema  sub-schema to update
+     * @param  title      new title
+     */
+    void setSubschemaTitle(const Subschema *subschema, const std::string &title)
+    {
+        mutableSubschema(subschema)->setTitle(title);
+    }
+
 private:
+
+    // Disable copy construction
+    Schema(const Schema &);
+
+    // Disable copy assignment
+    Schema & operator=(const Schema &);
+
+    static Subschema *newSubschema()
+    {
+        // TODO: Replace with custom alloc function
+        void *ptr = ::operator new(sizeof(Subschema));
+        if (!ptr) {
+            throw std::runtime_error(
+                    "Failed to allocate memory for shared empty sub-schema");
+        }
+
+        Subschema *subschema = NULL;
+        try {
+            subschema = new (ptr) Subschema();
+            if (!subschema) {
+                throw std::runtime_error(
+                        "Failed to construct shared empty sub-schema");
+            }
+            ptr = NULL;
+        } catch (...) {
+            // TODO: Replace with custom free function
+            ::operator delete(ptr);
+            throw;
+        }
+
+        return subschema;
+    }
+
+    Subschema * mutableSubschema(const Subschema *subschema)
+    {
+        if (subschema == this) {
+            return this;
+        }
+
+        if (subschema == sharedEmptySubschema) {
+            throw std::runtime_error(
+                    "Cannot modify the shared empty sub-schema");
+        }
+
+        Subschema *noConst = const_cast<Subschema*>(subschema);
+        if (subschemaSet.find(noConst) == subschemaSet.end()) {
+            throw std::runtime_error(
+                    "Subschema pointer is not owned by this Schema instance");
+        }
+
+        return noConst;
+    }
 
     /// Set of Subschema instances owned by this schema
     std::set<Subschema*> subschemaSet;
+
+    /// Empty schema that can be reused by multiple constraints
+    const Subschema *sharedEmptySubschema;
 };
 
 } // namespace valijson

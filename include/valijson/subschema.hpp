@@ -2,10 +2,11 @@
 #ifndef __VALIJSON_SUBSCHEMA_HPP
 #define __VALIJSON_SUBSCHEMA_HPP
 
+#include <vector>
+
 #include <boost/foreach.hpp>
 #include <boost/function.hpp>
 #include <boost/optional.hpp>
-#include <boost/ptr_container/ptr_vector.hpp>
 
 #include <valijson/constraints/constraint.hpp>
 
@@ -52,6 +53,24 @@ public:
         title(subschema.title) { }
 
     /**
+     * @brief  Clean up and free all memory managed by the Subschema
+     */
+    virtual ~Subschema()
+    {
+        try {
+            for (std::vector<const Constraint *>::iterator itr =
+                    constraints.begin(); itr != constraints.end(); ++itr) {
+                const Constraint *constraint = *itr;
+                delete constraint;
+            }
+            constraints.clear();
+        } catch (const std::exception &e) {
+            fprintf(stderr, "Caught an exception in Subschema destructor: %s",
+                    e.what());
+        }
+    }
+
+    /**
      * @brief  Add a constraint to this sub-schema
      *
      * The constraint will be copied before being added to the list of
@@ -94,8 +113,8 @@ public:
     bool apply(ApplyFunction &applyFunction) const
     {
         bool allTrue = true;
-        BOOST_FOREACH( const Constraint &constraint, constraints ) {
-            allTrue = allTrue && applyFunction(constraint);
+        BOOST_FOREACH( const Constraint *constraint, constraints ) {
+            allTrue = allTrue && applyFunction(*constraint);
         }
 
         return allTrue;
@@ -113,8 +132,8 @@ public:
      */
     bool applyStrict(ApplyFunction &applyFunction) const
     {
-        BOOST_FOREACH( const Constraint &constraint, constraints ) {
-            if (!applyFunction(constraint)) {
+        BOOST_FOREACH( const Constraint *constraint, constraints ) {
+            if (!applyFunction(*constraint)) {
                 return false;
             }
         }
@@ -238,7 +257,7 @@ public:
 private:
 
     /// List of pointers to constraints that apply to this schema.
-    boost::ptr_vector<Constraint> constraints;
+    std::vector<const Constraint *> constraints;
 
     /// Schema description (optional)
     boost::optional<std::string> description;
