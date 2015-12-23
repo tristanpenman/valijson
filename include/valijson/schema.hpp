@@ -25,6 +25,19 @@ public:
       : sharedEmptySubschema(newSubschema()) { }
 
     /**
+     * @brief  Construct a new Schema using custom memory management
+     *         functions
+     *
+     * @parma  allocFn  malloc- or new-like function to allocate memory
+     *                  within Schema, such as for Subschema instances
+     * @param  freeFn   free-like function to free memory allocated with
+     *                  the `customAlloc` function
+     */
+    Schema(CustomAlloc allocFn, CustomFree freeFn)
+      : Subschema(allocFn, freeFn),
+        sharedEmptySubschema(newSubschema()) { }
+
+    /**
      * @brief  Clean up and free all memory managed by the Schema
      *
      * Note that any Subschema pointers created and returned by this Schema
@@ -33,7 +46,7 @@ public:
     virtual ~Schema()
     {
         sharedEmptySubschema->~Subschema();
-        ::operator delete((void*)(sharedEmptySubschema));
+        freeFn((void*)(sharedEmptySubschema));
         sharedEmptySubschema = NULL;
 
         try {
@@ -41,8 +54,7 @@ public:
                     itr != subschemaSet.end(); ++itr) {
                 Subschema *subschema = *itr;
                 subschema->~Subschema();
-                // TODO: Replace with custom free function
-                ::operator delete(subschema);
+                freeFn(subschema);
             }
         } catch (const std::exception &e) {
             fprintf(stderr, "Caught an exception while destroying Schema: %s",
@@ -85,8 +97,7 @@ public:
             }
         } catch (...) {
             subschema->~Subschema();
-            // TODO: Replace with custom free function
-            ::operator delete(subschema);
+            freeFn(subschema);
             throw;
         }
 
@@ -154,30 +165,20 @@ private:
     // Disable copy assignment
     Schema & operator=(const Schema &);
 
-    static Subschema *newSubschema()
+    Subschema *newSubschema()
     {
-        // TODO: Replace with custom alloc function
-        void *ptr = ::operator new(sizeof(Subschema));
+        void *ptr = allocFn(sizeof(Subschema));
         if (!ptr) {
             throw std::runtime_error(
                     "Failed to allocate memory for shared empty sub-schema");
         }
 
-        Subschema *subschema = NULL;
         try {
-            subschema = new (ptr) Subschema();
-            if (!subschema) {
-                throw std::runtime_error(
-                        "Failed to construct shared empty sub-schema");
-            }
-            ptr = NULL;
+            return new (ptr) Subschema();
         } catch (...) {
-            // TODO: Replace with custom free function
-            ::operator delete(ptr);
+            freeFn(ptr);
             throw;
         }
-
-        return subschema;
     }
 
     Subschema * mutableSubschema(const Subschema *subschema)
