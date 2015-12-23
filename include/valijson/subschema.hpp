@@ -25,6 +25,12 @@ namespace valijson {
 class Subschema
 {
 public:
+    /// Typedef for custom new-/malloc-like function
+    typedef void * (*CustomAlloc)(size_t size);
+
+    /// Typedef for custom free-like function
+    typedef void (*CustomFree)(void *);
+
     /// Typedef the Constraint class into the local namespace for convenience
     typedef constraints::Constraint Constraint;
 
@@ -33,9 +39,24 @@ public:
     typedef boost::function<bool (const Constraint &)> ApplyFunction;
 
     /**
-     * @brief  Construct a new Subschema object with no constraints
+     * @brief  Construct a new Subschema object
      */
-    Subschema() { }
+    Subschema()
+      : allocFn(::operator new)
+      , freeFn(::operator delete) { }
+
+    /**
+     * @brief  Construct a new Subschema using custom memory management
+     *         functions
+     *
+     * @parma  allocFn  malloc- or new-like function to allocate memory
+     *                  within Schema, such as for Subschema instances
+     * @param  freeFn   free-like function to free memory allocated with
+     *                  the `customAlloc` function
+     */
+    Subschema(CustomAlloc allocFn, CustomFree freeFn)
+      : allocFn(allocFn)
+      , freeFn(freeFn) { }
 
     /**
      * @brief  Clean up and free all memory managed by the Subschema
@@ -46,7 +67,8 @@ public:
             for (std::vector<const Constraint *>::iterator itr =
                     constraints.begin(); itr != constraints.end(); ++itr) {
                 const Constraint *constraint = *itr;
-                delete constraint;
+                constraint->~Constraint();
+                freeFn((void*)(constraint));
             }
             constraints.clear();
         } catch (const std::exception &e) {
@@ -68,20 +90,7 @@ public:
      */
     void addConstraint(const Constraint &constraint)
     {
-        constraints.push_back(constraint.clone());
-    }
-
-    /**
-     * @brief  Add a constraint to this sub-schema
-     *
-     * This Subschema instance will take ownership of Constraint that is
-     * pointed to, and will free it when it is no longer needed.
-     *
-     * @param  constraint  Pointer to the Constraint to take ownership of
-     */
-    void addConstraint(Constraint *constraint)
-    {
-        constraints.push_back(constraint);
+        constraints.push_back(constraint.clone(allocFn, freeFn));
     }
 
     /**
@@ -238,6 +247,12 @@ public:
     {
         this->title = title;
     }
+
+protected:
+
+    CustomAlloc allocFn;
+
+    CustomFree freeFn;
 
 private:
 

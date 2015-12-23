@@ -159,14 +159,14 @@ void addRequiredConstraint(Schema &schema)
     requiredProperties.insert("category");
     requiredProperties.insert("price");
     requiredProperties.insert("title");
-    schema.addConstraint(new RequiredConstraint(requiredProperties));
+    schema.addConstraint(RequiredConstraint(requiredProperties));
 }
 
 void addTypeConstraint(Schema &schema)
 {
     // Add a TypeConstraint to the schema, specifying that the root of the
     // document must be an object.
-    schema.addConstraint(new TypeConstraint(TypeConstraint::kObject));
+    schema.addConstraint(TypeConstraint(TypeConstraint::kObject));
 }
 
 int main(int argc, char *argv[])

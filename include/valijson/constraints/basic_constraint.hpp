@@ -25,9 +25,21 @@ struct BasicConstraint: Constraint
         return visitor.visit(*static_cast<const ConstraintType*>(this));
     }
 
-    virtual Constraint * clone() const
+    virtual Constraint * clone(CustomAlloc allocFn, CustomFree freeFn) const
     {
-        return new ConstraintType(*static_cast<const ConstraintType*>(this));
+        void *ptr = allocFn(sizeof(ConstraintType));
+        if (!ptr) {
+            throw std::runtime_error(
+                    "Failed to allocate memory for cloned constraint");
+        }
+
+        try {
+            return new (ptr) ConstraintType(
+                    *static_cast<const ConstraintType*>(this));
+        } catch (...) {
+            freeFn(ptr);
+            throw;
+        }
     }
 };
 
