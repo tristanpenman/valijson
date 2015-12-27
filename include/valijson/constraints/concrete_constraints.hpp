@@ -27,6 +27,7 @@
 
 #include <valijson/adapters/frozen_value.hpp>
 #include <valijson/constraints/basic_constraint.hpp>
+#include <valijson/internal/custom_allocator.hpp>
 #include <valijson/schema.hpp>
 
 namespace valijson {
@@ -77,23 +78,113 @@ struct AnyOfConstraint: BasicConstraint<AnyOfConstraint>
  * A dependency constraint ensures that a given property is valid only if the
  * properties that it depends on are present.
  */
-struct DependenciesConstraint: BasicConstraint<DependenciesConstraint>
+class DependenciesConstraint: public BasicConstraint<DependenciesConstraint>
 {
-    // A mapping from property names to the set of names of their dependencies
-    typedef std::set<std::string> Dependencies;
-    typedef std::map<std::string, Dependencies> PropertyDependenciesMap;
+public:
+    DependenciesConstraint()
+      : propertyDependencies(allocator),
+        schemaDependencies(allocator)
+    { }
 
-    // A mapping from property names to dependent schemas
-    typedef std::map<std::string, const Subschema *>
-            PropertyDependentSchemasMap;
+    DependenciesConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        propertyDependencies(allocator),
+        schemaDependencies(allocator)
+    { }
 
-    DependenciesConstraint(const PropertyDependenciesMap &dependencies,
-                           const PropertyDependentSchemasMap &dependentSchemas)
-      : dependencies(dependencies),
-        dependentSchemas(dependentSchemas) { }
+    template<typename StringType>
+    DependenciesConstraint & addPropertyDependency(
+            const StringType &propertyName,
+            const StringType &dependencyName)
+    {
+        const String key(propertyName.c_str(), allocator);
+        PropertyDependencies::iterator itr = propertyDependencies.find(key);
+        if (itr == propertyDependencies.end()) {
+            itr = propertyDependencies.insert(PropertyDependencies::value_type(
+                    key, PropertySet(allocator))).first;
+        }
 
-    const PropertyDependenciesMap dependencies;
-    const PropertyDependentSchemasMap dependentSchemas;
+        itr->second.insert(String(dependencyName.c_str(), allocator));
+
+        return *this;
+    }
+
+    template<typename StringType, typename ContainerType>
+    DependenciesConstraint & addPropertyDependencies(
+            const StringType &propertyName,
+            const ContainerType &dependencyNames)
+    {
+        const String key(propertyName.c_str(), allocator);
+        PropertyDependencies::iterator itr = propertyDependencies.find(key);
+        if (itr == propertyDependencies.end()) {
+            itr = propertyDependencies.insert(PropertyDependencies::value_type(
+                    key, PropertySet(allocator))).first;
+        }
+
+        typedef typename ContainerType::value_type ValueType;
+        BOOST_FOREACH( const ValueType &dependencyName, dependencyNames ) {
+            itr->second.insert(String(dependencyName.c_str(), allocator));
+        }
+
+        return *this;
+    }
+
+    template<typename StringType>
+    DependenciesConstraint & addSchemaDependency(
+            const StringType &propertyName,
+            const Subschema *schemaDependency)
+    {
+        if (schemaDependencies.insert(SchemaDependencies::value_type(
+                String(propertyName.c_str(), allocator),
+                schemaDependency)).second) {
+            return *this;
+        }
+
+        throw std::runtime_error(
+                "Dependencies constraint already contains a dependent "
+                "schema for the property '" + propertyName + "'");
+    }
+
+    template<typename FunctorType>
+    bool applyToPropertyDependencies(const FunctorType &fn) const
+    {
+        BOOST_FOREACH( const PropertyDependencies::value_type &v,
+                propertyDependencies ) {
+            if (!fn(v.first, v.second)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    template<typename FunctorType>
+    bool applyToSchemaDependencies(const FunctorType &fn) const
+    {
+        BOOST_FOREACH( const SchemaDependencies::value_type &v,
+                schemaDependencies ) {
+            if (!fn(v.first, v.second)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+private:
+    typedef std::set<String, std::less<String>, Allocator> PropertySet;
+
+    typedef std::map<String, PropertySet, std::less<String>, Allocator>
+            PropertyDependencies;
+
+    typedef std::map<String, const Subschema *, std::less<String>, Allocator>
+            SchemaDependencies;
+
+    /// Mapping from property names to their property-based dependencies
+    PropertyDependencies propertyDependencies;
+
+    /// Mapping from property names to their schema-based dependencies
+    SchemaDependencies schemaDependencies;
 };
 
 /**

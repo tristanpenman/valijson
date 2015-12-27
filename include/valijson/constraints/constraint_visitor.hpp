@@ -7,7 +7,6 @@ namespace constraints {
 
 struct AllOfConstraint;
 struct AnyOfConstraint;
-struct DependenciesConstraint;
 struct EnumConstraint;
 struct ItemsConstraint;
 struct FormatConstraint;
@@ -27,6 +26,8 @@ struct PropertiesConstraint;
 struct RequiredConstraint;
 struct TypeConstraint;
 struct UniqueItemsConstraint;
+
+class DependenciesConstraint;
 
 /// Interface to allow usage of the visitor pattern with Constraints
 class ConstraintVisitor

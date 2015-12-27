@@ -176,16 +176,21 @@ public:
     }
 
     /**
-     * @brief   Validate against the dependencies constraint represented by a
-     *          DependenciesConstraint object.
+     * @brief   Validate current node against a 'dependencies' constraint
      *
-     * A dependencies constraint can specify either a mapping of attribute names
-     * to their dependencies, or a mapping of attribute names to child schemas
-     * that must be satisfied if a given attribute is present.
+     * A 'dependencies' constraint can be used to specify property-based or
+     * schema-based dependencies that must be fulfilled when a particular
+     * property is present in an object.
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * Property-based dependencies define a set of properties that must be
+     * present in addition to a particular property, whereas a schema-based
+     * dependency defines an additional schema that the current document must
+     * validate against.
      *
-     * @return  true if validation passes, false otherwise.
+     * @param   constraint  DependenciesConstraint that the current node
+     *                      must validate against
+     *
+     * @return  \c true if validation passes; \c false otherwise
      */
     virtual bool visit(const DependenciesConstraint &constraint)
     {
@@ -194,54 +199,28 @@ public:
             return true;
         }
 
-        // Typedef and reference for conciseness in nested loops
-        typedef DependenciesConstraint::PropertyDependenciesMap PDM;
-        const PDM &deps = constraint.dependencies;
-
-        typedef DependenciesConstraint::PropertyDependentSchemasMap PDSM;
-        const PDSM &depSchemas = constraint.dependentSchemas;
-
-        // Get access to the target as an object
+        // Object to be validated
         const typename AdapterType::Object object = target.asObject();
 
-        // Flag used to track validation status if errors are non-fatal
+        // Cleared if validation fails
         bool validated = true;
 
-        // For each property in the object, check for a list of dependencies in
-        // the constraint object and verify that the dependencies have been
-        // satisfied.
-        BOOST_FOREACH( const typename AdapterType::ObjectMember m, object ) {
+        // Iterate over all dependent properties defined by this constraint,
+        // invoking the DependentPropertyValidator functor once for each
+        // set of dependent properties
+        constraint.applyToPropertyDependencies(ValidatePropertyDependencies(
+                object, context, results, &validated));
+        if (!results && !validated) {
+            return false;
+        }
 
-            // Check for this property in the dependency map. If it is not
-            // present, we can move on to the next one...
-            PDM::const_iterator itr = deps.find(m.first);
-            if (itr != deps.end()) {
-                BOOST_FOREACH( const std::string &name, itr->second ) {
-                    if (object.find(name) == object.end()) {
-                        if (!results) {
-                            return false;
-                        }
-                        validated = false;
-                        results->pushError(context, "Missing dependency '" + name + "'.");
-                    }
-                }
-            }
-
-            // Check for this property in the dependent schemas map. If it is
-            // present then we need to validate the current target against the
-            // dependent schema.
-            PDSM::const_iterator depSchemasItr = depSchemas.find(m.first);
-            if (depSchemasItr != depSchemas.end()) {
-                const Subschema *subschema = depSchemasItr->second;
-                if (!validateSchema(*subschema)) {
-                    if (results) {
-                        results->pushError(context, "Failed to validate against dependent schema.");
-                        validated = false;
-                    } else {
-                        return false;
-                    }
-                }
-            }
+        // Iterate over all dependent schemas defined by this constraint,
+        // invoking the DependentSchemaValidator function once for each schema
+        // that must be validated if a given property is present
+        constraint.applyToSchemaDependencies(ValidateSchemaDependencies(
+                object, context, *this, results, &validated));
+        if (!results && !validated) {
+            return false;
         }
 
         return validated;
@@ -1086,6 +1065,101 @@ public:
     }
 
 private:
+
+    struct ValidatePropertyDependencies
+    {
+        ValidatePropertyDependencies(
+                const typename AdapterType::Object &object,
+                const std::vector<std::string> &context,
+                ValidationResults *results,
+                bool *validated)
+          : object(object),
+            context(context),
+            results(results),
+            validated(validated) { }
+
+        template<typename StringType, typename ContainerType>
+        bool operator()(
+                const StringType &propertyName,
+                const ContainerType &dependencyNames) const
+        {
+            const std::string propertyNameKey(propertyName.c_str());
+            if (object.find(propertyNameKey) == object.end()) {
+                return true;
+            }
+
+            typedef typename ContainerType::value_type ValueType;
+            BOOST_FOREACH( const ValueType &dependencyName, dependencyNames ) {
+                const std::string dependencyNameKey(dependencyName.c_str());
+                if (object.find(dependencyNameKey) == object.end()) {
+                    if (validated) {
+                        *validated = false;
+                    }
+                    if (results) {
+                        results->pushError(context, "Missing dependency '" +
+                                dependencyNameKey + "'.");
+                    } else {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+    private:
+        const typename AdapterType::Object &object;
+        const std::vector<std::string> &context;
+        ValidationResults * const results;
+        bool * const validated;
+    };
+
+    struct ValidateSchemaDependencies
+    {
+        ValidateSchemaDependencies(
+                const typename AdapterType::Object &object,
+                const std::vector<std::string> &context,
+                ValidationVisitor &validationVisitor,
+                ValidationResults *results,
+                bool *validated)
+          : object(object),
+            context(context),
+            validationVisitor(validationVisitor),
+            results(results),
+            validated(validated) { }
+
+        template<typename StringType>
+        bool operator()(
+                const StringType &propertyName,
+                const Subschema *schemaDependency) const
+        {
+            const std::string propertyNameKey(propertyName.c_str());
+            if (object.find(propertyNameKey) == object.end()) {
+                return true;
+            }
+
+            if (!validationVisitor.validateSchema(*schemaDependency)) {
+                if (validated) {
+                    *validated = false;
+                }
+                if (results) {
+                    results->pushError(context,
+                            "Failed to validate against dependent schema.");
+                } else {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+    private:
+        const typename AdapterType::Object &object;
+        const std::vector<std::string> &context;
+        ValidationVisitor &validationVisitor;
+        ValidationResults * const results;
+        bool * const validated;
+    };
 
     /**
      * @brief  Callback function that passes a visitor to a constraint.

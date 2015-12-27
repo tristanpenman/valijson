@@ -5,6 +5,8 @@
 #include <valijson/constraints/constraint.hpp>
 #include <valijson/constraints/constraint_visitor.hpp>
 
+#include <valijson/internal/custom_allocator.hpp>
+
 namespace valijson {
 namespace constraints {
 
@@ -18,6 +20,17 @@ namespace constraints {
 template<typename ConstraintType>
 struct BasicConstraint: Constraint
 {
+    typedef internal::CustomAllocator<void *> Allocator;
+
+    typedef std::basic_string<char, std::char_traits<char>,
+            internal::CustomAllocator<char> > String;
+
+    BasicConstraint()
+      : allocator() { }
+
+    BasicConstraint(Allocator::CustomAlloc allocFn, Allocator::CustomFree freeFn)
+      : allocator(allocFn, freeFn) { }
+
     virtual ~BasicConstraint<ConstraintType>() { }
 
     virtual bool accept(ConstraintVisitor &visitor) const
@@ -41,6 +54,10 @@ struct BasicConstraint: Constraint
             throw;
         }
     }
+
+protected:
+
+    Allocator allocator;
 };
 
 } // namespace constraints

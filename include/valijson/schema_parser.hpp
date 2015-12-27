@@ -617,8 +617,7 @@ private:
             throw std::runtime_error("Expected object value for 'dependencies' constraint.");
         }
 
-        constraints::DependenciesConstraint::PropertyDependenciesMap pdm;
-        constraints::DependenciesConstraint::PropertyDependentSchemasMap pdsm;
+        constraints::DependenciesConstraint dependenciesConstraint;
 
         // Process each of the dependency mappings defined by the object
         BOOST_FOREACH ( const typename AdapterType::ObjectMember member, node.asObject() ) {
@@ -632,15 +631,18 @@ private:
             // be detected.
             if (member.second.maybeArray()) {
                 // Parse an array of dependency names
-                constraints::DependenciesConstraint::Dependencies &dependencies = pdm[member.first];
+                std::vector<std::string> dependentPropertyNames;
                 BOOST_FOREACH( const AdapterType dependencyName, member.second.asArray() ) {
                     if (dependencyName.maybeString()) {
-                        dependencies.insert(dependencyName.getString());
+                        dependentPropertyNames.push_back(dependencyName.getString());
                     } else {
                         throw std::runtime_error("Expected string value in dependency list of property '" +
                             member.first + "' in 'dependencies' constraint.");
                     }
                 }
+
+                dependenciesConstraint.addPropertyDependencies(member.first,
+                        dependentPropertyNames);
 
             // If the value of dependency mapping could not be processed as an
             // array, we'll try to process it as an object instead. Note that
@@ -651,15 +653,17 @@ private:
             } else if (member.second.isObject()) {
                 // Parse dependent subschema
                 const Subschema *childSubschema = rootSchema.createSubschema();
-                pdsm[member.first] = childSubschema;
                 populateSchema<AdapterType>(rootSchema, rootNode, member.second,
                         *childSubschema, currentScope, nodePath, fetchDoc);
+                dependenciesConstraint.addSchemaDependency(member.first,
+                        childSubschema);
 
             // If we're supposed to be parsing a Draft3 schema, then the value
             // of the dependency mapping can also be a string containing the
             // name of a single dependency.
             } else if (version == kDraft3 && member.second.isString()) {
-                pdm[member.first].insert(member.second.getString());
+                dependenciesConstraint.addPropertyDependency(member.first,
+                        member.second.getString());
 
             // All other types result in an exception being thrown.
             } else {
@@ -667,7 +671,7 @@ private:
             }
         }
 
-        return constraints::DependenciesConstraint(pdm, pdsm);
+        return dependenciesConstraint;
     }
 
     /**

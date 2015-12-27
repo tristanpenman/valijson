@@ -236,6 +236,7 @@
 		6AD030F51B03FD9900B957E5 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
 		6AE1D76617E3F993008CF38C /* custom_schema.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = custom_schema.cpp; sourceTree = "<group>"; };
 		6AEFECC81AB53F1000275614 /* libjsoncpp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libjsoncpp.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		6AF3F5071C2D874F001B3445 /* custom_allocator.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = custom_allocator.hpp; path = internal/custom_allocator.hpp; sourceTree = "<group>"; };
 		6AF70AE118FE71F600342325 /* gtest-death-test.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-death-test.h"; sourceTree = "<group>"; };
 		6AF70AE218FE71F600342325 /* gtest-message.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-message.h"; sourceTree = "<group>"; };
 		6AF70AE318FE71F600342325 /* gtest-param-test.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-param-test.h"; sourceTree = "<group>"; };
@@ -362,6 +363,7 @@
 		6A506D1D1AF88D5E00C2C818 /* internal */ = {
 			isa = PBXGroup;
 			children = (
+				6AF3F5071C2D874F001B3445 /* custom_allocator.hpp */,
 				6A506D1E1AF88D8700C2C818 /* json_pointer.hpp */,
 				6A34698C1BD109A900C97DA2 /* json_reference.hpp */,
 				6A356B0D1C1CFD020007EB8B /* uri.hpp */,
