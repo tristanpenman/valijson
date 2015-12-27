@@ -1152,18 +1152,20 @@ private:
         const boost::optional<
                 typename FetchDocumentFunction<AdapterType>::Type > fetchDoc)
     {
-        constraints::OneOfConstraint::Schemas childSchemas;
+        constraints::OneOfConstraint constraint;
+
         int index = 0;
         BOOST_FOREACH ( const AdapterType schemaNode, node.getArray() ) {
             const std::string childPath = nodePath + "/" +
                     boost::lexical_cast<std::string>(index);
-            childSchemas.push_back(rootSchema.createSubschema());
+            const Subschema *subschema = rootSchema.createSubschema();
+            constraint.addSubschema(subschema);
             populateSchema<AdapterType>(rootSchema, rootNode, schemaNode,
-                *childSchemas.back(), currentScope, childPath, fetchDoc);
+                *subschema, currentScope, childPath, fetchDoc);
             index++;
         }
 
-        return constraints::OneOfConstraint(childSchemas);
+        return constraint;
     }
 
     /**

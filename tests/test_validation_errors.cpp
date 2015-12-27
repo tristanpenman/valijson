@@ -88,7 +88,7 @@ TEST_F(TestValidationErrors, AllOfConstraintFailure)
     EXPECT_TRUE( results.popError(error) );
     EXPECT_EQ( 1, error.context.size() );
     EXPECT_EQ( "<root>", error.context[0] );
-    EXPECT_EQ( "Failed to validate against child schema #0 of allOf constraint.", error.description );
+    EXPECT_EQ( "Failed to validate against child schema #0.", error.description );
 
     EXPECT_FALSE( results.popError(error) );
 

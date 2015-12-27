@@ -114,8 +114,8 @@ public:
     {
         bool validated = true;
 
-        constraint.applyToSubschemas(ValidateAllSubschemas(target, context,
-                *this, results, &validated));
+        constraint.applyToSubschemas(ValidateSubschemas(target, context,
+                false, *this, results, NULL, &validated));
 
         return validated;
     }
@@ -739,15 +739,12 @@ public:
     virtual bool visit(const OneOfConstraint &constraint)
     {
         unsigned int numValidated = 0;
+
         ValidationResults newResults;
         ValidationResults *childResults = (results) ? &newResults : NULL;
 
-        BOOST_FOREACH( const Subschema *subschema, constraint.schemas ) {
-            ValidationVisitor<AdapterType> v(target, context, strictTypes, childResults);
-            if (v.validateSchema(*subschema)) {
-                numValidated++;
-            }
-        }
+        constraint.applyToSubschemas(ValidateSubschemas(target, context,
+                true, *this, childResults, &numValidated, NULL));
 
         if (numValidated == 0) {
             if (results) {
@@ -1044,47 +1041,6 @@ public:
 
 private:
 
-    struct ValidateAllSubschemas
-    {
-        ValidateAllSubschemas(
-                const AdapterType &adapter,
-                const std::vector<std::string> &context,
-                ValidationVisitor &validationVisitor,
-                ValidationResults *results,
-                bool *validated)
-          : adapter(adapter),
-            context(context),
-            validationVisitor(validationVisitor),
-            results(results),
-            validated(validated) { }
-
-        bool operator()(unsigned int index, const Subschema *subschema) const
-        {
-            if (!validationVisitor.validateSchema(*subschema)) {
-                if (validated) {
-                    *validated = false;
-                }
-                if (results) {
-                    results->pushError(context,
-                        "Failed to validate against child schema #" +
-                        boost::lexical_cast<std::string>(index) +
-                        " of allOf constraint.");
-                }
-
-                return false;
-            }
-
-            return true;
-        }
-
-    private:
-        const AdapterType &adapter;
-        const std::vector<std::string> &context;
-        ValidationVisitor &validationVisitor;
-        ValidationResults * const results;
-        bool * const validated;
-    };
-
     struct ValidateAtLeastOneSubschema
     {
         ValidateAtLeastOneSubschema(
@@ -1212,6 +1168,57 @@ private:
         const std::vector<std::string> &context;
         ValidationVisitor &validationVisitor;
         ValidationResults * const results;
+        bool * const validated;
+    };
+
+    struct ValidateSubschemas
+    {
+        ValidateSubschemas(
+                const AdapterType &adapter,
+                const std::vector<std::string> &context,
+                bool continueOnFailure,
+                ValidationVisitor &validationVisitor,
+                ValidationResults *results,
+                unsigned int *numValidated,
+                bool *validated)
+          : adapter(adapter),
+            context(context),
+            continueOnFailure(continueOnFailure),
+            validationVisitor(validationVisitor),
+            results(results),
+            numValidated(numValidated),
+            validated(validated) { }
+
+        bool operator()(unsigned int index, const Subschema *subschema) const
+        {
+            if (validationVisitor.validateSchema(*subschema)) {
+                if (numValidated) {
+                    (*numValidated)++;
+                }
+
+                return true;
+            }
+
+            if (validated) {
+                *validated = false;
+            }
+
+            if (results) {
+                results->pushError(context,
+                    "Failed to validate against child schema #" +
+                    boost::lexical_cast<std::string>(index) + ".");
+            }
+
+            return continueOnFailure;
+        }
+
+    private:
+        const AdapterType &adapter;
+        const std::vector<std::string> &context;
+        bool continueOnFailure;
+        ValidationVisitor &validationVisitor;
+        ValidationResults * const results;
+        unsigned int * const numValidated;
         bool * const validated;
     };
 

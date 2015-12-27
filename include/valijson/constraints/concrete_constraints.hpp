@@ -434,15 +434,40 @@ struct NotConstraint: BasicConstraint<NotConstraint>
 /**
  * @brief   Represents a 'oneOf' constraint.
  */
-struct OneOfConstraint: BasicConstraint<OneOfConstraint>
+class OneOfConstraint: public BasicConstraint<OneOfConstraint>
 {
-    typedef std::vector<const Subschema *> Schemas;
+public:
+    OneOfConstraint()
+      : subschemas(Allocator::rebind<const Subschema *>::other(allocator)) { }
 
-    OneOfConstraint(const Schemas &schemas)
-      : schemas(schemas) { }
+    OneOfConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        subschemas(Allocator::rebind<const Subschema *>::other(allocator)) { }
 
-    /// Collection of schemas that must all be satisfied
-    const Schemas schemas;
+    void addSubschema(const Subschema *subschema)
+    {
+        subschemas.push_back(subschema);
+    }
+
+    template<typename FunctorType>
+    void applyToSubschemas(const FunctorType &fn) const
+    {
+        unsigned int index = 0;
+        BOOST_FOREACH( const Subschema *subschema, subschemas ) {
+            if (!fn(index, subschema)) {
+                return;
+            }
+
+            index++;
+        }
+    }
+
+private:
+    typedef std::vector<const Subschema *,
+            internal::CustomAllocator<const Subschema *> > Subschemas;
+
+    /// Collection of sub-schemas, exactly one of which must be satisfied
+    Subschemas subschemas;
 };
 
 /**
