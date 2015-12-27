@@ -115,7 +115,7 @@ public:
         bool validated = true;
 
         constraint.applyToSubschemas(ValidateSubschemas(target, context,
-                false, *this, results, NULL, &validated));
+                true, false, *this, results, NULL, &validated));
 
         return validated;
     }
@@ -140,17 +140,17 @@ public:
      */
     virtual bool visit(const AnyOfConstraint &constraint)
     {
-        bool validated = false;
+        unsigned int numValidated = 0;
 
-        constraint.applyToSubschemas(ValidateAtLeastOneSubschema(target,
-                context, *this, results, &validated));
+        constraint.applyToSubschemas(ValidateSubschemas(target, context, false,
+                true, *this, results, &numValidated, NULL));
 
-        if (!validated && results) {
+        if (numValidated == 0 && results) {
             results->pushError(context, "Failed to validate against any child "
                     "schemas allowed by anyOf constraint.");
         }
 
-        return validated;
+        return numValidated > 0;
     }
 
     /**
@@ -744,7 +744,7 @@ public:
         ValidationResults *childResults = (results) ? &newResults : NULL;
 
         constraint.applyToSubschemas(ValidateSubschemas(target, context,
-                true, *this, childResults, &numValidated, NULL));
+                true, true, *this, childResults, &numValidated, NULL));
 
         if (numValidated == 0) {
             if (results) {
@@ -1041,41 +1041,6 @@ public:
 
 private:
 
-    struct ValidateAtLeastOneSubschema
-    {
-        ValidateAtLeastOneSubschema(
-                const AdapterType &adapter,
-                const std::vector<std::string> &context,
-                ValidationVisitor &validationVisitor,
-                ValidationResults *results,
-                bool *validated)
-          : adapter(adapter),
-            context(context),
-            validationVisitor(validationVisitor),
-            results(results),
-            validated(validated) { }
-
-        bool operator()(unsigned int index, const Subschema *subschema) const
-        {
-            if (validationVisitor.validateSchema(*subschema)) {
-                if (validated) {
-                    *validated = true;
-                }
-
-                return false;
-            }
-
-            return true;
-        }
-
-    private:
-        const AdapterType &adapter;
-        const std::vector<std::string> &context;
-        ValidationVisitor &validationVisitor;
-        ValidationResults * const results;
-        bool * const validated;
-    };
-
     struct ValidatePropertyDependencies
     {
         ValidatePropertyDependencies(
@@ -1176,6 +1141,7 @@ private:
         ValidateSubschemas(
                 const AdapterType &adapter,
                 const std::vector<std::string> &context,
+                bool continueOnSuccess,
                 bool continueOnFailure,
                 ValidationVisitor &validationVisitor,
                 ValidationResults *results,
@@ -1183,6 +1149,7 @@ private:
                 bool *validated)
           : adapter(adapter),
             context(context),
+            continueOnSuccess(continueOnSuccess),
             continueOnFailure(continueOnFailure),
             validationVisitor(validationVisitor),
             results(results),
@@ -1196,7 +1163,7 @@ private:
                     (*numValidated)++;
                 }
 
-                return true;
+                return continueOnSuccess;
             }
 
             if (validated) {
@@ -1215,6 +1182,7 @@ private:
     private:
         const AdapterType &adapter;
         const std::vector<std::string> &context;
+        bool continueOnSuccess;
         bool continueOnFailure;
         ValidationVisitor &validationVisitor;
         ValidationResults * const results;
