@@ -23,8 +23,6 @@ public:
     typedef std::size_t size_type;
     typedef std::ptrdiff_t difference_type;
 
-    typedef std::true_type propagate_on_container_move_assignment;
-
     template<typename U>
     struct rebind
     {
