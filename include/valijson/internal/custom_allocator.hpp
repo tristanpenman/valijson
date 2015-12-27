@@ -88,12 +88,12 @@ public:
         p->~T();
     }
 
-    bool operator==(CustomAllocator const &other)
+    bool operator==(const CustomAllocator &other) const
     {
         return other.allocFn == allocFn && other.freeFn == freeFn;
     }
 
-    bool operator!=(CustomAllocator const &other)
+    bool operator!=(const CustomAllocator &other) const
     {
         return !operator==(other);
     }
