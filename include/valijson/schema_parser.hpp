@@ -496,16 +496,17 @@ private:
                     "Expected array value for 'allOf' constraint.");
         }
 
-        constraints::AllOfConstraint::Schemas childSchemas;
+        constraints::AllOfConstraint constraint;
+
         int index = 0;
         BOOST_FOREACH ( const AdapterType schemaNode, node.asArray() ) {
             if (schemaNode.maybeObject()) {
                 const std::string childPath = nodePath + "/" +
                         boost::lexical_cast<std::string>(index);
-                childSchemas.push_back(rootSchema.createSubschema());
+                const Subschema *subschema = rootSchema.createSubschema();
+                constraint.addSubschema(subschema);
                 populateSchema<AdapterType>(rootSchema, rootNode, schemaNode,
-                        *childSchemas.back(), currentScope, childPath,
-                        fetchDoc);
+                        *subschema, currentScope, childPath, fetchDoc);
                 index++;
             } else {
                 throw std::runtime_error(
@@ -514,7 +515,7 @@ private:
             }
         }
 
-        return constraints::AllOfConstraint(childSchemas);
+        return constraint;
     }
 
     /**
@@ -548,16 +549,17 @@ private:
                     "Expected array value for 'anyOf' constraint.");
         }
 
-        constraints::AnyOfConstraint::Schemas childSchemas;
+        constraints::AnyOfConstraint constraint;
+
         int index = 0;
         BOOST_FOREACH ( const AdapterType schemaNode, node.asArray() ) {
             if (schemaNode.maybeObject()) {
                 const std::string childPath = nodePath + "/" +
                         boost::lexical_cast<std::string>(index);
-                childSchemas.push_back(rootSchema.createSubschema());
+                const Subschema *subschema = rootSchema.createSubschema();
+                constraint.addSubschema(subschema);
                 populateSchema<AdapterType>(rootSchema, rootNode, schemaNode,
-                        *childSchemas.back(), currentScope, childPath,
-                        fetchDoc);
+                        *subschema, currentScope, childPath, fetchDoc);
                 index++;
             } else {
                 throw std::runtime_error(
@@ -566,7 +568,7 @@ private:
             }
         }
 
-        return constraints::AnyOfConstraint(childSchemas);
+        return constraint;
     }
 
     /**

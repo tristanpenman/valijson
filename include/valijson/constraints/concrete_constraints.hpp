@@ -31,9 +31,6 @@
 #include <valijson/schema.hpp>
 
 namespace valijson {
-
-class Schema;
-
 namespace constraints {
 
 /**
@@ -43,15 +40,40 @@ namespace constraints {
  * validate against. If a value fails to validate against any of these sub-
  * schemas, then validation fails.
  */
-struct AllOfConstraint: BasicConstraint<AllOfConstraint>
+class AllOfConstraint: public BasicConstraint<AllOfConstraint>
 {
-    typedef std::vector<const Subschema *> Schemas;
+public:
+    AllOfConstraint()
+      : subschemas(Allocator::rebind<const Subschema *>::other(allocator)) { }
 
-    AllOfConstraint(const Schemas &schemas)
-      : schemas(schemas) { }
+    AllOfConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        subschemas(Allocator::rebind<const Subschema *>::other(allocator)) { }
 
-    /// Collection of schemas that must all be satisfied
-    const Schemas schemas;
+    void addSubschema(const Subschema *subschema)
+    {
+        subschemas.push_back(subschema);
+    }
+
+    template<typename FunctorType>
+    void applyToSubschemas(const FunctorType &fn) const
+    {
+        unsigned int index = 0;
+        BOOST_FOREACH( const Subschema *subschema, subschemas ) {
+            if (!fn(index, subschema)) {
+                return;
+            }
+
+            index++;
+        }
+    }
+
+private:
+    typedef std::vector<const Subschema *,
+            internal::CustomAllocator<const Subschema *> > Subschemas;
+
+    /// Collection of sub-schemas, all of which must be satisfied
+    Subschemas subschemas;
 };
 
 /**
@@ -61,15 +83,40 @@ struct AllOfConstraint: BasicConstraint<AllOfConstraint>
  * validate against. If a value validates against one of these sub-schemas,
  * then the validation passes.
  */
-struct AnyOfConstraint: BasicConstraint<AnyOfConstraint>
+class AnyOfConstraint: public BasicConstraint<AnyOfConstraint>
 {
-    typedef std::vector<const Subschema *> Schemas;
+public:
+    AnyOfConstraint()
+      : subschemas(Allocator::rebind<const Subschema *>::other(allocator)) { }
 
-    AnyOfConstraint(const Schemas &schemas)
-      : schemas(schemas) { }
+    AnyOfConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        subschemas(Allocator::rebind<const Subschema *>::other(allocator)) { }
 
-    /// Collection of schemas of which one must be satisfied
-    const Schemas schemas;
+    void addSubschema(const Subschema *subschema)
+    {
+        subschemas.push_back(subschema);
+    }
+
+    template<typename FunctorType>
+    void applyToSubschemas(const FunctorType &fn) const
+    {
+        unsigned int index = 0;
+        BOOST_FOREACH( const Subschema *subschema, subschemas ) {
+            if (!fn(index, subschema)) {
+                return;
+            }
+
+            index++;
+        }
+    }
+
+private:
+    typedef std::vector<const Subschema *,
+            internal::CustomAllocator<const Subschema *> > Subschemas;
+
+    /// Collection of sub-schemas, at least one of which must be satisfied
+    Subschemas subschemas;
 };
 
 /**
@@ -146,29 +193,25 @@ public:
     }
 
     template<typename FunctorType>
-    bool applyToPropertyDependencies(const FunctorType &fn) const
+    void applyToPropertyDependencies(const FunctorType &fn) const
     {
         BOOST_FOREACH( const PropertyDependencies::value_type &v,
                 propertyDependencies ) {
             if (!fn(v.first, v.second)) {
-                return false;
+                return;
             }
         }
-
-        return true;
     }
 
     template<typename FunctorType>
-    bool applyToSchemaDependencies(const FunctorType &fn) const
+    void applyToSchemaDependencies(const FunctorType &fn) const
     {
         BOOST_FOREACH( const SchemaDependencies::value_type &v,
                 schemaDependencies ) {
             if (!fn(v.first, v.second)) {
-                return false;
+                return;
             }
         }
-
-        return true;
     }
 
 private:

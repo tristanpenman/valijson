@@ -112,27 +112,10 @@ public:
      */
     virtual bool visit(const AllOfConstraint &constraint)
     {
-        // Flag used to track validation status if errors are non-fatal
         bool validated = true;
 
-        // Validate against each child schema
-        unsigned int index = 0;
-        BOOST_FOREACH( const Subschema *subschema, constraint.schemas ) {
-
-            // Ensure that the target validates against child schema
-            if (!validateSchema(*subschema)) {
-                if (results) {
-                    validated = false;
-                    results->pushError(context,
-                        std::string("Failed to validate against child schema #") +
-                        boost::lexical_cast<std::string>(index) + " of allOf constraint.");
-                } else {
-                    return false;
-                }
-            }
-
-            index++;
-        }
+        constraint.applyToSubschemas(ValidateAllSubschemas(target, context,
+                *this, results, &validated));
 
         return validated;
     }
@@ -157,22 +140,17 @@ public:
      */
     virtual bool visit(const AnyOfConstraint &constraint)
     {
-        // Wrap the validationCallback() function below so that it will be
-        // passed a reference to a constraint (_1), and a reference to the
-        // visitor (*this).
-        Schema::ApplyFunction fn(boost::bind(validationCallback, _1, *this));
+        bool validated = false;
 
-        BOOST_FOREACH( const Subschema *subschema, constraint.schemas ) {
-            if (subschema->apply(fn)) {
-                return true;
-            }
+        constraint.applyToSubschemas(ValidateAtLeastOneSubschema(target,
+                context, *this, results, &validated));
+
+        if (!validated && results) {
+            results->pushError(context, "Failed to validate against any child "
+                    "schemas allowed by anyOf constraint.");
         }
 
-        if (results) {
-            results->pushError(context, "Failed to validate against any child schemas allowed by anyOf constraint.");
-        }
-
-        return false;
+        return validated;
     }
 
     /**
@@ -1065,6 +1043,82 @@ public:
     }
 
 private:
+
+    struct ValidateAllSubschemas
+    {
+        ValidateAllSubschemas(
+                const AdapterType &adapter,
+                const std::vector<std::string> &context,
+                ValidationVisitor &validationVisitor,
+                ValidationResults *results,
+                bool *validated)
+          : adapter(adapter),
+            context(context),
+            validationVisitor(validationVisitor),
+            results(results),
+            validated(validated) { }
+
+        bool operator()(unsigned int index, const Subschema *subschema) const
+        {
+            if (!validationVisitor.validateSchema(*subschema)) {
+                if (validated) {
+                    *validated = false;
+                }
+                if (results) {
+                    results->pushError(context,
+                        "Failed to validate against child schema #" +
+                        boost::lexical_cast<std::string>(index) +
+                        " of allOf constraint.");
+                }
+
+                return false;
+            }
+
+            return true;
+        }
+
+    private:
+        const AdapterType &adapter;
+        const std::vector<std::string> &context;
+        ValidationVisitor &validationVisitor;
+        ValidationResults * const results;
+        bool * const validated;
+    };
+
+    struct ValidateAtLeastOneSubschema
+    {
+        ValidateAtLeastOneSubschema(
+                const AdapterType &adapter,
+                const std::vector<std::string> &context,
+                ValidationVisitor &validationVisitor,
+                ValidationResults *results,
+                bool *validated)
+          : adapter(adapter),
+            context(context),
+            validationVisitor(validationVisitor),
+            results(results),
+            validated(validated) { }
+
+        bool operator()(unsigned int index, const Subschema *subschema) const
+        {
+            if (validationVisitor.validateSchema(*subschema)) {
+                if (validated) {
+                    *validated = true;
+                }
+
+                return false;
+            }
+
+            return true;
+        }
+
+    private:
+        const AdapterType &adapter;
+        const std::vector<std::string> &context;
+        ValidationVisitor &validationVisitor;
+        ValidationResults * const results;
+        bool * const validated;
+    };
 
     struct ValidatePropertyDependencies
     {
