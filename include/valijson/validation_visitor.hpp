@@ -1332,8 +1332,8 @@ private:
         return constraint.accept(visitor);
     }
 
-    /// Reference to the JSON value being validated
-    const AdapterType &target;
+    /// The JSON value being validated
+    const AdapterType target;
 
     /// Vector of strings describing the current object context
     const std::vector<std::string> context;
