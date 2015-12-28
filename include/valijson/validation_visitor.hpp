@@ -1076,6 +1076,9 @@ public:
 
 private:
 
+    /**
+     * @brief  Functor to validate property-based dependencies
+     */
     struct ValidatePropertyDependencies
     {
         ValidatePropertyDependencies(
@@ -1196,6 +1199,9 @@ private:
 
     };
 
+    /**
+     * @brief  Functor to validate schema-based dependencies
+     */
     struct ValidateSchemaDependencies
     {
         ValidateSchemaDependencies(
@@ -1243,6 +1249,21 @@ private:
         bool * const validated;
     };
 
+    /**
+     * @brief  Functor that can be used to validate one or more subschemas
+     *
+     * This functor is designed to be applied to collections of subschemas
+     * contained within 'allOf', 'anyOf' and 'oneOf' constraints.
+     *
+     * The return value depends on whether a given schema validates, with the
+     * actual return value for a given case being decided at construction time.
+     * The return value is used by the 'applyToSubschemas' functions in the
+     * AllOfConstraint, AnyOfConstraint and OneOfConstrant classes to decide
+     * whether to terminate early.
+     *
+     * The functor uses output parameters (provided at construction) to update
+     * validation state that may be needed by the caller.
+     */
     struct ValidateSubschemas
     {
         ValidateSubschemas(
