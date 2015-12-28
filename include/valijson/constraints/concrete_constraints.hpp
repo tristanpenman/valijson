@@ -474,14 +474,43 @@ private:
 };
 
 /**
- * @brief   Represents a 'pattern' constraint.
+ * @brief   Represents a 'pattern' constraint
  */
-struct PatternConstraint: BasicConstraint<PatternConstraint>
+class PatternConstraint: public BasicConstraint<PatternConstraint>
 {
-    PatternConstraint(const std::string &pattern)
-      : pattern(pattern) { }
+public:
+    PatternConstraint()
+      : pattern(Allocator::rebind<char>::other(allocator)) { }
 
-    const std::string pattern;
+    PatternConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        pattern(Allocator::rebind<char>::other(allocator)) { }
+
+    template<typename AllocatorType>
+    bool getPattern(std::basic_string<char, std::char_traits<char>,
+            AllocatorType> &result) const
+    {
+        result.assign(this->pattern.c_str());
+        return true;
+    }
+
+    template<typename AllocatorType>
+    std::basic_string<char, std::char_traits<char>, AllocatorType> getPattern(
+            const AllocatorType &alloc = AllocatorType()) const
+    {
+        return std::basic_string<char, std::char_traits<char>, AllocatorType>(
+                pattern.c_str(), alloc);
+    }
+
+    template<typename AllocatorType>
+    void setPattern(const std::basic_string<char, std::char_traits<char>,
+            AllocatorType> &pattern)
+    {
+        this->pattern.assign(pattern.c_str());
+    }
+
+private:
+    String pattern;
 };
 
 /**

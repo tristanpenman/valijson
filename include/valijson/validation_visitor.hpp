@@ -755,11 +755,17 @@ public:
             return true;
         }
 
-        const boost::regex r(constraint.pattern, boost::regex::perl);
-        if (!boost::regex_search(target.asString(), r)) {
+        const boost::regex patternRegex(
+                constraint.getPattern<std::string::allocator_type>(),
+                boost::regex::perl);
+
+        if (!boost::regex_search(target.asString(), patternRegex)) {
             if (results) {
-                results->pushError(context, "Failed to match regex specified by 'pattern' constraint.");
+                results->pushError(context,
+                        "Failed to match regex specified by 'pattern' "
+                        "constraint.");
             }
+
             return false;
         }
 
