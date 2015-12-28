@@ -199,22 +199,30 @@ private:
         }
 
         {
-            // Check for schema keywords that require the creation of a
-            // ItemsConstraint instance.
-            const typename AdapterType::Object::const_iterator
-                itemsItr = object.find("items"),
-                additionalitemsItr = object.find("additionalItems");
-            if (object.end() != itemsItr ||
-                object.end() != additionalitemsItr) {
-                rootSchema.addConstraintToSubschema(
-                        makeItemsConstraint(rootSchema, rootNode,
-                                itemsItr != object.end() ?
-                                        &itemsItr->second : NULL,
-                                additionalitemsItr != object.end() ?
-                                        &additionalitemsItr->second : NULL,
-                                currentScope, nodePath + "/items",
-                                nodePath + "/additionalItems", fetchDoc),
-                        &subschema);
+            const typename AdapterType::Object::const_iterator itemsItr =
+                    object.find("items");
+
+            if (object.end() != itemsItr) {
+                if (!itemsItr->second.isArray()) {
+                    rootSchema.addConstraintToSubschema(
+                            makeSingularItemsConstraint(rootSchema, rootNode,
+                                    itemsItr->second, currentScope,
+                                    nodePath + "/items", fetchDoc),
+                            &subschema);
+
+                } else {
+                    const typename AdapterType::Object::const_iterator
+                            additionalItemsItr = object.find("additionalItems");
+                    rootSchema.addConstraintToSubschema(
+                            makeLinearItemsConstraint(rootSchema, rootNode,
+                                    itemsItr != object.end() ?
+                                            &itemsItr->second : NULL,
+                                    additionalItemsItr != object.end() ?
+                                            &additionalItemsItr->second : NULL,
+                                    currentScope, nodePath + "/items",
+                                    nodePath + "/additionalItems", fetchDoc),
+                            &subschema);
+                }
             }
         }
 
@@ -728,7 +736,7 @@ private:
      * @return  pointer to a new ItemsConstraint that belongs to the caller
      */
     template<typename AdapterType>
-    constraints::ItemsConstraint makeItemsConstraint(
+    constraints::LinearItemsConstraint makeLinearItemsConstraint(
         Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType *items,
@@ -739,24 +747,27 @@ private:
         const boost::optional<
                 typename FetchDocumentFunction<AdapterType>::Type > fetchDoc)
     {
+        constraints::LinearItemsConstraint constraint;
+
         // Construct a Schema object for the the additionalItems constraint,
         // if the additionalItems property is present
-        const Subschema *additionalItemsSchema = NULL;
         if (additionalItems) {
             if (additionalItems->maybeBool()) {
                 // If the value of the additionalItems property is a boolean
                 // and is set to true, then additional array items do not need
                 // to satisfy any constraints.
                 if (additionalItems->asBool()) {
-                    additionalItemsSchema = rootSchema.createSubschema();
+                    constraint.setAdditionalItemsSubschema(
+                            rootSchema.emptySubschema());
                 }
             } else if (additionalItems->maybeObject()) {
                 // If the value of the additionalItems property is an object,
                 // then it should be parsed into a Schema object, which will be
                 // used to validate additional array items.
-                additionalItemsSchema = rootSchema.createSubschema();
+                const Subschema *subschema = rootSchema.createSubschema();
+                constraint.setAdditionalItemsSubschema(subschema);
                 populateSchema<AdapterType>(rootSchema, rootNode,
-                        *additionalItems, *additionalItemsSchema, currentScope,
+                        *additionalItems, *subschema, currentScope,
                         additionalItemsPath, fetchDoc);
             } else {
                 // Any other format for the additionalItems property will result
@@ -768,14 +779,12 @@ private:
             // The default value for the additionalItems property is an empty
             // object, which means that additional array items do not need to
             // satisfy any constraints.
-            additionalItemsSchema = rootSchema.createSubschema();
+            constraint.setAdditionalItemsSubschema(rootSchema.emptySubschema());
         }
 
-        // Construct a Schema object for each item in the items array, if an
-        // array is provided, or a single Schema object, in an object value is
-        // provided. If the items constraint is not provided, then array items
+        // Construct a Schema object for each item in the items array.
+        // If the items constraint is not provided, then array items
         // will be validated against the additionalItems schema.
-        constraints::ItemsConstraint::Schemas itemSchemas;
         if (items) {
             if (items->isArray()) {
                 // If the items constraint contains an array, then it should
@@ -786,61 +795,87 @@ private:
                 BOOST_FOREACH( const AdapterType v, items->getArray() ) {
                     const std::string childPath = itemsPath + "/" +
                             boost::lexical_cast<std::string>(index);
-                    itemSchemas.push_back(rootSchema.createSubschema());
-                    const Subschema &childSubschema = *itemSchemas.back();
+                    const Subschema *subschema = rootSchema.createSubschema();
+                    constraint.addItemSubschema(subschema);
                     populateSchema<AdapterType>(rootSchema, rootNode, v,
-                            childSubschema, currentScope, childPath, fetchDoc);
+                            *subschema, currentScope, childPath, fetchDoc);
                     index++;
                 }
-
-                // Create an ItemsConstraint object using the appropriate
-                // overloaded constructor.
-                if (additionalItemsSchema) {
-                    return constraints::ItemsConstraint(itemSchemas,
-                            additionalItemsSchema);
-                } else {
-                    return constraints::ItemsConstraint(itemSchemas);
-                }
-
-            } else if (items->isObject()) {
-                // If the items constraint contains an object value, then it
-                // should contain a Schema that will be used to validate all
-                // items in a target array. Any schema defined by the
-                // additionalItems constraint will be ignored.
-                const Subschema *childSubschema = rootSchema.createSubschema();
-                populateSchema<AdapterType>(rootSchema, rootNode, *items,
-                        *childSubschema, currentScope, itemsPath, fetchDoc);
-                if (additionalItemsSchema) {
-                    return constraints::ItemsConstraint(childSubschema,
-                            additionalItemsSchema);
-                } else {
-                    return constraints::ItemsConstraint(childSubschema);
-                }
-
-            } else if (items->maybeObject()) {
-                // If a loosely-typed Adapter type is being used, then we'll
-                // assume that an empty schema has been provided.
-                const Subschema *childSubschema = rootSchema.createSubschema();
-                if (additionalItemsSchema) {
-                    return constraints::ItemsConstraint(childSubschema,
-                            additionalItemsSchema);
-                } else {
-                    return constraints::ItemsConstraint(childSubschema);
-                }
-
             } else {
-                // All other formats will result in an exception being thrown.
                 throw std::runtime_error(
-                        "Expected array or object value for 'items'.");
+                        "Expected array value for non-singular 'items' "
+                        "constraint.");
             }
         }
 
-        if (additionalItemsSchema) {
-            return constraints::ItemsConstraint(rootSchema.emptySubschema(),
-                    additionalItemsSchema);
+        return constraint;
+    }
+
+    /**
+     * @brief   Make a new ItemsConstraint object.
+     *
+     * @param   rootSchema           The Schema instance, and root subschema,
+     *                               through which other subschemas can be 
+     *                               created and modified
+     * @param   rootNode             Reference to the node from which JSON
+     *                               References will be resolved when they refer
+     *                               to the current document; used for recursive
+     *                               parsing of schemas
+     * @param   items                Optional pointer to a JSON node containing
+     *                               an object mapping property names to 
+     *                               schemas.
+     * @param   additionalItems      Optional pointer to a JSON node containing
+     *                               an additional properties schema or a
+     *                               boolean value.
+     * @param   currentScope         URI for current resolution scope
+     * @param   itemsPath            JSON Pointer representing the path to
+     *                               the 'items' node
+     * @param   additionalItemsPath  JSON Pointer representing the path to
+     *                               the 'additionalItems' node
+     * @param   fetchDoc             Function to fetch remote JSON documents
+     *                               (optional)
+     *
+     * @return  pointer to a new ItemsConstraint that belongs to the caller
+     */
+    template<typename AdapterType>
+    constraints::SingularItemsConstraint makeSingularItemsConstraint(
+        Schema &rootSchema,
+        const AdapterType &rootNode,
+        const AdapterType &items,
+        const boost::optional<std::string> currentScope,
+        const std::string &itemsPath,
+        const boost::optional<
+                typename FetchDocumentFunction<AdapterType>::Type > fetchDoc)
+    {
+        constraints::SingularItemsConstraint constraint;
+
+        // Construct a Schema object for each item in the items array, if an
+        // array is provided, or a single Schema object, in an object value is
+        // provided. If the items constraint is not provided, then array items
+        // will be validated against the additionalItems schema.
+        if (items.isObject()) {
+            // If the items constraint contains an object value, then it
+            // should contain a Schema that will be used to validate all
+            // items in a target array. Any schema defined by the
+            // additionalItems constraint will be ignored.
+            const Subschema *subschema = rootSchema.createSubschema();
+            constraint.setItemsSubschema(subschema);
+            populateSchema<AdapterType>(rootSchema, rootNode, items,
+                    *subschema, currentScope, itemsPath, fetchDoc);
+
+        } else if (items.maybeObject()) {
+            // If a loosely-typed Adapter type is being used, then we'll
+            // assume that an empty schema has been provided.
+            constraint.setItemsSubschema(rootSchema.emptySubschema());
+
+        } else {
+            // All other formats will result in an exception being thrown.
+            throw std::runtime_error(
+                    "Expected object value for singular 'items' "
+                    "constraint.");
         }
 
-        return constraints::ItemsConstraint(rootSchema.emptySubschema());
+        return constraint;
     }
 
     /**

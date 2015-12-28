@@ -248,67 +248,70 @@ struct EnumConstraint: BasicConstraint<EnumConstraint>
 };
 
 /**
- * @brief  Represents a pair of 'items' and 'additionalItems' constraints.
+ * @brief  Represents non-singular 'items' and 'additionalItems' constraints
+ *
+ * Unlike the SingularItemsConstraint class, this class represents an 'items'
+ * constraint that specifies an array of sub-schemas, which should be used to
+ * validate each item in an array, in sequence. It also represents an optional
+ * 'additionalItems' sub-schema that should be used when an array contains
+ * more values than there are sub-schemas in the 'items' constraint.
+ *
+ * The prefix 'Linear' comes from the fact that this class contains a list of
+ * sub-schemas that corresponding array items must be validated against, and
+ * this validation is performed linearly (i.e. in sequence).
  */
-struct ItemsConstraint: BasicConstraint<ItemsConstraint>
+class LinearItemsConstraint: public BasicConstraint<LinearItemsConstraint>
 {
-    typedef std::vector<const Subschema *> Schemas;
+public:
+    LinearItemsConstraint()
+      : itemSubschemas(Allocator::rebind<const Subschema *>::other(allocator)),
+        additionalItemsSubschema(NULL) { }
 
-    /**
-     * @brief  Construct a singular item constraint that allows no additional
-     *         items
-     *
-     * @param  itemSchema
-     */
-    ItemsConstraint(const Subschema *itemSchema)
-      : itemSchema(itemSchema),
-        additionalItemsSchema(NULL) { }
+    LinearItemsConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        itemSubschemas(Allocator::rebind<const Subschema *>::other(allocator)),
+        additionalItemsSubschema(NULL) { }
 
-    /**
-     * @brief  Construct a singular item schema that allows additional items
-     *
-     * @param  itemSchema
-     * @param  additionalItemsSchema
-     */
-    ItemsConstraint(const Subschema *itemSchema,
-                    const Subschema *additionalItemsSchema)
-      : itemSchema(itemSchema),
-        additionalItemsSchema(additionalItemsSchema) { }
+    void addItemSubschema(const Subschema *subschema)
+    {
+        itemSubschemas.push_back(subschema);
+    }
 
-    /**
-     * @brief  Construct a plural items constraint that does not allow for
-     *         additional item schemas
-     *
-     * @param  itemSchemas  collection of item schemas
-     */
-    ItemsConstraint(const Schemas &itemSchemas)
-      : itemSchema(NULL),
-        itemSchemas(itemSchemas),
-        additionalItemsSchema(NULL) { }
+    template<typename FunctorType>
+    void applyToItemSubschemas(const FunctorType &fn) const
+    {
+        unsigned int index = 0;
+        BOOST_FOREACH( const Subschema *subschema, itemSubschemas ) {
+            if (!fn(index, subschema)) {
+                return;
+            }
 
-    /**
-     * @brief  Construct a plural items constraint that allows additional items
-     *
-     * @param  itemSchemas
-     * @param  additionalItemsSchema
-     */
-    ItemsConstraint(const Schemas &itemSchemas,
-                    const Subschema *additionalItemsSchema)
-      : itemSchema(NULL),
-        itemSchemas(itemSchemas),
-        additionalItemsSchema(additionalItemsSchema) { }
+            index++;
+        }
+    }
 
-    /**
-     * @brief  Copy constructor
-     */
-    ItemsConstraint(const ItemsConstraint &other)
-      : itemSchema(other.itemSchema),
-        itemSchemas(other.itemSchemas),
-        additionalItemsSchema(other.additionalItemsSchema) { }
+    const Subschema * getAdditionalItemsSubschema() const
+    {
+        return additionalItemsSubschema;
+    }
 
-    const Subschema* itemSchema;
-    const Schemas itemSchemas;
-    const Subschema* additionalItemsSchema;
+    size_t getItemSubschemaCount() const
+    {
+        return itemSubschemas.size();
+    }
+
+    void setAdditionalItemsSubschema(const Subschema *subschema)
+    {
+        additionalItemsSubschema = subschema;
+    }
+
+private:
+    typedef std::vector<const Subschema *,
+            internal::CustomAllocator<const Subschema *> > Subschemas;
+
+    Subschemas itemSubschemas;
+
+    const Subschema* additionalItemsSubschema;
 };
 
 /**
@@ -531,6 +534,36 @@ struct RequiredConstraint: BasicConstraint<RequiredConstraint>
     }
 
     const RequiredProperties requiredProperties;
+};
+
+/**
+ * @brief  Represents an 'items' constraint that specifies one sub-schema
+ *
+ * A value is considered valid against this constraint if it is an array, and
+ * each item in the array validates against the sub-schema specified by this
+ * constraint.
+ *
+ * The prefix 'Singular' comes from the fact that array items must validate
+ * against exactly one sub-schema.
+ */
+class SingularItemsConstraint: public BasicConstraint<SingularItemsConstraint>
+{
+public:
+    SingularItemsConstraint()
+      : itemsSubschema(NULL) { }
+
+    const Subschema * getItemsSubschema() const
+    {
+        return itemsSubschema;
+    }
+
+    void setItemsSubschema(const Subschema *subschema)
+    {
+        itemsSubschema = subschema;
+    }
+
+private:
+    const Subschema *itemsSubschema;
 };
 
 /**

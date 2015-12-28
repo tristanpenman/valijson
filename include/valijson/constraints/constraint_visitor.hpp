@@ -6,7 +6,6 @@ namespace valijson {
 namespace constraints {
 
 struct EnumConstraint;
-struct ItemsConstraint;
 struct FormatConstraint;
 struct MaximumConstraint;
 struct MaxItemsConstraint;
@@ -27,7 +26,9 @@ struct UniqueItemsConstraint;
 class AllOfConstraint;
 class AnyOfConstraint;
 class DependenciesConstraint;
+class LinearItemsConstraint;
 class OneOfConstraint;
+class SingularItemsConstraint;
 
 /// Interface to allow usage of the visitor pattern with Constraints
 class ConstraintVisitor
@@ -39,7 +40,7 @@ protected:
     typedef constraints::AnyOfConstraint AnyOfConstraint;
     typedef constraints::DependenciesConstraint DependenciesConstraint;
     typedef constraints::EnumConstraint EnumConstraint;
-    typedef constraints::ItemsConstraint ItemsConstraint;
+    typedef constraints::LinearItemsConstraint LinearItemsConstraint;
     typedef constraints::MaximumConstraint MaximumConstraint;
     typedef constraints::MaxItemsConstraint MaxItemsConstraint;
     typedef constraints::MaxLengthConstraint MaxLengthConstraint;
@@ -54,6 +55,7 @@ protected:
     typedef constraints::PatternConstraint PatternConstraint;
     typedef constraints::PropertiesConstraint PropertiesConstraint;
     typedef constraints::RequiredConstraint RequiredConstraint;
+    typedef constraints::SingularItemsConstraint SingularItemsConstraint;
     typedef constraints::TypeConstraint TypeConstraint;
     typedef constraints::UniqueItemsConstraint UniqueItemsConstraint;
 
@@ -63,7 +65,7 @@ public:
     virtual bool visit(const AnyOfConstraint &) = 0;
     virtual bool visit(const DependenciesConstraint &) = 0;
     virtual bool visit(const EnumConstraint &) = 0;
-    virtual bool visit(const ItemsConstraint &) = 0;
+    virtual bool visit(const LinearItemsConstraint &) = 0;
     virtual bool visit(const MaximumConstraint &) = 0;
     virtual bool visit(const MaxItemsConstraint &) = 0;
     virtual bool visit(const MaxLengthConstraint &) = 0;
@@ -78,6 +80,7 @@ public:
     virtual bool visit(const PatternConstraint &) = 0;
     virtual bool visit(const PropertiesConstraint &) = 0;
     virtual bool visit(const RequiredConstraint &) = 0;
+    virtual bool visit(const SingularItemsConstraint &) = 0;
     virtual bool visit(const TypeConstraint &) = 0;
     virtual bool visit(const UniqueItemsConstraint &) = 0;
 

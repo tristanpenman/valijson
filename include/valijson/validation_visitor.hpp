@@ -232,68 +232,52 @@ public:
     }
 
     /**
-     * @brief   Validate against the items and additionalItems constraints
-     *          represented by an ItemsConstraint object.
+     * @brief   Validate a value against a LinearItemsConstraint
+     
+     * A LinearItemsConstraint represents an 'items' constraint that specifies,
+     * for each item in array, an individual sub-schema that the item must
+     * validate against. The LinearItemsConstraint class also captures the
+     * presence of an 'additionalItems' constraint, which specifies a default
+     * sub-schema that should be used if an array contains more items than
+     * there are sub-schemas in the 'items' constraint.
      *
-     * An items constraint restricts the values in array to those that match a
-     * given set of schemas. An item constraint can specify either an ordered
-     * list of child schemas that will be used to validate the corresponding
-     * value in the target array, or a single schema that will be used to
-     * validate all items.
+     * If the current value is not an array, validation always succeeds.
      *
-     * If a list of child schemas is used, then the additionalItems constraint
-     * will also be considered. If present, the schema derived from the
-     * additionalItems constraint will  be used to validate items that do not
-     * have a corresponding child schema in the items constraint. If the
-     * items constraint was not provided, then the additionalItems schema will
-     * be used to validate all items in the array.
+     * @param  constraint  SingularItemsConstraint to validate against
      *
-     * @param   constraint  Constraint that the target must validate against.
-     *
-     * @return  true if validatation succeeds, false otherwise.
+     * @returns  \c true if validation is successful; \c false otherwise
      */
-    virtual bool visit(const ItemsConstraint &constraint)
+    virtual bool visit(const LinearItemsConstraint &constraint)
     {
         // Ignore values that are not arrays
         if ((strictTypes && !target.isArray()) || (!target.maybeArray())) {
             return true;
         }
 
+        // Sub-schema to validate against when number of items in array exceeds
+        // the number of sub-schemas provided by the 'items' constraint
+        const Subschema * const additionalItemsSubschema =
+                constraint.getAdditionalItemsSubschema();
+
+        // Track how many items are validated using 'items' constraint
+        unsigned int numValidated = 0;
+
+        // Array to validate
+        const typename AdapterType::Array arr = target.asArray();
+        const size_t arrSize = arr.size();
+
+        // Track validation status
         bool validated = true;
 
-        if (constraint.itemSchema) {
-
-            // Get access to the target as an object
-            const typename AdapterType::Array arr = target.asArray();
-
-            // Validate all items against single schema
-            unsigned int index = 0;
-            BOOST_FOREACH( const AdapterType arrayItem, arr ) {
-                std::vector<std::string> newContext = context;
-                newContext.push_back("[" + boost::lexical_cast<std::string>(index) + "]");
-                ValidationVisitor<AdapterType> v(arrayItem,
-                    newContext, strictTypes, results);
-                if (!v.validateSchema(*constraint.itemSchema)) {
+        // Validate as many items as possible using 'items' sub-schemas
+        const size_t itemSubschemaCount = constraint.getItemSubschemaCount();
+        if (itemSubschemaCount > 0) {
+            if (!additionalItemsSubschema) {
+                if (arrSize > itemSubschemaCount) {
                     if (results) {
-                        results->pushError(context, "Failed to validate item #" + boost::lexical_cast<std::string>(index) + " in array.");
-                        validated = false;
-                    } else {
-                        return false;
-                    }
-                }
-                ++index;
-            }
-
-        } else if (!constraint.itemSchemas.empty()) {
-
-            // Get access to the target as an object
-            const typename AdapterType::Array arr = target.asArray();
-
-            if (!constraint.additionalItemsSchema) {
-                // Check that the array length is <= length of the itemsSchema list
-                if (arr.size() > constraint.itemSchemas.size()) {
-                    if (results) {
-                        results->pushError(context, "Array contains more items than allowed by items constraint.");
+                        results->pushError(context,
+                                "Array contains more items than allowed by "
+                                "items constraint.");
                         validated = false;
                     } else {
                         return false;
@@ -301,67 +285,59 @@ public:
                 }
             }
 
-            // Validate items against the schema with the same index, or
-            // additionalItems schema
-            unsigned int index = 0;
-            BOOST_FOREACH( const AdapterType arrayItem, arr ) {
-                std::vector<std::string> newContext = context;
-                newContext.push_back("[" + boost::lexical_cast<std::string>(index) + "]");
-                ValidationVisitor<AdapterType> v(arrayItem,
-                    newContext, strictTypes, results);
-                if (index >= constraint.itemSchemas.size()) {
-                    if (constraint.additionalItemsSchema) {
-                        if (!v.validateSchema(*constraint.additionalItemsSchema)) {
-                            if (results) {
-                                results->pushError(context, "Failed to validate item #" +
-                                    boost::lexical_cast<std::string>(index) + " against additional items schema.");
-                                validated = false;
-                            } else {
-                                return false;
-                            }
+            constraint.applyToItemSubschemas(ValidateItems(arr, context,
+                    results != NULL, strictTypes, results, &numValidated,
+                    &validated));
+
+            if (!results && !validated) {
+                return false;
+            }
+        }
+
+        // Validate remaining items using 'additionalItems' sub-schema
+        if (numValidated < arrSize) {
+            if (additionalItemsSubschema) {
+                // Begin validation from the first item not validated against
+                // an sub-schema provided by the 'items' constraint
+                unsigned int index = numValidated;
+                typename AdapterType::Array::const_iterator begin = arr.begin();
+                begin.advance(numValidated);
+                for (typename AdapterType::Array::const_iterator itr = begin;
+                        itr != arr.end(); ++itr) {
+
+                    // Update context for current array item
+                    std::vector<std::string> newContext = context;
+                    newContext.push_back("[" +
+                            boost::lexical_cast<std::string>(index) + "]");
+
+                    ValidationVisitor<AdapterType> validator(*itr, newContext,
+                            strictTypes, results);
+
+                    if (!validator.validateSchema(*additionalItemsSubschema)) {
+                        if (results) {
+                            results->pushError(context,
+                                    "Failed to validate item #" +
+                                    boost::lexical_cast<std::string>(index) +
+                                    " against additional items schema.");
+                            validated = false;
+                        } else {
+                            return false;
                         }
-                    } else {
-                        results->pushError(context, "Cannot validate item #" +
-                            boost::lexical_cast<std::string>(index) + " in array due to missing schema.");
-                        validated = false;
                     }
-                } else if (!v.validateSchema(*constraint.itemSchemas.at(index))) {
-                    if (results) {
-                        results->pushError(context, "Failed to validate item #" +
-                            boost::lexical_cast<std::string>(index) + " against corresponding item schema.");
-                        validated = false;
-                    } else {
-                        return false;
-                    }
+
+                    index++;
                 }
-                ++index;
+
+            } else if (results) {
+                results->pushError(context, "Cannot validate item #" +
+                    boost::lexical_cast<std::string>(numValidated) + " or "
+                    "greater using 'items' constraint or 'additionalItems' "
+                    "constraint.");
+                validated = false;
+
+            } else {
+                return false;
             }
-
-
-        } else if (constraint.additionalItemsSchema) {
-
-            // Get access to the target as an object
-            const typename AdapterType::Array arr = target.asArray();
-
-            // Validate each item against additional items schema
-            unsigned int index = 0;
-            BOOST_FOREACH( const AdapterType arrayItem, arr ) {
-                std::vector<std::string> newContext = context;
-                newContext.push_back("[" + boost::lexical_cast<std::string>(index) + "]");
-                ValidationVisitor<AdapterType> v(arrayItem,
-                    newContext, strictTypes, results);
-                if (!v.validateSchema(*constraint.additionalItemsSchema)) {
-                    if (results) {
-                        results->pushError(context, "Failed to validate item #" +
-                            boost::lexical_cast<std::string>(index) + " against additional items schema.");
-                        validated = false;
-                    } else {
-                        return false;
-                    }
-                }
-                ++index;
-            }
-
         }
 
         return validated;
@@ -927,6 +903,65 @@ public:
     }
 
     /**
+     * @brief  Validate a value against a SingularItemsConstraint
+     *
+     * A SingularItemsConstraint represents an 'items' constraint that specifies
+     * a sub-schema against which all items in an array must validate. If the
+     * current value is not an array, validation always succeeds.
+     *
+     * @param  constraint  SingularItemsConstraint to validate against
+     *
+     * @returns  \c true if validation is successful; \c false otherwise
+     */
+    virtual bool visit(const SingularItemsConstraint &constraint)
+    {
+        // Ignore values that are not arrays
+        if (!target.isArray()) {
+            return true;
+        }
+
+        // Schema against which all items must validate
+        const Subschema *itemsSubschema = constraint.getItemsSubschema();
+
+        // Default items sub-schema accepts all values
+        if (!itemsSubschema) {
+            return true;
+        }
+
+        // Track whether validation has failed
+        bool validated = true;
+
+        unsigned int index = 0;
+        BOOST_FOREACH( const AdapterType &item, target.getArray() ) {
+            // Update context for current array item
+            std::vector<std::string> newContext = context;
+            newContext.push_back("[" +
+                    boost::lexical_cast<std::string>(index) + "]");
+
+            // Create a validator for the current array item
+            ValidationVisitor<AdapterType> validationVisitor(item,
+                    newContext, strictTypes, results);
+
+            // Perform validation
+            if (!validationVisitor.validateSchema(*itemsSubschema)) {
+                if (results) {
+                    results->pushError(context,
+                            "Failed to validate item #" +
+                            boost::lexical_cast<std::string>(index) +
+                            " in array.");
+                    validated = false;
+                } else {
+                    return false;
+                }
+            }
+
+            index++;
+        }
+
+        return validated;
+    }
+
+    /**
      * @brief   Validate against the type constraint represented by a
      *          TypeConstraint object.
      *
@@ -1087,6 +1122,78 @@ private:
         const std::vector<std::string> &context;
         ValidationResults * const results;
         bool * const validated;
+    };
+
+    /**
+     * @brief  Functor to validate against sub-schemas in 'items' constraint
+     */
+    struct ValidateItems
+    {
+        ValidateItems(
+                const typename AdapterType::Array &arr,
+                const std::vector<std::string> &context,
+                bool continueOnFailure,
+                bool strictTypes,
+                ValidationResults *results,
+                unsigned int *numValidated,
+                bool *validated)
+          : arr(arr),
+            context(context),
+            continueOnFailure(continueOnFailure),
+            strictTypes(strictTypes),
+            results(results),
+            numValidated(numValidated),
+            validated(validated) { }
+
+        bool operator()(unsigned int index, const Subschema *subschema) const
+        {
+            // Check that there are more elements to validate
+            if (index >= arr.size()) {
+                return false;
+            }
+
+            // Update context
+            std::vector<std::string> newContext = context;
+            newContext.push_back(
+                    "[" + boost::lexical_cast<std::string>(index) + "]");
+
+            // Find array item
+            typename AdapterType::Array::const_iterator itr = arr.begin();
+            itr.advance(index);
+
+            // Validate current array item
+            ValidationVisitor validator(*itr, newContext, strictTypes, results);
+            if (validator.validateSchema(*subschema)) {
+                if (numValidated) {
+                    (*numValidated)++;
+                }
+
+                return true;
+            }
+
+            if (validated) {
+                *validated = false;
+            }
+
+            if (results) {
+                results->pushError(newContext,
+                    "Failed to validate item #" +
+                    boost::lexical_cast<std::string>(index) +
+                    " against corresponding item schema.");
+            }
+
+            return continueOnFailure;
+        }
+
+    private:
+        const typename AdapterType::Array &arr;
+        const std::vector<std::string> &context;
+        bool continueOnFailure;
+        bool strictTypes;
+        ValidationResults * const results;
+        unsigned int * const numValidated;
+        bool * const validated;
+
     };
 
     struct ValidateSchemaDependencies
