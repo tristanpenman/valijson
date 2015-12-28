@@ -552,6 +552,10 @@ public:
     SingularItemsConstraint()
       : itemsSubschema(NULL) { }
 
+    SingularItemsConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        itemsSubschema(NULL) { }
+
     const Subschema * getItemsSubschema() const
     {
         return itemsSubschema;
