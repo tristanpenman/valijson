@@ -114,8 +114,9 @@ void addPropertiesConstraint(Schema &schema)
         // Create a child schema for the 'description' property that requires
         // a string, but does not enforce any length constraints.
         const Subschema *subschema = schema.createSubschema();
-        schema.addConstraintToSubschema(TypeConstraint(TypeConstraint::kString),
-                subschema);
+        TypeConstraint typeConstraint;
+        typeConstraint.addNamedType(TypeConstraint::kString);
+        schema.addConstraintToSubschema(typeConstraint, subschema);
 
         // Include subschema in properties constraint
         propertySchemaMap["description"] = subschema;
@@ -126,8 +127,9 @@ void addPropertiesConstraint(Schema &schema)
         // number with a value greater than zero.
         const Subschema *subschema = schema.createSubschema();
         schema.addConstraintToSubschema(MinimumConstraint(0.0, true), subschema);
-        schema.addConstraintToSubschema(TypeConstraint(TypeConstraint::kNumber),
-                subschema);
+        TypeConstraint typeConstraint;
+        typeConstraint.addNamedType(TypeConstraint::kNumber);
+        schema.addConstraintToSubschema(typeConstraint, subschema);
 
         // Include subschema in properties constraint
         propertySchemaMap["price"] = subschema;
@@ -139,8 +141,9 @@ void addPropertiesConstraint(Schema &schema)
         const Subschema *subschema = schema.createSubschema();
         schema.addConstraintToSubschema(MaxLengthConstraint(200), subschema);
         schema.addConstraintToSubschema(MinLengthConstraint(1), subschema);
-        schema.addConstraintToSubschema(TypeConstraint(TypeConstraint::kString),
-                subschema);
+        TypeConstraint typeConstraint;
+        typeConstraint.addNamedType(TypeConstraint::kString);
+        schema.addConstraintToSubschema(typeConstraint, subschema);
 
         // Include subschema in properties constraint
         propertySchemaMap["title"] = subschema;
@@ -166,7 +169,9 @@ void addTypeConstraint(Schema &schema)
 {
     // Add a TypeConstraint to the schema, specifying that the root of the
     // document must be an object.
-    schema.addConstraint(TypeConstraint(TypeConstraint::kObject));
+    TypeConstraint typeConstraint;
+    typeConstraint.addNamedType(TypeConstraint::kObject);
+    schema.addConstraint(typeConstraint);
 }
 
 int main(int argc, char *argv[])

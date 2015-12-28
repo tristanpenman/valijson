@@ -602,8 +602,9 @@ private:
 /**
  * @brief   Represents a 'type' constraint.
  */
-struct TypeConstraint: BasicConstraint<TypeConstraint>
+class TypeConstraint: public BasicConstraint<TypeConstraint>
 {
+public:
     enum JsonType {
         kAny,
         kArray,
@@ -615,29 +616,51 @@ struct TypeConstraint: BasicConstraint<TypeConstraint>
         kString
     };
 
-    typedef std::set<JsonType> JsonTypes;
+    TypeConstraint()
+      : namedTypes(std::less<JsonType>(), allocator),
+        schemaTypes(Allocator::rebind<const Subschema *>::other(allocator)) { }
 
-    typedef std::vector<const Subschema *> Schemas;
+    TypeConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        namedTypes(std::less<JsonType>(), allocator),
+        schemaTypes(Allocator::rebind<const Subschema *>::other(allocator)) { }
 
-    TypeConstraint(const JsonType jsonType)
-      : jsonTypes(makeJsonTypes(jsonType)) { }
-
-    TypeConstraint(const JsonTypes &jsonTypes)
-      : jsonTypes(jsonTypes) { }
-
-    TypeConstraint(const JsonTypes &jsonTypes,
-                   const Schemas &schemas)
-      : jsonTypes(jsonTypes),
-        schemas(schemas) { }
-
-    static JsonTypes makeJsonTypes(const JsonType jsonType)
+    void addNamedType(JsonType type)
     {
-        JsonTypes jsonTypes;
-        jsonTypes.insert(jsonType);
-        return jsonTypes;
+        namedTypes.insert(type);
     }
 
-    static JsonType jsonTypeFromString(const std::string &typeName)
+    void addSchemaType(const Subschema *subschema)
+    {
+        schemaTypes.push_back(subschema);
+    }
+
+    template<typename FunctorType>
+    void applyToNamedTypes(const FunctorType &fn) const
+    {
+        BOOST_FOREACH( const JsonType namedType, namedTypes ) {
+            if (!fn(namedType)) {
+                return;
+            }
+        }
+    }
+
+    template<typename FunctorType>
+    void applyToSchemaTypes(const FunctorType &fn) const
+    {
+        unsigned int index = 0;
+        BOOST_FOREACH( const Subschema *subschema, schemaTypes ) {
+            if (!fn(index, subschema)) {
+                return;
+            }
+
+            index++;
+        }
+    }
+
+    template<typename AllocatorType>
+    static JsonType jsonTypeFromString(const std::basic_string<char,
+            std::char_traits<char>, AllocatorType> &typeName)
     {
         if (typeName.compare("any") == 0) {
             return kAny;
@@ -657,11 +680,21 @@ struct TypeConstraint: BasicConstraint<TypeConstraint>
             return kString;
         }
 
-        throw std::runtime_error("Unrecognised JSON type name '" + typeName + "'");
+        throw std::runtime_error("Unrecognised JSON type name '" +
+                std::string(typeName.c_str()) + "'");
     }
 
-    const JsonTypes jsonTypes;
-    const Schemas schemas;
+private:
+    typedef std::set<JsonType, std::less<JsonType>, Allocator> NamedTypes;
+
+    typedef std::vector<const Subschema *,
+            Allocator::rebind<const Subschema *>::other> SchemaTypes;
+
+    /// Set of named JSON types that serve as valid types
+    NamedTypes namedTypes;
+
+    /// Set of sub-schemas that serve as valid types
+    SchemaTypes schemaTypes;
 };
 
 /**

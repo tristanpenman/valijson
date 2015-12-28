@@ -1432,52 +1432,62 @@ private:
         const boost::optional<
                 typename FetchDocumentFunction<AdapterType>::Type > fetchDoc)
     {
-        typedef constraints::TypeConstraint TC;
+        typedef constraints::TypeConstraint TypeConstraint;
 
-        TC::JsonTypes jsonTypes;
-        TC::Schemas schemas;
+        TypeConstraint constraint;
 
         if (node.isString()) {
-            const TC::JsonType jsonType =
-                    TC::jsonTypeFromString(node.getString());
-            if (jsonType == TC::kAny && version == kDraft4) {
+            const TypeConstraint::JsonType type =
+                    TypeConstraint::jsonTypeFromString(node.getString());
+
+            if (type == TypeConstraint::kAny && version == kDraft4) {
                 throw std::runtime_error(
                         "'any' type is not supported in version 4 schemas.");
             }
-            jsonTypes.insert(jsonType);
+
+            constraint.addNamedType(type);
 
         } else if (node.isArray()) {
             int index = 0;
             BOOST_FOREACH( const AdapterType v, node.getArray() ) {
                 if (v.isString()) {
-                    const TC::JsonType jsonType =
-                            TC::jsonTypeFromString(v.getString());
-                    if (jsonType == TC::kAny && version == kDraft4) {
+                    const TypeConstraint::JsonType type =
+                            TypeConstraint::jsonTypeFromString(v.getString());
+
+                    if (type == TypeConstraint::kAny && version == kDraft4) {
                         throw std::runtime_error(
                                 "'any' type is not supported in version 4 "
                                 "schemas.");
                     }
-                    jsonTypes.insert(jsonType);
+
+                    constraint.addNamedType(type);
+
                 } else if (v.isObject() && version == kDraft3) {
                     const std::string childPath = nodePath + "/" +
                             boost::lexical_cast<std::string>(index);
-                    schemas.push_back(rootSchema.createSubschema());
+                    const Subschema *subschema = rootSchema.createSubschema();
+                    constraint.addSchemaType(subschema);
                     populateSchema<AdapterType>(rootSchema, rootNode, v,
-                            *schemas.back(), currentScope, childPath, fetchDoc);
+                            *subschema, currentScope, childPath, fetchDoc);
+
                 } else {
                     throw std::runtime_error("Type name should be a string.");
                 }
+
                 index++;
             }
+
         } else if (node.isObject() && version == kDraft3) {
-            schemas.push_back(rootSchema.createSubschema());
+            const Subschema *subschema = rootSchema.createSubschema();
+            constraint.addSchemaType(subschema);
             populateSchema<AdapterType>(rootSchema, rootNode, node,
-                    *schemas.back(), currentScope, nodePath, fetchDoc);
+                    *subschema, currentScope, nodePath, fetchDoc);
+
         } else {
             throw std::runtime_error("Type name should be a string.");
         }
 
-        return constraints::TypeConstraint(jsonTypes, schemas);
+        return constraint;
     }
 
     /**

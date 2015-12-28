@@ -968,68 +968,39 @@ public:
     }
 
     /**
-     * @brief   Validate against the type constraint represented by a
-     *          TypeConstraint object.
+     * @brief   Validate a value against a TypeConstraint
      *
-     * Checks that the target is of the expected type.
+     * Checks that the target is one of the valid named types, or matches one
+     * of a set of valid sub-schemas.
      *
-     * @param   constraint  Constraint that the target must validate against
+     * @param   constraint  TypeConstraint to validate against
      *
-     * @return  true if validation succeeds, false otherwise
+     * @return  \c true if validation is successful; \c false otherwise
      */
     virtual bool visit(const TypeConstraint &constraint)
     {
-        // Try to match the type to one of the types in the jsonTypes array
-        BOOST_FOREACH( const TypeConstraint::JsonType jsonType, constraint.jsonTypes ) {
-            switch (jsonType) {
-            case TypeConstraint::kAny:
-                return true;
-            case TypeConstraint::kArray:
-                if (target.isArray()) {
-                    return true;
-                }
-                break;
-            case TypeConstraint::kBoolean:
-                if (target.isBool() || (!strictTypes && target.maybeBool())) {
-                    return true;
-                }
-                break;
-            case TypeConstraint::kInteger:
-                if (target.isInteger() || (!strictTypes && target.maybeInteger())) {
-                    return true;
-                }
-                break;
-            case TypeConstraint::kNull:
-                if (target.isNull() || (!strictTypes && target.maybeNull())) {
-                    return true;
-                }
-                break;
-            case TypeConstraint::kNumber:
-                if (target.isNumber() || (!strictTypes && target.maybeDouble())) {
-                    return true;
-                }
-                break;
-            case TypeConstraint::kObject:
-                if (target.isObject()) {
-                    return true;
-                }
-                break;
-            case TypeConstraint::kString:
-                if (target.isString()) {
-                    return true;
-                }
-                break;
-            }
-        }
-
-        BOOST_FOREACH( const Subschema *subschema, constraint.schemas ) {
-            if (validateSchema(*subschema)) {
+        // Check named types
+        {
+            // ValidateNamedTypes functor assumes target is invalid
+            bool validated = false;
+            constraint.applyToNamedTypes(ValidateNamedTypes(target, strictTypes,
+                    false, true, &validated));
+            if (validated) {
                 return true;
             }
         }
 
-        if (results) {
-            results->pushError(context, "Value type not permitted by 'type' constraint.");
+        // Check schema-based types
+        {
+            unsigned int numValidated = 0;
+            constraint.applyToSchemaTypes(ValidateSubschemas(target, context,
+                    false, true, *this, NULL, &numValidated, NULL));
+            if (numValidated > 0) {
+                return true;
+            } else if (results) {
+                results->pushError(context,
+                        "Value type not permitted by 'type' constraint.");
+            }
         }
 
         return false;
@@ -1206,6 +1177,74 @@ private:
     };
 
     /**
+     * @brief  Functor to validate value against named JSON types
+     */
+    struct ValidateNamedTypes
+    {
+        ValidateNamedTypes(
+                const AdapterType &target,
+                bool strict,
+                bool continueOnSuccess,
+                bool continueOnFailure,
+                bool *validated)
+          : target(target),
+            strict(strict),
+            continueOnSuccess(continueOnSuccess),
+            continueOnFailure(continueOnFailure),
+            validated(validated) { }
+
+        bool operator()(constraints::TypeConstraint::JsonType jsonType) const
+        {
+            typedef constraints::TypeConstraint TypeConstraint;
+
+            bool valid = false;
+
+            switch (jsonType) {
+            case TypeConstraint::kAny:
+                valid = true;
+                break;
+            case TypeConstraint::kArray:
+                valid = target.isArray();
+                break;
+            case TypeConstraint::kBoolean:
+                valid = target.isBool() || (!strict && target.maybeBool());
+                break;
+            case TypeConstraint::kInteger:
+                valid = target.isInteger() ||
+                        (!strict && target.maybeInteger());
+                break;
+            case TypeConstraint::kNull:
+                valid = target.isNull() || (!strict && target.maybeNull());
+                break;
+            case TypeConstraint::kNumber:
+                valid = target.isNumber() || (!strict && target.maybeDouble());
+                break;
+            case TypeConstraint::kObject:
+                valid = target.isObject();
+                break;
+            case TypeConstraint::kString:
+                valid = target.isString();
+                break;
+            default:
+                break;
+            }
+
+            if (valid && validated) {
+                *validated = true;
+            }
+
+            return (valid && continueOnSuccess) || continueOnFailure;
+        }
+
+    private:
+        const AdapterType target;
+        const bool strict;
+        const bool continueOnSuccess;
+        const bool continueOnFailure;
+        bool * const validated;
+    };
+
+    /**
      * @brief  Functor to validate schema-based dependencies
      */
     struct ValidateSchemaDependencies
@@ -1306,8 +1345,8 @@ private:
 
             if (results) {
                 results->pushError(context,
-                    "Failed to validate against child schema #" +
-                    boost::lexical_cast<std::string>(index) + ".");
+                        "Failed to validate against child schema #" +
+                        boost::lexical_cast<std::string>(index) + ".");
             }
 
             return continueOnFailure;
