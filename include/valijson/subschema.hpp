@@ -49,7 +49,7 @@ public:
      * @brief  Construct a new Subschema using custom memory management
      *         functions
      *
-     * @parma  allocFn  malloc- or new-like function to allocate memory
+     * @param  allocFn  malloc- or new-like function to allocate memory
      *                  within Schema, such as for Subschema instances
      * @param  freeFn   free-like function to free memory allocated with
      *                  the `customAlloc` function

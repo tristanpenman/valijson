@@ -61,9 +61,9 @@ public:
      * will only continue for as long as the constraints are validated
      * successfully.
      *
-     * @param  schema  Schema that the target must validate against
+     * @param   subschema  Sub-schema that the target must validate against
      *
-     * @return  true if validation passes, false otherwise
+     * @return  \c true if validation passes; \c false otherwise
      */
     bool validateSchema(const Subschema &subschema)
     {
