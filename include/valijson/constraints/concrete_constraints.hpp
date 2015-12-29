@@ -698,11 +698,15 @@ private:
 };
 
 /**
- * @brief   Represents a 'uniqueItems' constraint.
+ * @brief   Represents a 'uniqueItems' constraint
  */
-struct UniqueItemsConstraint: BasicConstraint<UniqueItemsConstraint>
+class UniqueItemsConstraint: public BasicConstraint<UniqueItemsConstraint>
 {
-    // Don't need anything here.
+public:
+    UniqueItemsConstraint() { }
+
+    UniqueItemsConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn) { }
 };
 
 } // namespace constraints
