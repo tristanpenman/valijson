@@ -887,23 +887,16 @@ public:
     {
         if ((strictTypes && !target.isObject()) || !target.maybeObject()) {
             if (results) {
-                results->pushError(context, "Object required to validate 'required' properties.");
+                results->pushError(context,
+                        "Object required to validate 'required' properties.");
             }
             return false;
         }
 
         bool validated = true;
         const typename AdapterType::Object object = target.asObject();
-        BOOST_FOREACH( const std::string &requiredProperty, constraint.requiredProperties ) {
-            if (object.find(requiredProperty) == object.end()) {
-                if (results) {
-                    results->pushError(context, "Missing required property '" + requiredProperty + "'.");
-                    validated = false;
-                } else {
-                    return false;
-                }
-            }
-        }
+        constraint.applyToRequiredProperties(ValidateProperties(object, context,
+                true, results != NULL, results, &validated));
 
         return validated;
     }
@@ -1052,6 +1045,53 @@ public:
     }
 
 private:
+
+    /**
+     * @brief  Functor to validate the presence of a set of properties
+     */
+    struct ValidateProperties
+    {
+        ValidateProperties(
+                const typename AdapterType::Object &object,
+                const std::vector<std::string> &context,
+                bool continueOnSuccess,
+                bool continueOnFailure,
+                ValidationResults *results,
+                bool *validated)
+          : object(object),
+            context(context),
+            continueOnSuccess(continueOnSuccess),
+            continueOnFailure(continueOnFailure),
+            results(results),
+            validated(validated) { }
+
+        template<typename StringType>
+        bool operator()(const StringType &property) const
+        {
+            if (object.find(property.c_str()) == object.end()) {
+                if (validated) {
+                    *validated = false;
+                }
+
+                if (results) {
+                    results->pushError(context, "Missing required property '" +
+                            std::string(property.c_str()) + "'.");
+                }
+
+                return continueOnFailure;
+            }
+
+            return continueOnSuccess;
+        }
+
+    private:
+        const typename AdapterType::Object &object;
+        const std::vector<std::string> &context;
+        bool continueOnSuccess;
+        bool continueOnFailure;
+        ValidationResults * const results;
+        bool * const validated;
+    };
 
     /**
      * @brief  Functor to validate property-based dependencies

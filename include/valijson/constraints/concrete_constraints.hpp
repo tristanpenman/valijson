@@ -552,17 +552,44 @@ struct PropertiesConstraint: BasicConstraint<PropertiesConstraint> {
 /**
  * @brief   Represents a 'required' constraint.
  */
-struct RequiredConstraint: BasicConstraint<RequiredConstraint>
+class RequiredConstraint: public BasicConstraint<RequiredConstraint>
 {
-    typedef std::set<std::string> RequiredProperties;
+public:
+    RequiredConstraint()
+      : requiredProperties(std::less<String>(), allocator) { }
 
-    RequiredConstraint(const RequiredProperties &requiredProperties)
-      : requiredProperties(requiredProperties)
+    RequiredConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        requiredProperties(std::less<String>(), allocator) { }
+
+    bool addRequiredProperty(const char *propertyName)
     {
-
+        return requiredProperties.insert(String(propertyName,
+                Allocator::rebind<char>::other(allocator))).second;
     }
 
-    const RequiredProperties requiredProperties;
+    template<typename AllocatorType>
+    bool addRequiredProperty(const std::basic_string<char,
+            std::char_traits<char>, AllocatorType> &propertyName)
+    {
+        return addRequiredProperty(propertyName.c_str());
+    }
+
+    template<typename FunctorType>
+    void applyToRequiredProperties(const FunctorType &fn) const
+    {
+        BOOST_FOREACH( const String &propertyName, requiredProperties ) {
+            if (!fn(propertyName)) {
+                return;
+            }
+        }
+    }
+
+private:
+    typedef std::set<String, std::less<String>,
+            internal::CustomAllocator<String> > RequiredProperties;
+
+    RequiredProperties requiredProperties;
 };
 
 /**

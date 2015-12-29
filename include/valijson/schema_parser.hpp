@@ -1372,9 +1372,9 @@ private:
         }
 
         if (node.asBool()) {
-            constraints::RequiredConstraint::RequiredProperties requiredProperties;
-            requiredProperties.insert(name);
-            return constraints::RequiredConstraint(requiredProperties);
+            constraints::RequiredConstraint constraint;
+            constraint.addRequiredProperty(name);
+            return constraint;
         }
 
         return boost::none;
@@ -1395,15 +1395,18 @@ private:
     constraints::RequiredConstraint makeRequiredConstraint(
         const AdapterType &node)
     {
-        constraints::RequiredConstraint::RequiredProperties requiredProperties;
+        constraints::RequiredConstraint constraint;
+
         BOOST_FOREACH( const AdapterType v, node.getArray() ) {
             if (!v.isString()) {
-                // @todo throw exception
+                throw std::runtime_error("Expected required property name to "
+                        "be a string value");
             }
-            requiredProperties.insert(v.getString());
+
+            constraint.addRequiredProperty(v.getString());
         }
 
-        return constraints::RequiredConstraint(requiredProperties);
+        return constraint;
     }
 
     /**

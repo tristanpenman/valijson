@@ -19,13 +19,14 @@ struct MultipleOfConstraint;
 struct NotConstraint;
 struct PatternConstraint;
 struct PropertiesConstraint;
-struct RequiredConstraint;
+
 
 class AllOfConstraint;
 class AnyOfConstraint;
 class DependenciesConstraint;
 class LinearItemsConstraint;
 class OneOfConstraint;
+class RequiredConstraint;
 class SingularItemsConstraint;
 class TypeConstraint;
 class UniqueItemsConstraint;

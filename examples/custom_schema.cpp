@@ -158,11 +158,11 @@ void addRequiredConstraint(Schema &schema)
 {
     // Add a RequiredConstraint to the schema, specifying that the category,
     // price, and title properties must be present.
-    RequiredConstraint::RequiredProperties requiredProperties;
-    requiredProperties.insert("category");
-    requiredProperties.insert("price");
-    requiredProperties.insert("title");
-    schema.addConstraint(RequiredConstraint(requiredProperties));
+    RequiredConstraint constraint;
+    constraint.addRequiredProperty("category");
+    constraint.addRequiredProperty("price");
+    constraint.addRequiredProperty("title");
+    schema.addConstraint(constraint);
 }
 
 void addTypeConstraint(Schema &schema)
