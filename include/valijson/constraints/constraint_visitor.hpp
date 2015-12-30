@@ -16,15 +16,14 @@ struct MinItemsConstraint;
 struct MinLengthConstraint;
 struct MinPropertiesConstraint;
 struct MultipleOfConstraint;
-struct NotConstraint;
 struct PatternConstraint;
 struct PropertiesConstraint;
-
 
 class AllOfConstraint;
 class AnyOfConstraint;
 class DependenciesConstraint;
 class LinearItemsConstraint;
+class NotConstraint;
 class OneOfConstraint;
 class RequiredConstraint;
 class SingularItemsConstraint;

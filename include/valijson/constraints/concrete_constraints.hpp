@@ -421,17 +421,30 @@ struct MultipleOfConstraint: BasicConstraint<MultipleOfConstraint>
 };
 
 /**
- * @brief   Represents a 'not' constraint.
+ * @brief   Represents a 'not' constraint
  */
-struct NotConstraint: BasicConstraint<NotConstraint>
+class NotConstraint: public BasicConstraint<NotConstraint>
 {
-    NotConstraint(const Subschema *schema)
-      : schema(schema) { }
+public:
+    NotConstraint()
+      : subschema(NULL) { }
 
-    NotConstraint(const NotConstraint &other)
-      : schema(other.schema) { }
+    NotConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        subschema(NULL) { }
 
-    const Subschema *schema;
+    const Subschema * getSubschema() const
+    {
+        return subschema;
+    }
+
+    void setSubschema(const Subschema *subschema)
+    {
+        this->subschema = subschema;
+    }
+
+private:
+    const Subschema *subschema;
 };
 
 /**

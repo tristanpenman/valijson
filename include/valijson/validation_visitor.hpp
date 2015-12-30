@@ -683,21 +683,32 @@ public:
     }
 
     /**
-     * @brief   Validate against the not constraint represented by a
-     *          NotConstraint object.
+     * @brief   Validate a value against a NotConstraint
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * If the subschema NotConstraint currently holds a NULL pointer, the
+     * schema will be treated like the empty schema. Therefore validation
+     * will always fail.
      *
-     * @return  true if the constraint is satisfied, false otherwise.
+     * @param   constraint  Constraint that the target must validate against
+     *
+     * @return  \c true if the constraint is satisfied; \c false otherwise
      */
     virtual bool visit(const NotConstraint &constraint)
     {
-        ValidationVisitor<AdapterType> v(target, context, strictTypes, NULL);
+        const Subschema *subschema = constraint.getSubschema();
+        if (!subschema) {
+            // Treat NULL pointer like empty schema
+            return false;
+        }
 
-        if (v.validateSchema(*constraint.schema)) {
+        ValidationVisitor<AdapterType> v(target, context, strictTypes, NULL);
+        if (v.validateSchema(*subschema)) {
             if (results) {
-                results->pushError(context, "Target should not validate against schema specified in 'not' constraint.");
+                results->pushError(context,
+                        "Target should not validate against schema "
+                        "specified in 'not' constraint.");
             }
+
             return false;
         }
 

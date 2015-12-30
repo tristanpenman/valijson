@@ -1153,10 +1153,13 @@ private:
                 typename FetchDocumentFunction<AdapterType>::Type > fetchDoc)
     {
         if (node.maybeObject()) {
-            const Subschema *childSubschema = rootSchema.createSubschema();
-            populateSchema<AdapterType>(rootSchema, rootNode, node,
-                    *childSubschema, currentScope, nodePath, fetchDoc);
-            return constraints::NotConstraint(childSubschema);
+            const Subschema *subschema = rootSchema.createSubschema();
+            constraints::NotConstraint constraint;
+            constraint.setSubschema(subschema);
+            populateSchema<AdapterType>(rootSchema, rootNode, node, *subschema,
+                    currentScope, nodePath, fetchDoc);
+
+            return constraint;
         }
 
         throw std::runtime_error("Expected object value for 'not' constraint.");
