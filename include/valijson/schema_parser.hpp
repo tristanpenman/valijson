@@ -697,16 +697,16 @@ private:
         const AdapterType &node)
     {
         // Make a copy of each value in the enum array
-        constraints::EnumConstraint::Values values;
+        constraints::EnumConstraint constraint;
         BOOST_FOREACH( const AdapterType value, node.getArray() ) {
-            values.push_back(value.freeze());
+            constraint.addValue(value);
         }
 
         /// @todo This will make another copy of the values while constructing
         /// the EnumConstraint. Move semantics in C++11 should make it possible
         /// to avoid these copies without complicating the implementation of the
         /// EnumConstraint class.
-        return constraints::EnumConstraint(values);
+        return constraint;
     }
 
     /**

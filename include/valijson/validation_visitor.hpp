@@ -205,30 +205,31 @@ public:
     }
 
     /**
-     * @brief   Validate against the enum constraint represented by an
-     *          EnumConstraint object.
+     * @brief   Validate current node against an EnumConstraint
      *
      * Validation succeeds if the target is equal to one of the values provided
-     * by the enum constraint.
+     * by the EnumConstraint.
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * @param   constraint  Constraint that the target must validate against
      *
-     * @return  true if validation succeeds, false otherwise.
+     * @return  \c true if validation succeeds; \c false otherwise
      */
     virtual bool visit(const EnumConstraint &constraint)
     {
-        // Compare the target with each 'frozen' value in the enum constraint.
-        BOOST_FOREACH( const adapters::FrozenValue &value, constraint.values ) {
-            if (value.equalTo(target, true)) {
-                return true;
+        unsigned int numValidated = 0;
+        constraint.applyToValues(ValidateEquality(target, context, false, true,
+                strictTypes, NULL, &numValidated));
+
+        if (numValidated == 0) {
+            if (results) {
+                results->pushError(context,
+                        "Failed to match against any enum values.");
             }
+
+            return false;
         }
 
-        if (results) {
-            results->pushError(context, "Failed to match against any enum values.");
-        }
-
-        return false;
+        return numValidated > 0;
     }
 
     /**
@@ -1056,6 +1057,56 @@ public:
     }
 
 private:
+
+    /**
+     * @brief  Functor to compare a node with a collection of values
+     */
+    struct ValidateEquality
+    {
+        ValidateEquality(
+                const AdapterType &target,
+                const std::vector<std::string> &context,
+                bool continueOnSuccess,
+                bool continueOnFailure,
+                bool strictTypes,
+                ValidationResults *results,
+                unsigned int *numValidated)
+          : target(target),
+            context(context),
+            continueOnSuccess(continueOnSuccess),
+            continueOnFailure(continueOnFailure),
+            strictTypes(strictTypes),
+            results(results),
+            numValidated(numValidated) { }
+
+        template<typename OtherValue>
+        bool operator()(const OtherValue &value) const
+        {
+            if (value.equalTo(target, strictTypes)) {
+                if (numValidated) {
+                    (*numValidated)++;
+                }
+
+                return continueOnSuccess;
+            }
+
+            if (results) {
+                results->pushError(context,
+                        "Target value and comparison value are not equal");
+            }
+
+            return continueOnFailure;
+        }
+
+    private:
+        const AdapterType &target;
+        const std::vector<std::string> &context;
+        bool continueOnSuccess;
+        bool continueOnFailure;
+        bool strictTypes;
+        ValidationResults * const results;
+        unsigned int * const numValidated;
+    };
 
     /**
      * @brief  Functor to validate the presence of a set of properties

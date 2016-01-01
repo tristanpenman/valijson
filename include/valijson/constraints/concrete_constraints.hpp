@@ -231,20 +231,51 @@ private:
 };
 
 /**
- * @brief  Represents an 'enum' constraint.
+ * @brief  Represents an 'enum' constraint
  *
- * An enum constraint provides a set of permissible values for a JSON node. The
- * node will only validate against this constraint if it matches one of the
- * values in the set.
+ * An enum constraint provides a collection of permissible values for a JSON
+ * node. The node will only validate against this constraint if it matches one
+ * or more of the values in the collection.
  */
-struct EnumConstraint: BasicConstraint<EnumConstraint>
+class EnumConstraint: public BasicConstraint<EnumConstraint>
 {
-    typedef boost::ptr_vector<adapters::FrozenValue> Values;
+public:
+    EnumConstraint()
+      : enumValues(Allocator::rebind<const EnumValue *>::other(allocator)) { }
 
-    EnumConstraint(const Values &values)   // Copy each of the frozen values
-      : values(values) { }
+    EnumConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        enumValues(Allocator::rebind<const EnumValue *>::other(allocator)) { }
 
-    const Values values;
+    void addValue(const adapters::Adapter &value)
+    {
+        // TODO: Freeze value using custom alloc/free functions
+        enumValues.push_back(value.freeze());
+    }
+
+    void addValue(const adapters::FrozenValue &value)
+    {
+        // TODO: Clone using custom alloc/free functions
+        enumValues.push_back(value.clone());
+    }
+
+    template<typename FunctorType>
+    void applyToValues(const FunctorType &fn) const
+    {
+        BOOST_FOREACH( const EnumValue *value, enumValues ) {
+            if (!fn(*value)) {
+                return;
+            }
+        }
+    }
+
+private:
+    typedef adapters::FrozenValue EnumValue;
+
+    typedef std::vector<const EnumValue *,
+            internal::CustomAllocator<const EnumValue *> > EnumValues;
+
+    EnumValues enumValues;
 };
 
 /**

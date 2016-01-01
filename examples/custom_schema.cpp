@@ -95,16 +95,15 @@ void addPropertiesConstraint(Schema &schema)
     {
         // Prepare an enum constraint requires a document to be equal to at
         // least one of a set of possible values
-        EnumConstraint::Values enumConstraintValues;
-        enumConstraintValues.push_back(new RapidJsonFrozenValue("album"));
-        enumConstraintValues.push_back(new RapidJsonFrozenValue("book"));
-        enumConstraintValues.push_back(new RapidJsonFrozenValue("other"));
-        enumConstraintValues.push_back(new RapidJsonFrozenValue("video"));
+        EnumConstraint constraint;
+        constraint.addValue(RapidJsonFrozenValue("album"));
+        constraint.addValue(RapidJsonFrozenValue("book"));
+        constraint.addValue(RapidJsonFrozenValue("other"));
+        constraint.addValue(RapidJsonFrozenValue("video"));
 
         // Create a subschema, owned by the root schema, with a constraint
         const Subschema *subschema = schema.createSubschema();
-        schema.addConstraintToSubschema(EnumConstraint(enumConstraintValues),
-                subschema);
+        schema.addConstraintToSubschema(constraint, subschema);
 
         // Include subschema in properties constraint
         propertySchemaMap["category"] = subschema;
