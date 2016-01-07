@@ -785,13 +785,28 @@ public:
     }
 
     /**
-     * @brief   Validate against the properties, patternProperties, and
-     *          additionalProperties constraints represented by a
-     *          PatternConstraint object.
+     * @brief   Validate a value against a PropertiesConstraint
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * Validation of an object against a PropertiesConstraint proceeds in three
+     * stages. The first stage finds all properties in the object that have a
+     * corresponding subschema in the constraint, and validates those properties
+     * recursively.
      *
-     * @return  true if the constraint is satisfied, false otherwise.
+     * Next, the object's properties will be validated against the subschemas
+     * for any 'patternProperties' that match a given property name. A property
+     * is required to validate against the sub-schema for all patterns that it
+     * matches.
+     *
+     * Finally, any properties that have not yet been validated against at least
+     * one subschema will be validated against the 'additionalItems' subschema.
+     * If this subschema is not present, then all properties must have been
+     * validated at least once.
+     *
+     * Non-object values are always considered valid.
+     *
+     * @param   constraint  Constraint that the target must validate against
+     *
+     * @return  \c true if the constraint is satisfied; \c false otherwise
      */
     virtual bool visit(const PropertiesConstraint &constraint)
     {
@@ -801,83 +816,53 @@ public:
 
         bool validated = true;
 
-        const typename AdapterType::Object obj = target.asObject();
+        // Track which properties have already been validated
+        std::set<std::string> propertiesMatched;
 
-        // Validate each property in the target object
-        BOOST_FOREACH( const typename AdapterType::ObjectMember m, obj ) {
+        // Validate properties against subschemas for matching 'properties'
+        // constraints
+        const typename AdapterType::Object object = target.asObject();
+        constraint.applyToProperties(ValidatePropertySubschemas(object, context,
+                true, false, true, strictTypes, results, &propertiesMatched,
+                &validated));
 
-            const std::string propertyName = m.first;
-            bool propertyNameMatched = false;
+        // Exit early if validation failed, and we're not collecting exhaustive
+        // validation results
+        if (!validated && !results) {
+            return false;
+        }
 
-            std::vector<std::string> newContext = context;
-            newContext.push_back("[\"" + m.first + "\"]");
+        // Validate properties against subschemas for matching patternProperties
+        // constraints
+        constraint.applyToPatternProperties(ValidatePatternPropertySubschemas(
+                object, context, true, false, true, strictTypes, results,
+                &propertiesMatched, &validated));
 
-            ValidationVisitor<AdapterType> v(m.second,
-                newContext, strictTypes, results);
+        // Validate against additionalProperties subschema for any properties
+        // that have not yet been matched
+        const Subschema *additionalPropertiesSubschema =
+                constraint.getAdditionalPropertiesSubschema();
+        if (!additionalPropertiesSubschema) {
+            return propertiesMatched.size() == target.getObjectSize();
+        }
 
-            // Search for matching property name
-            PropertiesConstraint::PropertySchemaMap::const_iterator itr =
-                constraint.properties.find(propertyName);
-            if (itr != constraint.properties.end()) {
-                propertyNameMatched = true;
-                if (!v.validateSchema(*itr->second)) {
+        BOOST_FOREACH( const typename AdapterType::ObjectMember m, object ) {
+            if (propertiesMatched.find(m.first) == propertiesMatched.end()) {
+                // Update context
+                std::vector<std::string> newContext = context;
+                newContext.push_back("[" + m.first + "]");
+
+                // Create a validator to validate the property's value
+                ValidationVisitor validator(m.second, newContext, strictTypes,
+                        results);
+                if (!validator.validateSchema(*additionalPropertiesSubschema)) {
                     if (results) {
-                        results->pushError(context,
-                            "Failed to validate against schema associated with property name '" +
-                            propertyName + "' in properties constraint.");
-                        validated = false;
-                    } else {
-                        return false;
+                        results->pushError(context, "Failed to validate "
+                                "against additional properties schema");
                     }
-                }
-            }
 
-            // Search for a regex that matches the property name
-            for (itr = constraint.patternProperties.begin(); itr != constraint.patternProperties.end(); ++itr) {
-                const boost::regex r(itr->first, boost::regex::perl);
-                if (boost::regex_search(propertyName, r)) {
-                    propertyNameMatched = true;
-                    // Check schema
-                    if (!v.validateSchema(*itr->second)) {
-                        if (results) {
-                            results->pushError(context,
-                                "Failed to validate against schema associated with regex '" +
-                                itr->first + "' in patternProperties constraint.");
-                            validated = false;
-                        } else {
-                            return false;
-                        }
-                    }
-                }
-            }
-
-            // If the property name has been matched by a name in 'properties'
-            // or a regex in 'patternProperties', then it should not be
-            // validated against the 'additionalPatterns' schema.
-            if (propertyNameMatched) {
-                continue;
-            }
-
-            // If an additionalProperties schema has been provided, the values
-            // associated with unmatched property names should be validated
-            // against that schema.
-            if (constraint.additionalProperties) {
-                if (v.validateSchema(*constraint.additionalProperties)) {
-                    continue;
-                } else if (results) {
-                    results->pushError(context, "Failed to validate property '" +
-                        propertyName + "' against schema in additionalProperties constraint.");
                     validated = false;
-                } else {
-                    return false;
                 }
-            } else if (results) {
-                results->pushError(context, "Failed to match property name '" +
-                        propertyName + "' to any names in 'properties' or "
-                        "regexes in 'patternProperties'");
-                validated = false;
-            } else {
-                return false;
             }
         }
 
@@ -1348,6 +1333,179 @@ private:
         const bool continueOnSuccess;
         const bool continueOnFailure;
         const bool strictTypes;
+        bool * const validated;
+    };
+
+    /**
+     * @brief  Functor to validate object properties against sub-schemas
+     *         defined by a 'patternProperties' constraint
+     */
+    struct ValidatePatternPropertySubschemas
+    {
+        ValidatePatternPropertySubschemas(
+                const typename AdapterType::Object &object,
+                const std::vector<std::string> &context,
+                bool continueOnSuccess,
+                bool continueOnFailure,
+                bool continueIfUnmatched,
+                bool strictTypes,
+                ValidationResults *results,
+                std::set<std::string> *propertiesMatched,
+                bool *validated)
+          : object(object),
+            context(context),
+            continueOnSuccess(continueOnSuccess),
+            continueOnFailure(continueOnFailure),
+            continueIfUnmatched(continueIfUnmatched),
+            strictTypes(strictTypes),
+            results(results),
+            propertiesMatched(propertiesMatched),
+            validated(validated) { }
+
+        template<typename StringType>
+        bool operator()(const StringType &patternProperty,
+                const Subschema *subschema) const
+        {
+            const std::string patternPropertyStr(patternProperty.c_str());
+
+            // It would be nice to store pre-allocated regex objects in the
+            // PropertiesConstraint, but boost::regex does not currently support
+            // custom allocators. This isn't an issue here, because Valijson's
+            // JSON Scheme validator does not yet support custom allocators.
+            const boost::regex r(patternPropertyStr, boost::regex::perl);
+
+            bool matchFound = false;
+
+            // Recursively validate all matching properties
+            typedef const typename AdapterType::ObjectMember ObjectMember;
+            BOOST_FOREACH( const ObjectMember m, object ) {
+                if (boost::regex_search(m.first, r)) {
+                    matchFound = true;
+                    if (propertiesMatched) {
+                        propertiesMatched->insert(m.first);
+                    }
+
+                    // Update context
+                    std::vector<std::string> newContext = context;
+                    newContext.push_back("[" + m.first + "]");
+
+                    // Recursively validate property's value
+                    ValidationVisitor validator(m.second, newContext,
+                            strictTypes, results);
+                    if (validator.validateSchema(*subschema)) {
+                        continue;
+                    }
+
+                    if (results) {
+                        results->pushError(context, "Failed to validate "
+                                "against schema associated with pattern '" +
+                                patternPropertyStr + "'.");
+                    }
+
+                    if (validated) {
+                        *validated = false;
+                    }
+
+                    if (!continueOnFailure) {
+                        return false;
+                    }
+                }
+            }
+
+            // Allow iteration to terminate if there was not at least one match
+            if (!matchFound && !continueIfUnmatched) {
+                return false;
+            }
+
+            return continueOnSuccess;
+        }
+
+    private:
+        const typename AdapterType::Object &object;
+        const std::vector<std::string> &context;
+        const bool continueOnSuccess;
+        const bool continueOnFailure;
+        const bool continueIfUnmatched;
+        const bool strictTypes;
+        ValidationResults * const results;
+        std::set<std::string> * const propertiesMatched;
+        bool * const validated;
+    };
+
+    /**
+     * @brief  Functor to validate object properties against sub-schemas defined
+     *         by a 'properties' constraint
+     */
+    struct ValidatePropertySubschemas
+    {
+        ValidatePropertySubschemas(
+                const typename AdapterType::Object &object,
+                const std::vector<std::string> &context,
+                bool continueOnSuccess,
+                bool continueOnFailure,
+                bool continueIfUnmatched,
+                bool strictTypes,
+                ValidationResults *results,
+                std::set<std::string> *propertiesMatched,
+                bool *validated)
+          : object(object),
+            context(context),
+            continueOnSuccess(continueOnSuccess),
+            continueOnFailure(continueOnFailure),
+            continueIfUnmatched(continueIfUnmatched),
+            strictTypes(strictTypes),
+            results(results),
+            propertiesMatched(propertiesMatched),
+            validated(validated) { }
+
+        template<typename StringType>
+        bool operator()(const StringType &propertyName,
+                const Subschema *subschema) const
+        {
+            const std::string propertyNameKey(propertyName.c_str());
+            const typename AdapterType::Object::const_iterator itr =
+                    object.find(propertyNameKey);
+            if (itr == object.end()) {
+                return continueIfUnmatched;
+            }
+
+            if (propertiesMatched) {
+                propertiesMatched->insert(propertyNameKey);
+            }
+
+            // Update context
+            std::vector<std::string> newContext = context;
+            newContext.push_back("[" + propertyNameKey + "]");
+
+            // Recursively validate property's value
+            ValidationVisitor validator(itr->second, newContext, strictTypes,
+                    results);
+            if (validator.validateSchema(*subschema)) {
+                return continueOnSuccess;
+            }
+
+            if (results) {
+                results->pushError(context, "Failed to validate against "
+                        "schema associated with property name '" +
+                        propertyNameKey + "'.");
+            }
+
+            if (validated) {
+                *validated = false;
+            }
+
+            return continueOnFailure;
+        }
+
+    private:
+        const typename AdapterType::Object &object;
+        const std::vector<std::string> &context;
+        const bool continueOnSuccess;
+        const bool continueOnFailure;
+        const bool continueIfUnmatched;
+        const bool strictTypes;
+        ValidationResults * const results;
+        std::set<std::string> * const propertiesMatched;
         bool * const validated;
     };
 

@@ -90,7 +90,7 @@ using valijson::constraints::TypeConstraint;
 void addPropertiesConstraint(Schema &schema)
 {
 
-    PropertiesConstraint::PropertySchemaMap propertySchemaMap;
+    PropertiesConstraint propertiesConstraint;
 
     {
         // Prepare an enum constraint requires a document to be equal to at
@@ -106,7 +106,7 @@ void addPropertiesConstraint(Schema &schema)
         schema.addConstraintToSubschema(constraint, subschema);
 
         // Include subschema in properties constraint
-        propertySchemaMap["category"] = subschema;
+        propertiesConstraint.addPropertySubschema("category", subschema);
     }
 
     {
@@ -118,7 +118,7 @@ void addPropertiesConstraint(Schema &schema)
         schema.addConstraintToSubschema(typeConstraint, subschema);
 
         // Include subschema in properties constraint
-        propertySchemaMap["description"] = subschema;
+        propertiesConstraint.addPropertySubschema("description", subschema);
     }
 
     {
@@ -131,7 +131,7 @@ void addPropertiesConstraint(Schema &schema)
         schema.addConstraintToSubschema(typeConstraint, subschema);
 
         // Include subschema in properties constraint
-        propertySchemaMap["price"] = subschema;
+        propertiesConstraint.addPropertySubschema("price", subschema);
     }
 
     {
@@ -145,12 +145,11 @@ void addPropertiesConstraint(Schema &schema)
         schema.addConstraintToSubschema(typeConstraint, subschema);
 
         // Include subschema in properties constraint
-        propertySchemaMap["title"] = subschema;
+        propertiesConstraint.addPropertySubschema("title", subschema);
     }
 
-    // Add a PropertiesConstraint to the schema, with the properties defined
-    // above, no pattern properties or additional property schemas
-    schema.addConstraint(PropertiesConstraint(propertySchemaMap));
+    // Add a PropertiesConstraint to the root schema
+    schema.addConstraint(propertiesConstraint);
 }
 
 void addRequiredConstraint(Schema &schema)

@@ -1273,42 +1273,37 @@ private:
         const Subschema *parentSubschema)
     {
         typedef typename AdapterType::ObjectMember Member;
-        typedef constraints::PropertiesConstraint::PropertySchemaMap PSM;
 
-        // Populate a PropertySchemaMap for each of the properties defined by
-        // the 'properties' keyword.
-        PSM propertySchemas;
+        constraints::PropertiesConstraint constraint;
+
+        // Create subschemas for 'properties' constraint
         if (properties) {
             BOOST_FOREACH( const Member m, properties->getObject() ) {
-                const std::string &propertyName = m.first;
-                const std::string childPath = propertiesPath + "/" +
-                        propertyName;
-                const Subschema *childSubschema = rootSchema.createSubschema();
-                propertySchemas[propertyName] = childSubschema;
+                const std::string &property = m.first;
+                const std::string childPath = propertiesPath + "/" + property;
+                const Subschema *subschema = rootSchema.createSubschema();
+                constraint.addPropertySubschema(property, subschema);
                 populateSchema<AdapterType>(rootSchema, rootNode, m.second,
-                        *childSubschema, currentScope, childPath, fetchDoc,
-                        parentSubschema, &propertyName);
+                        *subschema, currentScope, childPath, fetchDoc,
+                        parentSubschema, &property);
             }
         }
 
-        // Populate a PropertySchemaMap for each of the properties defined by
-        // the 'patternProperties' keyword
-        PSM patternPropertySchemas;
+        // Create subschemas for 'patternProperties' constraint
         if (patternProperties) {
             BOOST_FOREACH( const Member m, patternProperties->getObject() ) {
-                const std::string &propertyName = m.first;
+                const std::string &pattern = m.first;
                 const std::string childPath = patternPropertiesPath + "/" +
-                        propertyName;
-                const Subschema *childSubschema = rootSchema.createSubschema();
-                patternPropertySchemas[propertyName] = childSubschema;
+                        pattern;
+                const Subschema *subschema = rootSchema.createSubschema();
+                constraint.addPatternPropertySubschema(pattern, subschema);
                 populateSchema<AdapterType>(rootSchema, rootNode, m.second,
-                        *childSubschema, currentScope, childPath, fetchDoc,
-                        parentSubschema, &propertyName);
+                        *subschema, currentScope, childPath, fetchDoc,
+                        parentSubschema, &pattern);
             }
         }
 
-        // Populate an additionalItems schema if required
-        const Subschema *additionalPropertiesSchema = NULL;
+        // Create an additionalItems subschema if required
         if (additionalProperties) {
             // If additionalProperties has been set, check for a boolean value.
             // Setting 'additionalProperties' to true allows the values of
@@ -1322,15 +1317,17 @@ private:
                 // If it has a boolean value that is 'true', then an empty
                 // schema should be used.
                 if (additionalProperties->asBool()) {
-                    additionalPropertiesSchema = rootSchema.createSubschema();
+                    constraint.setAdditionalPropertiesSubschema(
+                            rootSchema.emptySubschema());
                 }
             } else if (additionalProperties->isObject()) {
                 // If additionalProperties is an object, it should be used as
                 // a child schema.
-                additionalPropertiesSchema = rootSchema.createSubschema();
+                const Subschema *subschema = rootSchema.createSubschema();
+                constraint.setAdditionalPropertiesSubschema(subschema);
                 populateSchema<AdapterType>(rootSchema, rootNode,
-                        *additionalProperties, *additionalPropertiesSchema,
-                        currentScope, additionalPropertiesPath, fetchDoc);
+                        *additionalProperties, *subschema, currentScope,
+                        additionalPropertiesPath, fetchDoc);
             } else {
                 // All other types are invalid
                 throw std::runtime_error(
@@ -1339,18 +1336,11 @@ private:
         } else {
             // If an additionalProperties constraint is not provided, then the
             // default value is an empty schema.
-            additionalPropertiesSchema = rootSchema.emptySubschema();
+            constraint.setAdditionalPropertiesSubschema(
+                    rootSchema.emptySubschema());
         }
 
-        if (additionalPropertiesSchema) {
-            // If an additionalProperties schema has been created, construct a
-            // new PropertiesConstraint object using that schema.
-            return constraints::PropertiesConstraint(propertySchemas,
-                    patternPropertySchemas, additionalPropertiesSchema);
-        }
-
-        return constraints::PropertiesConstraint(propertySchemas,
-                patternPropertySchemas);
+        return constraint;
     }
 
     /**

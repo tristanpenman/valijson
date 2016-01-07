@@ -558,43 +558,97 @@ private:
 };
 
 /**
- * @brief   Represents a tuple of 'properties', 'patternProperties' and
- *          'additionalProperties' constraints.
+ * @brief   Represents a combination of 'properties', 'patternProperties' and
+ *          'additionalProperties' constraints
  */
-struct PropertiesConstraint: BasicConstraint<PropertiesConstraint> {
-
-    typedef std::map<std::string, const Subschema *> PropertySchemaMap;
-
-    PropertiesConstraint(const PropertySchemaMap &properties)
-      : properties(properties),
+class PropertiesConstraint: public BasicConstraint<PropertiesConstraint>
+{
+public:
+    PropertiesConstraint()
+      : properties(std::less<String>(), allocator),
+        patternProperties(std::less<String>(), allocator),
         additionalProperties(NULL) { }
 
-    PropertiesConstraint(const PropertySchemaMap &properties,
-                         const PropertySchemaMap &patternProperties)
-      : properties(properties),
-        patternProperties(patternProperties),
+    PropertiesConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        properties(std::less<String>(), allocator),
+        patternProperties(std::less<String>(), allocator),
         additionalProperties(NULL) { }
 
-    PropertiesConstraint(const PropertySchemaMap &properties,
-                         const PropertySchemaMap &patternProperties,
-                         const Subschema *additionalProperties)
-      : properties(properties),
-        patternProperties(patternProperties),
-        additionalProperties(additionalProperties) { }
+    bool addPatternPropertySubschema(const char *patternProperty,
+            const Subschema *subschema)
+    {
+        return patternProperties.insert(PropertySchemaMap::value_type(
+                String(patternProperty, allocator), subschema)).second;
+    }
 
-    PropertiesConstraint(const PropertiesConstraint &other)
-      : properties(other.properties),
-        patternProperties(other.patternProperties),
-        additionalProperties(other.additionalProperties) {}
+    template<typename AllocatorType>
+    bool addPatternPropertySubschema(const std::basic_string<char,
+            std::char_traits<char>, AllocatorType> &patternProperty,
+            const Subschema *subschema)
+    {
+        return addPatternPropertySubschema(patternProperty.c_str(), subschema);
+    }
 
-    const PropertySchemaMap properties;
-    const PropertySchemaMap patternProperties;
+    bool addPropertySubschema(const char *propertyName,
+            const Subschema *subschema)
+    {
+        return properties.insert(PropertySchemaMap::value_type(
+                String(propertyName, allocator), subschema)).second;
+    }
+
+    template<typename AllocatorType>
+    bool addPropertySubschema(const std::basic_string<char,
+            std::char_traits<char>, AllocatorType> &propertyName,
+            const Subschema *subschema)
+    {
+        return addPropertySubschema(propertyName.c_str(), subschema);
+    }
+
+    template<typename FunctorType>
+    void applyToPatternProperties(const FunctorType &fn) const
+    {
+        typedef typename PropertySchemaMap::value_type ValueType;
+        BOOST_FOREACH( const ValueType &value, patternProperties ) {
+            if (!fn(value.first, value.second)) {
+                return;
+            }
+        }
+    }
+
+    template<typename FunctorType>
+    void applyToProperties(const FunctorType &fn) const
+    {
+        typedef typename PropertySchemaMap::value_type ValueType;
+        BOOST_FOREACH( const ValueType &value, properties ) {
+            if (!fn(value.first, value.second)) {
+                return;
+            }
+        }
+    }
+
+    const Subschema * getAdditionalPropertiesSubschema() const
+    {
+        return additionalProperties;
+    }
+
+    void setAdditionalPropertiesSubschema(const Subschema *subschema)
+    {
+        additionalProperties = subschema;
+    }
+
+private:
+    typedef std::map<String, const Subschema *, std::less<String>, Allocator>
+            PropertySchemaMap;
+
+    PropertySchemaMap properties;
+    PropertySchemaMap patternProperties;
+
     const Subschema *additionalProperties;
-
 };
 
 /**
- * @brief   Represents a 'required' constraint.
+ * @brief   Represents a 'required' constraint
  */
 class RequiredConstraint: public BasicConstraint<RequiredConstraint>
 {
