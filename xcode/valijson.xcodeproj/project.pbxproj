@@ -17,6 +17,7 @@
 		6A725F4917F6404100D6B2FF /* test_rapidjson_adapter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AC18D3917CC874100FE0EC9 /* test_rapidjson_adapter.cpp */; };
 		6A725F4A17F6404100D6B2FF /* test_validator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AC18D3517CC86E000FE0EC9 /* test_validator.cpp */; };
 		6A9E1856194DC44B003F1C4C /* test_fetch_document_callback.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AA8A5DA17F8BDCA002728A0 /* test_fetch_document_callback.cpp */; };
+		6AA822FF1C3F38D4007103A7 /* test_picojson_adapter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AA822FE1C3F38D4007103A7 /* test_picojson_adapter.cpp */; };
 		6AB8FE8717E6A56F0028E147 /* external_schema.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AB8FE8617E6A56F0028E147 /* external_schema.cpp */; };
 		6AB8FE8D17E6A57E0028E147 /* libboost_regex-mt.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 6A477F8417D6BCBB0013571C /* libboost_regex-mt.dylib */; };
 		6AD3490118FF56FB004BDEE7 /* gtest_main.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6AF70B3718FE71F700342325 /* gtest_main.cc */; };
@@ -165,6 +166,7 @@
 		6AA334921AB5103C00F1928B /* json_value.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = json_value.cpp; sourceTree = "<group>"; };
 		6AA334931AB5103C00F1928B /* json_valueiterator.inl */ = {isa = PBXFileReference; lastKnownFileType = text; path = json_valueiterator.inl; sourceTree = "<group>"; };
 		6AA334941AB5103C00F1928B /* json_writer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = json_writer.cpp; sourceTree = "<group>"; };
+		6AA822FE1C3F38D4007103A7 /* test_picojson_adapter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_picojson_adapter.cpp; sourceTree = "<group>"; };
 		6AA8A5DA17F8BDCA002728A0 /* test_fetch_document_callback.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_fetch_document_callback.cpp; sourceTree = "<group>"; };
 		6AAF16D21BC744BE002CB1AF /* picojson_adapter.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = picojson_adapter.hpp; sourceTree = "<group>"; };
 		6AB8FE8617E6A56F0028E147 /* external_schema.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = external_schema.cpp; sourceTree = "<group>"; };
@@ -698,6 +700,7 @@
 				6AA8A5DA17F8BDCA002728A0 /* test_fetch_document_callback.cpp */,
 				6A506D1F1AF88E5D00C2C818 /* test_json_pointer.cpp */,
 				6AB8FE9217E6BE770028E147 /* test_jsoncpp_adapter.cpp */,
+				6AA822FE1C3F38D4007103A7 /* test_picojson_adapter.cpp */,
 				6AB8FEC417E92B100028E147 /* test_property_tree_adapter.cpp */,
 				6AC18D3917CC874100FE0EC9 /* test_rapidjson_adapter.cpp */,
 				6A725F4317F61B5100D6B2FF /* test_validation_errors.cpp */,
@@ -1000,6 +1003,7 @@
 				6A725F4717F6404100D6B2FF /* test_jsoncpp_adapter.cpp in Sources */,
 				6A725F4817F6404100D6B2FF /* test_property_tree_adapter.cpp in Sources */,
 				6AD3490118FF56FB004BDEE7 /* gtest_main.cc in Sources */,
+				6AA822FF1C3F38D4007103A7 /* test_picojson_adapter.cpp in Sources */,
 				6A506D201AF88E5D00C2C818 /* test_json_pointer.cpp in Sources */,
 				6A725F4917F6404100D6B2FF /* test_rapidjson_adapter.cpp in Sources */,
 				6A725F4A17F6404100D6B2FF /* test_validator.cpp in Sources */,
