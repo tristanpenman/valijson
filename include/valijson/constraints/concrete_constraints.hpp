@@ -247,6 +247,38 @@ public:
       : BasicConstraint(allocFn, freeFn),
         enumValues(Allocator::rebind<const EnumValue *>::other(allocator)) { }
 
+    EnumConstraint(const EnumConstraint &other)
+      : BasicConstraint(other),
+        enumValues(Allocator::rebind<const EnumValue *>::other(allocator))
+    {
+        try {
+            // Clone individual enum values
+            BOOST_FOREACH( const EnumValue *otherValue, other.enumValues ) {
+                const EnumValue *value = otherValue->clone();
+                try {
+                    enumValues.push_back(value);
+                } catch (...) {
+                    delete value;
+                    throw;
+                }
+            }
+
+        } catch (...) {
+            // Delete values already added to constraint
+            BOOST_FOREACH( const EnumValue *value, enumValues ) {
+                delete value;
+            }
+            throw;
+        }
+    }
+
+    virtual ~EnumConstraint()
+    {
+        BOOST_FOREACH( const EnumValue *value, enumValues ) {
+            delete value;
+        }
+    }
+
     void addValue(const adapters::Adapter &value)
     {
         // TODO: Freeze value using custom alloc/free functions

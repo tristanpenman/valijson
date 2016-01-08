@@ -31,6 +31,9 @@ struct BasicConstraint: Constraint
     BasicConstraint(Allocator::CustomAlloc allocFn, Allocator::CustomFree freeFn)
       : allocator(allocFn, freeFn) { }
 
+    BasicConstraint(const BasicConstraint &other)
+      : allocator(other.allocator) { }
+
     virtual ~BasicConstraint<ConstraintType>() { }
 
     virtual bool accept(ConstraintVisitor &visitor) const
