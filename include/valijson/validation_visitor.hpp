@@ -345,12 +345,11 @@ public:
     }
 
     /**
-     * @brief   Validate against the maximum and exclusiveMaximum constraints
-     *          represented by a MaximumConstraint object.
+     * @brief   Validate a value against a MaximumConstraint object
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * @param   constraint  Constraint that the target must validate against
      *
-     * @return  true if constraints are satisfied, false otherwise.
+     * @return  \c true if constraints are satisfied; \c false otherwise
      */
     virtual bool visit(const MaximumConstraint &constraint)
     {
@@ -359,23 +358,26 @@ public:
             return true;
         }
 
-        if (constraint.exclusiveMaximum) {
-            if (target.asDouble() >= constraint.maximum) {
+        const double maximum = constraint.getMaximum();
+
+        if (constraint.getExclusiveMaximum()) {
+            if (target.asDouble() >= maximum) {
                 if (results) {
                     results->pushError(context, "Expected number less than " +
-                        boost::lexical_cast<std::string>(constraint.maximum));
+                            boost::lexical_cast<std::string>(maximum));
                 }
+
                 return false;
             }
-        } else {
-            if (target.asDouble() > constraint.maximum) {
-                if (results) {
-                    results->pushError(context,
-                            "Expected number less than or equal to" +
-                            boost::lexical_cast<std::string>(constraint.maximum));
-                }
-                return false;
+
+        } else if (target.asDouble() > maximum) {
+            if (results) {
+                results->pushError(context,
+                        "Expected number less than or equal to" +
+                        boost::lexical_cast<std::string>(maximum));
             }
+
+            return false;
         }
 
         return true;

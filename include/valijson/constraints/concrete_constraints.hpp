@@ -378,16 +378,43 @@ private:
 };
 
 /**
- * @brief   Represents a 'maximum' constraint.
+ * @brief   Represents 'maximum' and 'exclusiveMaximum' constraints
  */
-struct MaximumConstraint: BasicConstraint<MaximumConstraint>
+class MaximumConstraint: public BasicConstraint<MaximumConstraint>
 {
-    MaximumConstraint(double maximum, bool exclusiveMaximum)
-      : maximum(maximum),
-        exclusiveMaximum(exclusiveMaximum) { }
+public:
+    MaximumConstraint()
+      : maximum(std::numeric_limits<double>::infinity()),
+        exclusiveMaximum(false) { }
 
-    const double maximum;
-    const bool exclusiveMaximum;
+    MaximumConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        maximum(std::numeric_limits<double>::infinity()),
+        exclusiveMaximum(false) { }
+
+    bool getExclusiveMaximum() const
+    {
+        return exclusiveMaximum;
+    }
+
+    void setExclusiveMaximum(bool newExclusiveMaximum)
+    {
+        exclusiveMaximum = newExclusiveMaximum;
+    }
+
+    double getMaximum() const
+    {
+        return maximum;
+    }
+
+    void setMaximum(double newMaximum)
+    {
+        maximum = newMaximum;
+    }
+
+private:
+    double maximum;
+    bool exclusiveMaximum;
 };
 
 /**

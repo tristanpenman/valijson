@@ -900,25 +900,25 @@ private:
         const AdapterType &node,
         const AdapterType *exclusiveMaximum)
     {
-        bool exclusiveMaximumValue = false;
+        if (!node.maybeDouble()) {
+            throw std::runtime_error(
+                    "Expected numeric value for maximum constraint.");
+        }
+
+        constraints::MaximumConstraint constraint;
+        constraint.setMaximum(node.asDouble());
+
         if (exclusiveMaximum) {
-            if (exclusiveMaximum->maybeBool()) {
-                exclusiveMaximumValue = exclusiveMaximum->asBool();
-            } else {
+            if (!exclusiveMaximum->maybeBool()) {
                 throw std::runtime_error(
                         "Expected boolean value for exclusiveMaximum "
                         "constraint.");
             }
+
+            constraint.setExclusiveMaximum(exclusiveMaximum->asBool());
         }
 
-        if (node.maybeDouble()) {
-            double maximumValue = node.asDouble();
-            return constraints::MaximumConstraint(maximumValue,
-                    exclusiveMaximumValue);
-        }
-
-        throw std::runtime_error(
-                "Expected numeric value for maximum constraint.");
+        return constraint;
     }
 
     /**
