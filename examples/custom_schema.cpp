@@ -125,7 +125,10 @@ void addPropertiesConstraint(Schema &schema)
         // Create a child schema for the 'price' property, that requires a
         // number with a value greater than zero.
         const Subschema *subschema = schema.createSubschema();
-        schema.addConstraintToSubschema(MinimumConstraint(0.0, true), subschema);
+        MinimumConstraint minimumConstraint;
+        minimumConstraint.setMinimum(0.0);
+        minimumConstraint.setExclusiveMinimum(true);
+        schema.addConstraintToSubschema(minimumConstraint, subschema);
         TypeConstraint typeConstraint;
         typeConstraint.addNamedType(TypeConstraint::kNumber);
         schema.addConstraintToSubschema(typeConstraint, subschema);

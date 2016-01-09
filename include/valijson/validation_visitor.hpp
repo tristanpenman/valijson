@@ -467,12 +467,11 @@ public:
     }
 
     /**
-     * @brief   Validate against the minimum constraint represented by a
-     *          MinimumConstraint object.
+     * @brief   Validate a value against a MinimumConstraint
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * @param   constraint  Constraint that the target must validate against
      *
-     * @return  true if the constraint is satisfied, false otherwise.
+     * @return  \c true if the constraint is satisfied; \c false otherwise
      */
     virtual bool visit(const MinimumConstraint &constraint)
     {
@@ -481,24 +480,26 @@ public:
             return true;
         }
 
-        if (constraint.exclusiveMinimum) {
-            if (target.asDouble() <= constraint.minimum) {
+        const double minimum = constraint.getMinimum();
+
+        if (constraint.getExclusiveMinimum()) {
+            if (target.asDouble() <= minimum) {
                 if (results) {
                     results->pushError(context,
                         "Expected number greater than " +
-                        boost::lexical_cast<std::string>(constraint.minimum));
+                        boost::lexical_cast<std::string>(minimum));
                 }
+
                 return false;
             }
-        } else {
-            if (target.asDouble() < constraint.minimum) {
-                if (results) {
-                    results->pushError(context,
+        } else if (target.asDouble() < minimum) {
+            if (results) {
+                results->pushError(context,
                         "Expected number greater than or equal to" +
-                        boost::lexical_cast<std::string>(constraint.minimum));
-                }
-                return false;
+                        boost::lexical_cast<std::string>(minimum));
             }
+
+            return false;
         }
 
         return true;

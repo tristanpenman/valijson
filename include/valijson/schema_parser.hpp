@@ -1009,25 +1009,25 @@ private:
         const AdapterType &node,
         const AdapterType *exclusiveMinimum)
     {
-        bool exclusiveMinimumValue = false;
+        if (!node.maybeDouble()) {
+            throw std::runtime_error(
+                    "Expected numeric value for minimum constraint.");
+        }
+
+        constraints::MinimumConstraint constraint;
+        constraint.setMinimum(node.asDouble());
+
         if (exclusiveMinimum) {
-            if (exclusiveMinimum->maybeBool()) {
-                exclusiveMinimumValue = exclusiveMinimum->asBool();
-            } else {
+            if (!exclusiveMinimum->maybeBool()) {
                 throw std::runtime_error(
                         "Expected boolean value for 'exclusiveMinimum' "
                         "constraint.");
             }
+
+            constraint.setExclusiveMinimum(exclusiveMinimum->asBool());
         }
 
-        if (node.maybeDouble()) {
-            double minimumValue = node.asDouble();
-            return constraints::MinimumConstraint(minimumValue,
-                    exclusiveMinimumValue);
-        }
-
-        throw std::runtime_error(
-                "Expected numeric value for 'minimum' constraint.");
+        return constraint;
     }
 
     /**

@@ -451,16 +451,43 @@ struct MaxPropertiesConstraint: BasicConstraint<MaxPropertiesConstraint>
 };
 
 /**
- * @brief   Represents a pair of 'minimum' and 'exclusiveMinimum' constraints.
+ * @brief   Represents 'minimum' and 'exclusiveMinimum' constraints
  */
-struct MinimumConstraint: BasicConstraint<MinimumConstraint>
+class MinimumConstraint: public BasicConstraint<MinimumConstraint>
 {
-    MinimumConstraint(double minimum, bool exclusiveMinimum)
-      : minimum(minimum),
-        exclusiveMinimum(exclusiveMinimum) { }
+public:
+    MinimumConstraint()
+      : minimum(-std::numeric_limits<double>::infinity()),
+        exclusiveMinimum(false) { }
 
-    const double minimum;
-    const bool exclusiveMinimum;
+    MinimumConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        minimum(-std::numeric_limits<double>::infinity()),
+        exclusiveMinimum(false) { }
+
+    bool getExclusiveMinimum() const
+    {
+        return exclusiveMinimum;
+    }
+
+    void setExclusiveMinimum(bool newExclusiveMinimum)
+    {
+        exclusiveMinimum = newExclusiveMinimum;
+    }
+
+    double getMinimum() const
+    {
+        return minimum;
+    }
+
+    void setMinimum(double newMinimum)
+    {
+        minimum = newMinimum;
+    }
+
+private:
+    double minimum;
+    bool exclusiveMinimum;
 };
 
 /**
