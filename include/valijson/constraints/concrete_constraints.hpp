@@ -418,14 +418,30 @@ private:
 };
 
 /**
- * @brief   Represents a 'maxItems' constraint.
+ * @brief   Represents a 'maxItems' constraint
  */
-struct MaxItemsConstraint: BasicConstraint<MaxItemsConstraint>
+class MaxItemsConstraint: public BasicConstraint<MaxItemsConstraint>
 {
-    MaxItemsConstraint(int64_t maxItems)
-      : maxItems(maxItems) { }
+public:
+    MaxItemsConstraint()
+      : maxItems(std::numeric_limits<int64_t>::max()) { }
 
-    const int64_t maxItems;
+    MaxItemsConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        maxItems(std::numeric_limits<int64_t>::max()) { }
+
+    int64_t getMaxItems() const
+    {
+        return maxItems;
+    }
+
+    void setMaxItems(int64_t newMaxItems)
+    {
+        maxItems = newMaxItems;
+    }
+
+private:
+    int64_t maxItems;
 };
 
 /**
@@ -491,14 +507,35 @@ private:
 };
 
 /**
- * @brief   Represents a 'minItems' constraint.
+ * @brief   Represents a 'minItems' constraint
  */
-struct MinItemsConstraint: BasicConstraint<MinItemsConstraint>
+class MinItemsConstraint: public BasicConstraint<MinItemsConstraint>
 {
-    MinItemsConstraint(int64_t minItems)
-      : minItems(minItems) { }
+public:
+    MinItemsConstraint()
+      : minItems(0) { }
 
-    const int64_t minItems;
+    MinItemsConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        minItems(0) { }
+
+    int64_t getMinItems() const
+    {
+        return minItems;
+    }
+
+    void setMinItems(int64_t newMinItems)
+    {
+        if (newMinItems < 0) {
+            throw std::runtime_error(
+                    "Minimum number of items must be a non-negative integer");
+        }
+
+        minItems = newMinItems;
+    }
+
+private:
+    int64_t minItems;
 };
 
 /**

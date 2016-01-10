@@ -934,9 +934,11 @@ private:
         const AdapterType &node)
     {
         if (node.maybeInteger()) {
-            int64_t value = node.asInteger();
+            const int64_t value = node.asInteger();
             if (value >= 0) {
-                return constraints::MaxItemsConstraint(value);
+                constraints::MaxItemsConstraint constraint;
+                constraint.setMaxItems(value);
+                return constraint;
             }
         }
 
@@ -1043,9 +1045,11 @@ private:
         const AdapterType &node)
     {
         if (node.maybeInteger()) {
-            int64_t value = node.asInteger();
+            const int64_t value = node.asInteger();
             if (value >= 0) {
-                return constraints::MinItemsConstraint(value);
+                constraints::MinItemsConstraint constraint;
+                constraint.setMinItems(value);
+                return constraint;
             }
         }
 

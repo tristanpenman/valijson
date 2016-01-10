@@ -384,12 +384,11 @@ public:
     }
 
     /**
-     * @brief   Validate against the maxItems constraint represented by a
-     *          MaxItemsConstraint object.
+     * @brief   Validate a value against a MaxItemsConstraint
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * @param   constraint  Constraint that the target must validate against
      *
-     * @return  true if constraint is satisfied, false otherwise.
+     * @return  \c true if constraint is satisfied; \c false otherwise
      */
     virtual bool visit(const MaxItemsConstraint &constraint)
     {
@@ -397,14 +396,14 @@ public:
             return true;
         }
 
-        if (target.asArray().size() <= constraint.maxItems) {
+        const uint64_t maxItems = constraint.getMaxItems();
+        if (target.asArray().size() <= maxItems) {
             return true;
         }
 
         if (results) {
             results->pushError(context, "Array should contain no more than " +
-                boost::lexical_cast<std::string>(constraint.maxItems) +
-                " elements.");
+                    boost::lexical_cast<std::string>(maxItems) + " elements.");
         }
 
         return false;
@@ -506,12 +505,11 @@ public:
     }
 
     /**
-     * @brief   Validate against the minItems constraint represented by a
-     *          MinItemsConstraint object.
+     * @brief   Validate a value against a MinItemsConstraint
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * @param   constraint  Constraint that the target must validate against
      *
-     * @return  true if the constraint is satisfied, false otherwise.
+     * @return  \c true if the constraint is satisfied; \c false otherwise
      */
     virtual bool visit(const MinItemsConstraint &constraint)
     {
@@ -519,14 +517,14 @@ public:
             return true;
         }
 
-        if (target.asArray().size() >= constraint.minItems) {
+        const int64_t minItems = constraint.getMinItems();
+        if (target.asArray().size() >= minItems) {
             return true;
         }
 
         if (results) {
             results->pushError(context, "Array should contain no fewer than " +
-                boost::lexical_cast<std::string>(constraint.minItems) +
-                " elements.");
+                boost::lexical_cast<std::string>(minItems) + " elements.");
         }
 
         return false;
