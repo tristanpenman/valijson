@@ -598,17 +598,61 @@ struct MinPropertiesConstraint: BasicConstraint<MinPropertiesConstraint>
 };
 
 /**
- * @brief  Represents a 'multipleOf' or 'divisibleBy' constraint
+ * @brief  Represents either 'multipleOf' or 'divisibleBy' constraints where
+ *         the divisor is a floating point number
  */
-struct MultipleOfConstraint: BasicConstraint<MultipleOfConstraint>
+class MultipleOfDoubleConstraint:
+        public BasicConstraint<MultipleOfDoubleConstraint>
 {
-    explicit MultipleOfConstraint(int64_t value)
-      : value(value) { }
+public:
+    MultipleOfDoubleConstraint()
+      : value(1.) { }
 
-    explicit MultipleOfConstraint(double value)
-      : value(value) { }
+    MultipleOfDoubleConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        value(1.) { }
 
-    const boost::variant<double, int64_t> value;
+    double getDivisor() const
+    {
+        return value;
+    }
+
+    void setDivisor(double newValue)
+    {
+        value = newValue;
+    }
+
+private:
+    double value;
+};
+
+/**
+ * @brief  Represents either 'multipleOf' or 'divisibleBy' constraints where
+ *         the divisor is of integer type
+ */
+class MultipleOfIntConstraint:
+        public BasicConstraint<MultipleOfIntConstraint>
+{
+public:
+    MultipleOfIntConstraint()
+      : value(1) { }
+
+    MultipleOfIntConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        value(1) { }
+
+    int64_t getDivisor() const
+    {
+        return value;
+    }
+
+    void setDivisor(int64_t newValue)
+    {
+        value = newValue;
+    }
+
+private:
+    int64_t value;
 };
 
 /**

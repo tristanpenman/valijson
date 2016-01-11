@@ -590,100 +590,105 @@ public:
     }
 
     /**
-     * @brief   Validate against the multipleOf or divisibleBy constraints
-     *          represented by a MultipleOfConstraint object.
+     * @brief   Validate a value against a MultipleOfDoubleConstraint
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * @param   constraint  Constraint that the target must validate against
      *
-     * @return  true if the constraint is satisfied, false otherwise.
+     * @return  \c true if the constraint is satisfied; \c false otherwise
      */
-    virtual bool visit(const MultipleOfConstraint &constraint)
+    virtual bool visit(const MultipleOfDoubleConstraint &constraint)
     {
-        const int64_t *multipleOfInteger = boost::get<int64_t>(&constraint.value);
-        if (multipleOfInteger) {
+        const double divisor = constraint.getDivisor();
+
+        double d = 0.;
+        if (target.maybeDouble()) {
+            if (!target.asDouble(d)) {
+                if (results) {
+                    results->pushError(context, "Value could not be converted "
+                        "to a number to check if it is a multiple of " +
+                        boost::lexical_cast<std::string>(divisor));
+                }
+                return false;
+            }
+        } else if (target.maybeInteger()) {
             int64_t i = 0;
-            if (target.maybeInteger()) {
-                if (!target.asInteger(i)) {
-                    if (results) {
-                        results->pushError(context, "Value could not be converted "
-                            "to an integer for multipleOf check");
-                    }
-                    return false;
-                }
-            } else if (target.maybeDouble()) {
-                double d;
-                if (!target.asDouble(d)) {
-                    if (results) {
-                        results->pushError(context, "Value could not be converted "
-                            "to a double for multipleOf check");
-                    }
-                    return false;
-                }
-                i = static_cast<int64_t>(d);
-            } else {
-                return true;
-            }
-
-            if (i == 0) {
-                return true;
-            }
-
-            if (i % *multipleOfInteger != 0) {
+            if (!target.asInteger(i)) {
                 if (results) {
-                    results->pushError(context, "Value should be a multiple of " +
-                        boost::lexical_cast<std::string>(*multipleOfInteger));
+                    results->pushError(context, "Value could not be converted "
+                        "to a number to check if it is a multiple of " +
+                        boost::lexical_cast<std::string>(divisor));
                 }
                 return false;
             }
-
+            d = static_cast<double>(i);
+        } else {
             return true;
         }
 
-        const double *multipleOfDouble = boost::get<double>(&constraint.value);
-        if (multipleOfDouble) {
-            double d = 0.;
-            if (target.maybeDouble()) {
-                if (!target.asDouble(d)) {
-                    if (results) {
-                        results->pushError(context, "Value could not be converted "
-                            "to a number to check if it is a multiple of " +
-                            boost::lexical_cast<std::string>(*multipleOfDouble));
-                    }
-                    return false;
-                }
-            } else if (target.maybeInteger()) {
-                int64_t i = 0;
-                if (!target.asInteger(i)) {
-                    if (results) {
-                        results->pushError(context, "Value could not be converted "
-                            "to a number to check if it is a multiple of " +
-                            boost::lexical_cast<std::string>(*multipleOfDouble));
-                    }
-                    return false;
-                }
-                d = static_cast<double>(i);
-            } else {
-                return true;
+        if (d == 0) {
+            return true;
+        }
+
+        const double r = remainder(d, divisor);
+
+        if (fabs(r) > std::numeric_limits<double>::epsilon()) {
+            if (results) {
+                results->pushError(context, "Value should be a multiple of " +
+                    boost::lexical_cast<std::string>(divisor));
             }
+            return false;
+        }
 
-            if (d == 0) {
-                return true;
-            }
+        return true;
+    }
 
-            const double r = remainder(d, *multipleOfDouble);
+    /**
+     * @brief   Validate a value against a MultipleOfIntConstraint
+     *
+     * @param   constraint  Constraint that the target must validate against
+     *
+     * @return  \c true if the constraint is satisfied; \c false otherwise
+     */
+    virtual bool visit(const MultipleOfIntConstraint &constraint)
+    {
+        const int64_t divisor = constraint.getDivisor();
 
-            if (fabs(r) > std::numeric_limits<double>::epsilon()) {
+        int64_t i = 0;
+        if (target.maybeInteger()) {
+            if (!target.asInteger(i)) {
                 if (results) {
-                    results->pushError(context, "Value should be a multiple of " +
-                        boost::lexical_cast<std::string>(*multipleOfDouble));
+                    results->pushError(context, "Value could not be converted "
+                        "to an integer for multipleOf check");
                 }
                 return false;
             }
-
+        } else if (target.maybeDouble()) {
+            double d;
+            if (!target.asDouble(d)) {
+                if (results) {
+                    results->pushError(context, "Value could not be converted "
+                        "to a double for multipleOf check");
+                }
+                return false;
+            }
+            i = static_cast<int64_t>(d);
+        } else {
             return true;
         }
 
-        return false;
+        if (i == 0) {
+            return true;
+        }
+
+        if (i % divisor != 0) {
+            if (results) {
+                results->pushError(context, "Value should be a multiple of " +
+                    boost::lexical_cast<std::string>(divisor));
+            }
+            return false;
+        }
+
+        return true;
     }
 
     /**

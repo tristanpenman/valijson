@@ -186,10 +186,21 @@ private:
 
         if ((itr = object.find("divisibleBy")) != object.end()) {
             if (version == kDraft3) {
-                rootSchema.addConstraintToSubschema(
-                        makeMultipleOfConstraint(itr->second), &subschema);
+                if (itr->second.maybeInteger()) {
+                    rootSchema.addConstraintToSubschema(
+                            makeMultipleOfIntConstraint(itr->second),
+                            &subschema);
+                } else if (itr->second.maybeDouble()) {
+                    rootSchema.addConstraintToSubschema(
+                            makeMultipleOfDoubleConstraint(itr->second),
+                            &subschema);
+                } else {
+                    throw std::runtime_error("Expected an numeric value for "
+                            " 'divisibleBy' constraint.");
+                }
             } else {
-                throw std::runtime_error("'divisibleBy' constraint not valid after draft 3");
+                throw std::runtime_error(
+                        "'divisibleBy' constraint not valid after draft 3");
             }
         }
 
@@ -294,10 +305,19 @@ private:
 
         if ((itr = object.find("multipleOf")) != object.end()) {
             if (version == kDraft3) {
-                throw std::runtime_error("'multipleOf' constraint not available in draft 3");
-            } else {
+                throw std::runtime_error(
+                        "'multipleOf' constraint not available in draft 3");
+            } else if (itr->second.maybeInteger()) {
                 rootSchema.addConstraintToSubschema(
-                        makeMultipleOfConstraint(itr->second), &subschema);
+                        makeMultipleOfIntConstraint(itr->second),
+                        &subschema);
+            } else if (itr->second.maybeDouble()) {
+                rootSchema.addConstraintToSubschema(
+                        makeMultipleOfDoubleConstraint(itr->second),
+                        &subschema);
+            } else {
+                throw std::runtime_error("Expected an numeric value for "
+                        " 'divisibleBy' constraint.");
             }
         }
 
@@ -1112,27 +1132,37 @@ private:
     }
 
     /**
-     * @brief   Make a new MultipleOfConstraint object.
+     * @brief   Make a new MultipleOfDoubleConstraint object
      *
-     * @param   node  JSON node containing an numeric value that a value must
-     *                be divisible by.
+     * @param   node  JSON node containing an numeric value that a target value
+     *                must divide by in order to satisfy this constraint
      *
-     * @return  pointer to a new MultipleOfConstraint that belongs to the
-     *          caller
+     * @return  a MultipleOfConstraint
      */
     template<typename AdapterType>
-    constraints::MultipleOfConstraint makeMultipleOfConstraint(
+    constraints::MultipleOfDoubleConstraint makeMultipleOfDoubleConstraint(
         const AdapterType &node)
     {
-        // Allow both integral and double types to be provided
-        if (node.maybeInteger()) {
-            return constraints::MultipleOfConstraint(node.asInteger());
-        } else if (node.maybeDouble()) {
-            return constraints::MultipleOfConstraint(node.asDouble());
-        }
+        constraints::MultipleOfDoubleConstraint constraint;
+        constraint.setDivisor(node.asDouble());
+        return constraint;
+    }
 
-        throw std::runtime_error(
-                "Expected an numeric value for 'multipleOf' constraint.");
+    /**
+     * @brief   Make a new MultipleOfIntConstraint object
+     *
+     * @param   node  JSON node containing a numeric value that a target value
+     *                must divide by in order to satisfy this constraint
+     *
+     * @return  a MultipleOfIntConstraint
+     */
+    template<typename AdapterType>
+    constraints::MultipleOfIntConstraint makeMultipleOfIntConstraint(
+            const AdapterType &node)
+    {
+        constraints::MultipleOfIntConstraint constraint;
+        constraint.setDivisor(node.asInteger());
+        return constraint;
     }
 
     /**
