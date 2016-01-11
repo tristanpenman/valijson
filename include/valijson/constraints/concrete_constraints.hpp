@@ -445,14 +445,30 @@ private:
 };
 
 /**
- * @brief   Represents a 'maxLength' constraint.
+ * @brief   Represents a 'maxLength' constraint
  */
-struct MaxLengthConstraint: BasicConstraint<MaxLengthConstraint>
+class MaxLengthConstraint: public BasicConstraint<MaxLengthConstraint>
 {
-    MaxLengthConstraint(int64_t maxLength)
-      : maxLength(maxLength) { }
+public:
+    MaxLengthConstraint()
+      : maxLength(std::numeric_limits<int64_t>::max()) { }
 
-    const int64_t maxLength;
+    MaxLengthConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        maxLength(std::numeric_limits<int64_t>::max()) { }
+
+    int64_t getMaxLength() const
+    {
+        return maxLength;
+    }
+
+    void setMaxLength(int64_t newMaxLength)
+    {
+        maxLength = newMaxLength;
+    }
+
+private:
+    int64_t maxLength;
 };
 
 /**
@@ -539,14 +555,35 @@ private:
 };
 
 /**
- * @brief   Represents a 'minLength' constraint.
+ * @brief   Represents a 'minLength' constraint
  */
-struct MinLengthConstraint: BasicConstraint<MinLengthConstraint>
+class MinLengthConstraint: public BasicConstraint<MinLengthConstraint>
 {
-    MinLengthConstraint(int64_t minLength)
-      : minLength(minLength) { }
+public:
+    MinLengthConstraint()
+      : minLength(0) { }
 
-    const int64_t minLength;
+    MinLengthConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        minLength(0) { }
+
+    int64_t getMinLength() const
+    {
+        return minLength;
+    }
+
+    void setMinLength(int64_t newMinLength)
+    {
+        if (newMinLength < 0) {
+            throw std::runtime_error(
+                    "Minimum number of items must be a non-negative integer");
+        }
+
+        minLength = newMinLength;
+    }
+
+private:
+    int64_t minLength;
 };
 
 /**

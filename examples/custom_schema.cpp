@@ -141,8 +141,12 @@ void addPropertiesConstraint(Schema &schema)
         // Create a child schema for the 'title' property that requires a string
         // that is between 1 and 200 characters in length.
         const Subschema *subschema = schema.createSubschema();
-        schema.addConstraintToSubschema(MaxLengthConstraint(200), subschema);
-        schema.addConstraintToSubschema(MinLengthConstraint(1), subschema);
+        MaxLengthConstraint maxLengthConstraint;
+        maxLengthConstraint.setMaxLength(200);
+        schema.addConstraintToSubschema(maxLengthConstraint, subschema);
+        MinLengthConstraint minLengthConstraint;
+        minLengthConstraint.setMinLength(0);
+        schema.addConstraintToSubschema(minLengthConstraint, subschema);
         TypeConstraint typeConstraint;
         typeConstraint.addNamedType(TypeConstraint::kString);
         schema.addConstraintToSubschema(typeConstraint, subschema);

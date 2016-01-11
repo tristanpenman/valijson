@@ -410,12 +410,11 @@ public:
     }
 
     /**
-     * @brief   Validate against the maxLength constraint represented by a
-     *          MaxLengthConstraint object.
+     * @brief   Validate a value against a MaxLengthConstraint
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * @param   constraint  Constraint that the target must validate against
      *
-     * @return  true if constraint is satisfied, false otherwise.
+     * @return  \c true if constraint is satisfied; \c false otherwise
      */
     virtual bool visit(const MaxLengthConstraint &constraint)
     {
@@ -424,15 +423,17 @@ public:
         }
 
         const std::string s = target.asString();
-        const int len = utils::u8_strlen(s.c_str());
-        if (len <= constraint.maxLength) {
+        const int64_t len = utils::u8_strlen(s.c_str());
+        const int64_t maxLength = constraint.getMaxLength();
+        if (len <= maxLength) {
             return true;
         }
 
         if (results) {
-            results->pushError(context, "String should be no more than " +
-                boost::lexical_cast<std::string>(constraint.maxLength) +
-                " characters in length.");
+            results->pushError(context,
+                    "String should be no more than " +
+                    boost::lexical_cast<std::string>(maxLength) +
+                    " characters in length.");
         }
 
         return false;
@@ -531,12 +532,11 @@ public:
     }
 
     /**
-     * @brief   Validate against the minLength constraint represented by a
-     *          MinLengthConstraint object.
+     * @brief   Validate a value against a MinLengthConstraint
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * @param   constraint  Constraint that the target must validate against
      *
-     * @return  true if the constraint is satisfied, false otherwise.
+     * @return  \c true if the constraint is satisfied; \c false otherwise
      */
     virtual bool visit(const MinLengthConstraint &constraint)
     {
@@ -546,14 +546,16 @@ public:
 
         const std::string s = target.asString();
         const int len = utils::u8_strlen(s.c_str());
-        if (len >= constraint.minLength) {
+        const int64_t minLength = constraint.getMinLength();
+        if (len >= minLength) {
             return true;
         }
 
         if (results) {
-            results->pushError(context, "String should be no fewer than " +
-                boost::lexical_cast<std::string>(constraint.minLength) +
-                " characters in length.");
+            results->pushError(context,
+                    "String should be no fewer than " +
+                    boost::lexical_cast<std::string>(minLength) +
+                    " characters in length.");
         }
 
         return false;
