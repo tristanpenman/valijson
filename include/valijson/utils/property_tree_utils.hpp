@@ -3,8 +3,6 @@
 
 #include <sstream>
 
-#include <json/json.h>
-
 #include <boost/property_tree/ptree.hpp>
 
 #if defined(__clang__)
