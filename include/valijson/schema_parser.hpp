@@ -1323,7 +1323,7 @@ private:
             // If the boolean value is true, this function will return a pointer
             // to a new UniqueItemsConstraint object. If it is value, then the
             // constraint is redundant, so NULL is returned instead.
-            if (node.getBool()) {
+            if (node.asBool()) {
                 return new constraints::UniqueItemsConstraint();
             } else {
                 return NULL;
