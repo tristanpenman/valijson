@@ -451,14 +451,16 @@ public:
             return true;
         }
 
-        if (target.asObject().size() <= constraint.maxProperties) {
+        const int64_t maxProperties = constraint.getMaxProperties();
+
+        if (target.asObject().size() <= maxProperties) {
             return true;
         }
 
         if (results) {
             results->pushError(context, "Object should have no more than" +
-                boost::lexical_cast<std::string>(constraint.maxProperties) +
-                " properties.");
+                    boost::lexical_cast<std::string>(maxProperties) +
+                    " properties.");
         }
 
         return false;
@@ -568,19 +570,20 @@ public:
      */
     virtual bool visit(const MinPropertiesConstraint &constraint)
     {
-
         if ((strictTypes && !target.isObject()) || !target.maybeObject()) {
             return true;
         }
 
-        if (target.asObject().size() >= constraint.minProperties) {
+        const int64_t minProperties = constraint.getMinProperties();
+
+        if (target.asObject().size() >= minProperties) {
             return true;
         }
 
         if (results) {
             results->pushError(context, "Object should have no fewer than" +
-                boost::lexical_cast<std::string>(constraint.minProperties) +
-                " properties.");
+                    boost::lexical_cast<std::string>(minProperties) +
+                    " properties.");
         }
 
         return false;

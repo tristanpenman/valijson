@@ -472,14 +472,35 @@ private:
 };
 
 /**
- * @brief   Represents a 'maxProperties' constraint.
+ * @brief   Represents a 'maxProperties' constraint
  */
-struct MaxPropertiesConstraint: BasicConstraint<MaxPropertiesConstraint>
+class MaxPropertiesConstraint: public BasicConstraint<MaxPropertiesConstraint>
 {
-    MaxPropertiesConstraint(int64_t maxProperties)
-      : maxProperties(maxProperties) { }
+public:
+    MaxPropertiesConstraint()
+      : maxProperties(std::numeric_limits<int64_t>::max()) { }
 
-    const int64_t maxProperties;
+    MaxPropertiesConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        maxProperties(std::numeric_limits<int64_t>::max()) { }
+
+    int64_t getMaxProperties() const
+    {
+        return maxProperties;
+    }
+
+    void setMaxProperties(int64_t newMaxProperties)
+    {
+        if (newMaxProperties < 0) {
+            throw std::runtime_error("Maximum number of properties must be a "
+                    "non-negative integer");
+        }
+
+        maxProperties = newMaxProperties;
+    }
+
+private:
+    int64_t maxProperties;
 };
 
 /**
@@ -587,14 +608,35 @@ private:
 };
 
 /**
- * @brief   Represents a 'minProperties' constraint.
+ * @brief   Represents a 'minProperties' constraint
  */
-struct MinPropertiesConstraint: BasicConstraint<MinPropertiesConstraint>
+class MinPropertiesConstraint: public BasicConstraint<MinPropertiesConstraint>
 {
-    MinPropertiesConstraint(int64_t minProperties)
-      : minProperties(minProperties) { }
+public:
+    MinPropertiesConstraint()
+      : minProperties(0) { }
 
-    const int64_t minProperties;
+    MinPropertiesConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        minProperties(0) { }
+
+    int64_t getMinProperties() const
+    {
+        return minProperties;
+    }
+
+    void setMinProperties(int64_t newMinProperties)
+    {
+        if (newMinProperties < 0) {
+            throw std::runtime_error("Minimum number of properties must be a "
+                    "non-negative integer");
+        }
+
+        minProperties = newMinProperties;
+    }
+
+private:
+    int64_t minProperties;
 };
 
 /**

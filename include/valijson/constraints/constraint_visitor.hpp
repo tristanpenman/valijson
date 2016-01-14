@@ -6,8 +6,6 @@ namespace valijson {
 namespace constraints {
 
 struct FormatConstraint;
-struct MaxPropertiesConstraint;
-struct MinPropertiesConstraint;
 
 class AllOfConstraint;
 class AnyOfConstraint;
@@ -17,9 +15,11 @@ class LinearItemsConstraint;
 class MaxItemsConstraint;
 class MaximumConstraint;
 class MaxLengthConstraint;
+class MaxPropertiesConstraint;
 class MinItemsConstraint;
 class MinimumConstraint;
 class MinLengthConstraint;
+class MinPropertiesConstraint;
 class MultipleOfDoubleConstraint;
 class MultipleOfIntConstraint;
 class NotConstraint;
