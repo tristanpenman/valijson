@@ -1153,7 +1153,7 @@ private:
                 additionalProperties->maybeBool()) {
                 // If it has a boolean value that is 'true', then an empty
                 // schema should be used.
-                if (additionalProperties->getBool()) {
+                if (additionalProperties->asBool()) {
                     additionalPropertiesSchema.reset(new Schema());
                 }
             } else if (additionalProperties->isObject()) {
@@ -1206,7 +1206,7 @@ private:
             throw std::runtime_error("Expected boolean value for 'required' attribute.");
         }
 
-        if (node.getBool()) {
+        if (node.asBool()) {
             constraints::RequiredConstraint::RequiredProperties requiredProperties;
             requiredProperties.insert(name);
             return new constraints::RequiredConstraint(requiredProperties);
