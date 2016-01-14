@@ -5,8 +5,6 @@
 namespace valijson {
 namespace constraints {
 
-struct FormatConstraint;
-
 class AllOfConstraint;
 class AnyOfConstraint;
 class DependenciesConstraint;
