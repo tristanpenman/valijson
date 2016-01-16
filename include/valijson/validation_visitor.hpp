@@ -188,7 +188,7 @@ public:
     virtual bool visit(const DependenciesConstraint &constraint)
     {
         // Ignore non-objects
-        if (!target.isObject()) {
+        if ((strictTypes && !target.isObject()) || (!target.maybeObject())) {
             return true;
         }
 
@@ -200,7 +200,7 @@ public:
         const PDSM &depSchemas = constraint.dependentSchemas;
 
         // Get access to the target as an object
-        const typename AdapterType::Object object = target.getObject();
+        const typename AdapterType::Object object = target.asObject();
 
         // Flag used to track validation status if errors are non-fatal
         bool validated = true;
@@ -296,7 +296,7 @@ public:
     virtual bool visit(const ItemsConstraint &constraint)
     {
         // Ignore values that are not arrays
-        if (!target.isArray()) {
+        if ((strictTypes && !target.isArray()) || (!target.maybeArray())) {
             return true;
         }
 
@@ -304,9 +304,12 @@ public:
 
         if (constraint.itemSchema) {
 
+            // Get access to the target as an object
+            const typename AdapterType::Array arr = target.asArray();
+
             // Validate all items against single schema
             unsigned int index = 0;
-            BOOST_FOREACH( const AdapterType arrayItem, target.getArray() ) {
+            BOOST_FOREACH( const AdapterType arrayItem, arr ) {
                 std::vector<std::string> newContext = context;
                 newContext.push_back("[" + boost::lexical_cast<std::string>(index) + "]");
                 ValidationVisitor<AdapterType> v(arrayItem,
@@ -324,9 +327,12 @@ public:
 
         } else if (constraint.itemSchemas) {
 
+            // Get access to the target as an object
+            const typename AdapterType::Array arr = target.asArray();
+
             if (!constraint.additionalItemsSchema) {
                 // Check that the array length is <= length of the itemsSchema list
-                if (target.getArray().size() > constraint.itemSchemas->size()) {
+                if (arr.size() > constraint.itemSchemas->size()) {
                     if (results) {
                         results->pushError(context, "Array contains more items than allowed by items constraint.");
                         validated = false;
@@ -339,7 +345,7 @@ public:
             // Validate items against the schema with the same index, or
             // additionalItems schema
             unsigned int index = 0;
-            BOOST_FOREACH( const AdapterType arrayItem, target.getArray() ) {
+            BOOST_FOREACH( const AdapterType arrayItem, arr ) {
                 std::vector<std::string> newContext = context;
                 newContext.push_back("[" + boost::lexical_cast<std::string>(index) + "]");
                 ValidationVisitor<AdapterType> v(arrayItem,
@@ -375,9 +381,12 @@ public:
 
         } else if (constraint.additionalItemsSchema) {
 
+            // Get access to the target as an object
+            const typename AdapterType::Array arr = target.asArray();
+
             // Validate each item against additional items schema
             unsigned int index = 0;
-            BOOST_FOREACH( const AdapterType arrayItem, target.getArray() ) {
+            BOOST_FOREACH( const AdapterType arrayItem, arr ) {
                 std::vector<std::string> newContext = context;
                 newContext.push_back("[" + boost::lexical_cast<std::string>(index) + "]");
                 ValidationVisitor<AdapterType> v(arrayItem,
@@ -409,24 +418,24 @@ public:
      */
     virtual bool visit(const MaximumConstraint &constraint)
     {
-        if (!target.isNumber()) {
+        if ((strictTypes && !target.isNumber()) || !target.maybeDouble()) {
             // Ignore values that are not numbers
             return true;
         }
 
         if (constraint.exclusiveMaximum) {
-            if (target.getNumber() >= constraint.maximum) {
+            if (target.asDouble() >= constraint.maximum) {
                 if (results) {
-                    results->pushError(context,
-                        "Expected number less than " + boost::lexical_cast<std::string>(constraint.maximum));
+                    results->pushError(context, "Expected number less than " +
+                        boost::lexical_cast<std::string>(constraint.maximum));
                 }
                 return false;
             }
         } else {
-            if (target.getNumber() > constraint.maximum) {
+            if (target.asDouble() > constraint.maximum) {
                 if (results) {
                     results->pushError(context,
-                        "Expected number less than or equal to" +
+                            "Expected number less than or equal to" +
                             boost::lexical_cast<std::string>(constraint.maximum));
                 }
                 return false;
@@ -446,17 +455,21 @@ public:
      */
     virtual bool visit(const MaxItemsConstraint &constraint)
     {
-        if (target.isArray() &&
-            target.getArray().size() > constraint.maxItems) {
-            if (results) {
-                results->pushError(context, "Array should contain no more than " +
-                    boost::lexical_cast<std::string>(constraint.maxItems) +
-                    " elements.");
-            }
-            return false;
+        if ((strictTypes && !target.isArray()) || !target.maybeArray()) {
+            return true;
         }
 
-        return true;
+        if (target.asArray().size() <= constraint.maxItems) {
+            return true;
+        }
+
+        if (results) {
+            results->pushError(context, "Array should contain no more than " +
+                boost::lexical_cast<std::string>(constraint.maxItems) +
+                " elements.");
+        }
+
+        return false;
     }
 
     /**
@@ -469,20 +482,23 @@ public:
      */
     virtual bool visit(const MaxLengthConstraint &constraint)
     {
-        if (target.isString()) {
-            const std::string s = target.getString();
-            const int len = utils::u8_strlen(s.c_str());
-            if (len > constraint.maxLength) {
-                if (results) {
-                    results->pushError(context, "String should be no more than " +
-                        boost::lexical_cast<std::string>(constraint.maxLength) +
-                        " characters in length.");
-                }
-                return false;
-            }
+        if ((strictTypes && !target.isString()) || !target.maybeString()) {
+            return true;
         }
 
-        return true;
+        const std::string s = target.asString();
+        const int len = utils::u8_strlen(s.c_str());
+        if (len <= constraint.maxLength) {
+            return true;
+        }
+
+        if (results) {
+            results->pushError(context, "String should be no more than " +
+                boost::lexical_cast<std::string>(constraint.maxLength) +
+                " characters in length.");
+        }
+
+        return false;
     }
 
     /**
@@ -495,17 +511,21 @@ public:
      */
     virtual bool visit(const MaxPropertiesConstraint &constraint)
     {
-        if (target.isObject() &&
-            target.getObject().size() > constraint.maxProperties) {
-            if (results) {
-                results->pushError(context, "Object should have no more than" +
-                    boost::lexical_cast<std::string>(constraint.maxProperties) +
-                    " properties.");
-            }
-            return false;
+        if ((strictTypes && !target.isObject()) || !target.maybeObject()) {
+            return true;
         }
 
-        return true;
+        if (target.asObject().size() <= constraint.maxProperties) {
+            return true;
+        }
+
+        if (results) {
+            results->pushError(context, "Object should have no more than" +
+                boost::lexical_cast<std::string>(constraint.maxProperties) +
+                " properties.");
+        }
+
+        return false;
     }
 
     /**
@@ -518,13 +538,13 @@ public:
      */
     virtual bool visit(const MinimumConstraint &constraint)
     {
-        if (!target.isNumber()) {
+        if ((strictTypes && !target.isNumber()) || !target.maybeDouble()) {
             // Ignore values that are not numbers
             return true;
         }
 
         if (constraint.exclusiveMinimum) {
-            if (target.getNumber() <= constraint.minimum) {
+            if (target.asDouble() <= constraint.minimum) {
                 if (results) {
                     results->pushError(context,
                         "Expected number greater than " +
@@ -533,7 +553,7 @@ public:
                 return false;
             }
         } else {
-            if (target.getNumber() < constraint.minimum) {
+            if (target.asDouble() < constraint.minimum) {
                 if (results) {
                     results->pushError(context,
                         "Expected number greater than or equal to" +
@@ -556,17 +576,21 @@ public:
      */
     virtual bool visit(const MinItemsConstraint &constraint)
     {
-        if (target.isArray() &&
-            target.getArray().size() < constraint.minItems) {
-            if (results) {
-                results->pushError(context, "Array should contain no fewer than " +
-                    boost::lexical_cast<std::string>(constraint.minItems) +
-                    " elements.");
-            }
-            return false;
+        if ((strictTypes && !target.isArray()) || !target.maybeArray()) {
+            return true;
         }
 
-        return true;
+        if (target.asArray().size() >= constraint.minItems) {
+            return true;
+        }
+
+        if (results) {
+            results->pushError(context, "Array should contain no fewer than " +
+                boost::lexical_cast<std::string>(constraint.minItems) +
+                " elements.");
+        }
+
+        return false;
     }
 
     /**
@@ -579,20 +603,23 @@ public:
      */
     virtual bool visit(const MinLengthConstraint &constraint)
     {
-        if (target.isString()) {
-            const std::string s = target.getString();
-            const int len = utils::u8_strlen(s.c_str());
-            if (len < constraint.minLength) {
-                if (results) {
-                    results->pushError(context, "String should be no fewer than " +
-                        boost::lexical_cast<std::string>(constraint.minLength) +
-                        " characters in length.");
-                }
-                return false;
-            }
+        if ((strictTypes && !target.isString()) || !target.maybeString()) {
+            return true;
         }
 
-        return true;
+        const std::string s = target.asString();
+        const int len = utils::u8_strlen(s.c_str());
+        if (len >= constraint.minLength) {
+            return true;
+        }
+
+        if (results) {
+            results->pushError(context, "String should be no fewer than " +
+                boost::lexical_cast<std::string>(constraint.minLength) +
+                " characters in length.");
+        }
+
+        return false;
     }
 
     /**
@@ -605,17 +632,22 @@ public:
      */
     virtual bool visit(const MinPropertiesConstraint &constraint)
     {
-        if (target.isObject() &&
-            target.getObject().size() < constraint.minProperties) {
-            if (results) {
-                results->pushError(context, "Object should have no fewer than" +
-                    boost::lexical_cast<std::string>(constraint.minProperties) +
-                    " properties.");
-            }
-            return false;
+
+        if ((strictTypes && !target.isObject()) || !target.maybeObject()) {
+            return true;
         }
 
-        return true;
+        if (target.asObject().size() >= constraint.minProperties) {
+            return true;
+        }
+
+        if (results) {
+            results->pushError(context, "Object should have no fewer than" +
+                boost::lexical_cast<std::string>(constraint.minProperties) +
+                " properties.");
+        }
+
+        return false;
     }
 
     /**
@@ -794,12 +826,12 @@ public:
      */
     virtual bool visit(const PatternConstraint &constraint)
     {
-        if (!target.isString()) {
+        if ((strictTypes && !target.isString()) || !target.maybeString()) {
             return true;
         }
 
         const boost::regex r(constraint.pattern, boost::regex::perl);
-        if (!boost::regex_search(target.getString(), r)) {
+        if (!boost::regex_search(target.asString(), r)) {
             if (results) {
                 results->pushError(context, "Failed to match regex specified by 'pattern' constraint.");
             }
@@ -820,14 +852,16 @@ public:
      */
     virtual bool visit(const PropertiesConstraint &constraint)
     {
-        if (!target.isObject()) {
+        if ((strictTypes && !target.isObject()) || !target.maybeObject()) {
             return true;
         }
 
         bool validated = true;
 
+        const typename AdapterType::Object obj = target.asObject();
+
         // Validate each property in the target object
-        BOOST_FOREACH( const typename AdapterType::ObjectMember m, target.getObject() ) {
+        BOOST_FOREACH( const typename AdapterType::ObjectMember m, obj ) {
 
             const std::string propertyName = m.first;
             bool propertyNameMatched = false;
@@ -920,7 +954,7 @@ public:
      */
     virtual bool visit(const RequiredConstraint &constraint)
     {
-        if (!target.isObject()) {
+        if ((strictTypes && !target.isObject()) || !target.maybeObject()) {
             if (results) {
                 results->pushError(context, "Object required to validate 'required' properties.");
             }
@@ -928,7 +962,7 @@ public:
         }
 
         bool validated = true;
-        const typename AdapterType::Object object = target.getObject();
+        const typename AdapterType::Object object = target.asObject();
         BOOST_FOREACH( const std::string &requiredProperty, constraint.requiredProperties ) {
             if (object.find(requiredProperty) == object.end()) {
                 if (results) {
@@ -1024,13 +1058,13 @@ public:
      */
     virtual bool visit(const UniqueItemsConstraint &constraint)
     {
-        if (!target.isArray()) {
+        if ((strictTypes && !target.isArray()) || !target.maybeArray()) {
             return true;
         }
 
         bool validated = true;
 
-        const typename AdapterType::Array targetArray = target.getArray();
+        const typename AdapterType::Array targetArray = target.asArray();
         const typename AdapterType::Array::const_iterator end = targetArray.end();
         const typename AdapterType::Array::const_iterator secondLast = --targetArray.end();
         unsigned int outerIndex = 0;
