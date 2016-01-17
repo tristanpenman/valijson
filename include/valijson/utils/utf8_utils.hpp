@@ -37,12 +37,19 @@ inline uint32_t u8_nextchar(const char *s, int *i)
 }
 
 /* number of characters */
-inline int u8_strlen(const char *s)
+inline uint64_t u8_strlen(const char *s)
 {
-    int count = 0;
+    static const int maxLength = std::numeric_limits<int>::max();
+
+    uint64_t count = 0;
     int i = 0;
 
     while (s[i] != 0 && u8_nextchar(s, &i) != 0) {
+        if (i == maxLength) {
+            throw std::runtime_error(
+                    "String exceeded maximum size of " +
+                    boost::lexical_cast<std::string>(maxLength) + " bytes.");
+        }
         count++;
     }
 

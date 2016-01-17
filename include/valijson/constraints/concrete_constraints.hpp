@@ -424,29 +424,24 @@ class MaxItemsConstraint: public BasicConstraint<MaxItemsConstraint>
 {
 public:
     MaxItemsConstraint()
-      : maxItems(std::numeric_limits<int64_t>::max()) { }
+      : maxItems(std::numeric_limits<uint64_t>::max()) { }
 
     MaxItemsConstraint(CustomAlloc allocFn, CustomFree freeFn)
       : BasicConstraint(allocFn, freeFn),
-        maxItems(std::numeric_limits<int64_t>::max()) { }
+        maxItems(std::numeric_limits<uint64_t>::max()) { }
 
-    int64_t getMaxItems() const
+    uint64_t getMaxItems() const
     {
         return maxItems;
     }
 
-    void setMaxItems(int64_t newMaxItems)
+    void setMaxItems(uint64_t newMaxItems)
     {
-        if (newMaxItems < 0) {
-            throw std::runtime_error(
-                    "Maximum number of items must be a non-negative integer");
-        }
-
         maxItems = newMaxItems;
     }
 
 private:
-    int64_t maxItems;
+    uint64_t maxItems;
 };
 
 /**
@@ -456,29 +451,24 @@ class MaxLengthConstraint: public BasicConstraint<MaxLengthConstraint>
 {
 public:
     MaxLengthConstraint()
-      : maxLength(std::numeric_limits<int64_t>::max()) { }
+      : maxLength(std::numeric_limits<uint64_t>::max()) { }
 
     MaxLengthConstraint(CustomAlloc allocFn, CustomFree freeFn)
       : BasicConstraint(allocFn, freeFn),
-        maxLength(std::numeric_limits<int64_t>::max()) { }
+        maxLength(std::numeric_limits<uint64_t>::max()) { }
 
-    int64_t getMaxLength() const
+    uint64_t getMaxLength() const
     {
         return maxLength;
     }
 
-    void setMaxLength(int64_t newMaxLength)
+    void setMaxLength(uint64_t newMaxLength)
     {
-        if (newMaxLength < 0) {
-            throw std::runtime_error(
-                    "Maximum length must be a non-negative integer");
-        }
-
         maxLength = newMaxLength;
     }
 
 private:
-    int64_t maxLength;
+    uint64_t maxLength;
 };
 
 /**
@@ -488,29 +478,24 @@ class MaxPropertiesConstraint: public BasicConstraint<MaxPropertiesConstraint>
 {
 public:
     MaxPropertiesConstraint()
-      : maxProperties(std::numeric_limits<int64_t>::max()) { }
+      : maxProperties(std::numeric_limits<uint64_t>::max()) { }
 
     MaxPropertiesConstraint(CustomAlloc allocFn, CustomFree freeFn)
       : BasicConstraint(allocFn, freeFn),
-        maxProperties(std::numeric_limits<int64_t>::max()) { }
+        maxProperties(std::numeric_limits<uint64_t>::max()) { }
 
-    int64_t getMaxProperties() const
+    uint64_t getMaxProperties() const
     {
         return maxProperties;
     }
 
-    void setMaxProperties(int64_t newMaxProperties)
+    void setMaxProperties(uint64_t newMaxProperties)
     {
-        if (newMaxProperties < 0) {
-            throw std::runtime_error("Maximum number of properties must be a "
-                    "non-negative integer");
-        }
-
         maxProperties = newMaxProperties;
     }
 
 private:
-    int64_t maxProperties;
+    uint64_t maxProperties;
 };
 
 /**
@@ -566,23 +551,18 @@ public:
       : BasicConstraint(allocFn, freeFn),
         minItems(0) { }
 
-    int64_t getMinItems() const
+    uint64_t getMinItems() const
     {
         return minItems;
     }
 
-    void setMinItems(int64_t newMinItems)
+    void setMinItems(uint64_t newMinItems)
     {
-        if (newMinItems < 0) {
-            throw std::runtime_error(
-                    "Minimum number of items must be a non-negative integer");
-        }
-
         minItems = newMinItems;
     }
 
 private:
-    int64_t minItems;
+    uint64_t minItems;
 };
 
 /**
@@ -603,18 +583,13 @@ public:
         return minLength;
     }
 
-    void setMinLength(int64_t newMinLength)
+    void setMinLength(uint64_t newMinLength)
     {
-        if (newMinLength < 0) {
-            throw std::runtime_error(
-                    "Minimum number of items must be a non-negative integer");
-        }
-
         minLength = newMinLength;
     }
 
 private:
-    int64_t minLength;
+    uint64_t minLength;
 };
 
 /**
@@ -630,23 +605,18 @@ public:
       : BasicConstraint(allocFn, freeFn),
         minProperties(0) { }
 
-    int64_t getMinProperties() const
+    uint64_t getMinProperties() const
     {
         return minProperties;
     }
 
-    void setMinProperties(int64_t newMinProperties)
+    void setMinProperties(uint64_t newMinProperties)
     {
-        if (newMinProperties < 0) {
-            throw std::runtime_error("Minimum number of properties must be a "
-                    "non-negative integer");
-        }
-
         minProperties = newMinProperties;
     }
 
 private:
-    int64_t minProperties;
+    uint64_t minProperties;
 };
 
 /**
