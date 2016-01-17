@@ -963,7 +963,8 @@ private:
         }
 
         throw std::runtime_error(
-                "Expected positive integer value for maxItems constraint.");
+                "Expected non-negative integer value for 'maxItems' "
+                "constraint.");
     }
 
     /**
@@ -988,7 +989,8 @@ private:
         }
 
         throw std::runtime_error(
-                "Expected a positive integer value for maxLength constraint.");
+                "Expected a non-negative integer value for 'maxLength' "
+                "constraint.");
     }
 
     /**
@@ -1015,7 +1017,8 @@ private:
         }
 
         throw std::runtime_error(
-                "Expected a positive integer for 'maxProperties' constraint.");
+                "Expected a non-negative integer for 'maxProperties' "
+                "constraint.");
     }
 
     /**
@@ -1078,7 +1081,8 @@ private:
         }
 
         throw std::runtime_error(
-                "Expected a positive integer value for 'minItems' constraint.");
+                "Expected a non-negative integer value for 'minItems' "
+                "constraint.");
     }
 
     /**
@@ -1132,7 +1136,8 @@ private:
         }
 
         throw std::runtime_error(
-                "Expected a positive integer for 'minProperties' constraint.");
+                "Expected a non-negative integer for 'minProperties' "
+                "constraint.");
     }
 
     /**
