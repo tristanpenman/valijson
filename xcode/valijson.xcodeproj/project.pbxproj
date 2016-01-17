@@ -1268,6 +1268,7 @@
 					PICOJSON_USE_INT64,
 					VALIJSON_BUILD_CXX11_ADAPTERS,
 				);
+				GCC_WARN_SIGN_COMPARE = YES;
 				HEADER_SEARCH_PATHS = (
 					"../thirdparty/gtest-1.7.0/include",
 					"../thirdparty/gtest-1.7.0",
@@ -1298,6 +1299,7 @@
 					PICOJSON_USE_INT64,
 					VALIJSON_BUILD_CXX11_ADAPTERS,
 				);
+				GCC_WARN_SIGN_COMPARE = YES;
 				HEADER_SEARCH_PATHS = (
 					"../thirdparty/gtest-1.7.0/include",
 					"../thirdparty/gtest-1.7.0",
