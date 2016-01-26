@@ -428,7 +428,7 @@ public:
     bool isInteger() const
     {
         return value.is_number()
-            && static_cast<int>(value.number_value()) == value.number_value();
+            && value.int_value() == value.number_value();
     }
 
     bool isNull() const
