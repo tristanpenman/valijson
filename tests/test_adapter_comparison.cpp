@@ -9,10 +9,12 @@
 #include <valijson/adapters/property_tree_adapter.hpp>
 #include <valijson/adapters/rapidjson_adapter.hpp>
 #include <valijson/adapters/picojson_adapter.hpp>
+#include <valijson/adapters/json11_adapter.hpp>
 #include <valijson/utils/jsoncpp_utils.hpp>
 #include <valijson/utils/property_tree_utils.hpp>
 #include <valijson/utils/rapidjson_utils.hpp>
 #include <valijson/utils/picojson_utils.hpp>
+#include <valijson/utils/json11_utils.hpp>
 
 #define TEST_DATA_DIR "../tests/data/documents/"
 
@@ -155,6 +157,13 @@ TEST_F(TestAdapterComparison, JsonCppVsRapidJsonCrtAlloc)
             rapidjson::CrtAllocator> > >();
 }
 
+TEST_F(TestAdapterComparison, JsonCppVsJson11)
+{
+    testComparison<
+        valijson::adapters::JsonCppAdapter,
+        valijson::adapters::Json11Adapter>();
+}
+
 TEST_F(TestAdapterComparison, PropertyTreeVsPicoJson)
 {
     testComparison<
@@ -233,4 +242,41 @@ TEST_F(TestAdapterComparison, RapidJsonCrtAllocVsRapidJsonCrtAlloc)
         valijson::adapters::GenericRapidJsonAdapter<
             rapidjson::GenericValue<rapidjson::UTF8<>,
             rapidjson::CrtAllocator> > >();
+}
+
+TEST_F(TestAdapterComparison, Json11VsJson11)
+{
+    testComparison<
+        valijson::adapters::Json11Adapter,
+        valijson::adapters::Json11Adapter>();
+}
+
+TEST_F(TestAdapterComparison, Json11VsRapidJson)
+{
+    testComparison<
+        valijson::adapters::Json11Adapter,
+        valijson::adapters::RapidJsonAdapter>();
+}
+
+TEST_F(TestAdapterComparison, Json11VsRapidJsonCrtAlloc)
+{
+    testComparison<
+        valijson::adapters::Json11Adapter,
+        valijson::adapters::GenericRapidJsonAdapter<
+            rapidjson::GenericValue<rapidjson::UTF8<>,
+            rapidjson::CrtAllocator> > >();
+}
+
+TEST_F(TestAdapterComparison, Json11VsPicoJson)
+{
+    testComparison<
+        valijson::adapters::Json11Adapter,
+        valijson::adapters::PicoJsonAdapter>();
+}
+
+TEST_F(TestAdapterComparison, Json11VsPropertyTree)
+{
+    testComparison<
+        valijson::adapters::Json11Adapter,
+        valijson::adapters::PropertyTreeAdapter>();
 }
