@@ -2,6 +2,7 @@ cmake_minimum_required (VERSION 2.6)
 project (valijson)
 
 SET(CMAKE_CXX_FLAGS_DEBUG  "-O0 -g")
+SET(CMAKE_CXX_FLAGS "-std=c++11")
 
 add_definitions(-DBOOST_ALL_DYN_LINK)
 set(Boost_USE_STATIC_LIBS OFF)
@@ -17,6 +18,10 @@ add_library(jsoncpp
     thirdparty/jsoncpp-0.9.4/src/lib_json/json_writer.cpp
 )
 
+add_library(json11
+    thirdparty/json11-2016-01-26/json11.cpp
+    )
+
 # Build local gtest
 set(gtest_force_shared_crt ON)
 add_subdirectory(thirdparty/gtest-1.7.0)
@@ -28,6 +33,7 @@ include_directories(
   thirdparty/jsoncpp-0.9.4/include
   thirdparty/rapidjson-0.1/include
   thirdparty/picojson-1.3.0
+  thirdparty/json11-2016-01-26
   ${Boost_INCLUDE_DIRS}
 )
 
@@ -50,6 +56,7 @@ add_executable(test_suite
     tests/test_property_tree_adapter.cpp
     tests/test_rapidjson_adapter.cpp
     tests/test_picojson_adapter.cpp
+    tests/test_json11_adapter.cpp
     tests/test_validation_errors.cpp
     tests/test_validator.cpp
 )
@@ -59,7 +66,7 @@ set_target_properties(test_suite
     PROPERTIES COMPILE_DEFINITIONS "PICOJSON_USE_INT64"
 )
 
-set(TEST_LIBS gtest gtest_main jsoncpp)
+set(TEST_LIBS gtest gtest_main jsoncpp json11)
 
 target_link_libraries(test_suite ${TEST_LIBS} ${Boost_LIBRARIES})
 target_link_libraries(custom_schema ${Boost_LIBRARIES})
