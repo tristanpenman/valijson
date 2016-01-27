@@ -12,12 +12,5 @@ before_install:
 install:
   - sudo apt-get install -y --force-yes libboost1.55-dev libboost-regex1.55-dev
 
-before_script:
-  - mkdir -p build
-
 script:
-  - pushd build
-  - cmake ..
-  - make
-  - ./test_suite
-  - popd
+  - ./travis.sh
