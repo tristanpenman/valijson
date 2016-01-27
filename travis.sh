@@ -17,7 +17,7 @@ else
 fi
 
 mkdir -p build
-pushd build
+pushd build > /dev/null
 
 echo "Attempting to build and run test suite with C++11 support disabled..."
 cmake -DVALIJSON_CXX11_ADAPTERS=disabled ..
@@ -37,4 +37,4 @@ fi
 
 make clean
 
-popd
+popd > /dev/null
