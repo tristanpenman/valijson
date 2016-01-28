@@ -8,6 +8,7 @@ else()
     include(CheckCXXCompilerFlag)
     CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
     if(COMPILER_SUPPORTS_CXX11)
+        set(VALIJSON_CXX11_ADAPTERS_ARE_ENABLED 1)
         message(STATUS "Building with C++11 support enabled")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -DVALIJSON_BUILD_CXX11_ADAPTERS=1")
     else()
@@ -29,9 +30,11 @@ add_library(jsoncpp
     thirdparty/jsoncpp-0.9.4/src/lib_json/json_writer.cpp
 )
 
-add_library(json11
-    thirdparty/json11-2016-01-26/json11.cpp
-    )
+if(VALIJSON_CXX11_ADAPTERS_ARE_ENABLED)
+    add_library(json11
+        thirdparty/json11-2016-01-26/json11.cpp
+        )
+endif()
 
 # Build local gtest
 set(gtest_force_shared_crt ON)
@@ -44,9 +47,14 @@ include_directories(
   thirdparty/jsoncpp-0.9.4/include
   thirdparty/rapidjson-0.1/include
   thirdparty/picojson-1.3.0
-  thirdparty/json11-2016-01-26
   ${Boost_INCLUDE_DIRS}
 )
+
+if(VALIJSON_CXX11_ADAPTERS_ARE_ENABLED)
+    include_directories(
+        thirdparty/json11-2016-01-26
+        )
+endif()
 
 # Custom schema validation example
 add_executable(custom_schema
@@ -58,8 +66,7 @@ add_executable(external_schema
     examples/external_schema.cpp
 )
 
-# Unit tests executable
-add_executable(test_suite
+set(TEST_SOURCES
     tests/test_adapter_comparison.cpp
     tests/test_fetch_document_callback.cpp
     tests/test_json_pointer.cpp
@@ -67,17 +74,29 @@ add_executable(test_suite
     tests/test_property_tree_adapter.cpp
     tests/test_rapidjson_adapter.cpp
     tests/test_picojson_adapter.cpp
-    tests/test_json11_adapter.cpp
     tests/test_validation_errors.cpp
     tests/test_validator.cpp
-)
+    )
+
+if(VALIJSON_CXX11_ADAPTERS_ARE_ENABLED)
+    set(TEST_SOURCES
+        ${TEST_SOURCES}
+        tests/test_json11_adapter.cpp
+        )
+endif()
+
+# Unit tests executable
+add_executable(test_suite ${TEST_SOURCES})
 
 # Definition for using picojson
 set_target_properties(test_suite
     PROPERTIES COMPILE_DEFINITIONS "PICOJSON_USE_INT64"
 )
 
-set(TEST_LIBS gtest gtest_main jsoncpp json11)
+set(TEST_LIBS gtest gtest_main jsoncpp)
+if(VALIJSON_CXX11_ADAPTERS_ARE_ENABLED)
+    set(TEST_LIBS ${TEST_LIBS} json11)
+endif()
 
 target_link_libraries(test_suite ${TEST_LIBS} ${Boost_LIBRARIES})
 target_link_libraries(custom_schema ${Boost_LIBRARIES})
