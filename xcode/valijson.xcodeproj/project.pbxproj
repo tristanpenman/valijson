@@ -10,6 +10,9 @@
 		6A477F8517D6BCBB0013571C /* libboost_regex-mt.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 6A477F8417D6BCBB0013571C /* libboost_regex-mt.dylib */; };
 		6A477F8617D6EA000013571C /* libboost_regex-mt.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 6A477F8417D6BCBB0013571C /* libboost_regex-mt.dylib */; };
 		6A506D201AF88E5D00C2C818 /* test_json_pointer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6A506D1F1AF88E5D00C2C818 /* test_json_pointer.cpp */; };
+		6A5C5D2A1C5B13D4004F40ED /* test_json11_adapter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6A5C5D291C5B13D4004F40ED /* test_json11_adapter.cpp */; };
+		6A5C5D4B1C5B1525004F40ED /* json11.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6A5C5D411C5B1511004F40ED /* json11.cpp */; };
+		6A5C5D4E1C5B1554004F40ED /* libjson11.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6A5C5D471C5B151F004F40ED /* libjson11.a */; };
 		6A725F4517F61D7000D6B2FF /* test_validation_errors.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6A725F4317F61B5100D6B2FF /* test_validation_errors.cpp */; };
 		6A725F4617F6404100D6B2FF /* test_adapter_comparison.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AB8FEB117E6DF9A0028E147 /* test_adapter_comparison.cpp */; };
 		6A725F4717F6404100D6B2FF /* test_jsoncpp_adapter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6AB8FE9217E6BE770028E147 /* test_jsoncpp_adapter.cpp */; };
@@ -30,6 +33,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		6A5C5D4C1C5B1539004F40ED /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6AC78AC517C5FBBC00674114 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6A5C5D461C5B151F004F40ED;
+			remoteInfo = json11;
+		};
 		6AEFECCF1AB53F6D00275614 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 6AC78AC517C5FBBC00674114 /* Project object */;
@@ -56,6 +66,13 @@
 		6A506D1C1AF884E100C2C818 /* rfc6901-json-pointer.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "rfc6901-json-pointer.txt"; sourceTree = "<group>"; };
 		6A506D1E1AF88D8700C2C818 /* json_pointer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = json_pointer.hpp; path = internal/json_pointer.hpp; sourceTree = "<group>"; };
 		6A506D1F1AF88E5D00C2C818 /* test_json_pointer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_json_pointer.cpp; sourceTree = "<group>"; };
+		6A5C5D261C5B139B004F40ED /* json11_adapter.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = json11_adapter.hpp; sourceTree = "<group>"; };
+		6A5C5D271C5B13AB004F40ED /* json11_utils.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = json11_utils.hpp; sourceTree = "<group>"; };
+		6A5C5D281C5B13C3004F40ED /* picojson_utils.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = picojson_utils.hpp; sourceTree = "<group>"; };
+		6A5C5D291C5B13D4004F40ED /* test_json11_adapter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_json11_adapter.cpp; sourceTree = "<group>"; };
+		6A5C5D411C5B1511004F40ED /* json11.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = json11.cpp; sourceTree = "<group>"; };
+		6A5C5D421C5B1511004F40ED /* json11.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = json11.hpp; sourceTree = "<group>"; };
+		6A5C5D471C5B151F004F40ED /* libjson11.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libjson11.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		6A6962F81C1C113F00089239 /* folderInteger.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = folderInteger.json; sourceTree = "<group>"; };
 		6A6962F91C1C113F00089239 /* integer.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = integer.json; sourceTree = "<group>"; };
 		6A6962FA1C1C113F00089239 /* subSchemas.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = subSchemas.json; sourceTree = "<group>"; };
@@ -252,6 +269,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		6A5C5D441C5B151F004F40ED /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6AB8FE8C17E6A57E0028E147 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -264,6 +288,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6A5C5D4E1C5B1554004F40ED /* libjson11.a in Frameworks */,
 				6AEFECD11AB53F7600275614 /* libjsoncpp.a in Frameworks */,
 				6A477F8517D6BCBB0013571C /* libboost_regex-mt.dylib in Frameworks */,
 			);
@@ -338,6 +363,15 @@
 				6A356B0D1C1CFD020007EB8B /* uri.hpp */,
 			);
 			name = internal;
+			sourceTree = "<group>";
+		};
+		6A5C5D401C5B14BC004F40ED /* json11-2016-01-26 */ = {
+			isa = PBXGroup;
+			children = (
+				6A5C5D411C5B1511004F40ED /* json11.cpp */,
+				6A5C5D421C5B1511004F40ED /* json11.hpp */,
+			);
+			path = "json11-2016-01-26";
 			sourceTree = "<group>";
 		};
 		6A6962F61C1C113F00089239 /* remotes */ = {
@@ -560,7 +594,9 @@
 			isa = PBXGroup;
 			children = (
 				6AB8FEBB17E6EF910028E147 /* file_utils.hpp */,
+				6A5C5D271C5B13AB004F40ED /* json11_utils.hpp */,
 				6AB8FEBC17E6EF9A0028E147 /* jsoncpp_utils.hpp */,
+				6A5C5D281C5B13C3004F40ED /* picojson_utils.hpp */,
 				6AB8FEBD17E77C360028E147 /* property_tree_utils.hpp */,
 				6A869A3017CD8A92006864FA /* rapidjson_utils.hpp */,
 				6A9E1855194D486C003F1C4C /* utf8_utils.hpp */,
@@ -637,6 +673,7 @@
 			isa = PBXGroup;
 			children = (
 				6AF70AC218FE71F600342325 /* gtest-1.7.0 */,
+				6A5C5D401C5B14BC004F40ED /* json11-2016-01-26 */,
 				6AA334801AB5100700F1928B /* jsoncpp-0.9.4 */,
 				6A8699E517CD8641006864FA /* JSON-Schema-Test-Suite */,
 				6AC18CEC17CC851000FE0EC9 /* rapidjson-0.1 */,
@@ -699,6 +736,7 @@
 				6AB8FEB117E6DF9A0028E147 /* test_adapter_comparison.cpp */,
 				6AA8A5DA17F8BDCA002728A0 /* test_fetch_document_callback.cpp */,
 				6A506D1F1AF88E5D00C2C818 /* test_json_pointer.cpp */,
+				6A5C5D291C5B13D4004F40ED /* test_json11_adapter.cpp */,
 				6AB8FE9217E6BE770028E147 /* test_jsoncpp_adapter.cpp */,
 				6AA822FE1C3F38D4007103A7 /* test_picojson_adapter.cpp */,
 				6AB8FEC417E92B100028E147 /* test_property_tree_adapter.cpp */,
@@ -732,6 +770,7 @@
 				6AC18D4117CC899800FE0EC9 /* test_suite */,
 				6AB8FE9117E6A57E0028E147 /* custom_schema */,
 				6AEFECC81AB53F1000275614 /* libjsoncpp.a */,
+				6A5C5D471C5B151F004F40ED /* libjson11.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -778,6 +817,7 @@
 				6AC18C1917CC2DDC00FE0EC9 /* adapter.hpp */,
 				6AB8FEBE17E7F9420028E147 /* basic_adapter.hpp */,
 				6AC18C1717CC1BE100FE0EC9 /* frozen_value.hpp */,
+				6A5C5D261C5B139B004F40ED /* json11_adapter.hpp */,
 				6AC78BE017C5FC6A00674114 /* jsoncpp_adapter.hpp */,
 				6AAF16D21BC744BE002CB1AF /* picojson_adapter.hpp */,
 				6AC78BE117C5FC6A00674114 /* property_tree_adapter.hpp */,
@@ -873,6 +913,13 @@
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
+		6A5C5D451C5B151F004F40ED /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6AEFECC61AB53F1000275614 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -883,6 +930,23 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
+		6A5C5D461C5B151F004F40ED /* json11 */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6A5C5D481C5B151F004F40ED /* Build configuration list for PBXNativeTarget "json11" */;
+			buildPhases = (
+				6A5C5D431C5B151F004F40ED /* Sources */,
+				6A5C5D441C5B151F004F40ED /* Frameworks */,
+				6A5C5D451C5B151F004F40ED /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = json11;
+			productName = json11;
+			productReference = 6A5C5D471C5B151F004F40ED /* libjson11.a */;
+			productType = "com.apple.product-type.library.static";
+		};
 		6AB8FE8817E6A57E0028E147 /* custom_schema */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 6AB8FE8E17E6A57E0028E147 /* Build configuration list for PBXNativeTarget "custom_schema" */;
@@ -909,6 +973,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				6A5C5D4D1C5B1539004F40ED /* PBXTargetDependency */,
 				6AEFECD01AB53F6D00275614 /* PBXTargetDependency */,
 			);
 			name = test_suite;
@@ -958,6 +1023,9 @@
 				LastUpgradeCheck = 0720;
 				ORGANIZATIONNAME = "Tristan Penman";
 				TargetAttributes = {
+					6A5C5D461C5B151F004F40ED = {
+						CreatedOnToolsVersion = 7.2;
+					};
 					6AEFECC71AB53F1000275614 = {
 						CreatedOnToolsVersion = 6.2;
 					};
@@ -979,11 +1047,20 @@
 				6AC78ACC17C5FBBC00674114 /* external_schema */,
 				6AC18D4017CC899800FE0EC9 /* test_suite */,
 				6AEFECC71AB53F1000275614 /* jsoncpp */,
+				6A5C5D461C5B151F004F40ED /* json11 */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
+		6A5C5D431C5B151F004F40ED /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6A5C5D4B1C5B1525004F40ED /* json11.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6AB8FE8917E6A57E0028E147 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1003,6 +1080,7 @@
 				6A725F4717F6404100D6B2FF /* test_jsoncpp_adapter.cpp in Sources */,
 				6A725F4817F6404100D6B2FF /* test_property_tree_adapter.cpp in Sources */,
 				6AD3490118FF56FB004BDEE7 /* gtest_main.cc in Sources */,
+				6A5C5D2A1C5B13D4004F40ED /* test_json11_adapter.cpp in Sources */,
 				6AA822FF1C3F38D4007103A7 /* test_picojson_adapter.cpp in Sources */,
 				6A506D201AF88E5D00C2C818 /* test_json_pointer.cpp in Sources */,
 				6A725F4917F6404100D6B2FF /* test_rapidjson_adapter.cpp in Sources */,
@@ -1031,6 +1109,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		6A5C5D4D1C5B1539004F40ED /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6A5C5D461C5B151F004F40ED /* json11 */;
+			targetProxy = 6A5C5D4C1C5B1539004F40ED /* PBXContainerItemProxy */;
+		};
 		6AEFECD01AB53F6D00275614 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 6AEFECC71AB53F1000275614 /* jsoncpp */;
@@ -1039,6 +1122,55 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		6A5C5D491C5B151F004F40ED /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CODE_SIGN_IDENTITY = "-";
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				EXECUTABLE_PREFIX = lib;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		6A5C5D4A1C5B151F004F40ED /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				EXECUTABLE_PREFIX = lib;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		6AB8FE8F17E6A57E0028E147 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1075,10 +1207,12 @@
 					GTEST_USE_OWN_TR1_TUPLE,
 					GTEST_HAS_PARAM_TEST,
 					PICOJSON_USE_INT64,
+					VALIJSON_BUILD_CXX11_ADAPTERS,
 				);
 				HEADER_SEARCH_PATHS = (
 					"../thirdparty/gtest-1.7.0/include",
 					"../thirdparty/gtest-1.7.0",
+					"../thirdparty/json11-2016-01-26",
 					"../thirdparty/jsoncpp-0.9.4/include",
 					"../thirdparty/picojson-1.3.0",
 					"../thirdparty/rapidjson-0.1/include",
@@ -1098,10 +1232,12 @@
 					GTEST_USE_OWN_TR1_TUPLE,
 					GTEST_HAS_PARAM_TEST,
 					PICOJSON_USE_INT64,
+					VALIJSON_BUILD_CXX11_ADAPTERS,
 				);
 				HEADER_SEARCH_PATHS = (
 					"../thirdparty/gtest-1.7.0/include",
 					"../thirdparty/gtest-1.7.0",
+					"../thirdparty/json11-2016-01-26",
 					"../thirdparty/jsoncpp-0.9.4/include",
 					"../thirdparty/picojson-1.3.0",
 					"../thirdparty/rapidjson-0.1/include",
@@ -1249,6 +1385,14 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		6A5C5D481C5B151F004F40ED /* Build configuration list for PBXNativeTarget "json11" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6A5C5D491C5B151F004F40ED /* Debug */,
+				6A5C5D4A1C5B151F004F40ED /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
 		6AB8FE8E17E6A57E0028E147 /* Build configuration list for PBXNativeTarget "custom_schema" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
