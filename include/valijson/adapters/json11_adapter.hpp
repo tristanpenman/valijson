@@ -102,8 +102,7 @@ public:
     /// Return the number of elements in the array
     size_t size() const
     {
-        const json11::Json::array &array = value.array_items();
-        return array.size();
+        return value.array_items().size();
     }
 
 private:
@@ -193,8 +192,7 @@ public:
     /// Returns the number of members belonging to this object.
     size_t size() const
     {
-        const json11::Json::object &object = value.object_items();
-        return object.size();
+        return value.object_items().size();
     }
 
 private:
@@ -318,8 +316,7 @@ public:
     bool getArraySize(size_t &result) const
     {
         if (value.is_array()) {
-            const json11::Json::array& array = value.array_items();
-            result = array.size();
+            result = value.array_items().size();
             return true;
         }
 
@@ -387,8 +384,7 @@ public:
     bool getObjectSize(size_t &result) const
     {
         if (value.is_object()) {
-            const json11::Json::object &object = value.object_items();
-            result = object.size();
+            result = value.object_items().size();
             return true;
         }
 
@@ -650,33 +646,28 @@ inline bool Json11FrozenValue::equalTo(const Adapter &other, bool strict) const
 
 inline Json11ArrayValueIterator Json11Array::begin() const
 {
-    const json11::Json::array &array = value.array_items();
-    return array.begin();
+    return value.array_items().begin();
 }
 
 inline Json11ArrayValueIterator Json11Array::end() const
 {
-    const json11::Json::array &array = value.array_items();
-    return array.end();
+    return value.array_items().end();
 }
 
 inline Json11ObjectMemberIterator Json11Object::begin() const
 {
-    const json11::Json::object &object = value.object_items();
-    return object.begin();
+    return value.object_items().begin();
 }
 
 inline Json11ObjectMemberIterator Json11Object::end() const
 {
-    const json11::Json::object &object = value.object_items();
-    return object.end();
+    return value.object_items().end();
 }
 
 inline Json11ObjectMemberIterator Json11Object::find(
     const std::string &propertyName) const
 {
-    const json11::Json::object &object = value.object_items();
-    return object.find(propertyName);
+    return value.object_items().find(propertyName);
 }
 
 }  // namespace adapters
