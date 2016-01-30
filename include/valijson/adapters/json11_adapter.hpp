@@ -1,9 +1,9 @@
 /**
  * @file
  *
- * @brief   Adapter implementation for the Json11 parser library.
+ * @brief   Adapter implementation for the json11 parser library.
  *
- * Include this file in your program to enable support for Json11.
+ * Include this file in your program to enable support for json11.
  *
  * This file defines the following classes (not in this order):
  *  - Json11Adapter
