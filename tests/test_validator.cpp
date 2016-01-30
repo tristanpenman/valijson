@@ -18,6 +18,11 @@
 #include <valijson/validation_results.hpp>
 #include <valijson/validator.hpp>
 
+#ifdef VALIJSON_BUILD_CXX11_ADAPTERS
+#include <valijson/adapters/json11_adapter.hpp>
+#include <valijson/utils/json11_utils.hpp>
+#endif // VALIJSON_BUILD_CXX11_ADAPTERS
+
 #define TEST_SUITE_DIR "../thirdparty/JSON-Schema-Test-Suite/tests/"
 
 using valijson::adapters::AdapterTraits;
@@ -116,6 +121,9 @@ protected:
         processTestFile<valijson::adapters::JsonCppAdapter>(testFile, version);
         processTestFile<valijson::adapters::RapidJsonAdapter>(testFile, version);
         processTestFile<valijson::adapters::PicoJsonAdapter>(testFile, version);
+#ifdef VALIJSON_BUILD_CXX11_ADAPTERS
+        processTestFile<valijson::adapters::Json11Adapter>(testFile, version);
+#endif // VALIJSON_BUILD_CXX11_ADAPTERS
     }
 
     void processDraft3TestFile(const std::string &testFile)

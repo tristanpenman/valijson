@@ -14,6 +14,11 @@
 #include <valijson/utils/rapidjson_utils.hpp>
 #include <valijson/utils/picojson_utils.hpp>
 
+#ifdef VALIJSON_BUILD_CXX11_ADAPTERS
+#include <valijson/adapters/json11_adapter.hpp>
+#include <valijson/utils/json11_utils.hpp>
+#endif // VALIJSON_BUILD_CXX11_ADAPTERS
+
 #define TEST_DATA_DIR "../tests/data/documents/"
 
 using valijson::adapters::AdapterTraits;
@@ -234,3 +239,53 @@ TEST_F(TestAdapterComparison, RapidJsonCrtAllocVsRapidJsonCrtAlloc)
             rapidjson::GenericValue<rapidjson::UTF8<>,
             rapidjson::CrtAllocator> > >();
 }
+
+#ifdef VALIJSON_BUILD_CXX11_ADAPTERS
+
+TEST_F(TestAdapterComparison, Json11VsJson11)
+{
+    testComparison<
+        valijson::adapters::Json11Adapter,
+        valijson::adapters::Json11Adapter>();
+}
+
+TEST_F(TestAdapterComparison, Json11VsJsonCpp)
+{
+    testComparison<
+        valijson::adapters::Json11Adapter,
+        valijson::adapters::JsonCppAdapter>();
+}
+
+
+TEST_F(TestAdapterComparison, Json11VsRapidJson)
+{
+    testComparison<
+        valijson::adapters::Json11Adapter,
+        valijson::adapters::RapidJsonAdapter>();
+}
+
+TEST_F(TestAdapterComparison, Json11VsRapidJsonCrtAlloc)
+{
+    testComparison<
+        valijson::adapters::Json11Adapter,
+        valijson::adapters::GenericRapidJsonAdapter<
+            rapidjson::GenericValue<rapidjson::UTF8<>,
+            rapidjson::CrtAllocator> > >();
+}
+
+TEST_F(TestAdapterComparison, Json11VsPicoJson)
+{
+    testComparison<
+        valijson::adapters::Json11Adapter,
+        valijson::adapters::PicoJsonAdapter>();
+}
+
+TEST_F(TestAdapterComparison, Json11VsPropertyTree)
+{
+    testComparison<
+        valijson::adapters::Json11Adapter,
+        valijson::adapters::PropertyTreeAdapter>();
+}
+
+#endif // VALIJSON_BUILD_CXX11_ADAPTERS
+
