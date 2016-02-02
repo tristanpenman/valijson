@@ -37,8 +37,6 @@ matrix:
       env: COMPILER=clang++-3.7
 
 before_install:
-  - sudo apt-get install python-software-properties
-  - sudo add-apt-repository ppa:boost-latest/ppa -y
   - sudo apt-get update -qq
 
 install:
