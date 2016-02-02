@@ -47,6 +47,7 @@ include_directories(
   thirdparty/jsoncpp-0.9.4/include
   thirdparty/rapidjson-0.1/include
   thirdparty/picojson-1.3.0
+  thirdparty/nlohmann-json-1.1.0
   ${Boost_INCLUDE_DIRS}
 )
 
