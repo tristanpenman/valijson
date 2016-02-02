@@ -16,17 +16,16 @@ TEST_F(TestNlohmannJsonAdapter, BasicArrayIteration)
 {
     const unsigned int numElements = 10;
 
-    // Create a Json11 document that consists of an array of numbers
-    json11::Json::array array;
+    // Create a Json document that consists of an array of numbers
+    nlohmann::json document;
+
     for (unsigned int i = 0; i < numElements; i++) {
-        json11::Json value(static_cast<double>(i));
-        array.push_back(value);
+        document.push_back(static_cast<double>(i));
     }
-    json11::Json document(array);
 
     // Ensure that wrapping the document preserves the array and does not allow
     // it to be cast to other types
-    valijson::adapters::Json11Adapter adapter(document);
+    valijson::adapters::NlohmannJsonAdapter adapter(document);
     ASSERT_NO_THROW( adapter.getArray() );
     ASSERT_ANY_THROW( adapter.getBool() );
     ASSERT_ANY_THROW( adapter.getDouble() );
@@ -38,7 +37,7 @@ TEST_F(TestNlohmannJsonAdapter, BasicArrayIteration)
 
     // Ensure that the elements are returned in the order they were inserted
     unsigned int expectedValue = 0;
-    BOOST_FOREACH( const valijson::adapters::Json11Adapter value, adapter.getArray() ) {
+    BOOST_FOREACH( const valijson::adapters::NlohmannJsonAdapter value, adapter.getArray() ) {
                     ASSERT_TRUE( value.isNumber() );
                     EXPECT_EQ( double(expectedValue), value.getDouble() );
                     expectedValue++;
@@ -52,18 +51,16 @@ TEST_F(TestNlohmannJsonAdapter, BasicObjectIteration)
 {
     const unsigned int numElements = 10;
 
-    // Create a DropBoxJson11 document that consists of an object that maps numeric
+    // Create a DropBoxJson document that consists of an object that maps numeric
     // strings their corresponding numeric values
-    json11::Json::object object;
-    for (unsigned int i = 0; i < numElements; i++) {
-        std::string name(boost::lexical_cast<std::string>(i));
-        object[name] = json11::Json(static_cast<double>(i));
+    nlohmann::json document;
+    for (uint32_t i = 0; i < numElements; i++) {
+        document[boost::lexical_cast<std::string>(i)] = static_cast<double>(i);
     }
-    json11::Json document(object);
 
     // Ensure that wrapping the document preserves the object and does not
     // allow it to be cast to other types
-    valijson::adapters::Json11Adapter adapter(document);
+    valijson::adapters::NlohmannJsonAdapter adapter(document);
     ASSERT_NO_THROW( adapter.getObject() );
     ASSERT_ANY_THROW( adapter.getArray() );
     ASSERT_ANY_THROW( adapter.getBool() );
@@ -75,7 +72,7 @@ TEST_F(TestNlohmannJsonAdapter, BasicObjectIteration)
 
     // Ensure that the members are returned in the order they were inserted
     unsigned int expectedValue = 0;
-    BOOST_FOREACH( const valijson::adapters::Json11Adapter::ObjectMember member, adapter.getObject() ) {
+    BOOST_FOREACH( const valijson::adapters::NlohmannJsonAdapter::ObjectMember member, adapter.getObject() ) {
                     ASSERT_TRUE( member.second.isNumber() );
                     EXPECT_EQ( boost::lexical_cast<std::string>(expectedValue), member.first );
                     EXPECT_EQ( double(expectedValue), member.second.getDouble() );
