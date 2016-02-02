@@ -38,10 +38,10 @@ TEST_F(TestNlohmannJsonAdapter, BasicArrayIteration)
     // Ensure that the elements are returned in the order they were inserted
     unsigned int expectedValue = 0;
     BOOST_FOREACH( const valijson::adapters::NlohmannJsonAdapter value, adapter.getArray() ) {
-                    ASSERT_TRUE( value.isNumber() );
-                    EXPECT_EQ( double(expectedValue), value.getDouble() );
-                    expectedValue++;
-                }
+        ASSERT_TRUE( value.isNumber() );
+        EXPECT_EQ( double(expectedValue), value.getDouble() );
+        expectedValue++;
+    }
 
     // Ensure that the correct number of elements were iterated over
     EXPECT_EQ(numElements, expectedValue);
@@ -73,14 +73,15 @@ TEST_F(TestNlohmannJsonAdapter, BasicObjectIteration)
     // Ensure that the members are returned in the order they were inserted
     unsigned int expectedValue = 0;
     BOOST_FOREACH( const valijson::adapters::NlohmannJsonAdapter::ObjectMember member, adapter.getObject() ) {
-                    ASSERT_TRUE( member.second.isNumber() );
-                    EXPECT_EQ( boost::lexical_cast<std::string>(expectedValue), member.first );
-                    EXPECT_EQ( double(expectedValue), member.second.getDouble() );
-                    expectedValue++;
-                }
+        ASSERT_TRUE( member.second.isNumber() );
+        EXPECT_EQ( boost::lexical_cast<std::string>(expectedValue), member.first );
+        EXPECT_EQ( double(expectedValue), member.second.getDouble() );
+        expectedValue++;
+    }
 
     // Ensure that the correct number of elements were iterated over
     EXPECT_EQ( numElements, expectedValue );
 }
 
 #endif // VALIJSON_BUILD_CXX11_ADAPTERS
+

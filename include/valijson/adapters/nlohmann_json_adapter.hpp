@@ -65,7 +65,7 @@ public:
 
     /// Construct a NlohmannJsonArray referencing an empty array.
     NlohmannJsonArray()
-            : value(emptyArray()) { }
+      : value(emptyArray()) { }
 
     /**
      * @brief   Construct a NlohmannJsonArray referencing a specific NlohmannJson
@@ -77,7 +77,7 @@ public:
      * an array.
      */
     NlohmannJsonArray(const nlohmann::json &value)
-            : value(value)
+      : value(value)
     {
         if (!value.is_array()) {
             throw std::runtime_error("Value is not an array.");
@@ -143,7 +143,7 @@ public:
 
     /// Construct a NlohmannJsonObject referencing an empty object singleton.
     NlohmannJsonObject()
-            : value(emptyObject()) { }
+      : value(emptyObject()) { }
 
     /**
      * @brief   Construct a NlohmannJsonObject referencing a specific NlohmannJson
@@ -155,7 +155,7 @@ public:
      * an object.
      */
     NlohmannJsonObject(const nlohmann::json &value)
-            : value(value)
+      : value(value)
     {
         if (!value.is_object()) {
             throw std::runtime_error("Value is not an object.");
@@ -233,7 +233,7 @@ public:
      * @param  source  the NlohmannJson value to be copied
      */
     NlohmannJsonFrozenValue(const nlohmann::json &source)
-            : value(source) { }
+      : value(source) { }
 
     virtual FrozenValue * clone() const
     {
@@ -269,11 +269,11 @@ public:
 
     /// Construct a wrapper for the empty object singleton
     NlohmannJsonValue()
-            : value(emptyObject()) { }
+      : value(emptyObject()) { }
 
     /// Construct a wrapper for a specific NlohmannJson value
     NlohmannJsonValue(const nlohmann::json &value)
-            : value(value) { }
+      : value(value) { }
 
     /**
      * @brief   Create a new NlohmannJsonFrozenValue instance that contains the
@@ -472,20 +472,20 @@ private:
  * @see BasicAdapter
  */
 class NlohmannJsonAdapter:
-        public BasicAdapter<NlohmannJsonAdapter,
-                NlohmannJsonArray,
-                NlohmannJsonObjectMember,
-                NlohmannJsonObject,
-                NlohmannJsonValue>
+    public BasicAdapter<NlohmannJsonAdapter,
+        NlohmannJsonArray,
+        NlohmannJsonObjectMember,
+        NlohmannJsonObject,
+        NlohmannJsonValue>
 {
 public:
     /// Construct a NlohmannJsonAdapter that contains an empty object
     NlohmannJsonAdapter()
-            : BasicAdapter() { }
+      : BasicAdapter() { }
 
     /// Construct a NlohmannJsonAdapter containing a specific Nlohmann Json object
     NlohmannJsonAdapter(const nlohmann::json &value)
-            : BasicAdapter(NlohmannJsonValue{value}) { }
+      : BasicAdapter(NlohmannJsonValue{value}) { }
 };
 
 /**
@@ -498,11 +498,11 @@ public:
  * @see NlohmannJsonArray
  */
 class NlohmannJsonArrayValueIterator:
-        public boost::iterator_facade<
-                NlohmannJsonArrayValueIterator,          // name of derived type
-                NlohmannJsonAdapter,                     // value type
-                boost::bidirectional_traversal_tag,  // bi-directional iterator
-                NlohmannJsonAdapter>                     // type returned when dereferenced
+    public boost::iterator_facade<
+        NlohmannJsonArrayValueIterator,      // name of derived type
+        NlohmannJsonAdapter,                 // value type
+        boost::bidirectional_traversal_tag,  // bi-directional iterator
+        NlohmannJsonAdapter>                 // type returned when dereferenced
 {
 public:
 
@@ -512,9 +512,8 @@ public:
      *
      * @param   itr  NlohmannJson iterator to store
      */
-    NlohmannJsonArrayValueIterator(
-            const nlohmann::json::const_iterator &itr)
-            : itr(itr) { }
+    NlohmannJsonArrayValueIterator(const nlohmann::json::const_iterator &itr)
+      : itr(itr) { }
 
     /// Returns a NlohmannJsonAdapter that contains the value of the current
     /// element.
@@ -570,11 +569,11 @@ private:
  * @see NlohmannJsonObjectMember
  */
 class NlohmannJsonObjectMemberIterator:
-        public boost::iterator_facade<
-                NlohmannJsonObjectMemberIterator,        // name of derived type
-                NlohmannJsonObjectMember,                // value type
-                boost::bidirectional_traversal_tag,  // bi-directional iterator
-                NlohmannJsonObjectMember>                // type returned when dereferenced
+    public boost::iterator_facade<
+        NlohmannJsonObjectMemberIterator,    // name of derived type
+        NlohmannJsonObjectMember,            // value type
+        boost::bidirectional_traversal_tag,  // bi-directional iterator
+        NlohmannJsonObjectMember>            // type returned when dereferenced
 {
 public:
 
@@ -583,9 +582,8 @@ public:
      *
      * @param   itr  NlohmannJson iterator to store
      */
-    NlohmannJsonObjectMemberIterator(
-            const nlohmann::json::const_iterator &itr)
-            : itr(itr) { }
+    NlohmannJsonObjectMemberIterator(const nlohmann::json::const_iterator &itr)
+      : itr(itr) { }
 
     /**
      * @brief   Returns a NlohmannJsonObjectMember that contains the key and value
@@ -671,7 +669,8 @@ inline NlohmannJsonObjectMemberIterator NlohmannJsonObject::find(
     return value.find(propertyName);
 }
 
-}
-}
+}  // namespace adapters
+}  // namespace valijson
 
 #endif
+

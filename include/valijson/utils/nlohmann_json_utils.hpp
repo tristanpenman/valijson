@@ -1,6 +1,8 @@
 #pragma once
-#ifndef VALIJSON_NLOHMANN_JSON_UTILS_HPP_HPP
-#define VALIJSON_NLOHMANN_JSON_UTILS_HPP_HPP
+#ifndef VALIJSON_NLOHMANN_JSON_UTILS_HPP
+#define VALIJSON_NLOHMANN_JSON_UTILS_HPP
+
+#include <iostream>
 
 #include <json.hpp>
 #include <valijson/utils/file_utils.hpp>
@@ -12,7 +14,8 @@ inline bool loadDocument(const std::string &path, nlohmann::json &document) {
     // Load schema JSON from file
     std::string file;
     if (!loadFile(path, file)) {
-        std::cerr << "Failed to load json from file '" << path << "'." << std::endl;
+        std::cerr << "Failed to load json from file '" << path << "'."
+                  << std::endl;
         return false;
     }
 
@@ -29,7 +32,7 @@ inline bool loadDocument(const std::string &path, nlohmann::json &document) {
     return true;
 }
 
-}
-}
+}  // namespace utils
+}  // namespace valijson
 
-#endif //VALIJSON_NLOHMANN_JSON_UTILS_HPP_HPP
+#endif //VALIJSON_NLOHMANN_JSON_UTILS_HPP
