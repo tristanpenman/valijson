@@ -30,7 +30,14 @@ Include the necessary headers:
     #include <valijson/schema_parser.hpp>
     #include <valijson/validator.hpp>
 
-Loading a schema using RapidJSON:
+These are the classes that we'll be using:
+
+    using valijson::Schema;
+    using valijson::SchemaParser;
+    using valijson::Validator;
+    using valijson::adapters::RapidJsonAdapter;
+
+We are going to use RapidJSON to load the schema and the target document:
 
     // Load JSON document using RapidJSON with Valijson helper function
     rapidjson::Document mySchemaDoc;
@@ -53,9 +60,9 @@ Load a document to validate:
 
 Validate a document:
 
-    Validator validator(mySchema);
+    Validator validator;
     RapidJsonAdapter myTargetAdapter(myTargetDoc);
-    if (!validator.validate(myTargetAdapter, NULL)) {
+    if (!validator.validate(mySchema, myTargetAdapter, NULL)) {
         std::runtime_error("Validation failed.");
     }
 
