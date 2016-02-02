@@ -2,6 +2,8 @@
 #ifndef __VALIJSON_UTILS_PICOJSON_UTILS_HPP
 #define __VALIJSON_UTILS_PICOJSON_UTILS_HPP
 
+#include <iostream>
+
 #include <picojson.h>
 
 #include <valijson/utils/file_utils.hpp>
