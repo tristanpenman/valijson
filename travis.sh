@@ -28,7 +28,7 @@ fi
 
 echo "Attempting to build and run test suite with C++11 support disabled..."
 cmake $CMAKE_FLAGS -DVALIJSON_CXX11_ADAPTERS=disabled ..
-make
+VERBOSE=1 make
 ./test_suite
 
 echo "Checking if current compiler is GCC..."
@@ -38,7 +38,7 @@ else
 	echo "Attempting to build and run test suite with C++11 support enabled..."
 	make clean
 	cmake $CMAKE_FLAGS -DVALIJSON_CXX11_ADAPTERS=enabled ..
-	make
+	VERBOSE=1 make
 	./test_suite
 fi
 
