@@ -23,6 +23,7 @@ pushd build > /dev/null
 CMAKE_FLAGS=
 if [[ $CXX == 'clang++' ]]; then
 	CMAKE_FLAGS=-DCMAKE_CXX_FLAGS=-DBOOST_NO_CXX11_ALLOCATOR
+	echo "Additional flags to pass to cmake: $CMAKE_FLAGS"
 fi
 
 echo "Attempting to build and run test suite with C++11 support disabled..."
