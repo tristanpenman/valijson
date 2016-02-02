@@ -83,6 +83,7 @@ if(VALIJSON_CXX11_ADAPTERS_ARE_ENABLED)
     set(TEST_SOURCES
         ${TEST_SOURCES}
         tests/test_json11_adapter.cpp
+        tests/test_nlohmann_json_adapter.cpp
         )
 endif()
 
