@@ -1,3 +1,4 @@
+#pragma once
 #ifndef __VALIJSON_INTERNAL_URI_HPP
 #define __VALIJSON_INTERNAL_URI_HPP
 

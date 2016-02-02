@@ -23,6 +23,7 @@
  * inherited BasicAdapter class.
  */
 
+#pragma once
 #ifndef __VALIJSON_ADAPTERS_JSON11_ADAPTER_HPP
 #define __VALIJSON_ADAPTERS_JSON11_ADAPTER_HPP
 
