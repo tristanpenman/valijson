@@ -1,8 +1,40 @@
 language: cpp
+sudo: required
+dist: trusty
 
-compiler:
-  - clang
-  - gcc
+matrix:
+  include:
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['g++-4.9', 'valgrind', 'python-pip', 'python-yaml']
+      env: COMPILER=g++-4.9
+
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['g++-5', 'valgrind']
+      env: COMPILER=g++-5
+
+    - os: linux
+      compiler: clang
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.6']
+          packages: ['clang-3.6', 'valgrind']
+      env: COMPILER=clang++-3.6
+
+    - os: linux
+      compiler: clang
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.7']
+          packages: ['clang-3.7', 'valgrind']
+      env: COMPILER=clang++-3.7
 
 before_install:
   - sudo apt-get install python-software-properties
@@ -14,3 +46,4 @@ install:
 
 script:
   - ./travis.sh
+
