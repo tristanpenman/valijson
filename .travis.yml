@@ -43,5 +43,5 @@ install:
   - sudo apt-get install -y --force-yes libboost1.55-dev libboost-regex1.55-dev
 
 script:
-  - ./travis.sh
+  - CXX=$COMPILER ./travis.sh
 
