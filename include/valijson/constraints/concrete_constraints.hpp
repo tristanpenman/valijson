@@ -11,6 +11,8 @@
  * @see BasicConstraint
  * @see Constraint
  */
+
+#pragma once
 #ifndef __VALIJSON_CONSTRAINTS_CONCRETE_CONSTRAINTS_HPP
 #define __VALIJSON_CONSTRAINTS_CONCRETE_CONSTRAINTS_HPP
 

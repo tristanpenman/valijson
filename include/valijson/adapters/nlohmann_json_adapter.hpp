@@ -1,34 +1,34 @@
 /**
  * @file
  *
- * @brief   Adapter implementation for the json11 parser library.
+ * @brief   Adapter implementation for the nlohmann json parser library.
  *
- * Include this file in your program to enable support for json11.
+ * Include this file in your program to enable support for nlohmann json.
  *
  * This file defines the following classes (not in this order):
- *  - Json11Adapter
- *  - Json11Array
- *  - Json11ArrayValueIterator
- *  - Json11FrozenValue
- *  - Json11Object
- *  - Json11ObjectMember
- *  - Json11ObjectMemberIterator
- *  - Json11Value
+ *  - NlohmannJsonAdapter
+ *  - NlohmannJsonArray
+ *  - NlohmannJsonValueIterator
+ *  - NlohmannJsonFrozenValue
+ *  - NlohmannJsonObject
+ *  - NlohmannJsonObjectMember
+ *  - NlohmannJsonObjectMemberIterator
+ *  - NlohmannJsonValue
  *
  * Due to the dependencies that exist between these classes, the ordering of
  * class declarations and definitions may be a bit confusing. The best place to
- * start is Json11Adapter. This class definition is actually very small,
+ * start is NlohmannJsonAdapter. This class definition is actually very small,
  * since most of the functionality is inherited from the BasicAdapter class.
  * Most of the classes in this file are provided as template arguments to the
  * inherited BasicAdapter class.
  */
 
 #pragma once
-#ifndef __VALIJSON_ADAPTERS_JSON11_ADAPTER_HPP
-#define __VALIJSON_ADAPTERS_JSON11_ADAPTER_HPP
+#ifndef __VALIJSON_ADAPTERS_NLOHMANN_JSON_ADAPTER_HPP
+#define __VALIJSON_ADAPTERS_NLOHMANN_JSON_ADAPTER_HPP
 
 #include <string>
-#include <json11.hpp>
+#include <json.hpp>
 #include <boost/optional.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 
@@ -39,44 +39,44 @@
 namespace valijson {
 namespace adapters {
 
-class Json11Adapter;
-class Json11ArrayValueIterator;
-class Json11ObjectMemberIterator;
+class NlohmannJsonAdapter;
+class NlohmannJsonArrayValueIterator;
+class NlohmannJsonObjectMemberIterator;
 
-typedef std::pair<std::string, Json11Adapter> Json11ObjectMember;
+typedef std::pair<std::string, NlohmannJsonAdapter> NlohmannJsonObjectMember;
 
 /**
- * @brief  Light weight wrapper for a Json11 array value.
+ * @brief  Light weight wrapper for a NlohmannJson array value.
  *
- * This class is light weight wrapper for a Json11 array. It provides a
+ * This class is light weight wrapper for a NlohmannJson array. It provides a
  * minimum set of container functions and typedefs that allow it to be used as
  * an iterable container.
  *
  * An instance of this class contains a single reference to the underlying
- * Json11 value, assumed to be an array, so there is very little overhead
+ * NlohmannJson value, assumed to be an array, so there is very little overhead
  * associated with copy construction and passing by value.
  */
-class Json11Array
+class NlohmannJsonArray
 {
 public:
 
-    typedef Json11ArrayValueIterator const_iterator;
-    typedef Json11ArrayValueIterator iterator;
+    typedef NlohmannJsonArrayValueIterator const_iterator;
+    typedef NlohmannJsonArrayValueIterator iterator;
 
-    /// Construct a Json11Array referencing an empty array.
-    Json11Array()
+    /// Construct a NlohmannJsonArray referencing an empty array.
+    NlohmannJsonArray()
       : value(emptyArray()) { }
 
     /**
-     * @brief   Construct a Json11Array referencing a specific Json11
+     * @brief   Construct a NlohmannJsonArray referencing a specific NlohmannJson
      *          value.
      *
-     * @param   value   reference to a Json11 value
+     * @param   value   reference to a NlohmannJson value
      *
      * Note that this constructor will throw an exception if the value is not
      * an array.
      */
-    Json11Array(const json11::Json &value)
+    NlohmannJsonArray(const nlohmann::json &value)
       : value(value)
     {
         if (!value.is_array()) {
@@ -88,73 +88,73 @@ public:
      * @brief   Return an iterator for the first element of the array.
      *
      * The iterator return by this function is effectively the iterator
-     * returned by the underlying Json11 implementation.
+     * returned by the underlying NlohmannJson implementation.
      */
-    Json11ArrayValueIterator begin() const;
+    NlohmannJsonArrayValueIterator begin() const;
 
     /**
      * @brief   Return an iterator for one-past the last element of the array.
      *
      * The iterator return by this function is effectively the iterator
-     * returned by the underlying Json11 implementation.
+     * returned by the underlying NlohmannJson implementation.
      */
-    Json11ArrayValueIterator end() const;
+    NlohmannJsonArrayValueIterator end() const;
 
     /// Return the number of elements in the array
     size_t size() const
     {
-        return value.array_items().size();
+        return value.size();
     }
 
 private:
 
     /**
-     * @brief   Return a reference to a Json11 value that is an empty array.
+     * @brief   Return a reference to a NlohmannJson value that is an empty array.
      *
      * Note that the value returned by this function is a singleton.
      */
-    static const json11::Json & emptyArray()
+    static const nlohmann::json & emptyArray()
     {
-        static const json11::Json array((json11::Json::array()));
+        static const nlohmann::json array = nlohmann::json::array();
         return array;
     }
 
     /// Reference to the contained value
-    const json11::Json &value;
+    const nlohmann::json &value;
 };
 
 /**
- * @brief  Light weight wrapper for a Json11 object.
+ * @brief  Light weight wrapper for a NlohmannJson object.
  *
- * This class is light weight wrapper for a Json11 object. It provides a
+ * This class is light weight wrapper for a NlohmannJson object. It provides a
  * minimum set of container functions and typedefs that allow it to be used as
  * an iterable container.
  *
  * An instance of this class contains a single reference to the underlying
- * Json11 value, assumed to be an object, so there is very little overhead
+ * NlohmannJson value, assumed to be an object, so there is very little overhead
  * associated with copy construction and passing by value.
  */
-class Json11Object
+class NlohmannJsonObject
 {
 public:
 
-    typedef Json11ObjectMemberIterator const_iterator;
-    typedef Json11ObjectMemberIterator iterator;
+    typedef NlohmannJsonObjectMemberIterator const_iterator;
+    typedef NlohmannJsonObjectMemberIterator iterator;
 
-    /// Construct a Json11Object referencing an empty object singleton.
-    Json11Object()
+    /// Construct a NlohmannJsonObject referencing an empty object singleton.
+    NlohmannJsonObject()
       : value(emptyObject()) { }
 
     /**
-     * @brief   Construct a Json11Object referencing a specific Json11
+     * @brief   Construct a NlohmannJsonObject referencing a specific NlohmannJson
      *          value.
      *
-     * @param   value  reference to a Json11 value
+     * @param   value  reference to a NlohmannJson value
      *
      * Note that this constructor will throw an exception if the value is not
      * an object.
      */
-    Json11Object(const json11::Json &value)
+    NlohmannJsonObject(const nlohmann::json &value)
       : value(value)
     {
         if (!value.is_object()) {
@@ -166,18 +166,18 @@ public:
      * @brief   Return an iterator for this first object member
      *
      * The iterator return by this function is effectively a wrapper around
-     * the iterator value returned by the underlying Json11 implementation.
+     * the iterator value returned by the underlying NlohmannJson implementation.
      */
-    Json11ObjectMemberIterator begin() const;
+    NlohmannJsonObjectMemberIterator begin() const;
 
     /**
      * @brief   Return an iterator for an invalid object member that indicates
      *          the end of the collection.
      *
      * The iterator return by this function is effectively a wrapper around
-     * the iterator value returned by the underlying Json11 implementation.
+     * the iterator value returned by the underlying NlohmannJson implementation.
      */
-    Json11ObjectMemberIterator end() const;
+    NlohmannJsonObjectMemberIterator end() const;
 
     /**
      * @brief   Return an iterator for the object member with the specified
@@ -188,71 +188,73 @@ public:
      *
      * @param   propertyName  property name to search for
      */
-    Json11ObjectMemberIterator find(const std::string &propertyName) const;
+    NlohmannJsonObjectMemberIterator find(const std::string &propertyName) const;
 
     /// Returns the number of members belonging to this object.
     size_t size() const
     {
-        return value.object_items().size();
+        return value.size();
     }
 
 private:
 
     /**
-     * @brief   Return a reference to a Json11 value that is empty object.
+     * @brief   Return a reference to a NlohmannJson value that is empty object.
      *
      * Note that the value returned by this function is a singleton.
      */
-    static const json11::Json & emptyObject()
+    static const nlohmann::json & emptyObject()
     {
-        static const json11::Json object((json11::Json::object()));
+        static const nlohmann::json object = nlohmann::json::object();
         return object;
     }
 
     /// Reference to the contained object
-    const json11::Json &value;
+    const nlohmann::json &value;
 };
 
+
 /**
- * @brief   Stores an independent copy of a Json11 value.
+ * @brief   Stores an independent copy of a NlohmannJson value.
  *
- * This class allows a Json11 value to be stored independent of its original
- * document. Json11 makes this easy to do, as it does not perform any
+ * This class allows a NlohmannJson value to be stored independent of its original
+ * document. NlohmannJson makes this easy to do, as it does not perform any
  * custom memory management.
  *
  * @see FrozenValue
  */
-class Json11FrozenValue: public FrozenValue
+class NlohmannJsonFrozenValue: public FrozenValue
 {
 public:
 
     /**
-     * @brief  Make a copy of a Json11 value
+     * @brief  Make a copy of a NlohmannJson value
      *
-     * @param  source  the Json11 value to be copied
+     * @param  source  the NlohmannJson value to be copied
      */
-    Json11FrozenValue(const json11::Json &source)
+    NlohmannJsonFrozenValue(const nlohmann::json &source)
       : value(source) { }
 
     virtual FrozenValue * clone() const
     {
-        return new Json11FrozenValue(value);
+        return new NlohmannJsonFrozenValue(value);
     }
 
     virtual bool equalTo(const Adapter &other, bool strict) const;
 
 private:
 
-    /// Stored Json11 value
-    json11::Json value;
+    /// Stored NlohmannJson value
+    nlohmann::json value;
 };
 
+
 /**
- * @brief   Light weight wrapper for a Json11 value.
+ * @brief   Light weight wrapper for a NlohmannJson value.
  *
  * This class is passed as an argument to the BasicAdapter template class,
- * and is used to provide access to a Json11 value. This class is responsible
- * for the mechanics of actually reading a Json11 value, whereas the
+ * and is used to provide access to a NlohmannJson value. This class is responsible
+ * for the mechanics of actually reading a NlohmannJson value, whereas the
  * BasicAdapter class is responsible for the semantics of type comparisons
  * and conversions.
  *
@@ -261,43 +263,43 @@ private:
  *
  * @see BasicAdapter
  */
-class Json11Value
+class NlohmannJsonValue
 {
 public:
 
     /// Construct a wrapper for the empty object singleton
-    Json11Value()
+    NlohmannJsonValue()
       : value(emptyObject()) { }
 
-    /// Construct a wrapper for a specific Json11 value
-    Json11Value(const json11::Json &value)
+    /// Construct a wrapper for a specific NlohmannJson value
+    NlohmannJsonValue(const nlohmann::json &value)
       : value(value) { }
 
     /**
-     * @brief   Create a new Json11FrozenValue instance that contains the
-     *          value referenced by this Json11Value instance.
+     * @brief   Create a new NlohmannJsonFrozenValue instance that contains the
+     *          value referenced by this NlohmannJsonValue instance.
      *
-     * @returns pointer to a new Json11FrozenValue instance, belonging to the
+     * @returns pointer to a new NlohmannJsonFrozenValue instance, belonging to the
      *          caller.
      */
     FrozenValue * freeze() const
     {
-        return new Json11FrozenValue(value);
+        return new NlohmannJsonFrozenValue(value);
     }
 
     /**
-     * @brief   Optionally return a Json11Array instance.
+     * @brief   Optionally return a NlohmannJsonArray instance.
      *
-     * If the referenced Json11 value is an array, this function will return
-     * a boost::optional containing a Json11Array instance referencing the
+     * If the referenced NlohmannJson value is an array, this function will return
+     * a boost::optional containing a NlohmannJsonArray instance referencing the
      * array.
      *
      * Otherwise it will return boost::none.
      */
-    boost::optional<Json11Array> getArrayOptional() const
+    boost::optional<NlohmannJsonArray> getArrayOptional() const
     {
         if (value.is_array()) {
-            return boost::make_optional(Json11Array(value));
+            return boost::make_optional(NlohmannJsonArray(value));
         }
 
         return boost::none;
@@ -306,7 +308,7 @@ public:
     /**
      * @brief   Retrieve the number of elements in the array
      *
-     * If the referenced Json11 value is an array, this function will
+     * If the referenced NlohmannJson value is an array, this function will
      * retrieve the number of elements in the array and store it in the output
      * variable provided.
      *
@@ -317,7 +319,7 @@ public:
     bool getArraySize(size_t &result) const
     {
         if (value.is_array()) {
-            result = value.array_items().size();
+            result = value.size();
             return true;
         }
 
@@ -326,8 +328,8 @@ public:
 
     bool getBool(bool &result) const
     {
-        if (value.is_bool()) {
-            result = value.bool_value();
+        if (value.is_boolean()) {
+            result = value.get<bool>();
             return true;
         }
 
@@ -336,8 +338,8 @@ public:
 
     bool getDouble(double &result) const
     {
-        if (value.is_number()) {
-            result = value.number_value();
+        if (value.is_number_float()) {
+            result = value.get<double>();
             return true;
         }
 
@@ -346,26 +348,26 @@ public:
 
     bool getInteger(int64_t &result) const
     {
-        if(isInteger()) {
-            result = value.int_value();
+        if(value.is_number_integer()) {
+            result = value.get<int64_t>();
             return true;
         }
         return false;
     }
 
     /**
-     * @brief   Optionally return a Json11Object instance.
+     * @brief   Optionally return a NlohmannJsonObject instance.
      *
-     * If the referenced Json11 value is an object, this function will return a
-     * boost::optional containing a Json11Object instance referencing the
+     * If the referenced NlohmannJson value is an object, this function will return a
+     * boost::optional containing a NlohmannJsonObject instance referencing the
      * object.
      *
      * Otherwise it will return boost::none.
      */
-    boost::optional<Json11Object> getObjectOptional() const
+    boost::optional<NlohmannJsonObject> getObjectOptional() const
     {
         if (value.is_object()) {
-            return boost::make_optional(Json11Object(value));
+            return boost::make_optional(NlohmannJsonObject(value));
         }
 
         return boost::none;
@@ -374,7 +376,7 @@ public:
     /**
      * @brief   Retrieve the number of members in the object
      *
-     * If the referenced Json11 value is an object, this function will
+     * If the referenced NlohmannJson value is an object, this function will
      * retrieve the number of members in the object and store it in the output
      * variable provided.
      *
@@ -385,7 +387,7 @@ public:
     bool getObjectSize(size_t &result) const
     {
         if (value.is_object()) {
-            result = value.object_items().size();
+            result = value.size();
             return true;
         }
 
@@ -395,7 +397,7 @@ public:
     bool getString(std::string &result) const
     {
         if (value.is_string()) {
-            result = value.string_value();
+            result = value.get<std::string>();
             return true;
         }
 
@@ -414,18 +416,17 @@ public:
 
     bool isBool() const
     {
-        return value.is_bool();
+        return value.is_boolean();
     }
 
     bool isDouble() const
     {
-        return value.is_number();
+        return value.is_number_float();
     }
 
     bool isInteger() const
     {
-        return value.is_number()
-            && value.int_value() == value.number_value();
+        return value.is_number_integer();
     }
 
     bool isNull() const
@@ -451,18 +452,18 @@ public:
 private:
 
     /// Return a reference to an empty object singleton
-    static const json11::Json & emptyObject()
+    static const nlohmann::json & emptyObject()
     {
-        static const json11::Json object((json11::Json::object()));
+        static const nlohmann::json object = nlohmann::json::object();
         return object;
     }
 
-    /// Reference to the contained Json11 value.
-    const json11::Json &value;
+    /// Reference to the contained NlohmannJson value.
+    const nlohmann::json &value;
 };
 
 /**
- * @brief   An implementation of the Adapter interface supporting Json11.
+ * @brief   An implementation of the Adapter interface supporting NlohmannJson.
  *
  * This class is defined in terms of the BasicAdapter template class, which
  * helps to ensure that all of the Adapter implementations behave consistently.
@@ -470,57 +471,55 @@ private:
  * @see Adapter
  * @see BasicAdapter
  */
-class Json11Adapter:
-    public BasicAdapter<Json11Adapter,
-                        Json11Array,
-                        Json11ObjectMember,
-                        Json11Object,
-                        Json11Value>
+class NlohmannJsonAdapter:
+    public BasicAdapter<NlohmannJsonAdapter,
+        NlohmannJsonArray,
+        NlohmannJsonObjectMember,
+        NlohmannJsonObject,
+        NlohmannJsonValue>
 {
 public:
-
-    /// Construct a Json11Adapter that contains an empty object
-    Json11Adapter()
+    /// Construct a NlohmannJsonAdapter that contains an empty object
+    NlohmannJsonAdapter()
       : BasicAdapter() { }
 
-    /// Construct a Json11Adapter containing a specific Json11 value
-    Json11Adapter(const json11::Json &value)
-      : BasicAdapter(value) { }
+    /// Construct a NlohmannJsonAdapter containing a specific Nlohmann Json object
+    NlohmannJsonAdapter(const nlohmann::json &value)
+      : BasicAdapter(NlohmannJsonValue{value}) { }
 };
 
 /**
  * @brief   Class for iterating over values held in a JSON array.
  *
  * This class provides a JSON array iterator that dereferences as an instance of
- * Json11Adapter representing a value stored in the array. It has been
+ * NlohmannJsonAdapter representing a value stored in the array. It has been
  * implemented using the boost iterator_facade template.
  *
- * @see Json11Array
+ * @see NlohmannJsonArray
  */
-class Json11ArrayValueIterator:
+class NlohmannJsonArrayValueIterator:
     public boost::iterator_facade<
-        Json11ArrayValueIterator,          // name of derived type
-        Json11Adapter,                     // value type
+        NlohmannJsonArrayValueIterator,      // name of derived type
+        NlohmannJsonAdapter,                 // value type
         boost::bidirectional_traversal_tag,  // bi-directional iterator
-        Json11Adapter>                     // type returned when dereferenced
+        NlohmannJsonAdapter>                 // type returned when dereferenced
 {
 public:
 
     /**
-     * @brief   Construct a new Json11ArrayValueIterator using an existing
-     *          Json11 iterator.
+     * @brief   Construct a new NlohmannJsonArrayValueIterator using an existing
+     *          NlohmannJson iterator.
      *
-     * @param   itr  Json11 iterator to store
+     * @param   itr  NlohmannJson iterator to store
      */
-    Json11ArrayValueIterator(
-        const json11::Json::array::const_iterator &itr)
+    NlohmannJsonArrayValueIterator(const nlohmann::json::const_iterator &itr)
       : itr(itr) { }
 
-    /// Returns a Json11Adapter that contains the value of the current
+    /// Returns a NlohmannJsonAdapter that contains the value of the current
     /// element.
-    Json11Adapter dereference() const
+    NlohmannJsonAdapter dereference() const
     {
-        return Json11Adapter(*itr);
+        return NlohmannJsonAdapter(*itr);
     }
 
     /**
@@ -534,7 +533,7 @@ public:
      *
      * @returns true   if the iterators are equal, false otherwise.
      */
-    bool equal(const Json11ArrayValueIterator &other) const
+    bool equal(const NlohmannJsonArrayValueIterator &other) const
     {
         return itr == other.itr;
     }
@@ -555,45 +554,44 @@ public:
     }
 
 private:
-
-    json11::Json::array::const_iterator itr;
+    nlohmann::json::const_iterator itr;
 };
+
 
 /**
  * @brief   Class for iterating over the members belonging to a JSON object.
  *
  * This class provides a JSON object iterator that dereferences as an instance
- * of Json11ObjectMember representing one of the members of the object. It
+ * of NlohmannJsonObjectMember representing one of the members of the object. It
  * has been implemented using the boost iterator_facade template.
  *
- * @see Json11Object
- * @see Json11ObjectMember
+ * @see NlohmannJsonObject
+ * @see NlohmannJsonObjectMember
  */
-class Json11ObjectMemberIterator:
+class NlohmannJsonObjectMemberIterator:
     public boost::iterator_facade<
-        Json11ObjectMemberIterator,        // name of derived type
-        Json11ObjectMember,                // value type
+        NlohmannJsonObjectMemberIterator,    // name of derived type
+        NlohmannJsonObjectMember,            // value type
         boost::bidirectional_traversal_tag,  // bi-directional iterator
-        Json11ObjectMember>                // type returned when dereferenced
+        NlohmannJsonObjectMember>            // type returned when dereferenced
 {
 public:
 
     /**
-     * @brief   Construct an iterator from a Json11 iterator.
+     * @brief   Construct an iterator from a NlohmannJson iterator.
      *
-     * @param   itr  Json11 iterator to store
+     * @param   itr  NlohmannJson iterator to store
      */
-    Json11ObjectMemberIterator(
-        const json11::Json::object::const_iterator &itr)
+    NlohmannJsonObjectMemberIterator(const nlohmann::json::const_iterator &itr)
       : itr(itr) { }
 
     /**
-     * @brief   Returns a Json11ObjectMember that contains the key and value
+     * @brief   Returns a NlohmannJsonObjectMember that contains the key and value
      *          belonging to the object member identified by the iterator.
      */
-    Json11ObjectMember dereference() const
+    NlohmannJsonObjectMember dereference() const
     {
-        return Json11ObjectMember(itr->first, itr->second);
+        return NlohmannJsonObjectMember(itr.key(), itr.value());
     }
 
     /**
@@ -607,7 +605,7 @@ public:
      *
      * @returns true if the underlying iterators are equal, false otherwise
      */
-    bool equal(const Json11ObjectMemberIterator &other) const
+    bool equal(const NlohmannJsonObjectMemberIterator &other) const
     {
         return itr == other.itr;
     }
@@ -624,54 +622,55 @@ public:
 
 private:
 
-    /// Iternal copy of the original Json11 iterator
-    json11::Json::object::const_iterator itr;
+    /// Iternal copy of the original NlohmannJson iterator
+    nlohmann::json::const_iterator itr;
 };
 
-/// Specialisation of the AdapterTraits template struct for Json11Adapter.
+/// Specialisation of the AdapterTraits template struct for NlohmannJsonAdapter.
 template<>
-struct AdapterTraits<valijson::adapters::Json11Adapter>
+struct AdapterTraits<valijson::adapters::NlohmannJsonAdapter>
 {
-    typedef json11::Json DocumentType;
+    typedef nlohmann::json DocumentType;
 
     static std::string adapterName()
     {
-        return "Json11Adapter";
+        return "NlohmannJsonAdapter";
     }
 };
 
-inline bool Json11FrozenValue::equalTo(const Adapter &other, bool strict) const
+inline bool NlohmannJsonFrozenValue::equalTo(const Adapter &other, bool strict) const
 {
-    return Json11Adapter(value).equalTo(other, strict);
+    return NlohmannJsonAdapter(value).equalTo(other, strict);
 }
 
-inline Json11ArrayValueIterator Json11Array::begin() const
+inline NlohmannJsonArrayValueIterator NlohmannJsonArray::begin() const
 {
-    return value.array_items().begin();
+    return value.begin();
 }
 
-inline Json11ArrayValueIterator Json11Array::end() const
+inline NlohmannJsonArrayValueIterator NlohmannJsonArray::end() const
 {
-    return value.array_items().end();
+    return value.end();
 }
 
-inline Json11ObjectMemberIterator Json11Object::begin() const
+inline NlohmannJsonObjectMemberIterator NlohmannJsonObject::begin() const
 {
-    return value.object_items().begin();
+    return value.begin();
 }
 
-inline Json11ObjectMemberIterator Json11Object::end() const
+inline NlohmannJsonObjectMemberIterator NlohmannJsonObject::end() const
 {
-    return value.object_items().end();
+    return value.end();
 }
 
-inline Json11ObjectMemberIterator Json11Object::find(
-    const std::string &propertyName) const
+inline NlohmannJsonObjectMemberIterator NlohmannJsonObject::find(
+        const std::string &propertyName) const
 {
-    return value.object_items().find(propertyName);
+    return value.find(propertyName);
 }
 
 }  // namespace adapters
 }  // namespace valijson
 
 #endif
+

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef __VALIJSON_UTILS_UTF8_UTILS_HPP
 #define __VALIJSON_UTILS_UTF8_UTILS_HPP
 

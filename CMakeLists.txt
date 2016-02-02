@@ -47,6 +47,7 @@ include_directories(
   thirdparty/jsoncpp-0.9.4/include
   thirdparty/rapidjson-0.1/include
   thirdparty/picojson-1.3.0
+  thirdparty/nlohmann-json-1.1.0
   ${Boost_INCLUDE_DIRS}
 )
 
@@ -82,6 +83,7 @@ if(VALIJSON_CXX11_ADAPTERS_ARE_ENABLED)
     set(TEST_SOURCES
         ${TEST_SOURCES}
         tests/test_json11_adapter.cpp
+        tests/test_nlohmann_json_adapter.cpp
         )
 endif()
 

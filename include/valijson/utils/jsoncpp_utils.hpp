@@ -1,3 +1,4 @@
+#pragma once
 #ifndef __VALIJSON_UTILS_JSONCPP_UTILS_HPP
 #define __VALIJSON_UTILS_JSONCPP_UTILS_HPP
 

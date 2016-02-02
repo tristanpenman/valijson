@@ -17,6 +17,10 @@
 #ifdef VALIJSON_BUILD_CXX11_ADAPTERS
 #include <valijson/adapters/json11_adapter.hpp>
 #include <valijson/utils/json11_utils.hpp>
+
+#include <valijson/adapters/nlohmann_json_adapter.hpp>
+#include <valijson/utils/nlohmann_json_utils.hpp>
+
 #endif // VALIJSON_BUILD_CXX11_ADAPTERS
 
 #define TEST_DATA_DIR "../tests/data/documents/"
@@ -285,6 +289,57 @@ TEST_F(TestAdapterComparison, Json11VsPropertyTree)
     testComparison<
         valijson::adapters::Json11Adapter,
         valijson::adapters::PropertyTreeAdapter>();
+}
+
+TEST_F(TestAdapterComparison, NlohmannJsonVsNlohmannJson) {
+    testComparison<
+        valijson::adapters::NlohmannJsonAdapter,
+        valijson::adapters::NlohmannJsonAdapter>();
+}
+
+TEST_F(TestAdapterComparison, NlohmannJsonVsJson11)
+{
+    testComparison<
+            valijson::adapters::NlohmannJsonAdapter,
+            valijson::adapters::Json11Adapter>();
+}
+
+TEST_F(TestAdapterComparison, NlohmannJsonVsJsonCpp)
+{
+    testComparison<
+            valijson::adapters::NlohmannJsonAdapter,
+            valijson::adapters::JsonCppAdapter>();
+}
+
+
+TEST_F(TestAdapterComparison, NlohmannJsonVsRapidJson)
+{
+    testComparison<
+            valijson::adapters::NlohmannJsonAdapter,
+            valijson::adapters::RapidJsonAdapter>();
+}
+
+TEST_F(TestAdapterComparison, NlohmannJsonVsRapidJsonCrtAlloc)
+{
+    testComparison<
+            valijson::adapters::NlohmannJsonAdapter,
+            valijson::adapters::GenericRapidJsonAdapter<
+                    rapidjson::GenericValue<rapidjson::UTF8<>,
+                            rapidjson::CrtAllocator> > >();
+}
+
+TEST_F(TestAdapterComparison, NlohmannJsonVsPicoJson)
+{
+    testComparison<
+            valijson::adapters::NlohmannJsonAdapter,
+            valijson::adapters::PicoJsonAdapter>();
+}
+
+TEST_F(TestAdapterComparison, NlohmannJsonVsPropertyTree)
+{
+    testComparison<
+            valijson::adapters::NlohmannJsonAdapter,
+            valijson::adapters::PropertyTreeAdapter>();
 }
 
 #endif // VALIJSON_BUILD_CXX11_ADAPTERS

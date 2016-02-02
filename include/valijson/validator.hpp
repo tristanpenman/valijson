@@ -1,3 +1,4 @@
+#pragma once
 #ifndef __VALIJSON_VALIDATOR_HPP
 #define __VALIJSON_VALIDATOR_HPP
 

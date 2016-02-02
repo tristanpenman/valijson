@@ -1,3 +1,4 @@
+#pragma once
 #ifndef __VALIJSON_SUBSCHEMA_HPP
 #define __VALIJSON_SUBSCHEMA_HPP
 
