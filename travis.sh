@@ -19,8 +19,14 @@ fi
 mkdir -p build
 pushd build > /dev/null
 
+# Boost does not correctly identify version of libstdc++ used by clang
+CMAKE_FLAGS=
+if [[ $CXX == 'clang++' ]]; then
+	CMAKE_FLAGS=-DCMAKE_CXX_FLAGS=-DBOOST_NO_CXX11_ALLOCATOR
+fi
+
 echo "Attempting to build and run test suite with C++11 support disabled..."
-cmake -DVALIJSON_CXX11_ADAPTERS=disabled ..
+cmake $CMAKE_FLAGS -DVALIJSON_CXX11_ADAPTERS=disabled ..
 make
 ./test_suite
 
@@ -30,7 +36,7 @@ if [[ $CXX == 'g++' ]]; then
 else
 	echo "Attempting to build and run test suite with C++11 support enabled..."
 	make clean
-	cmake -DVALIJSON_CXX11_ADAPTERS=enabled ..
+	cmake $CMAKE_FLAGS -DVALIJSON_CXX11_ADAPTERS=enabled ..
 	make
 	./test_suite
 fi
@@ -38,3 +44,4 @@ fi
 make clean
 
 popd > /dev/null
+
