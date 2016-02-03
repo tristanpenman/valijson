@@ -16,6 +16,12 @@
 #include <valijson/internal/json_reference.hpp>
 #include <valijson/schema.hpp>
 
+#pragma clang diagnostic push
+
+#ifdef __clang__
+#  pragma clang diagnostic ignored "-Wunused-local-typedefs"
+#endif
+
 namespace valijson {
 
 /**
@@ -1563,5 +1569,7 @@ private:
 };
 
 }  // namespace valijson
+
+#pragma clang diagnostic pop
 
 #endif
