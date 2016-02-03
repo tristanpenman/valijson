@@ -65,7 +65,6 @@
 #include <valijson/constraints/concrete_constraints.hpp>
 #include <valijson/utils/rapidjson_utils.hpp>
 #include <valijson/schema.hpp>
-#include <valijson/schema_parser.hpp>
 #include <valijson/validation_results.hpp>
 #include <valijson/validator.hpp>
 
@@ -73,7 +72,6 @@ using std::cerr;
 using std::endl;
 
 using valijson::Schema;
-using valijson::SchemaParser;
 using valijson::Subschema;
 using valijson::Validator;
 using valijson::ValidationResults;
