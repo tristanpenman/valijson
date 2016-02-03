@@ -19,7 +19,7 @@
 #pragma clang diagnostic push
 
 #ifdef __clang__
-#  pragma clang diagnostic ignored "-Wunused-local-typedefs"
+#  pragma clang diagnostic ignored "-Wunused-local-typedef"
 #endif
 
 namespace valijson {
