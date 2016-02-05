@@ -180,7 +180,7 @@ inline AdapterType resolveJsonPointer(
                         "out of bounds; actual token: " + referenceToken);
             }
 
-            if (index > std::numeric_limits<ptrdiff_t>::max()) {
+            if (index > static_cast<uint64_t>(std::numeric_limits<ptrdiff_t>::max())) {
                 throw std::runtime_error("Array index out of bounds; hard "
                         "limit is " + boost::lexical_cast<std::string>(
                                 std::numeric_limits<ptrdiff_t>::max()));

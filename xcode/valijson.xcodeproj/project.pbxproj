@@ -168,6 +168,35 @@
 		6A869A2517CD8641006864FA /* type.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = type.json; sourceTree = "<group>"; };
 		6A869A2617CD8641006864FA /* uniqueItems.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = uniqueItems.json; sourceTree = "<group>"; };
 		6A869A3017CD8A92006864FA /* rapidjson_utils.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = rapidjson_utils.hpp; sourceTree = "<group>"; };
+		6A9297071C4B1A3500737891 /* allocators.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = allocators.h; sourceTree = "<group>"; };
+		6A9297081C4B1A3500737891 /* document.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = document.h; sourceTree = "<group>"; };
+		6A9297091C4B1A3500737891 /* encodedstream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = encodedstream.h; sourceTree = "<group>"; };
+		6A92970A1C4B1A3500737891 /* encodings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = encodings.h; sourceTree = "<group>"; };
+		6A92970C1C4B1A3500737891 /* en.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = en.h; sourceTree = "<group>"; };
+		6A92970D1C4B1A3500737891 /* error.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = error.h; sourceTree = "<group>"; };
+		6A92970E1C4B1A3500737891 /* filereadstream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = filereadstream.h; sourceTree = "<group>"; };
+		6A92970F1C4B1A3500737891 /* filewritestream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = filewritestream.h; sourceTree = "<group>"; };
+		6A9297111C4B1A3500737891 /* biginteger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = biginteger.h; sourceTree = "<group>"; };
+		6A9297121C4B1A3500737891 /* diyfp.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = diyfp.h; sourceTree = "<group>"; };
+		6A9297131C4B1A3500737891 /* dtoa.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = dtoa.h; sourceTree = "<group>"; };
+		6A9297141C4B1A3500737891 /* ieee754.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ieee754.h; sourceTree = "<group>"; };
+		6A9297151C4B1A3500737891 /* itoa.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = itoa.h; sourceTree = "<group>"; };
+		6A9297161C4B1A3500737891 /* meta.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = meta.h; sourceTree = "<group>"; };
+		6A9297171C4B1A3500737891 /* pow10.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = pow10.h; sourceTree = "<group>"; };
+		6A9297181C4B1A3500737891 /* stack.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stack.h; sourceTree = "<group>"; };
+		6A9297191C4B1A3500737891 /* strfunc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = strfunc.h; sourceTree = "<group>"; };
+		6A92971A1C4B1A3500737891 /* strtod.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = strtod.h; sourceTree = "<group>"; };
+		6A92971B1C4B1A3500737891 /* memorybuffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = memorybuffer.h; sourceTree = "<group>"; };
+		6A92971C1C4B1A3500737891 /* memorystream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = memorystream.h; sourceTree = "<group>"; };
+		6A92971E1C4B1A3500737891 /* inttypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = inttypes.h; sourceTree = "<group>"; };
+		6A92971F1C4B1A3500737891 /* stdint.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stdint.h; sourceTree = "<group>"; };
+		6A9297201C4B1A3500737891 /* prettywriter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = prettywriter.h; sourceTree = "<group>"; };
+		6A9297211C4B1A3500737891 /* rapidjson.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = rapidjson.h; sourceTree = "<group>"; };
+		6A9297221C4B1A3500737891 /* reader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = reader.h; sourceTree = "<group>"; };
+		6A9297231C4B1A3500737891 /* stringbuffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stringbuffer.h; sourceTree = "<group>"; };
+		6A9297241C4B1A3500737891 /* writer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = writer.h; sourceTree = "<group>"; };
+		6A9297251C4B1A3500737891 /* license.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = license.txt; sourceTree = "<group>"; };
+		6A9297261C4B1A3500737891 /* readme.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = readme.md; sourceTree = "<group>"; };
 		6A9E1855194D486C003F1C4C /* utf8_utils.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = utf8_utils.hpp; sourceTree = "<group>"; };
 		6AA334841AB5102C00F1928B /* assertions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = assertions.h; sourceTree = "<group>"; };
 		6AA334851AB5102C00F1928B /* autolink.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = autolink.h; sourceTree = "<group>"; };
@@ -202,21 +231,6 @@
 		6AC18C1517C861D600FE0EC9 /* validation_visitor.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = validation_visitor.hpp; sourceTree = "<group>"; };
 		6AC18C1717CC1BE100FE0EC9 /* frozen_value.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = frozen_value.hpp; sourceTree = "<group>"; };
 		6AC18C1917CC2DDC00FE0EC9 /* adapter.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; lineEnding = 0; path = adapter.hpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
-		6AC18CEF17CC851000FE0EC9 /* allocators.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = allocators.h; sourceTree = "<group>"; };
-		6AC18CF017CC851000FE0EC9 /* document.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = document.h; sourceTree = "<group>"; };
-		6AC18CF117CC851000FE0EC9 /* encodedstream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = encodedstream.h; sourceTree = "<group>"; };
-		6AC18CF217CC851000FE0EC9 /* encodings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = encodings.h; sourceTree = "<group>"; };
-		6AC18CF317CC851000FE0EC9 /* filereadstream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = filereadstream.h; sourceTree = "<group>"; };
-		6AC18CF417CC851000FE0EC9 /* filestream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = filestream.h; sourceTree = "<group>"; };
-		6AC18CF517CC851000FE0EC9 /* filewritestream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = filewritestream.h; sourceTree = "<group>"; };
-		6AC18CF717CC851000FE0EC9 /* pow10.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = pow10.h; sourceTree = "<group>"; };
-		6AC18CF817CC851000FE0EC9 /* stack.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stack.h; sourceTree = "<group>"; };
-		6AC18CF917CC851000FE0EC9 /* strfunc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = strfunc.h; sourceTree = "<group>"; };
-		6AC18CFA17CC851000FE0EC9 /* prettywriter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = prettywriter.h; sourceTree = "<group>"; };
-		6AC18CFB17CC851000FE0EC9 /* rapidjson.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = rapidjson.h; sourceTree = "<group>"; };
-		6AC18CFC17CC851000FE0EC9 /* reader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = reader.h; sourceTree = "<group>"; };
-		6AC18CFD17CC851000FE0EC9 /* stringbuffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stringbuffer.h; sourceTree = "<group>"; };
-		6AC18CFE17CC851000FE0EC9 /* writer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = writer.h; sourceTree = "<group>"; };
 		6AC18D3517CC86E000FE0EC9 /* test_validator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_validator.cpp; sourceTree = "<group>"; };
 		6AC18D3917CC874100FE0EC9 /* test_rapidjson_adapter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_rapidjson_adapter.cpp; sourceTree = "<group>"; };
 		6AC18D4117CC899800FE0EC9 /* test_suite */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test_suite; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -236,6 +250,7 @@
 		6AD030F51B03FD9900B957E5 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
 		6AE1D76617E3F993008CF38C /* custom_schema.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = custom_schema.cpp; sourceTree = "<group>"; };
 		6AEFECC81AB53F1000275614 /* libjsoncpp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libjsoncpp.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		6AF3F5071C2D874F001B3445 /* custom_allocator.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = custom_allocator.hpp; path = internal/custom_allocator.hpp; sourceTree = "<group>"; };
 		6AF70AE118FE71F600342325 /* gtest-death-test.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-death-test.h"; sourceTree = "<group>"; };
 		6AF70AE218FE71F600342325 /* gtest-message.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-message.h"; sourceTree = "<group>"; };
 		6AF70AE318FE71F600342325 /* gtest-param-test.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-param-test.h"; sourceTree = "<group>"; };
@@ -362,6 +377,7 @@
 		6A506D1D1AF88D5E00C2C818 /* internal */ = {
 			isa = PBXGroup;
 			children = (
+				6AF3F5071C2D874F001B3445 /* custom_allocator.hpp */,
 				6A506D1E1AF88D8700C2C818 /* json_pointer.hpp */,
 				6A34698C1BD109A900C97DA2 /* json_reference.hpp */,
 				6A356B0D1C1CFD020007EB8B /* uri.hpp */,
@@ -609,6 +625,82 @@
 			path = utils;
 			sourceTree = "<group>";
 		};
+		6A9297011C4B1A3500737891 /* rapidjson-1.0.2 */ = {
+			isa = PBXGroup;
+			children = (
+				6A9297051C4B1A3500737891 /* include */,
+				6A9297251C4B1A3500737891 /* license.txt */,
+				6A9297261C4B1A3500737891 /* readme.md */,
+			);
+			path = "rapidjson-1.0.2";
+			sourceTree = "<group>";
+		};
+		6A9297051C4B1A3500737891 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				6A9297061C4B1A3500737891 /* rapidjson */,
+			);
+			path = include;
+			sourceTree = "<group>";
+		};
+		6A9297061C4B1A3500737891 /* rapidjson */ = {
+			isa = PBXGroup;
+			children = (
+				6A9297071C4B1A3500737891 /* allocators.h */,
+				6A9297081C4B1A3500737891 /* document.h */,
+				6A9297091C4B1A3500737891 /* encodedstream.h */,
+				6A92970A1C4B1A3500737891 /* encodings.h */,
+				6A92970B1C4B1A3500737891 /* error */,
+				6A92970E1C4B1A3500737891 /* filereadstream.h */,
+				6A92970F1C4B1A3500737891 /* filewritestream.h */,
+				6A9297101C4B1A3500737891 /* internal */,
+				6A92971B1C4B1A3500737891 /* memorybuffer.h */,
+				6A92971C1C4B1A3500737891 /* memorystream.h */,
+				6A92971D1C4B1A3500737891 /* msinttypes */,
+				6A9297201C4B1A3500737891 /* prettywriter.h */,
+				6A9297211C4B1A3500737891 /* rapidjson.h */,
+				6A9297221C4B1A3500737891 /* reader.h */,
+				6A9297231C4B1A3500737891 /* stringbuffer.h */,
+				6A9297241C4B1A3500737891 /* writer.h */,
+			);
+			path = rapidjson;
+			sourceTree = "<group>";
+		};
+		6A92970B1C4B1A3500737891 /* error */ = {
+			isa = PBXGroup;
+			children = (
+				6A92970C1C4B1A3500737891 /* en.h */,
+				6A92970D1C4B1A3500737891 /* error.h */,
+			);
+			path = error;
+			sourceTree = "<group>";
+		};
+		6A9297101C4B1A3500737891 /* internal */ = {
+			isa = PBXGroup;
+			children = (
+				6A9297111C4B1A3500737891 /* biginteger.h */,
+				6A9297121C4B1A3500737891 /* diyfp.h */,
+				6A9297131C4B1A3500737891 /* dtoa.h */,
+				6A9297141C4B1A3500737891 /* ieee754.h */,
+				6A9297151C4B1A3500737891 /* itoa.h */,
+				6A9297161C4B1A3500737891 /* meta.h */,
+				6A9297171C4B1A3500737891 /* pow10.h */,
+				6A9297181C4B1A3500737891 /* stack.h */,
+				6A9297191C4B1A3500737891 /* strfunc.h */,
+				6A92971A1C4B1A3500737891 /* strtod.h */,
+			);
+			path = internal;
+			sourceTree = "<group>";
+		};
+		6A92971D1C4B1A3500737891 /* msinttypes */ = {
+			isa = PBXGroup;
+			children = (
+				6A92971E1C4B1A3500737891 /* inttypes.h */,
+				6A92971F1C4B1A3500737891 /* stdint.h */,
+			);
+			path = msinttypes;
+			sourceTree = "<group>";
+		};
 		6AA334801AB5100700F1928B /* jsoncpp-0.9.4 */ = {
 			isa = PBXGroup;
 			children = (
@@ -681,57 +773,11 @@
 				6A5C5D401C5B14BC004F40ED /* json11-2016-01-26 */,
 				6AA334801AB5100700F1928B /* jsoncpp-0.9.4 */,
 				6A8699E517CD8641006864FA /* JSON-Schema-Test-Suite */,
-				6AC18CEC17CC851000FE0EC9 /* rapidjson-0.1 */,
+				6A9297011C4B1A3500737891 /* rapidjson-1.0.2 */,
 				6A725F4E17F89CD500D6B2FF /* urdl-2013-08-15 */,
 			);
 			name = thirdparty;
 			path = ../thirdparty;
-			sourceTree = "<group>";
-		};
-		6AC18CEC17CC851000FE0EC9 /* rapidjson-0.1 */ = {
-			isa = PBXGroup;
-			children = (
-				6AC18CED17CC851000FE0EC9 /* include */,
-			);
-			path = "rapidjson-0.1";
-			sourceTree = "<group>";
-		};
-		6AC18CED17CC851000FE0EC9 /* include */ = {
-			isa = PBXGroup;
-			children = (
-				6AC18CEE17CC851000FE0EC9 /* rapidjson */,
-			);
-			path = include;
-			sourceTree = "<group>";
-		};
-		6AC18CEE17CC851000FE0EC9 /* rapidjson */ = {
-			isa = PBXGroup;
-			children = (
-				6AC18CEF17CC851000FE0EC9 /* allocators.h */,
-				6AC18CF017CC851000FE0EC9 /* document.h */,
-				6AC18CF117CC851000FE0EC9 /* encodedstream.h */,
-				6AC18CF217CC851000FE0EC9 /* encodings.h */,
-				6AC18CF317CC851000FE0EC9 /* filereadstream.h */,
-				6AC18CF417CC851000FE0EC9 /* filestream.h */,
-				6AC18CF517CC851000FE0EC9 /* filewritestream.h */,
-				6AC18CF617CC851000FE0EC9 /* internal */,
-				6AC18CFA17CC851000FE0EC9 /* prettywriter.h */,
-				6AC18CFB17CC851000FE0EC9 /* rapidjson.h */,
-				6AC18CFC17CC851000FE0EC9 /* reader.h */,
-				6AC18CFD17CC851000FE0EC9 /* stringbuffer.h */,
-				6AC18CFE17CC851000FE0EC9 /* writer.h */,
-			);
-			path = rapidjson;
-			sourceTree = "<group>";
-		};
-		6AC18CF617CC851000FE0EC9 /* internal */ = {
-			isa = PBXGroup;
-			children = (
-				6AC18CF717CC851000FE0EC9 /* pow10.h */,
-				6AC18CF817CC851000FE0EC9 /* stack.h */,
-				6AC18CF917CC851000FE0EC9 /* strfunc.h */,
-			);
-			path = internal;
 			sourceTree = "<group>";
 		};
 		6AC18D3217CC869D00FE0EC9 /* tests */ = {
@@ -1180,13 +1226,17 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				HEADER_SEARCH_PATHS = (
-					"../thirdparty/rapidjson-0.1/include",
+					"../thirdparty/rapidjson-1.0.2/include",
 					../include,
 					/usr/local/include,
 				);
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				PRODUCT_NAME = custom_schema;
 				VALID_ARCHS = x86_64;
+				WARNING_CFLAGS = (
+					"-Wall",
+					"-Werror",
+				);
 			};
 			name = Debug;
 		};
@@ -1194,13 +1244,17 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				HEADER_SEARCH_PATHS = (
-					"../thirdparty/rapidjson-0.1/include",
+					"../thirdparty/rapidjson-1.0.2/include",
 					../include,
 					/usr/local/include,
 				);
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				PRODUCT_NAME = custom_schema;
 				VALID_ARCHS = x86_64;
+				WARNING_CFLAGS = (
+					"-Wall",
+					"-Werror",
+				);
 			};
 			name = Release;
 		};
@@ -1214,6 +1268,7 @@
 					PICOJSON_USE_INT64,
 					VALIJSON_BUILD_CXX11_ADAPTERS,
 				);
+				GCC_WARN_SIGN_COMPARE = YES;
 				HEADER_SEARCH_PATHS = (
 					"../thirdparty/gtest-1.7.0/include",
 					"../thirdparty/gtest-1.7.0",
@@ -1221,13 +1276,17 @@
 					"../thirdparty/jsoncpp-0.9.4/include",
 					"../thirdparty/nlohmann-json-1.1.0",
 					"../thirdparty/picojson-1.3.0",
-					"../thirdparty/rapidjson-0.1/include",
+					"../thirdparty/rapidjson-1.0.2/include",
 					../include,
 					/usr/local/include,
 				);
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				PRELINK_LIBS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				WARNING_CFLAGS = (
+					"-Wall",
+					"-Werror",
+				);
 			};
 			name = Debug;
 		};
@@ -1240,6 +1299,7 @@
 					PICOJSON_USE_INT64,
 					VALIJSON_BUILD_CXX11_ADAPTERS,
 				);
+				GCC_WARN_SIGN_COMPARE = YES;
 				HEADER_SEARCH_PATHS = (
 					"../thirdparty/gtest-1.7.0/include",
 					"../thirdparty/gtest-1.7.0",
@@ -1247,13 +1307,17 @@
 					"../thirdparty/jsoncpp-0.9.4/include",
 					"../thirdparty/nlohmann-json-1.1.0",
 					"../thirdparty/picojson-1.3.0",
-					"../thirdparty/rapidjson-0.1/include",
+					"../thirdparty/rapidjson-1.0.2/include",
 					../include,
 					/usr/local/include,
 				);
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				PRELINK_LIBS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				WARNING_CFLAGS = (
+					"-Wall",
+					"-Werror",
+				);
 			};
 			name = Release;
 		};
@@ -1317,13 +1381,17 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				HEADER_SEARCH_PATHS = (
-					"../thirdparty/rapidjson-0.1/include",
+					"../thirdparty/rapidjson-1.0.2/include",
 					../include,
 					/usr/local/include,
 				);
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				VALID_ARCHS = x86_64;
+				WARNING_CFLAGS = (
+					"-Wall",
+					"-Werror",
+				);
 			};
 			name = Debug;
 		};
@@ -1331,13 +1399,17 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				HEADER_SEARCH_PATHS = (
-					"../thirdparty/rapidjson-0.1/include",
+					"../thirdparty/rapidjson-1.0.2/include",
 					../include,
 					/usr/local/include,
 				);
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				VALID_ARCHS = x86_64;
+				WARNING_CFLAGS = (
+					"-Wall",
+					"-Werror",
+				);
 			};
 			name = Release;
 		};

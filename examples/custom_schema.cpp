@@ -65,7 +65,6 @@
 #include <valijson/constraints/concrete_constraints.hpp>
 #include <valijson/utils/rapidjson_utils.hpp>
 #include <valijson/schema.hpp>
-#include <valijson/schema_parser.hpp>
 #include <valijson/validation_results.hpp>
 #include <valijson/validator.hpp>
 
@@ -73,7 +72,7 @@ using std::cerr;
 using std::endl;
 
 using valijson::Schema;
-using valijson::SchemaParser;
+using valijson::Subschema;
 using valijson::Validator;
 using valijson::ValidationResults;
 using valijson::adapters::RapidJsonAdapter;
@@ -89,68 +88,93 @@ using valijson::constraints::TypeConstraint;
 void addPropertiesConstraint(Schema &schema)
 {
 
-    PropertiesConstraint::PropertySchemaMap propertySchemaMap;
-    PropertiesConstraint::PropertySchemaMap patternPropertiesSchemaMap;
+    PropertiesConstraint propertiesConstraint;
 
     {
-        // Create a child schema for the 'category' property that requires one
-        // of several possible values.
-        Schema &propertySchema = propertySchemaMap["category"];
-        EnumConstraint::Values enumConstraintValues;
-        enumConstraintValues.push_back(new RapidJsonFrozenValue("album"));
-        enumConstraintValues.push_back(new RapidJsonFrozenValue("book"));
-        enumConstraintValues.push_back(new RapidJsonFrozenValue("other"));
-        enumConstraintValues.push_back(new RapidJsonFrozenValue("video"));
-        propertySchema.addConstraint(new EnumConstraint(enumConstraintValues));
+        // Prepare an enum constraint requires a document to be equal to at
+        // least one of a set of possible values
+        EnumConstraint constraint;
+        constraint.addValue(RapidJsonFrozenValue("album"));
+        constraint.addValue(RapidJsonFrozenValue("book"));
+        constraint.addValue(RapidJsonFrozenValue("other"));
+        constraint.addValue(RapidJsonFrozenValue("video"));
+
+        // Create a subschema, owned by the root schema, with a constraint
+        const Subschema *subschema = schema.createSubschema();
+        schema.addConstraintToSubschema(constraint, subschema);
+
+        // Include subschema in properties constraint
+        propertiesConstraint.addPropertySubschema("category", subschema);
     }
 
     {
         // Create a child schema for the 'description' property that requires
         // a string, but does not enforce any length constraints.
-        Schema &propertySchema = propertySchemaMap["description"];
-        propertySchema.addConstraint(new TypeConstraint(TypeConstraint::kString));
+        const Subschema *subschema = schema.createSubschema();
+        TypeConstraint typeConstraint;
+        typeConstraint.addNamedType(TypeConstraint::kString);
+        schema.addConstraintToSubschema(typeConstraint, subschema);
+
+        // Include subschema in properties constraint
+        propertiesConstraint.addPropertySubschema("description", subschema);
     }
 
     {
         // Create a child schema for the 'price' property, that requires a
         // number with a value greater than zero.
-        Schema &propertySchema = propertySchemaMap["price"];
-        propertySchema.addConstraint(new MinimumConstraint(0.0, true));
-        propertySchema.addConstraint(new TypeConstraint(TypeConstraint::kNumber));
+        const Subschema *subschema = schema.createSubschema();
+        MinimumConstraint minimumConstraint;
+        minimumConstraint.setMinimum(0.0);
+        minimumConstraint.setExclusiveMinimum(true);
+        schema.addConstraintToSubschema(minimumConstraint, subschema);
+        TypeConstraint typeConstraint;
+        typeConstraint.addNamedType(TypeConstraint::kNumber);
+        schema.addConstraintToSubschema(typeConstraint, subschema);
+
+        // Include subschema in properties constraint
+        propertiesConstraint.addPropertySubschema("price", subschema);
     }
 
     {
         // Create a child schema for the 'title' property that requires a string
         // that is between 1 and 200 characters in length.
-        Schema &propertySchema = propertySchemaMap["title"];
-        propertySchema.addConstraint(new MaxLengthConstraint(200));
-        propertySchema.addConstraint(new MinLengthConstraint(1));
-        propertySchema.addConstraint(new TypeConstraint(TypeConstraint::kString));
+        const Subschema *subschema = schema.createSubschema();
+        MaxLengthConstraint maxLengthConstraint;
+        maxLengthConstraint.setMaxLength(200);
+        schema.addConstraintToSubschema(maxLengthConstraint, subschema);
+        MinLengthConstraint minLengthConstraint;
+        minLengthConstraint.setMinLength(0);
+        schema.addConstraintToSubschema(minLengthConstraint, subschema);
+        TypeConstraint typeConstraint;
+        typeConstraint.addNamedType(TypeConstraint::kString);
+        schema.addConstraintToSubschema(typeConstraint, subschema);
+
+        // Include subschema in properties constraint
+        propertiesConstraint.addPropertySubschema("title", subschema);
     }
 
-    // Add a PropertiesConstraint to the schema, with the properties defined
-    // above, no pattern properties, and with additional property schemas
-    // prohibited.
-    schema.addConstraint(new PropertiesConstraint(
-        propertySchemaMap, patternPropertiesSchemaMap));
+    // Add a PropertiesConstraint to the root schema
+    schema.addConstraint(propertiesConstraint);
 }
 
 void addRequiredConstraint(Schema &schema)
 {
     // Add a RequiredConstraint to the schema, specifying that the category,
     // price, and title properties must be present.
-    RequiredConstraint::RequiredProperties requiredProperties;
-    requiredProperties.insert("category");
-    requiredProperties.insert("price");
-    requiredProperties.insert("title");
-    schema.addConstraint(new RequiredConstraint(requiredProperties));
+    RequiredConstraint constraint;
+    constraint.addRequiredProperty("category");
+    constraint.addRequiredProperty("price");
+    constraint.addRequiredProperty("title");
+    schema.addConstraint(constraint);
 }
 
 void addTypeConstraint(Schema &schema)
 {
     // Add a TypeConstraint to the schema, specifying that the root of the
     // document must be an object.
-    schema.addConstraint(new TypeConstraint(TypeConstraint::kObject));
+    TypeConstraint typeConstraint;
+    typeConstraint.addNamedType(TypeConstraint::kObject);
+    schema.addConstraint(typeConstraint);
 }
 
 int main(int argc, char *argv[])
@@ -176,10 +200,10 @@ int main(int argc, char *argv[])
     addTypeConstraint(schema);
 
     // Perform validation
-    Validator validator(schema);
+    Validator validator;
     ValidationResults results;
     RapidJsonAdapter targetDocumentAdapter(targetDocument);
-    if (!validator.validate(targetDocumentAdapter, &results)) {
+    if (!validator.validate(schema, targetDocumentAdapter, &results)) {
         std::cerr << "Validation failed." << endl;
         ValidationResults::Error error;
         unsigned int errorNum = 1;

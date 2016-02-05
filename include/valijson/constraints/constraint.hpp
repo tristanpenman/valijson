@@ -12,7 +12,13 @@ class ConstraintVisitor;
  *
  * @todo  Consider using something like the boost::cloneable concept here.
  */
-struct Constraint {
+struct Constraint
+{
+    /// Typedef for custom new-/malloc-like function
+    typedef void * (*CustomAlloc)(size_t size);
+
+    /// Typedef for custom free-like function
+    typedef void (*CustomFree)(void *);
 
     /**
      * @brief  Virtual destructor.
@@ -38,14 +44,9 @@ struct Constraint {
      *
      * @returns  an owning-pointer to the new constraint.
      */
-    virtual Constraint * clone() const = 0;
+    virtual Constraint * clone(CustomAlloc, CustomFree) const = 0;
 
 };
-
-inline Constraint * new_clone(const Constraint &constraint)
-{
-    return constraint.clone();
-}
 
 } // namespace constraints
 } // namespace valijson

@@ -14,38 +14,30 @@ class Schema;
 class ValidationResults;
 
 /**
- * @brief  Class that wraps a schema and provides validation functionality.
- *
- * This class wraps a Schema object, and encapsulates the logic required to
- * validate rapidjson values aginst the schema.
+ * @brief  Class that provides validation functionality.
  */
 class Validator
 {
 public:
-
-    /**
-     * @brief  Construct a validator using the specified schema.
-     *
-     * The schema that is provided will be copied.
-     *
-     * @param  schema       A schema to use for validation
-     */
-    Validator(const Schema &schema)
-      : schema(new Schema(schema)),
-        strictTypes(true) { }
-
-    /**
-     * @brief  Set flag to use strict comparison during validation.
-     *
-     * The default value is true, but this can be changed at any time. Future
-     * invokations of validate() will make use of the new value.
-     *
-     * @param  strictTypes  whether or not to use strict comparison
-     */
-    void setStrict(bool strictTypes)
+    enum TypeCheckingMode
     {
-        this->strictTypes = strictTypes;
-    }
+        kStrongTypes,
+        kWeakTypes
+    };
+
+    /**
+     * @brief  Construct a Validator that uses strong type checking by default
+     */
+    Validator()
+      : strictTypes(true) { }
+
+    /**
+     * @brief  Construct a Validator using a specific type checking mode
+     *
+     * @param  typeCheckingMode  choice of strong or weak type checking
+     */
+    Validator(TypeCheckingMode typeCheckingMode)
+      : strictTypes(typeCheckingMode == kStrongTypes) { }
 
     /**
      * @brief  Validate a JSON document and optionally return the results.
@@ -58,30 +50,29 @@ public:
      * will only continue for as long as the constraints are validated
      * successfully.
      *
-     * @param  target   A rapidjson::Value to be validated.
+     * @param  schema   The schema to validate against
+     * @param  target   A rapidjson::Value to be validated
      *
      * @param  results  An optional pointer to a ValidationResults instance that
-     *                  will be used to report validation errors.
+     *                  will be used to report validation errors
      *
-     * @returns  true if validation succeeds, false otherwise.
+     * @returns  true if validation succeeds, false otherwise
      */
     template<typename AdapterType>
-    bool validate(const AdapterType &target, ValidationResults *results)
+    bool validate(const Subschema &schema, const AdapterType &target,
+            ValidationResults *results)
     {
         // Construct a ValidationVisitor to perform validation at the root level
-        ValidationVisitor<AdapterType> v(target, std::vector<std::string>(1, "<root>"),
-            strictTypes, results);
+        ValidationVisitor<AdapterType> v(target,
+                std::vector<std::string>(1, "<root>"), strictTypes, results);
 
-        return v.validateSchema(*schema);
+        return v.validateSchema(schema);
     }
 
 private:
 
-    /// Pointer to an internal copy of a schema to use for validation
-    boost::scoped_ptr<const Schema> schema;
-
     /// Flag indicating that strict type comparisons should be used
-    bool strictTypes;
+    const bool strictTypes;
 
 };
 

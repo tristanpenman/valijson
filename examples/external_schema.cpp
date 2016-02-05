@@ -60,11 +60,10 @@ int main(int argc, char *argv[])
     }
 
     // Perform validation
-    Validator validator(schema);
-    validator.setStrict(false);
+    Validator validator(Validator::kWeakTypes);
     ValidationResults results;
     RapidJsonAdapter targetDocumentAdapter(targetDocument);
-    if (!validator.validate(targetDocumentAdapter, &results)) {
+    if (!validator.validate(schema, targetDocumentAdapter, &results)) {
         std::cerr << "Validation failed." << endl;
         ValidationResults::Error error;
         unsigned int errorNum = 1;

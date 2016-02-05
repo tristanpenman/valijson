@@ -2,6 +2,7 @@
 #ifndef __VALIJSON_UTILS_PROPERTY_TREE_UTILS_HPP
 #define __VALIJSON_UTILS_PROPERTY_TREE_UTILS_HPP
 
+#include <iostream>
 #include <sstream>
 
 #include <boost/property_tree/ptree.hpp>

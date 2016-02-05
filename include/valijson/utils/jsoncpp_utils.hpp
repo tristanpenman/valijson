@@ -2,6 +2,8 @@
 #ifndef __VALIJSON_UTILS_JSONCPP_UTILS_HPP
 #define __VALIJSON_UTILS_JSONCPP_UTILS_HPP
 
+#include <iostream>
+
 #include <json/json.h>
 
 #include <valijson/utils/file_utils.hpp>

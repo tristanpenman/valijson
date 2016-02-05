@@ -16,6 +16,11 @@
 #include <valijson/internal/json_reference.hpp>
 #include <valijson/schema.hpp>
 
+#ifdef __clang__
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wunused-local-typedef"
+#endif
+
 namespace valijson {
 
 /**
@@ -61,7 +66,7 @@ public:
     /**
      * @brief  Populate a Schema object from JSON Schema document
      *
-     * When processing Draft 3 schemas, the parentSchema and ownName pointers
+     * When processing Draft 3 schemas, the parentSubschema and ownName pointers
      * should be set in contexts where a 'required' constraint would be valid.
      * These are used to add a RequiredConstraint object to the Schema that
      * contains the required property.
@@ -77,7 +82,8 @@ public:
         boost::optional<typename FetchDocumentFunction<AdapterType>::Type>
                 fetchDoc = boost::none)
     {
-        populateSchema(node, node, schema, boost::none, "", fetchDoc, NULL, NULL);
+        populateSchema(schema, node, node, schema, boost::none, "",
+                fetchDoc, NULL, NULL);
     }
 
 private:
@@ -85,34 +91,38 @@ private:
     /**
      * @brief  Populate a Schema object from JSON Schema document
      *
-     * When processing Draft 3 schemas, the parentSchema and ownName pointers
+     * When processing Draft 3 schemas, the parentSubschema and ownName pointers
      * should be set in contexts where a 'required' constraint would be valid.
      * These are used to add a RequiredConstraint object to the Schema that
      * contains the required property.
      *
-     * @param  rootNode      Reference to the node from which JSON References
-     *                       will be resolved when they refer to the current
-     *                       document
-     * @param  node          Reference to node to parse
-     * @param  schema        Reference to Schema to populate
-     * @param  currentScope  URI for current resolution scope
-     * @param  nodePath      JSON Pointer representing path to current node
-     * @param  fetchDoc      Function to fetch remote JSON documents (optional)
-     * @param  parentSchema  Optional pointer to the parent schema, used to
-     *                       support required keyword in Draft 3.
-     * @param  ownName       Optional pointer to a node name, used to support
-     *                       the 'required' keyword in Draft 3.
+     * @param  rootSchema       The Schema instance, and root subschema, through
+     *                          which other subschemas can be created and
+     *                          modified
+     * @param  rootNode         Reference to the node from which JSON References
+     *                          will be resolved when they refer to the current
+     *                          document
+     * @param  node             Reference to node to parse
+     * @param  schema           Reference to Schema to populate
+     * @param  currentScope     URI for current resolution scope
+     * @param  nodePath         JSON Pointer representing path to current node
+     * @param  fetchDoc         Optional function to fetch remote JSON documents
+     * @param  parentSubschema  Optional pointer to the parent schema, used to
+     *                          support required keyword in Draft 3
+     * @param  ownName          Optional pointer to a node name, used to support
+     *                          the 'required' keyword in Draft 3
      */
     template<typename AdapterType>
     void populateSchema(
+        Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &node,
-        Schema &schema,
-        boost::optional<std::string> currentScope,
+        const Subschema &subschema,
+        const boost::optional<std::string> currentScope,
         const std::string &nodePath,
-        boost::optional<typename FetchDocumentFunction<AdapterType>::Type>
+        const boost::optional<typename FetchDocumentFunction<AdapterType>::Type>
                 fetchDoc = boost::none,
-        Schema *parentSchema = NULL,
+        const Subschema *parentSubschema = NULL,
         const std::string *ownName = NULL)
     {
         BOOST_STATIC_ASSERT_MSG((boost::is_convertible<AdapterType,
@@ -131,9 +141,9 @@ private:
                             "$ref property expected to contain string value.");
                 }
                 const std::string &jsonRef = itr->second.asString();
-                populateSchemaUsingJsonReference(jsonRef, rootNode, node,
-                        schema, currentScope, nodePath, fetchDoc,
-                        parentSchema, ownName);
+                populateSchemaUsingJsonReference(rootSchema, jsonRef, rootNode,
+                        node, subschema, currentScope, nodePath, fetchDoc,
+                        parentSubschema, ownName);
                 return;
             }
         }
@@ -143,29 +153,36 @@ private:
 
         if ((itr = object.find("id")) != object.end()) {
             if (itr->second.maybeString()) {
-                schema.setId(itr->second.asString());
+                rootSchema.setSubschemaId(&subschema, itr->second.asString());
             }
         }
 
         if ((itr = object.find("allOf")) != object.end()) {
-            schema.addConstraint(makeAllOfConstraint(rootNode, itr->second,
-                    currentScope, nodePath + "/allOf", fetchDoc));
+            rootSchema.addConstraintToSubschema(
+                    makeAllOfConstraint(rootSchema, rootNode, itr->second,
+                            currentScope, nodePath + "/allOf", fetchDoc),
+                    &subschema);
         }
 
         if ((itr = object.find("anyOf")) != object.end()) {
-            schema.addConstraint(makeAnyOfConstraint(rootNode, itr->second,
-                    currentScope, nodePath + "/anyOf", fetchDoc));
+            rootSchema.addConstraintToSubschema(
+                    makeAnyOfConstraint(rootSchema, rootNode, itr->second,
+                            currentScope, nodePath + "/anyOf", fetchDoc),
+                    &subschema);
         }
 
         if ((itr = object.find("dependencies")) != object.end()) {
-            schema.addConstraint(makeDependenciesConstraint(rootNode,
-                    itr->second, currentScope, nodePath + "/dependencies",
-                    fetchDoc));
+            rootSchema.addConstraintToSubschema(
+                    makeDependenciesConstraint(rootSchema, rootNode,
+                            itr->second, currentScope,
+                            nodePath + "/dependencies", fetchDoc),
+                    &subschema);
         }
 
         if ((itr = object.find("description")) != object.end()) {
             if (itr->second.maybeString()) {
-                schema.setDescription(itr->second.asString());
+                rootSchema.setSubschemaDescription(&subschema,
+                        itr->second.asString());
             } else {
                 throw std::runtime_error(
                         "'description' attribute should have a string value");
@@ -174,98 +191,158 @@ private:
 
         if ((itr = object.find("divisibleBy")) != object.end()) {
             if (version == kDraft3) {
-                schema.addConstraint(makeMultipleOfConstraint(itr->second));
+                if (itr->second.maybeInteger()) {
+                    rootSchema.addConstraintToSubschema(
+                            makeMultipleOfIntConstraint(itr->second),
+                            &subschema);
+                } else if (itr->second.maybeDouble()) {
+                    rootSchema.addConstraintToSubschema(
+                            makeMultipleOfDoubleConstraint(itr->second),
+                            &subschema);
+                } else {
+                    throw std::runtime_error("Expected an numeric value for "
+                            " 'divisibleBy' constraint.");
+                }
             } else {
-                throw std::runtime_error("'divisibleBy' constraint not valid after draft 3");
+                throw std::runtime_error(
+                        "'divisibleBy' constraint not valid after draft 3");
             }
         }
 
         if ((itr = object.find("enum")) != object.end()) {
-            schema.addConstraint(makeEnumConstraint(itr->second));
+            rootSchema.addConstraintToSubschema(makeEnumConstraint(itr->second),
+                    &subschema);
         }
 
         {
-            // Check for schema keywords that require the creation of a
-            // ItemsConstraint instance.
-            const typename AdapterType::Object::const_iterator
-                itemsItr = object.find("items"),
-                additionalitemsItr = object.find("additionalItems");
-            if (object.end() != itemsItr ||
-                object.end() != additionalitemsItr) {
-                schema.addConstraint(makeItemsConstraint(rootNode,
-                    itemsItr != object.end() ? &itemsItr->second : NULL,
-                    additionalitemsItr != object.end() ? &additionalitemsItr->second : NULL,
-                    currentScope, nodePath + "/items",
-                    nodePath + "/additionalItems", fetchDoc));
+            const typename AdapterType::Object::const_iterator itemsItr =
+                    object.find("items");
+
+            if (object.end() != itemsItr) {
+                if (!itemsItr->second.isArray()) {
+                    rootSchema.addConstraintToSubschema(
+                            makeSingularItemsConstraint(rootSchema, rootNode,
+                                    itemsItr->second, currentScope,
+                                    nodePath + "/items", fetchDoc),
+                            &subschema);
+
+                } else {
+                    const typename AdapterType::Object::const_iterator
+                            additionalItemsItr = object.find("additionalItems");
+                    rootSchema.addConstraintToSubschema(
+                            makeLinearItemsConstraint(rootSchema, rootNode,
+                                    itemsItr != object.end() ?
+                                            &itemsItr->second : NULL,
+                                    additionalItemsItr != object.end() ?
+                                            &additionalItemsItr->second : NULL,
+                                    currentScope, nodePath + "/items",
+                                    nodePath + "/additionalItems", fetchDoc),
+                            &subschema);
+                }
             }
         }
 
         if ((itr = object.find("maximum")) != object.end()) {
             typename AdapterType::Object::const_iterator exclusiveMaximumItr = object.find("exclusiveMaximum");
             if (exclusiveMaximumItr == object.end()) {
-                schema.addConstraint(makeMaximumConstraint<AdapterType>(itr->second, NULL));
+                rootSchema.addConstraintToSubschema(
+                        makeMaximumConstraint<AdapterType>(itr->second, NULL),
+                        &subschema);
             } else {
-                schema.addConstraint(makeMaximumConstraint(itr->second, &exclusiveMaximumItr->second));
+                rootSchema.addConstraintToSubschema(
+                        makeMaximumConstraint(itr->second,
+                                &exclusiveMaximumItr->second),
+                        &subschema);
             }
         } else if (object.find("exclusiveMaximum") != object.end()) {
-            // throw exception
+            throw std::runtime_error(
+                    "'exclusiveMaximum' constraint only valid if a 'maximum' "
+                    "constraint is also present");
         }
 
         if ((itr = object.find("maxItems")) != object.end()) {
-            schema.addConstraint(makeMaxItemsConstraint(itr->second));
+            rootSchema.addConstraintToSubschema(
+                    makeMaxItemsConstraint(itr->second), &subschema);
         }
 
         if ((itr = object.find("maxLength")) != object.end()) {
-            schema.addConstraint(makeMaxLengthConstraint(itr->second));
+            rootSchema.addConstraintToSubschema(
+                    makeMaxLengthConstraint(itr->second), &subschema);
         }
 
         if ((itr = object.find("maxProperties")) != object.end()) {
-            schema.addConstraint(makeMaxPropertiesConstraint(itr->second));
+            rootSchema.addConstraintToSubschema(
+                    makeMaxPropertiesConstraint(itr->second), &subschema);
         }
 
         if ((itr = object.find("minimum")) != object.end()) {
             typename AdapterType::Object::const_iterator exclusiveMinimumItr = object.find("exclusiveMinimum");
             if (exclusiveMinimumItr == object.end()) {
-                schema.addConstraint(makeMinimumConstraint<AdapterType>(itr->second, NULL));
+                rootSchema.addConstraintToSubschema(
+                        makeMinimumConstraint<AdapterType>(itr->second, NULL),
+                        &subschema);
             } else {
-                schema.addConstraint(makeMinimumConstraint(itr->second, &exclusiveMinimumItr->second));
+                rootSchema.addConstraintToSubschema(
+                        makeMinimumConstraint(itr->second,
+                                &exclusiveMinimumItr->second),
+                        &subschema);
             }
         } else if (object.find("exclusiveMinimum") != object.end()) {
-            // throw exception
+            throw std::runtime_error(
+                    "'exclusiveMinimum' constraint only valid if a 'minimum' "
+                    "constraint is also present");
         }
 
         if ((itr = object.find("minItems")) != object.end()) {
-            schema.addConstraint(makeMinItemsConstraint(itr->second));
+            rootSchema.addConstraintToSubschema(
+                    makeMinItemsConstraint(itr->second), &subschema);
         }
 
         if ((itr = object.find("minLength")) != object.end()) {
-            schema.addConstraint(makeMinLengthConstraint(itr->second));
+            rootSchema.addConstraintToSubschema(
+                    makeMinLengthConstraint(itr->second), &subschema);
         }
 
         if ((itr = object.find("minProperties")) != object.end()) {
-            schema.addConstraint(makeMinPropertiesConstraint(itr->second));
+            rootSchema.addConstraintToSubschema(
+                    makeMinPropertiesConstraint(itr->second), &subschema);
         }
 
         if ((itr = object.find("multipleOf")) != object.end()) {
             if (version == kDraft3) {
-                throw std::runtime_error("'multipleOf' constraint not available in draft 3");
+                throw std::runtime_error(
+                        "'multipleOf' constraint not available in draft 3");
+            } else if (itr->second.maybeInteger()) {
+                rootSchema.addConstraintToSubschema(
+                        makeMultipleOfIntConstraint(itr->second),
+                        &subschema);
+            } else if (itr->second.maybeDouble()) {
+                rootSchema.addConstraintToSubschema(
+                        makeMultipleOfDoubleConstraint(itr->second),
+                        &subschema);
             } else {
-                schema.addConstraint(makeMultipleOfConstraint(itr->second));
+                throw std::runtime_error("Expected an numeric value for "
+                        " 'divisibleBy' constraint.");
             }
         }
 
         if ((itr = object.find("not")) != object.end()) {
-            schema.addConstraint(makeNotConstraint(rootNode, itr->second,
-                    currentScope, nodePath + "/not", fetchDoc));
+            rootSchema.addConstraintToSubschema(
+                    makeNotConstraint(rootSchema, rootNode, itr->second,
+                            currentScope, nodePath + "/not", fetchDoc),
+                    &subschema);
         }
 
         if ((itr = object.find("oneOf")) != object.end()) {
-            schema.addConstraint(makeOneOfConstraint(rootNode, itr->second,
-                    currentScope, nodePath + "/oneOf", fetchDoc));
+            rootSchema.addConstraintToSubschema(
+                    makeOneOfConstraint(rootSchema, rootNode, itr->second,
+                            currentScope, nodePath + "/oneOf", fetchDoc),
+                    &subschema);
         }
 
         if ((itr = object.find("pattern")) != object.end()) {
-            schema.addConstraint(makePatternConstraint(itr->second));
+            rootSchema.addConstraintToSubschema(
+                    makePatternConstraint(itr->second), &subschema);
         }
 
         {
@@ -278,33 +355,45 @@ private:
             if (object.end() != propertiesItr ||
                 object.end() != patternPropertiesItr ||
                 object.end() != additionalPropertiesItr) {
-                schema.addConstraint(makePropertiesConstraint(rootNode,
-                    propertiesItr != object.end() ? &propertiesItr->second : NULL,
-                    patternPropertiesItr != object.end() ? &patternPropertiesItr->second : NULL,
-                    additionalPropertiesItr != object.end() ? &additionalPropertiesItr->second : NULL,
-                    currentScope, nodePath + "/properties",
-                    nodePath + "/patternProperties",
-                    nodePath + "/additionalProperties", fetchDoc, &schema));
+                rootSchema.addConstraintToSubschema(
+                        makePropertiesConstraint(rootSchema, rootNode,
+                                propertiesItr != object.end() ?
+                                        &propertiesItr->second : NULL,
+                                patternPropertiesItr != object.end() ?
+                                        &patternPropertiesItr->second : NULL,
+                                additionalPropertiesItr != object.end() ?
+                                        &additionalPropertiesItr->second : NULL,
+                                currentScope, nodePath + "/properties",
+                                nodePath + "/patternProperties",
+                                nodePath + "/additionalProperties",
+                                fetchDoc, &subschema),
+                        &subschema);
             }
         }
 
         if ((itr = object.find("required")) != object.end()) {
             if (version == kDraft3) {
-                if (parentSchema && ownName) {
-                    if (constraints::Constraint *c = makeRequiredConstraintForSelf(itr->second, *ownName)) {
-                        parentSchema->addConstraint(c);
+                if (parentSubschema && ownName) {
+                    boost::optional<constraints::RequiredConstraint>
+                            constraint = makeRequiredConstraintForSelf(
+                                    itr->second, *ownName);
+                    if (constraint) {
+                        rootSchema.addConstraintToSubschema(*constraint,
+                                parentSubschema);
                     }
                 } else {
                     throw std::runtime_error("'required' constraint not valid here");
                 }
             } else {
-                schema.addConstraint(makeRequiredConstraint(itr->second));
+                rootSchema.addConstraintToSubschema(
+                        makeRequiredConstraint(itr->second), &subschema);
             }
         }
 
         if ((itr = object.find("title")) != object.end()) {
             if (itr->second.maybeString()) {
-                schema.setTitle(itr->second.asString());
+                rootSchema.setSubschemaTitle(&subschema,
+                        itr->second.asString());
             } else {
                 throw std::runtime_error(
                         "'title' attribute should have a string value");
@@ -312,14 +401,17 @@ private:
         }
 
         if ((itr = object.find("type")) != object.end()) {
-            schema.addConstraint(makeTypeConstraint(rootNode, itr->second,
-                    currentScope, nodePath + "/type", fetchDoc));
+            rootSchema.addConstraintToSubschema(
+                    makeTypeConstraint(rootSchema, rootNode, itr->second,
+                            currentScope, nodePath + "/type", fetchDoc),
+                    &subschema);
         }
 
         if ((itr = object.find("uniqueItems")) != object.end()) {
-            constraints::Constraint *constraint = makeUniqueItemsConstraint(itr->second);
+            boost::optional<constraints::UniqueItemsConstraint> constraint =
+                    makeUniqueItemsConstraint(itr->second);
             if (constraint) {
-                schema.addConstraint(constraint);
+                rootSchema.addConstraintToSubschema(*constraint, &subschema);
             }
         }
     }
@@ -330,31 +422,35 @@ private:
      * Allows JSON references to be used with minimal changes to the parser
      * helper functions.
      *
-     * @param  jsonRef       String containing JSON Reference value
-     * @param  rootNode      Reference to the node from which JSON References
-     *                       will be resolved when they refer to the current
-     *                       document; used for recursive parsing of schemas
-     * @param  node          Reference to node to parse
-     * @param  schema        Reference to Schema to populate
-     * @param  currentScope  URI for current resolution scope
-     * @param  nodePath      JSON Pointer representing path to current node
-     * @param  fetchDoc      Function to fetch remote JSON documents (optional)
-     * @param  parentSchema  Optional pointer to the parent schema, used to
-     *                       support required keyword in Draft 3.
-     * @param  ownName       Optional pointer to a node name, used to support
-     *                       the 'required' keyword in Draft 3.
+     * @param  rootSchema       The Schema instance, and root subschema, through
+     *                          which other subschemas can be created and 
+     *                          modified
+     * @param  jsonRef          String containing JSON Reference value
+     * @param  rootNode         Reference to the node from which JSON References
+     *                          will be resolved when they refer to the current
+     *                          document; used for recursive parsing of schemas
+     * @param  node             Reference to node to parse
+     * @param  schema           Reference to Schema to populate
+     * @param  currentScope     URI for current resolution scope
+     * @param  nodePath         JSON Pointer representing path to current node
+     * @param  fetchDoc         Optional function to fetch remote JSON documents
+     * @param  parentSubschema  Optional pointer to the parent schema, used to
+     *                          support required keyword in Draft 3
+     * @param  ownName          Optional pointer to a node name, used to support
+     *                          the 'required' keyword in Draft 3
     */
     template<typename AdapterType>
     void populateSchemaUsingJsonReference(
+        Schema &rootSchema,
         const std::string &jsonRef,
         const AdapterType &rootNode,
         const AdapterType &node,
-        Schema &schema,
-        boost::optional<std::string> currentScope,
+        const Subschema &subschema,
+        const boost::optional<std::string> currentScope,
         const std::string &nodePath,
-        boost::optional<typename FetchDocumentFunction<AdapterType>::Type>
+        const boost::optional<typename FetchDocumentFunction<AdapterType>::Type>
                 fetchDoc,
-        Schema *parentSchema = NULL,
+        const Subschema *parentSubschema = NULL,
         const std::string *ownName = NULL)
     {
         // Returns a document URI if the reference points somewhere
@@ -389,22 +485,24 @@ private:
                     *docPtr, jsonPointer);
 
             // Resolve reference against retrieved document
-            populateSchema<AdapterType>(ref, ref, schema, currentScope,
-                    nodePath, fetchDoc, parentSchema, ownName);
+            populateSchema<AdapterType>(rootSchema, ref, ref, subschema,
+                    currentScope, nodePath, fetchDoc, parentSubschema, ownName);
 
         } else {
             const AdapterType &ref = internal::json_pointer::resolveJsonPointer(
                     rootNode, jsonPointer);
 
             // Resolve reference against current document
-            populateSchema<AdapterType>(rootNode, ref, schema, currentScope,
-                    nodePath, fetchDoc, parentSchema, ownName);
+            populateSchema<AdapterType>(rootSchema, rootNode, ref, subschema,
+                    currentScope, nodePath, fetchDoc, parentSubschema, ownName);
         }
     }
 
     /**
      * @brief   Make a new AllOfConstraint object
      *
+     * @param   rootSchema    The Schema instance, and root subschema, through
+     *                        which other subschemas can be created and modified
      * @param   rootNode      Reference to the node from which JSON References
      *                        will be resolved when they refer to the current
      *                        document; used for recursive parsing of schemas
@@ -417,39 +515,47 @@ private:
      *          caller
      */
     template<typename AdapterType>
-    constraints::AllOfConstraint* makeAllOfConstraint(
+    constraints::AllOfConstraint makeAllOfConstraint(
+        Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &node,
-        boost::optional<std::string> currentScope,
+        const boost::optional<std::string> currentScope,
         const std::string &nodePath,
-        boost::optional<typename FetchDocumentFunction<AdapterType>::Type > fetchDoc)
+        const boost::optional<
+                typename FetchDocumentFunction<AdapterType>::Type > fetchDoc)
     {
         if (!node.maybeArray()) {
-            throw std::runtime_error("Expected array value for 'allOf' constraint.");
+            throw std::runtime_error(
+                    "Expected array value for 'allOf' constraint.");
         }
 
-        constraints::AllOfConstraint::Schemas childSchemas;
+        constraints::AllOfConstraint constraint;
+
         int index = 0;
         BOOST_FOREACH ( const AdapterType schemaNode, node.asArray() ) {
             if (schemaNode.maybeObject()) {
                 const std::string childPath = nodePath + "/" +
                         boost::lexical_cast<std::string>(index);
-                childSchemas.push_back(new Schema);
-                populateSchema<AdapterType>(rootNode, schemaNode,
-                        childSchemas.back(), currentScope, childPath, fetchDoc);
+                const Subschema *subschema = rootSchema.createSubschema();
+                constraint.addSubschema(subschema);
+                populateSchema<AdapterType>(rootSchema, rootNode, schemaNode,
+                        *subschema, currentScope, childPath, fetchDoc);
                 index++;
             } else {
-                throw std::runtime_error("Expected array element to be an object value in 'allOf' constraint.");
+                throw std::runtime_error(
+                        "Expected array element to be an object value in "
+                        "'allOf' constraint.");
             }
         }
 
-        /// @todo: bypass deep copy of the child schemas
-        return new constraints::AllOfConstraint(childSchemas);
+        return constraint;
     }
 
     /**
      * @brief   Make a new AnyOfConstraint object
      *
+     * @param   rootSchema    The Schema instance, and root subschema, through
+     *                        which other subschemas can be created and modified
      * @param   rootNode      Reference to the node from which JSON References
      *                        will be resolved when they refer to the current
      *                        document; used for recursive parsing of schemas
@@ -462,34 +568,40 @@ private:
      *          caller
      */
     template<typename AdapterType>
-    constraints::AnyOfConstraint* makeAnyOfConstraint(
+    constraints::AnyOfConstraint makeAnyOfConstraint(
+        Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &node,
-        boost::optional<std::string> currentScope,
+        const boost::optional<std::string> currentScope,
         const std::string &nodePath,
-        boost::optional<typename FetchDocumentFunction<AdapterType>::Type > fetchDoc)
+        const boost::optional<
+                typename FetchDocumentFunction<AdapterType>::Type > fetchDoc)
     {
         if (!node.maybeArray()) {
-            throw std::runtime_error("Expected array value for 'anyOf' constraint.");
+            throw std::runtime_error(
+                    "Expected array value for 'anyOf' constraint.");
         }
 
-        constraints::AnyOfConstraint::Schemas childSchemas;
+        constraints::AnyOfConstraint constraint;
+
         int index = 0;
         BOOST_FOREACH ( const AdapterType schemaNode, node.asArray() ) {
             if (schemaNode.maybeObject()) {
                 const std::string childPath = nodePath + "/" +
                         boost::lexical_cast<std::string>(index);
-                childSchemas.push_back(new Schema);
-                populateSchema<AdapterType>(rootNode, schemaNode,
-                        childSchemas.back(), currentScope, childPath, fetchDoc);
+                const Subschema *subschema = rootSchema.createSubschema();
+                constraint.addSubschema(subschema);
+                populateSchema<AdapterType>(rootSchema, rootNode, schemaNode,
+                        *subschema, currentScope, childPath, fetchDoc);
                 index++;
             } else {
-                throw std::runtime_error("Expected array element to be an object value in 'anyOf' constraint.");
+                throw std::runtime_error(
+                        "Expected array element to be an object value in "
+                        "'anyOf' constraint.");
             }
         }
 
-        /// @todo: bypass deep copy of the child schemas
-        return new constraints::AnyOfConstraint(childSchemas);
+        return constraint;
     }
 
     /**
@@ -512,6 +624,8 @@ private:
      * If the format of any part of the the dependency node does not match one
      * of these formats, an exception will be thrown.
      *
+     * @param   rootSchema    The Schema instance, and root subschema, through
+     *                        which other subschemas can be created and modified
      * @param   rootNode      Reference to the node from which JSON References
      *                        will be resolved when they refer to the current
      *                        document; used for recursive parsing of schemas
@@ -525,20 +639,20 @@ private:
      *          caller
      */
     template<typename AdapterType>
-    constraints::DependenciesConstraint* makeDependenciesConstraint(
+    constraints::DependenciesConstraint makeDependenciesConstraint(
+        Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &node,
-        boost::optional<std::string> currentScope,
+        const boost::optional<std::string> currentScope,
         const std::string &nodePath,
-        boost::optional<typename FetchDocumentFunction<AdapterType>::Type >
-                fetchDoc)
+        const boost::optional<
+                typename FetchDocumentFunction<AdapterType>::Type > fetchDoc)
     {
         if (!node.maybeObject()) {
             throw std::runtime_error("Expected object value for 'dependencies' constraint.");
         }
 
-        constraints::DependenciesConstraint::PropertyDependenciesMap pdm;
-        constraints::DependenciesConstraint::PropertyDependentSchemasMap pdsm;
+        constraints::DependenciesConstraint dependenciesConstraint;
 
         // Process each of the dependency mappings defined by the object
         BOOST_FOREACH ( const typename AdapterType::ObjectMember member, node.asObject() ) {
@@ -552,15 +666,18 @@ private:
             // be detected.
             if (member.second.maybeArray()) {
                 // Parse an array of dependency names
-                constraints::DependenciesConstraint::Dependencies &dependencies = pdm[member.first];
+                std::vector<std::string> dependentPropertyNames;
                 BOOST_FOREACH( const AdapterType dependencyName, member.second.asArray() ) {
                     if (dependencyName.maybeString()) {
-                        dependencies.insert(dependencyName.getString());
+                        dependentPropertyNames.push_back(dependencyName.getString());
                     } else {
                         throw std::runtime_error("Expected string value in dependency list of property '" +
                             member.first + "' in 'dependencies' constraint.");
                     }
                 }
+
+                dependenciesConstraint.addPropertyDependencies(member.first,
+                        dependentPropertyNames);
 
             // If the value of dependency mapping could not be processed as an
             // array, we'll try to process it as an object instead. Note that
@@ -570,15 +687,18 @@ private:
             // process it as a dependent schema.
             } else if (member.second.isObject()) {
                 // Parse dependent subschema
-                Schema &childSchema = pdsm[member.first];
-                populateSchema<AdapterType>(rootNode, member.second,
-                        childSchema, currentScope, nodePath, fetchDoc);
+                const Subschema *childSubschema = rootSchema.createSubschema();
+                populateSchema<AdapterType>(rootSchema, rootNode, member.second,
+                        *childSubschema, currentScope, nodePath, fetchDoc);
+                dependenciesConstraint.addSchemaDependency(member.first,
+                        childSubschema);
 
             // If we're supposed to be parsing a Draft3 schema, then the value
             // of the dependency mapping can also be a string containing the
             // name of a single dependency.
             } else if (version == kDraft3 && member.second.isString()) {
-                pdm[member.first].insert(member.second.getString());
+                dependenciesConstraint.addPropertyDependency(member.first,
+                        member.second.getString());
 
             // All other types result in an exception being thrown.
             } else {
@@ -586,7 +706,7 @@ private:
             }
         }
 
-        return new constraints::DependenciesConstraint(pdm, pdsm);
+        return dependenciesConstraint;
     }
 
     /**
@@ -598,25 +718,28 @@ private:
      * @return  pointer to a new EnumConstraint that belongs to the caller
      */
     template<typename AdapterType>
-    constraints::EnumConstraint* makeEnumConstraint(
+    constraints::EnumConstraint makeEnumConstraint(
         const AdapterType &node)
     {
         // Make a copy of each value in the enum array
-        constraints::EnumConstraint::Values values;
+        constraints::EnumConstraint constraint;
         BOOST_FOREACH( const AdapterType value, node.getArray() ) {
-            values.push_back(value.freeze());
+            constraint.addValue(value);
         }
 
         /// @todo This will make another copy of the values while constructing
         /// the EnumConstraint. Move semantics in C++11 should make it possible
         /// to avoid these copies without complicating the implementation of the
         /// EnumConstraint class.
-        return new constraints::EnumConstraint(values);
+        return constraint;
     }
 
     /**
      * @brief   Make a new ItemsConstraint object.
      *
+     * @param   rootSchema           The Schema instance, and root subschema,
+     *                               through which other subschemas can be 
+     *                               created and modified
      * @param   rootNode             Reference to the node from which JSON
      *                               References will be resolved when they refer
      *                               to the current document; used for recursive
@@ -638,52 +761,55 @@ private:
      * @return  pointer to a new ItemsConstraint that belongs to the caller
      */
     template<typename AdapterType>
-    constraints::ItemsConstraint* makeItemsConstraint(
+    constraints::LinearItemsConstraint makeLinearItemsConstraint(
+        Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType *items,
         const AdapterType *additionalItems,
-        boost::optional<std::string> currentScope,
+        const boost::optional<std::string> currentScope,
         const std::string &itemsPath,
         const std::string &additionalItemsPath,
-        boost::optional<typename FetchDocumentFunction<AdapterType>::Type >
-                fetchDoc)
+        const boost::optional<
+                typename FetchDocumentFunction<AdapterType>::Type > fetchDoc)
     {
+        constraints::LinearItemsConstraint constraint;
+
         // Construct a Schema object for the the additionalItems constraint,
         // if the additionalItems property is present
-        boost::scoped_ptr<Schema> additionalItemsSchema;
         if (additionalItems) {
             if (additionalItems->maybeBool()) {
                 // If the value of the additionalItems property is a boolean
                 // and is set to true, then additional array items do not need
                 // to satisfy any constraints.
                 if (additionalItems->asBool()) {
-                    additionalItemsSchema.reset(new Schema());
+                    constraint.setAdditionalItemsSubschema(
+                            rootSchema.emptySubschema());
                 }
             } else if (additionalItems->maybeObject()) {
                 // If the value of the additionalItems property is an object,
                 // then it should be parsed into a Schema object, which will be
                 // used to validate additional array items.
-                additionalItemsSchema.reset(new Schema());
-                populateSchema<AdapterType>(
-                        rootNode, *additionalItems, *additionalItemsSchema,
-                        currentScope, additionalItemsPath, fetchDoc);
+                const Subschema *subschema = rootSchema.createSubschema();
+                constraint.setAdditionalItemsSubschema(subschema);
+                populateSchema<AdapterType>(rootSchema, rootNode,
+                        *additionalItems, *subschema, currentScope,
+                        additionalItemsPath, fetchDoc);
             } else {
                 // Any other format for the additionalItems property will result
                 // in an exception being thrown.
-                throw std::runtime_error("Expected bool or object value for 'additionalItems'");
+                throw std::runtime_error(
+                        "Expected bool or object value for 'additionalItems'");
             }
         } else {
             // The default value for the additionalItems property is an empty
             // object, which means that additional array items do not need to
             // satisfy any constraints.
-            additionalItemsSchema.reset(new Schema());
+            constraint.setAdditionalItemsSubschema(rootSchema.emptySubschema());
         }
 
-        // Construct a Schema object for each item in the items array, if an
-        // array is provided, or a single Schema object, in an object value is
-        // provided. If the items constraint is not provided, then array items
+        // Construct a Schema object for each item in the items array.
+        // If the items constraint is not provided, then array items
         // will be validated against the additionalItems schema.
-        constraints::ItemsConstraint::Schemas itemSchemas;
         if (items) {
             if (items->isArray()) {
                 // If the items constraint contains an array, then it should
@@ -694,62 +820,95 @@ private:
                 BOOST_FOREACH( const AdapterType v, items->getArray() ) {
                     const std::string childPath = itemsPath + "/" +
                             boost::lexical_cast<std::string>(index);
-                    itemSchemas.push_back(new Schema());
-                    Schema &childSchema = itemSchemas.back();
-                    populateSchema<AdapterType>(rootNode, v, childSchema,
-                            currentScope, childPath, fetchDoc);
+                    const Subschema *subschema = rootSchema.createSubschema();
+                    constraint.addItemSubschema(subschema);
+                    populateSchema<AdapterType>(rootSchema, rootNode, v,
+                            *subschema, currentScope, childPath, fetchDoc);
                     index++;
                 }
-
-                // Create an ItemsConstraint object using the appropriate
-                // overloaded constructor.
-                if (additionalItemsSchema) {
-                    return new constraints::ItemsConstraint(itemSchemas, *additionalItemsSchema);
-                } else {
-                    return new constraints::ItemsConstraint(itemSchemas);
-                }
-
-            } else if (items->isObject()) {
-                // If the items constraint contains an object value, then it
-                // should contain a Schema that will be used to validate all
-                // items in a target array. Any schema defined by the
-                // additionalItems constraint will be ignored.
-                Schema childSchema;
-                populateSchema<AdapterType>(rootNode, *items, childSchema,
-                        currentScope, itemsPath, fetchDoc);
-                if (additionalItemsSchema) {
-                    return new constraints::ItemsConstraint(childSchema, *additionalItemsSchema);
-                } else {
-                    return new constraints::ItemsConstraint(childSchema);
-                }
-
-            } else if (items->maybeObject()) {
-                // If a loosely-typed Adapter type is being used, then we'll
-                // assume that an empty schema has been provided.
-                Schema childSchema;
-                if (additionalItemsSchema) {
-                    return new constraints::ItemsConstraint(childSchema, *additionalItemsSchema);
-                } else {
-                    return new constraints::ItemsConstraint(childSchema);
-                }
-
             } else {
-                // All other formats will result in an exception being thrown.
-                throw std::runtime_error("Expected array or object value for 'items'.");
+                throw std::runtime_error(
+                        "Expected array value for non-singular 'items' "
+                        "constraint.");
             }
         }
 
-        Schema emptySchema;
-        if (additionalItemsSchema) {
-            return new constraints::ItemsConstraint(emptySchema, *additionalItemsSchema);
+        return constraint;
+    }
+
+    /**
+     * @brief   Make a new ItemsConstraint object.
+     *
+     * @param   rootSchema           The Schema instance, and root subschema,
+     *                               through which other subschemas can be 
+     *                               created and modified
+     * @param   rootNode             Reference to the node from which JSON
+     *                               References will be resolved when they refer
+     *                               to the current document; used for recursive
+     *                               parsing of schemas
+     * @param   items                Optional pointer to a JSON node containing
+     *                               an object mapping property names to 
+     *                               schemas.
+     * @param   additionalItems      Optional pointer to a JSON node containing
+     *                               an additional properties schema or a
+     *                               boolean value.
+     * @param   currentScope         URI for current resolution scope
+     * @param   itemsPath            JSON Pointer representing the path to
+     *                               the 'items' node
+     * @param   additionalItemsPath  JSON Pointer representing the path to
+     *                               the 'additionalItems' node
+     * @param   fetchDoc             Function to fetch remote JSON documents
+     *                               (optional)
+     *
+     * @return  pointer to a new ItemsConstraint that belongs to the caller
+     */
+    template<typename AdapterType>
+    constraints::SingularItemsConstraint makeSingularItemsConstraint(
+        Schema &rootSchema,
+        const AdapterType &rootNode,
+        const AdapterType &items,
+        const boost::optional<std::string> currentScope,
+        const std::string &itemsPath,
+        const boost::optional<
+                typename FetchDocumentFunction<AdapterType>::Type > fetchDoc)
+    {
+        constraints::SingularItemsConstraint constraint;
+
+        // Construct a Schema object for each item in the items array, if an
+        // array is provided, or a single Schema object, in an object value is
+        // provided. If the items constraint is not provided, then array items
+        // will be validated against the additionalItems schema.
+        if (items.isObject()) {
+            // If the items constraint contains an object value, then it
+            // should contain a Schema that will be used to validate all
+            // items in a target array. Any schema defined by the
+            // additionalItems constraint will be ignored.
+            const Subschema *subschema = rootSchema.createSubschema();
+            constraint.setItemsSubschema(subschema);
+            populateSchema<AdapterType>(rootSchema, rootNode, items,
+                    *subschema, currentScope, itemsPath, fetchDoc);
+
+        } else if (items.maybeObject()) {
+            // If a loosely-typed Adapter type is being used, then we'll
+            // assume that an empty schema has been provided.
+            constraint.setItemsSubschema(rootSchema.emptySubschema());
+
+        } else {
+            // All other formats will result in an exception being thrown.
+            throw std::runtime_error(
+                    "Expected object value for singular 'items' "
+                    "constraint.");
         }
 
-        return new constraints::ItemsConstraint(emptySchema);
+        return constraint;
     }
 
     /**
      * @brief   Make a new MaximumConstraint object.
      *
+     * @param   rootSchema        The Schema instance, and root subschema,
+     *                            through which other subschemas can be
+     *                            created and modified
      * @param   rootNode          Reference to the node from which JSON
      *                            References will be resolved when they refer
      *                            to the current document; used for recursive
@@ -762,25 +921,29 @@ private:
      * @return  pointer to a new MaximumConstraint that belongs to the caller
      */
     template<typename AdapterType>
-    constraints::MaximumConstraint* makeMaximumConstraint(
+    constraints::MaximumConstraint makeMaximumConstraint(
         const AdapterType &node,
         const AdapterType *exclusiveMaximum)
     {
-        bool exclusiveMaximumValue = false;
+        if (!node.maybeDouble()) {
+            throw std::runtime_error(
+                    "Expected numeric value for maximum constraint.");
+        }
+
+        constraints::MaximumConstraint constraint;
+        constraint.setMaximum(node.asDouble());
+
         if (exclusiveMaximum) {
-            if (exclusiveMaximum->maybeBool()) {
-                exclusiveMaximumValue = exclusiveMaximum->asBool();
-            } else {
-                throw std::runtime_error("Expected boolean value for exclusiveMaximum constraint.");
+            if (!exclusiveMaximum->maybeBool()) {
+                throw std::runtime_error(
+                        "Expected boolean value for exclusiveMaximum "
+                        "constraint.");
             }
+
+            constraint.setExclusiveMaximum(exclusiveMaximum->asBool());
         }
 
-        if (node.maybeDouble()) {
-            double maximumValue = node.asDouble();
-            return new constraints::MaximumConstraint(maximumValue, exclusiveMaximumValue);
-        }
-
-        throw std::runtime_error("Expected numeric value for maximum constraint.");
+        return constraint;
     }
 
     /**
@@ -792,17 +955,21 @@ private:
      * @return  pointer to a new MaxItemsConstraint that belongs to the caller.
      */
     template<typename AdapterType>
-    constraints::MaxItemsConstraint* makeMaxItemsConstraint(
+    constraints::MaxItemsConstraint makeMaxItemsConstraint(
         const AdapterType &node)
     {
         if (node.maybeInteger()) {
-            int64_t value = node.asInteger();
+            const int64_t value = node.asInteger();
             if (value >= 0) {
-                return new constraints::MaxItemsConstraint(value);
+                constraints::MaxItemsConstraint constraint;
+                constraint.setMaxItems(value);
+                return constraint;
             }
         }
 
-        throw std::runtime_error("Expected positive integer value for maxItems constraint.");
+        throw std::runtime_error(
+                "Expected non-negative integer value for 'maxItems' "
+                "constraint.");
     }
 
     /**
@@ -814,17 +981,21 @@ private:
      * @return  pointer to a new MaxLengthConstraint that belongs to the caller
      */
     template<typename AdapterType>
-    constraints::MaxLengthConstraint* makeMaxLengthConstraint(
+    constraints::MaxLengthConstraint makeMaxLengthConstraint(
         const AdapterType &node)
     {
         if (node.maybeInteger()) {
-            int64_t value = node.asInteger();
+            const int64_t value = node.asInteger();
             if (value >= 0) {
-                return new constraints::MaxLengthConstraint(value);
+                constraints::MaxLengthConstraint constraint;
+                constraint.setMaxLength(value);
+                return constraint;
             }
         }
 
-        throw std::runtime_error("Expected a positive integer value for maxLength constraint.");
+        throw std::runtime_error(
+                "Expected a non-negative integer value for 'maxLength' "
+                "constraint.");
     }
 
     /**
@@ -838,17 +1009,21 @@ private:
      *          caller
      */
     template<typename AdapterType>
-    constraints::MaxPropertiesConstraint* makeMaxPropertiesConstraint(
+    constraints::MaxPropertiesConstraint makeMaxPropertiesConstraint(
         const AdapterType &node)
     {
         if (node.maybeInteger()) {
             int64_t value = node.asInteger();
             if (value >= 0) {
-                return new constraints::MaxPropertiesConstraint(value);
+                constraints::MaxPropertiesConstraint constraint;
+                constraint.setMaxProperties(value);
+                return constraint;
             }
         }
 
-        throw std::runtime_error("Expected a positive integer for 'maxProperties' constraint.");
+        throw std::runtime_error(
+                "Expected a non-negative integer for 'maxProperties' "
+                "constraint.");
     }
 
     /**
@@ -864,25 +1039,29 @@ private:
      * @return  pointer to a new MinimumConstraint that belongs to the caller
      */
     template<typename AdapterType>
-    constraints::MinimumConstraint* makeMinimumConstraint(
+    constraints::MinimumConstraint makeMinimumConstraint(
         const AdapterType &node,
         const AdapterType *exclusiveMinimum)
     {
-        bool exclusiveMinimumValue = false;
+        if (!node.maybeDouble()) {
+            throw std::runtime_error(
+                    "Expected numeric value for minimum constraint.");
+        }
+
+        constraints::MinimumConstraint constraint;
+        constraint.setMinimum(node.asDouble());
+
         if (exclusiveMinimum) {
-            if (exclusiveMinimum->maybeBool()) {
-                exclusiveMinimumValue = exclusiveMinimum->asBool();
-            } else {
-                throw std::runtime_error("Expected boolean value for 'exclusiveMinimum' constraint.");
+            if (!exclusiveMinimum->maybeBool()) {
+                throw std::runtime_error(
+                        "Expected boolean value for 'exclusiveMinimum' "
+                        "constraint.");
             }
+
+            constraint.setExclusiveMinimum(exclusiveMinimum->asBool());
         }
 
-        if (node.maybeDouble()) {
-            double minimumValue = node.asDouble();
-            return new constraints::MinimumConstraint(minimumValue, exclusiveMinimumValue);
-        }
-
-        throw std::runtime_error("Expected numeric value for 'minimum' constraint.");
+        return constraint;
     }
 
     /**
@@ -894,17 +1073,21 @@ private:
      * @return  pointer to a new MinItemsConstraint that belongs to the caller
      */
     template<typename AdapterType>
-    constraints::MinItemsConstraint* makeMinItemsConstraint(
+    constraints::MinItemsConstraint makeMinItemsConstraint(
         const AdapterType &node)
     {
         if (node.maybeInteger()) {
-            int64_t value = node.asInteger();
+            const int64_t value = node.asInteger();
             if (value >= 0) {
-                return new constraints::MinItemsConstraint(value);
+                constraints::MinItemsConstraint constraint;
+                constraint.setMinItems(value);
+                return constraint;
             }
         }
 
-        throw std::runtime_error("Expected a positive integer value for 'minItems' constraint.");
+        throw std::runtime_error(
+                "Expected a non-negative integer value for 'minItems' "
+                "constraint.");
     }
 
     /**
@@ -916,17 +1099,21 @@ private:
      * @return  pointer to a new MinLengthConstraint that belongs to the caller
      */
     template<typename AdapterType>
-    constraints::MinLengthConstraint* makeMinLengthConstraint(
+    constraints::MinLengthConstraint makeMinLengthConstraint(
         const AdapterType &node)
     {
         if (node.maybeInteger()) {
-            int64_t value = node.asInteger();
+            const int64_t value = node.asInteger();
             if (value >= 0) {
-                return new constraints::MinLengthConstraint(value);
+                constraints::MinLengthConstraint constraint;
+                constraint.setMinLength(value);
+                return constraint;
             }
         }
 
-        throw std::runtime_error("Expected a positive integer value for 'minLength' constraint.");
+        throw std::runtime_error(
+                "Expected a non-negative integer value for 'minLength' "
+                "constraint.");
     }
 
 
@@ -941,47 +1128,62 @@ private:
      *          caller
      */
     template<typename AdapterType>
-    constraints::MinPropertiesConstraint* makeMinPropertiesConstraint(
+    constraints::MinPropertiesConstraint makeMinPropertiesConstraint(
         const AdapterType &node)
     {
         if (node.maybeInteger()) {
             int64_t value = node.asInteger();
             if (value >= 0) {
-                return new constraints::MinPropertiesConstraint(value);
+                constraints::MinPropertiesConstraint constraint;
+                constraint.setMinProperties(value);
+                return constraint;
             }
         }
 
-        throw std::runtime_error("Expected a positive integer for 'minProperties' constraint.");
+        throw std::runtime_error(
+                "Expected a non-negative integer for 'minProperties' "
+                "constraint.");
     }
 
     /**
-     * @brief   Make a new MultipleOfConstraint object.
+     * @brief   Make a new MultipleOfDoubleConstraint object
      *
-     * @param   node  JSON node containing an numeric value that a value must
-     *                be divisible by.
+     * @param   node  JSON node containing an numeric value that a target value
+     *                must divide by in order to satisfy this constraint
      *
-     * @return  pointer to a new MultipleOfConstraint that belongs to the
-     *          caller
+     * @return  a MultipleOfConstraint
      */
     template<typename AdapterType>
-    constraints::Constraint* makeMultipleOfConstraint(
+    constraints::MultipleOfDoubleConstraint makeMultipleOfDoubleConstraint(
         const AdapterType &node)
     {
-        // Allow both integral and double types to be provided
-        if (node.maybeInteger()) {
-            return new constraints::MultipleOfIntegerConstraint(
-                node.asInteger());
-        } else if (node.maybeDouble()) {
-            return new constraints::MultipleOfDecimalConstraint(
-                node.asDouble());
-        }
+        constraints::MultipleOfDoubleConstraint constraint;
+        constraint.setDivisor(node.asDouble());
+        return constraint;
+    }
 
-        throw std::runtime_error("Expected an numeric value for 'multipleOf' constraint.");
+    /**
+     * @brief   Make a new MultipleOfIntConstraint object
+     *
+     * @param   node  JSON node containing a numeric value that a target value
+     *                must divide by in order to satisfy this constraint
+     *
+     * @return  a MultipleOfIntConstraint
+     */
+    template<typename AdapterType>
+    constraints::MultipleOfIntConstraint makeMultipleOfIntConstraint(
+            const AdapterType &node)
+    {
+        constraints::MultipleOfIntConstraint constraint;
+        constraint.setDivisor(node.asInteger());
+        return constraint;
     }
 
     /**
      * @brief   Make a new NotConstraint object
      *
+     * @param   rootSchema    The Schema instance, and root subschema, through
+     *                        which other subschemas can be created and modified
      * @param   rootNode      Reference to the node from which JSON References
      *                        will be resolved when they refer to the current
      *                        document; used for recursive parsing of schemas
@@ -993,18 +1195,23 @@ private:
      * @return  pointer to a new NotConstraint object that belongs to the caller
      */
     template<typename AdapterType>
-    constraints::NotConstraint* makeNotConstraint(
+    constraints::NotConstraint makeNotConstraint(
+        Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &node,
-        boost::optional<std::string> currentScope,
+        const boost::optional<std::string> currentScope,
         const std::string &nodePath,
-        boost::optional<typename FetchDocumentFunction<AdapterType>::Type > fetchDoc)
+        const boost::optional<
+                typename FetchDocumentFunction<AdapterType>::Type > fetchDoc)
     {
         if (node.maybeObject()) {
-            Schema childSchema;
-            populateSchema<AdapterType>(rootNode, node, childSchema,
+            const Subschema *subschema = rootSchema.createSubschema();
+            constraints::NotConstraint constraint;
+            constraint.setSubschema(subschema);
+            populateSchema<AdapterType>(rootSchema, rootNode, node, *subschema,
                     currentScope, nodePath, fetchDoc);
-            return new constraints::NotConstraint(childSchema);
+
+            return constraint;
         }
 
         throw std::runtime_error("Expected object value for 'not' constraint.");
@@ -1013,6 +1220,8 @@ private:
     /**
      * @brief   Make a new OneOfConstraint object
      *
+     * @param   rootSchema    The Schema instance, and root subschema, through
+     *                        which other subschemas can be created and modified
      * @param   rootNode      Reference to the node from which JSON References
      *                        will be resolved when they refer to the current
      *                        document; used for recursive parsing of schemas
@@ -1024,27 +1233,29 @@ private:
      * @return  pointer to a new OneOfConstraint that belongs to the caller
      */
     template<typename AdapterType>
-    constraints::OneOfConstraint* makeOneOfConstraint(
+    constraints::OneOfConstraint makeOneOfConstraint(
+        Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &node,
-        boost::optional<std::string> currentScope,
+        const boost::optional<std::string> currentScope,
         const std::string &nodePath,
-        boost::optional<typename FetchDocumentFunction<AdapterType>::Type >
-                fetchDoc)
+        const boost::optional<
+                typename FetchDocumentFunction<AdapterType>::Type > fetchDoc)
     {
-        constraints::OneOfConstraint::Schemas childSchemas;
+        constraints::OneOfConstraint constraint;
+
         int index = 0;
         BOOST_FOREACH ( const AdapterType schemaNode, node.getArray() ) {
             const std::string childPath = nodePath + "/" +
                     boost::lexical_cast<std::string>(index);
-            childSchemas.push_back(new Schema);
-            populateSchema<AdapterType>(rootNode, schemaNode,
-                childSchemas.back(), currentScope, childPath, fetchDoc);
+            const Subschema *subschema = rootSchema.createSubschema();
+            constraint.addSubschema(subschema);
+            populateSchema<AdapterType>(rootSchema, rootNode, schemaNode,
+                *subschema, currentScope, childPath, fetchDoc);
             index++;
         }
 
-        /// @todo: bypass deep copy of the child schemas
-        return new constraints::OneOfConstraint(childSchemas);
+        return constraint;
     }
 
     /**
@@ -1056,15 +1267,20 @@ private:
      *          caller
      */
     template<typename AdapterType>
-    constraints::PatternConstraint* makePatternConstraint(
+    constraints::PatternConstraint makePatternConstraint(
         const AdapterType &node)
     {
-        return new constraints::PatternConstraint(node.getString());
+        constraints::PatternConstraint constraint;
+        constraint.setPattern(node.getString());
+        return constraint;
     }
 
     /**
      * @brief   Make a new Properties object.
      *
+     * @param   rootSchema                The Schema instance, and root
+     *                                    subschema, through which other 
+     *                                    subschemas can be created and modified
      * @param   rootNode                  Reference to the node from which JSON
      *                                    References will be resolved when they
      *                                    refer to the current document; used
@@ -1087,61 +1303,59 @@ private:
      *                                    the 'additionalProperties' node
      * @param   fetchDoc                  Function to fetch remote JSON
      *                                    documents (optional)
-     * @param   parentSchema              Optional pointer to the Schema of the
+     * @param   parentSubschema           Optional pointer to the Schema of the
      *                                    parent object, needed to support the
-     *                                    'required' keyword in Draft 3.
+     *                                    'required' keyword in Draft 3
      *
      * @return  pointer to a new Properties that belongs to the caller
      */
     template<typename AdapterType>
-    constraints::PropertiesConstraint* makePropertiesConstraint(
+    constraints::PropertiesConstraint makePropertiesConstraint(
+        Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType *properties,
         const AdapterType *patternProperties,
         const AdapterType *additionalProperties,
-        boost::optional<std::string> currentScope,
+        const boost::optional<std::string> currentScope,
         const std::string &propertiesPath,
         const std::string &patternPropertiesPath,
         const std::string &additionalPropertiesPath,
-        boost::optional<typename FetchDocumentFunction<AdapterType>::Type >
-                fetchDoc,
-        Schema *parentSchema)
+        const boost::optional<
+                typename FetchDocumentFunction<AdapterType>::Type > fetchDoc,
+        const Subschema *parentSubschema)
     {
         typedef typename AdapterType::ObjectMember Member;
-        typedef constraints::PropertiesConstraint::PropertySchemaMap PSM;
 
-        // Populate a PropertySchemaMap for each of the properties defined by
-        // the 'properties' keyword.
-        PSM propertySchemas;
+        constraints::PropertiesConstraint constraint;
+
+        // Create subschemas for 'properties' constraint
         if (properties) {
             BOOST_FOREACH( const Member m, properties->getObject() ) {
-                const std::string &propertyName = m.first;
-                const std::string childPath = propertiesPath + "/" +
-                        propertyName;
-                Schema &childSchema = propertySchemas[propertyName];
-                populateSchema<AdapterType>(
-                        rootNode, m.second, childSchema, currentScope,
-                        childPath, fetchDoc, parentSchema, &propertyName);
+                const std::string &property = m.first;
+                const std::string childPath = propertiesPath + "/" + property;
+                const Subschema *subschema = rootSchema.createSubschema();
+                constraint.addPropertySubschema(property, subschema);
+                populateSchema<AdapterType>(rootSchema, rootNode, m.second,
+                        *subschema, currentScope, childPath, fetchDoc,
+                        parentSubschema, &property);
             }
         }
 
-        // Populate a PropertySchemaMap for each of the properties defined by
-        // the 'patternProperties' keyword
-        PSM patternPropertySchemas;
+        // Create subschemas for 'patternProperties' constraint
         if (patternProperties) {
             BOOST_FOREACH( const Member m, patternProperties->getObject() ) {
-                const std::string &propertyName = m.first;
+                const std::string &pattern = m.first;
                 const std::string childPath = patternPropertiesPath + "/" +
-                        propertyName;
-                Schema &childSchema = patternPropertySchemas[propertyName];
-                populateSchema<AdapterType>(
-                        rootNode, m.second, childSchema, currentScope,
-                        childPath, fetchDoc, parentSchema, &propertyName);
+                        pattern;
+                const Subschema *subschema = rootSchema.createSubschema();
+                constraint.addPatternPropertySubschema(pattern, subschema);
+                populateSchema<AdapterType>(rootSchema, rootNode, m.second,
+                        *subschema, currentScope, childPath, fetchDoc,
+                        parentSubschema, &pattern);
             }
         }
 
-        // Populate an additionalItems schema if required
-        boost::scoped_ptr<Schema> additionalPropertiesSchema;
+        // Create an additionalItems subschema if required
         if (additionalProperties) {
             // If additionalProperties has been set, check for a boolean value.
             // Setting 'additionalProperties' to true allows the values of
@@ -1155,35 +1369,30 @@ private:
                 // If it has a boolean value that is 'true', then an empty
                 // schema should be used.
                 if (additionalProperties->asBool()) {
-                    additionalPropertiesSchema.reset(new Schema());
+                    constraint.setAdditionalPropertiesSubschema(
+                            rootSchema.emptySubschema());
                 }
             } else if (additionalProperties->isObject()) {
                 // If additionalProperties is an object, it should be used as
                 // a child schema.
-                additionalPropertiesSchema.reset(new Schema());
-                populateSchema<AdapterType>(rootNode, *additionalProperties,
-                        *additionalPropertiesSchema, currentScope,
+                const Subschema *subschema = rootSchema.createSubschema();
+                constraint.setAdditionalPropertiesSubschema(subschema);
+                populateSchema<AdapterType>(rootSchema, rootNode,
+                        *additionalProperties, *subschema, currentScope,
                         additionalPropertiesPath, fetchDoc);
             } else {
                 // All other types are invalid
-                throw std::runtime_error("Invalid type for 'additionalProperties' constraint.");
+                throw std::runtime_error(
+                        "Invalid type for 'additionalProperties' constraint.");
             }
         } else {
             // If an additionalProperties constraint is not provided, then the
             // default value is an empty schema.
-            additionalPropertiesSchema.reset(new Schema());
+            constraint.setAdditionalPropertiesSubschema(
+                    rootSchema.emptySubschema());
         }
 
-        if (additionalPropertiesSchema) {
-            // If an additionalProperties schema has been created, construct a
-            // new PropertiesConstraint object using that schema.
-            return new constraints::PropertiesConstraint(
-                    propertySchemas, patternPropertySchemas,
-                    *additionalPropertiesSchema);
-        }
-
-        return new constraints::PropertiesConstraint(
-                propertySchemas, patternPropertySchemas);
+        return constraint;
     }
 
     /**
@@ -1199,21 +1408,21 @@ private:
      *          caller
      */
     template<typename AdapterType>
-    constraints::RequiredConstraint* makeRequiredConstraintForSelf(
-        const AdapterType &node,
-        const std::string &name)
+    boost::optional<constraints::RequiredConstraint>
+            makeRequiredConstraintForSelf(const AdapterType &node,
+                    const std::string &name)
     {
         if (!node.maybeBool()) {
             throw std::runtime_error("Expected boolean value for 'required' attribute.");
         }
 
         if (node.asBool()) {
-            constraints::RequiredConstraint::RequiredProperties requiredProperties;
-            requiredProperties.insert(name);
-            return new constraints::RequiredConstraint(requiredProperties);
+            constraints::RequiredConstraint constraint;
+            constraint.addRequiredProperty(name);
+            return constraint;
         }
 
-        return NULL;
+        return boost::none;
     }
 
     /**
@@ -1228,23 +1437,28 @@ private:
      *          caller
      */
     template<typename AdapterType>
-    constraints::RequiredConstraint* makeRequiredConstraint(
+    constraints::RequiredConstraint makeRequiredConstraint(
         const AdapterType &node)
     {
-        constraints::RequiredConstraint::RequiredProperties requiredProperties;
+        constraints::RequiredConstraint constraint;
+
         BOOST_FOREACH( const AdapterType v, node.getArray() ) {
             if (!v.isString()) {
-                // @todo throw exception
+                throw std::runtime_error("Expected required property name to "
+                        "be a string value");
             }
-            requiredProperties.insert(v.getString());
+
+            constraint.addRequiredProperty(v.getString());
         }
 
-        return new constraints::RequiredConstraint(requiredProperties);
+        return constraint;
     }
 
     /**
      * @brief   Make a new TypeConstraint object
      *
+     * @param   rootSchema    The Schema instance, and root subschema, through
+     *                        which other subschemas can be created and modified
      * @param   rootNode      Reference to the node from which JSON References
      *                        will be resolved when they refer to the current
      *                        document; used for recursive parsing of schemas
@@ -1257,55 +1471,71 @@ private:
      * @return  pointer to a new TypeConstraint object.
      */
     template<typename AdapterType>
-    constraints::TypeConstraint* makeTypeConstraint(
+    constraints::TypeConstraint makeTypeConstraint(
+        Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &node,
-        boost::optional<std::string> currentScope,
+        const boost::optional<std::string> currentScope,
         const std::string &nodePath,
-        boost::optional<typename FetchDocumentFunction<AdapterType>::Type >
-                fetchDoc)
+        const boost::optional<
+                typename FetchDocumentFunction<AdapterType>::Type > fetchDoc)
     {
-        typedef constraints::TypeConstraint TC;
+        typedef constraints::TypeConstraint TypeConstraint;
 
-        TC::JsonTypes jsonTypes;
-        TC::Schemas schemas;
+        TypeConstraint constraint;
 
         if (node.isString()) {
-            const TC::JsonType jsonType = TC::jsonTypeFromString(node.getString());
-            if (jsonType == TC::kAny && version == kDraft4) {
-                throw std::runtime_error("'any' type is not supported in version 4 schemas.");
+            const TypeConstraint::JsonType type =
+                    TypeConstraint::jsonTypeFromString(node.getString());
+
+            if (type == TypeConstraint::kAny && version == kDraft4) {
+                throw std::runtime_error(
+                        "'any' type is not supported in version 4 schemas.");
             }
-            jsonTypes.insert(jsonType);
+
+            constraint.addNamedType(type);
 
         } else if (node.isArray()) {
             int index = 0;
             BOOST_FOREACH( const AdapterType v, node.getArray() ) {
                 if (v.isString()) {
-                    const TC::JsonType jsonType = TC::jsonTypeFromString(v.getString());
-                    if (jsonType == TC::kAny && version == kDraft4) {
-                        throw std::runtime_error("'any' type is not supported in version 4 schemas.");
+                    const TypeConstraint::JsonType type =
+                            TypeConstraint::jsonTypeFromString(v.getString());
+
+                    if (type == TypeConstraint::kAny && version == kDraft4) {
+                        throw std::runtime_error(
+                                "'any' type is not supported in version 4 "
+                                "schemas.");
                     }
-                    jsonTypes.insert(jsonType);
+
+                    constraint.addNamedType(type);
+
                 } else if (v.isObject() && version == kDraft3) {
                     const std::string childPath = nodePath + "/" +
                             boost::lexical_cast<std::string>(index);
-                    schemas.push_back(new Schema());
-                    populateSchema<AdapterType>(rootNode, v, schemas.back(),
-                            currentScope, childPath, fetchDoc);
+                    const Subschema *subschema = rootSchema.createSubschema();
+                    constraint.addSchemaType(subschema);
+                    populateSchema<AdapterType>(rootSchema, rootNode, v,
+                            *subschema, currentScope, childPath, fetchDoc);
+
                 } else {
                     throw std::runtime_error("Type name should be a string.");
                 }
+
                 index++;
             }
+
         } else if (node.isObject() && version == kDraft3) {
-            schemas.push_back(new Schema());
-            populateSchema<AdapterType>(rootNode, node, schemas.back(),
-                    currentScope, nodePath, fetchDoc);
+            const Subschema *subschema = rootSchema.createSubschema();
+            constraint.addSchemaType(subschema);
+            populateSchema<AdapterType>(rootSchema, rootNode, node,
+                    *subschema, currentScope, nodePath, fetchDoc);
+
         } else {
             throw std::runtime_error("Type name should be a string.");
         }
 
-        return new constraints::TypeConstraint(jsonTypes, schemas);
+        return constraint;
     }
 
     /**
@@ -1317,25 +1547,30 @@ private:
      *          the caller, or NULL if the boolean value is false.
      */
     template<typename AdapterType>
-    constraints::UniqueItemsConstraint* makeUniqueItemsConstraint(
-        const AdapterType &node)
+    boost::optional<constraints::UniqueItemsConstraint>
+            makeUniqueItemsConstraint(const AdapterType &node)
     {
         if (node.isBool() || node.maybeBool()) {
             // If the boolean value is true, this function will return a pointer
             // to a new UniqueItemsConstraint object. If it is value, then the
             // constraint is redundant, so NULL is returned instead.
             if (node.asBool()) {
-                return new constraints::UniqueItemsConstraint();
+                return constraints::UniqueItemsConstraint();
             } else {
-                return NULL;
+                return boost::none;
             }
         }
 
-        throw std::runtime_error("Expected boolean value for 'uniqueItems' constraint.");
+        throw std::runtime_error(
+                "Expected boolean value for 'uniqueItems' constraint.");
     }
 
 };
 
 }  // namespace valijson
+
+#ifdef __clang__
+#  pragma clang diagnostic pop
+#endif
 
 #endif

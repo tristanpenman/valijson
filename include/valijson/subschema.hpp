@@ -2,10 +2,11 @@
 #ifndef __VALIJSON_SUBSCHEMA_HPP
 #define __VALIJSON_SUBSCHEMA_HPP
 
+#include <vector>
+
 #include <boost/foreach.hpp>
 #include <boost/function.hpp>
 #include <boost/optional.hpp>
-#include <boost/ptr_container/ptr_vector.hpp>
 
 #include <valijson/constraints/constraint.hpp>
 
@@ -24,6 +25,12 @@ namespace valijson {
 class Subschema
 {
 public:
+    /// Typedef for custom new-/malloc-like function
+    typedef void * (*CustomAlloc)(size_t size);
+
+    /// Typedef for custom free-like function
+    typedef void (*CustomFree)(void *);
+
     /// Typedef the Constraint class into the local namespace for convenience
     typedef constraints::Constraint Constraint;
 
@@ -32,24 +39,43 @@ public:
     typedef boost::function<bool (const Constraint &)> ApplyFunction;
 
     /**
-     * @brief  Construct a new Subschema object with no constraints
+     * @brief  Construct a new Subschema object
      */
-    Subschema() { }
+    Subschema()
+      : allocFn(::operator new)
+      , freeFn(::operator delete) { }
 
     /**
-     * @brief  Copy an existing Subschema
+     * @brief  Construct a new Subschema using custom memory management
+     *         functions
      *
-     * The constructed Subschema instance will contain a copy of each constraint
-     * defined in the referenced Subschemas. Constraints will be copied only
-     * as deep as references to other Subschemas - e.g. copies of constraints
-     * that refer to sub-schemas, will continue to refer to the same Subschema
-     * instances.
-     *
-     * @param  subschema  Subschema instance to copy constraints from
+     * @param  allocFn  malloc- or new-like function to allocate memory
+     *                  within Schema, such as for Subschema instances
+     * @param  freeFn   free-like function to free memory allocated with
+     *                  the `customAlloc` function
      */
-    Subschema(const Subschema &subschema)
-      : constraints(subschema.constraints),
-        title(subschema.title) { }
+    Subschema(CustomAlloc allocFn, CustomFree freeFn)
+      : allocFn(allocFn)
+      , freeFn(freeFn) { }
+
+    /**
+     * @brief  Clean up and free all memory managed by the Subschema
+     */
+    virtual ~Subschema()
+    {
+        try {
+            for (std::vector<const Constraint *>::iterator itr =
+                    constraints.begin(); itr != constraints.end(); ++itr) {
+                const Constraint *constraint = *itr;
+                constraint->~Constraint();
+                freeFn((void*)(constraint));
+            }
+            constraints.clear();
+        } catch (const std::exception &e) {
+            fprintf(stderr, "Caught an exception in Subschema destructor: %s",
+                    e.what());
+        }
+    }
 
     /**
      * @brief  Add a constraint to this sub-schema
@@ -64,20 +90,7 @@ public:
      */
     void addConstraint(const Constraint &constraint)
     {
-        constraints.push_back(constraint.clone());
-    }
-
-    /**
-     * @brief  Add a constraint to this sub-schema
-     *
-     * This Subschema instance will take ownership of Constraint that is
-     * pointed to, and will free it when it is no longer needed.
-     *
-     * @param  constraint  Pointer to the Constraint to take ownership of
-     */
-    void addConstraint(Constraint *constraint)
-    {
-        constraints.push_back(constraint);
+        constraints.push_back(constraint.clone(allocFn, freeFn));
     }
 
     /**
@@ -94,8 +107,8 @@ public:
     bool apply(ApplyFunction &applyFunction) const
     {
         bool allTrue = true;
-        BOOST_FOREACH( const Constraint &constraint, constraints ) {
-            allTrue = allTrue && applyFunction(constraint);
+        BOOST_FOREACH( const Constraint *constraint, constraints ) {
+            allTrue = allTrue && applyFunction(*constraint);
         }
 
         return allTrue;
@@ -113,8 +126,8 @@ public:
      */
     bool applyStrict(ApplyFunction &applyFunction) const
     {
-        BOOST_FOREACH( const Constraint &constraint, constraints ) {
-            if (!applyFunction(constraint)) {
+        BOOST_FOREACH( const Constraint *constraint, constraints ) {
+            if (!applyFunction(*constraint)) {
                 return false;
             }
         }
@@ -235,10 +248,22 @@ public:
         this->title = title;
     }
 
+protected:
+
+    CustomAlloc allocFn;
+
+    CustomFree freeFn;
+
 private:
 
+    // Disable copy construction
+    Subschema(const Subschema &);
+
+    // Disable copy assignment
+    Subschema & operator=(const Subschema &);
+
     /// List of pointers to constraints that apply to this schema.
-    boost::ptr_vector<Constraint> constraints;
+    std::vector<const Constraint *> constraints;
 
     /// Schema description (optional)
     boost::optional<std::string> description;

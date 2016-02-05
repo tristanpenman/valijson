@@ -96,10 +96,10 @@ protected:
 
                     testItr = testObject.find("data");
                     ASSERT_NE( testObject.end(), testItr );
-                    Validator validator(schema);
-                    validator.setStrict(strict);
+                    Validator validator(strict ?
+                            Validator::kStrongTypes : Validator::kWeakTypes);
 
-                    EXPECT_EQ( shouldValidate, validator.validate(testItr->second, NULL) )
+                    EXPECT_EQ( shouldValidate, validator.validate(schema, testItr->second, NULL) )
                         << "Failed while testing validate() function in '"
                         << currentTest << "' of test case '"
                         << currentTestCase << "' with adapter '"

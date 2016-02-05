@@ -50,19 +50,6 @@ public:
 
 };
 
-/**
- * @brief   Implementation of new_clone for the FrozenValue interface, as
- *          required for the boost pointer containers.
- *
- * @param   frozenValue  reference to FrozenValue to clone
- *
- * @returns a pointer to a new FrozenValue, belonging to the caller
- */
-inline FrozenValue * new_clone(const FrozenValue &frozenValue)
-{
-    return frozenValue.clone();
-}
-
 }  // namespace adapters
 }  // namespace valijson
 

@@ -1,7 +1,8 @@
 cmake_minimum_required (VERSION 2.6)
 project (valijson)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
+SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 if(VALIJSON_CXX11_ADAPTERS STREQUAL "disabled")
     message(STATUS "Building with C++11 support disabled")
 else()
@@ -45,7 +46,7 @@ include_directories(
   include
   thirdparty/gtest-1.7.0/include
   thirdparty/jsoncpp-0.9.4/include
-  thirdparty/rapidjson-0.1/include
+  thirdparty/rapidjson-1.0.2/include
   thirdparty/picojson-1.3.0
   thirdparty/nlohmann-json-1.1.0
   ${Boost_INCLUDE_DIRS}

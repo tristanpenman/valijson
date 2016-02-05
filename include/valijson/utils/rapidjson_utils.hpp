@@ -2,6 +2,8 @@
 #ifndef __VALIJSON_UTILS_RAPIDJSON_UTILS_HPP
 #define __VALIJSON_UTILS_RAPIDJSON_UTILS_HPP
 
+#include <iostream>
+
 #include <rapidjson/document.h>
 
 #include <valijson/utils/file_utils.hpp>

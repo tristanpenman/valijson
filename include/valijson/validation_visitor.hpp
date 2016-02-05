@@ -6,6 +6,7 @@
 
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
+#include <boost/variant/get.hpp>
 
 #include <valijson/constraints/concrete_constraints.hpp>
 #include <valijson/constraints/constraint_visitor.hpp>
@@ -19,7 +20,7 @@ class ValidationResults;
 
 /**
  * @brief   Implementation of the ConstraintVisitor interface that validates a
- *          target document.
+ *          target document
  *
  * @tparam  AdapterType  Adapter type for the target document.
  */
@@ -46,8 +47,8 @@ public:
                       ValidationResults *results)
       : target(target),
         context(context),
-        strictTypes(strictTypes),
-        results(results) { }
+        results(results),
+        strictTypes(strictTypes) { }
 
     /**
      * @brief  Validate the target against a schema.
@@ -60,22 +61,22 @@ public:
      * will only continue for as long as the constraints are validated
      * successfully.
      *
-     * @param  schema  Schema that the target must validate against
+     * @param   subschema  Sub-schema that the target must validate against
      *
-     * @return  true if validation passes, false otherwise
+     * @return  \c true if validation passes; \c false otherwise
      */
-    bool validateSchema(const Schema &schema)
+    bool validateSchema(const Subschema &subschema)
     {
         // Wrap the validationCallback() function below so that it will be
         // passed a reference to a constraint (_1), and a reference to the
         // visitor (*this).
-        Schema::ApplyFunction fn(boost::bind(validationCallback, _1, *this));
+        Subschema::ApplyFunction fn(boost::bind(validationCallback, _1, *this));
 
         // Perform validation against each constraint defined in the schema
         if (results == NULL) {
             // The applyStrict() function will return immediately if the
             // callback function returns false
-            if (!schema.applyStrict(fn)) {
+            if (!subschema.applyStrict(fn)) {
                 return false;
             }
         } else {
@@ -83,7 +84,7 @@ public:
             // schema, even if the callback function returns false. Once
             // iteration is complete, the apply() function will return true
             // only if all invokations of the callback function returned true.
-            if (!schema.apply(fn)) {
+            if (!subschema.apply(fn)) {
                 return false;
             }
         }
@@ -92,7 +93,7 @@ public:
     }
 
     /**
-     * @brief  Validate the target against an allOf constraint.
+     * @brief  Validate a value against an AllOfConstraint
      *
      * An allOf constraint provides a set of child schemas against which the
      * target must be validated in order for the constraint to the satifisfied.
@@ -107,38 +108,20 @@ public:
      *
      * @param  constraint  Constraint that the target must validate against
      *
-     * @return  true if validation passes, false otherwise
+     * @return  \c true if validation passes; \c false otherwise
      */
     virtual bool visit(const AllOfConstraint &constraint)
     {
-        // Flag used to track validation status if errors are non-fatal
         bool validated = true;
 
-        // Validate against each child schema
-        unsigned int index = 0;
-        BOOST_FOREACH( const Schema &schema, constraint.schemas ) {
-
-            // Ensure that the target validates against child schema
-            if (!validateSchema(schema)) {
-                if (results) {
-                    validated = false;
-                    results->pushError(context,
-                        std::string("Failed to validate against child schema #") +
-                        boost::lexical_cast<std::string>(index) + " of allOf constraint.");
-                } else {
-                    return false;
-                }
-            }
-
-            index++;
-        }
+        constraint.applyToSubschemas(ValidateSubschemas(target, context,
+                true, false, *this, results, NULL, &validated));
 
         return validated;
     }
 
     /**
-     * @brief   Validate against the anyOf constraint represented by an
-     *          AnyOfConstraint object.
+     * @brief   Validate a value against an AnyOfConstraint
      *
      * An anyOf constraint provides a set of child schemas, any of which the
      * target may be validated against in order for the constraint to the
@@ -150,41 +133,41 @@ public:
      * validation fails for all child schemas will an error be added to the
      * ValidationResults object.
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * @param   constraint  Constraint that the target must validate against
      *
-     * @return  true if validation passes, false otherwise.
+     * @return  \c true if validation passes; \c false otherwise
      */
     virtual bool visit(const AnyOfConstraint &constraint)
     {
-        // Wrap the validationCallback() function below so that it will be
-        // passed a reference to a constraint (_1), and a reference to the
-        // visitor (*this).
-        Schema::ApplyFunction fn(boost::bind(validationCallback, _1, *this));
+        unsigned int numValidated = 0;
 
-        BOOST_FOREACH( const Schema &schema, constraint.schemas ) {
-            if (schema.apply(fn)) {
-                return true;
-            }
+        constraint.applyToSubschemas(ValidateSubschemas(target, context, false,
+                true, *this, results, &numValidated, NULL));
+
+        if (numValidated == 0 && results) {
+            results->pushError(context, "Failed to validate against any child "
+                    "schemas allowed by anyOf constraint.");
         }
 
-        if (results) {
-            results->pushError(context, "Failed to validate against any child schemas allowed by anyOf constraint.");
-        }
-
-        return false;
+        return numValidated > 0;
     }
 
     /**
-     * @brief   Validate against the dependencies constraint represented by a
-     *          DependenciesConstraint object.
+     * @brief   Validate current node against a 'dependencies' constraint
      *
-     * A dependencies constraint can specify either a mapping of attribute names
-     * to their dependencies, or a mapping of attribute names to child schemas
-     * that must be satisfied if a given attribute is present.
+     * A 'dependencies' constraint can be used to specify property-based or
+     * schema-based dependencies that must be fulfilled when a particular
+     * property is present in an object.
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * Property-based dependencies define a set of properties that must be
+     * present in addition to a particular property, whereas a schema-based
+     * dependency defines an additional schema that the current document must
+     * validate against.
      *
-     * @return  true if validation passes, false otherwise.
+     * @param   constraint  DependenciesConstraint that the current node
+     *                      must validate against
+     *
+     * @return  \c true if validation passes; \c false otherwise
      */
     virtual bool visit(const DependenciesConstraint &constraint)
     {
@@ -193,149 +176,108 @@ public:
             return true;
         }
 
-        // Typedef and reference for conciseness in nested loops
-        typedef DependenciesConstraint::PropertyDependenciesMap PDM;
-        const PDM &deps = constraint.dependencies;
-
-        typedef DependenciesConstraint::PropertyDependentSchemasMap PDSM;
-        const PDSM &depSchemas = constraint.dependentSchemas;
-
-        // Get access to the target as an object
+        // Object to be validated
         const typename AdapterType::Object object = target.asObject();
 
-        // Flag used to track validation status if errors are non-fatal
+        // Cleared if validation fails
         bool validated = true;
 
-        // For each property in the object, check for a list of dependencies in
-        // the constraint object and verify that the dependencies have been
-        // satisfied.
-        BOOST_FOREACH( const typename AdapterType::ObjectMember m, object ) {
+        // Iterate over all dependent properties defined by this constraint,
+        // invoking the DependentPropertyValidator functor once for each
+        // set of dependent properties
+        constraint.applyToPropertyDependencies(ValidatePropertyDependencies(
+                object, context, results, &validated));
+        if (!results && !validated) {
+            return false;
+        }
 
-            // Check for this property in the dependency map. If it is not
-            // present, we can move on to the next one...
-            PDM::const_iterator itr = deps.find(m.first);
-            if (itr != deps.end()) {
-                BOOST_FOREACH( const std::string &name, itr->second ) {
-                    if (object.find(name) == object.end()) {
-                        if (!results) {
-                            return false;
-                        }
-                        validated = false;
-                        results->pushError(context, "Missing dependency '" + name + "'.");
-                    }
-                }
-            }
-
-            // Check for this property in the dependent schemas map. If it is
-            // present then we need to validate the current target against the
-            // dependent schema.
-            PDSM::const_iterator depSchemasItr = depSchemas.find(m.first);
-            if (depSchemasItr != depSchemas.end()) {
-                const Schema *schema = depSchemasItr->second;
-                if (!validateSchema(*schema)) {
-                    if (results) {
-                        results->pushError(context, "Failed to validate against dependent schema.");
-                        validated = false;
-                    } else {
-                        return false;
-                    }
-                }
-            }
+        // Iterate over all dependent schemas defined by this constraint,
+        // invoking the DependentSchemaValidator function once for each schema
+        // that must be validated if a given property is present
+        constraint.applyToSchemaDependencies(ValidateSchemaDependencies(
+                object, context, *this, results, &validated));
+        if (!results && !validated) {
+            return false;
         }
 
         return validated;
     }
 
     /**
-     * @brief   Validate against the enum constraint represented by an
-     *          EnumConstraint object.
+     * @brief   Validate current node against an EnumConstraint
      *
      * Validation succeeds if the target is equal to one of the values provided
-     * by the enum constraint.
+     * by the EnumConstraint.
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * @param   constraint  Constraint that the target must validate against
      *
-     * @return  true if validation succeeds, false otherwise.
+     * @return  \c true if validation succeeds; \c false otherwise
      */
     virtual bool visit(const EnumConstraint &constraint)
     {
-        // Compare the target with each 'frozen' value in the enum constraint.
-        BOOST_FOREACH( const adapters::FrozenValue &value, constraint.values ) {
-            if (value.equalTo(target, true)) {
-                return true;
+        unsigned int numValidated = 0;
+        constraint.applyToValues(ValidateEquality(target, context, false, true,
+                strictTypes, NULL, &numValidated));
+
+        if (numValidated == 0) {
+            if (results) {
+                results->pushError(context,
+                        "Failed to match against any enum values.");
             }
+
+            return false;
         }
 
-        if (results) {
-            results->pushError(context, "Failed to match against any enum values.");
-        }
-
-        return false;
+        return numValidated > 0;
     }
 
     /**
-     * @brief   Validate against the items and additionalItems constraints
-     *          represented by an ItemsConstraint object.
+     * @brief   Validate a value against a LinearItemsConstraint
+     
+     * A LinearItemsConstraint represents an 'items' constraint that specifies,
+     * for each item in array, an individual sub-schema that the item must
+     * validate against. The LinearItemsConstraint class also captures the
+     * presence of an 'additionalItems' constraint, which specifies a default
+     * sub-schema that should be used if an array contains more items than
+     * there are sub-schemas in the 'items' constraint.
      *
-     * An items constraint restricts the values in array to those that match a
-     * given set of schemas. An item constraint can specify either an ordered
-     * list of child schemas that will be used to validate the corresponding
-     * value in the target array, or a single schema that will be used to
-     * validate all items.
+     * If the current value is not an array, validation always succeeds.
      *
-     * If a list of child schemas is used, then the additionalItems constraint
-     * will also be considered. If present, the schema derived from the
-     * additionalItems constraint will  be used to validate items that do not
-     * have a corresponding child schema in the items constraint. If the
-     * items constraint was not provided, then the additionalItems schema will
-     * be used to validate all items in the array.
+     * @param  constraint  SingularItemsConstraint to validate against
      *
-     * @param   constraint  Constraint that the target must validate against.
-     *
-     * @return  true if validatation succeeds, false otherwise.
+     * @returns  \c true if validation is successful; \c false otherwise
      */
-    virtual bool visit(const ItemsConstraint &constraint)
+    virtual bool visit(const LinearItemsConstraint &constraint)
     {
         // Ignore values that are not arrays
         if ((strictTypes && !target.isArray()) || (!target.maybeArray())) {
             return true;
         }
 
+        // Sub-schema to validate against when number of items in array exceeds
+        // the number of sub-schemas provided by the 'items' constraint
+        const Subschema * const additionalItemsSubschema =
+                constraint.getAdditionalItemsSubschema();
+
+        // Track how many items are validated using 'items' constraint
+        unsigned int numValidated = 0;
+
+        // Array to validate
+        const typename AdapterType::Array arr = target.asArray();
+        const size_t arrSize = arr.size();
+
+        // Track validation status
         bool validated = true;
 
-        if (constraint.itemSchema) {
-
-            // Get access to the target as an object
-            const typename AdapterType::Array arr = target.asArray();
-
-            // Validate all items against single schema
-            unsigned int index = 0;
-            BOOST_FOREACH( const AdapterType arrayItem, arr ) {
-                std::vector<std::string> newContext = context;
-                newContext.push_back("[" + boost::lexical_cast<std::string>(index) + "]");
-                ValidationVisitor<AdapterType> v(arrayItem,
-                    newContext, strictTypes, results);
-                if (!v.validateSchema(*constraint.itemSchema)) {
+        // Validate as many items as possible using 'items' sub-schemas
+        const size_t itemSubschemaCount = constraint.getItemSubschemaCount();
+        if (itemSubschemaCount > 0) {
+            if (!additionalItemsSubschema) {
+                if (arrSize > itemSubschemaCount) {
                     if (results) {
-                        results->pushError(context, "Failed to validate item #" + boost::lexical_cast<std::string>(index) + " in array.");
-                        validated = false;
-                    } else {
-                        return false;
-                    }
-                }
-                ++index;
-            }
-
-        } else if (constraint.itemSchemas) {
-
-            // Get access to the target as an object
-            const typename AdapterType::Array arr = target.asArray();
-
-            if (!constraint.additionalItemsSchema) {
-                // Check that the array length is <= length of the itemsSchema list
-                if (arr.size() > constraint.itemSchemas->size()) {
-                    if (results) {
-                        results->pushError(context, "Array contains more items than allowed by items constraint.");
+                        results->pushError(context,
+                                "Array contains more items than allowed by "
+                                "items constraint.");
                         validated = false;
                     } else {
                         return false;
@@ -343,79 +285,70 @@ public:
                 }
             }
 
-            // Validate items against the schema with the same index, or
-            // additionalItems schema
-            unsigned int index = 0;
-            BOOST_FOREACH( const AdapterType arrayItem, arr ) {
-                std::vector<std::string> newContext = context;
-                newContext.push_back("[" + boost::lexical_cast<std::string>(index) + "]");
-                ValidationVisitor<AdapterType> v(arrayItem,
-                    newContext, strictTypes, results);
-                if (index >= constraint.itemSchemas->size()) {
-                    if (constraint.additionalItemsSchema) {
-                        if (!v.validateSchema(*constraint.additionalItemsSchema)) {
-                            if (results) {
-                                results->pushError(context, "Failed to validate item #" +
-                                    boost::lexical_cast<std::string>(index) + " against additional items schema.");
-                                validated = false;
-                            } else {
-                                return false;
-                            }
+            constraint.applyToItemSubschemas(ValidateItems(arr, context, true,
+                    results != NULL, strictTypes, results, &numValidated,
+                    &validated));
+
+            if (!results && !validated) {
+                return false;
+            }
+        }
+
+        // Validate remaining items using 'additionalItems' sub-schema
+        if (numValidated < arrSize) {
+            if (additionalItemsSubschema) {
+                // Begin validation from the first item not validated against
+                // an sub-schema provided by the 'items' constraint
+                unsigned int index = numValidated;
+                typename AdapterType::Array::const_iterator begin = arr.begin();
+                begin.advance(numValidated);
+                for (typename AdapterType::Array::const_iterator itr = begin;
+                        itr != arr.end(); ++itr) {
+
+                    // Update context for current array item
+                    std::vector<std::string> newContext = context;
+                    newContext.push_back("[" +
+                            boost::lexical_cast<std::string>(index) + "]");
+
+                    ValidationVisitor<AdapterType> validator(*itr, newContext,
+                            strictTypes, results);
+
+                    if (!validator.validateSchema(*additionalItemsSubschema)) {
+                        if (results) {
+                            results->pushError(context,
+                                    "Failed to validate item #" +
+                                    boost::lexical_cast<std::string>(index) +
+                                    " against additional items schema.");
+                            validated = false;
+                        } else {
+                            return false;
                         }
-                    } else {
-                        results->pushError(context, "Cannot validate item #" +
-                            boost::lexical_cast<std::string>(index) + " in array due to missing schema.");
-                        validated = false;
                     }
-                } else if (!v.validateSchema(constraint.itemSchemas->at(index))) {
-                    if (results) {
-                        results->pushError(context, "Failed to validate item #" +
-                            boost::lexical_cast<std::string>(index) + " against corresponding item schema.");
-                        validated = false;
-                    } else {
-                        return false;
-                    }
+
+                    index++;
                 }
-                ++index;
+
+            } else if (results) {
+                results->pushError(context, "Cannot validate item #" +
+                    boost::lexical_cast<std::string>(numValidated) + " or "
+                    "greater using 'items' constraint or 'additionalItems' "
+                    "constraint.");
+                validated = false;
+
+            } else {
+                return false;
             }
-
-
-        } else if (constraint.additionalItemsSchema) {
-
-            // Get access to the target as an object
-            const typename AdapterType::Array arr = target.asArray();
-
-            // Validate each item against additional items schema
-            unsigned int index = 0;
-            BOOST_FOREACH( const AdapterType arrayItem, arr ) {
-                std::vector<std::string> newContext = context;
-                newContext.push_back("[" + boost::lexical_cast<std::string>(index) + "]");
-                ValidationVisitor<AdapterType> v(arrayItem,
-                    newContext, strictTypes, results);
-                if (!v.validateSchema(*constraint.additionalItemsSchema)) {
-                    if (results) {
-                        results->pushError(context, "Failed to validate item #" +
-                            boost::lexical_cast<std::string>(index) + " against additional items schema.");
-                        validated = false;
-                    } else {
-                        return false;
-                    }
-                }
-                ++index;
-            }
-
         }
 
         return validated;
     }
 
     /**
-     * @brief   Validate against the maximum and exclusiveMaximum constraints
-     *          represented by a MaximumConstraint object.
+     * @brief   Validate a value against a MaximumConstraint object
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * @param   constraint  Constraint that the target must validate against
      *
-     * @return  true if constraints are satisfied, false otherwise.
+     * @return  \c true if constraints are satisfied; \c false otherwise
      */
     virtual bool visit(const MaximumConstraint &constraint)
     {
@@ -424,35 +357,37 @@ public:
             return true;
         }
 
-        if (constraint.exclusiveMaximum) {
-            if (target.asDouble() >= constraint.maximum) {
+        const double maximum = constraint.getMaximum();
+
+        if (constraint.getExclusiveMaximum()) {
+            if (target.asDouble() >= maximum) {
                 if (results) {
                     results->pushError(context, "Expected number less than " +
-                        boost::lexical_cast<std::string>(constraint.maximum));
+                            boost::lexical_cast<std::string>(maximum));
                 }
+
                 return false;
             }
-        } else {
-            if (target.asDouble() > constraint.maximum) {
-                if (results) {
-                    results->pushError(context,
-                            "Expected number less than or equal to" +
-                            boost::lexical_cast<std::string>(constraint.maximum));
-                }
-                return false;
+
+        } else if (target.asDouble() > maximum) {
+            if (results) {
+                results->pushError(context,
+                        "Expected number less than or equal to" +
+                        boost::lexical_cast<std::string>(maximum));
             }
+
+            return false;
         }
 
         return true;
     }
 
     /**
-     * @brief   Validate against the maxItems constraint represented by a
-     *          MaxItemsConstraint object.
+     * @brief   Validate a value against a MaxItemsConstraint
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * @param   constraint  Constraint that the target must validate against
      *
-     * @return  true if constraint is satisfied, false otherwise.
+     * @return  \c true if constraint is satisfied; \c false otherwise
      */
     virtual bool visit(const MaxItemsConstraint &constraint)
     {
@@ -460,26 +395,25 @@ public:
             return true;
         }
 
-        if (target.asArray().size() <= constraint.maxItems) {
+        const uint64_t maxItems = constraint.getMaxItems();
+        if (target.asArray().size() <= maxItems) {
             return true;
         }
 
         if (results) {
             results->pushError(context, "Array should contain no more than " +
-                boost::lexical_cast<std::string>(constraint.maxItems) +
-                " elements.");
+                    boost::lexical_cast<std::string>(maxItems) + " elements.");
         }
 
         return false;
     }
 
     /**
-     * @brief   Validate against the maxLength constraint represented by a
-     *          MaxLengthConstraint object.
+     * @brief   Validate a value against a MaxLengthConstraint
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * @param   constraint  Constraint that the target must validate against
      *
-     * @return  true if constraint is satisfied, false otherwise.
+     * @return  \c true if constraint is satisfied; \c false otherwise
      */
     virtual bool visit(const MaxLengthConstraint &constraint)
     {
@@ -488,27 +422,28 @@ public:
         }
 
         const std::string s = target.asString();
-        const int len = utils::u8_strlen(s.c_str());
-        if (len <= constraint.maxLength) {
+        const uint64_t len = utils::u8_strlen(s.c_str());
+        const uint64_t maxLength = constraint.getMaxLength();
+        if (len <= maxLength) {
             return true;
         }
 
         if (results) {
-            results->pushError(context, "String should be no more than " +
-                boost::lexical_cast<std::string>(constraint.maxLength) +
-                " characters in length.");
+            results->pushError(context,
+                    "String should be no more than " +
+                    boost::lexical_cast<std::string>(maxLength) +
+                    " characters in length.");
         }
 
         return false;
     }
 
     /**
-     * @brief   Validate against the maxProperties constraint represented by a
-     *          MaxPropertiesConstraint object.
+     * @brief   Validate a value against a MaxPropertiesConstraint
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * @param   constraint  Constraint that the target must validate against
      *
-     * @return  true if the constraint is satisfied, false otherwise.
+     * @return  \c true if the constraint is satisfied; \c false otherwise
      */
     virtual bool visit(const MaxPropertiesConstraint &constraint)
     {
@@ -516,26 +451,27 @@ public:
             return true;
         }
 
-        if (target.asObject().size() <= constraint.maxProperties) {
+        const uint64_t maxProperties = constraint.getMaxProperties();
+
+        if (target.asObject().size() <= maxProperties) {
             return true;
         }
 
         if (results) {
             results->pushError(context, "Object should have no more than" +
-                boost::lexical_cast<std::string>(constraint.maxProperties) +
-                " properties.");
+                    boost::lexical_cast<std::string>(maxProperties) +
+                    " properties.");
         }
 
         return false;
     }
 
     /**
-     * @brief   Validate against the minimum constraint represented by a
-     *          MinimumConstraint object.
+     * @brief   Validate a value against a MinimumConstraint
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * @param   constraint  Constraint that the target must validate against
      *
-     * @return  true if the constraint is satisfied, false otherwise.
+     * @return  \c true if the constraint is satisfied; \c false otherwise
      */
     virtual bool visit(const MinimumConstraint &constraint)
     {
@@ -544,36 +480,37 @@ public:
             return true;
         }
 
-        if (constraint.exclusiveMinimum) {
-            if (target.asDouble() <= constraint.minimum) {
+        const double minimum = constraint.getMinimum();
+
+        if (constraint.getExclusiveMinimum()) {
+            if (target.asDouble() <= minimum) {
                 if (results) {
                     results->pushError(context,
                         "Expected number greater than " +
-                        boost::lexical_cast<std::string>(constraint.minimum));
+                        boost::lexical_cast<std::string>(minimum));
                 }
+
                 return false;
             }
-        } else {
-            if (target.asDouble() < constraint.minimum) {
-                if (results) {
-                    results->pushError(context,
+        } else if (target.asDouble() < minimum) {
+            if (results) {
+                results->pushError(context,
                         "Expected number greater than or equal to" +
-                        boost::lexical_cast<std::string>(constraint.minimum));
-                }
-                return false;
+                        boost::lexical_cast<std::string>(minimum));
             }
+
+            return false;
         }
 
         return true;
     }
 
     /**
-     * @brief   Validate against the minItems constraint represented by a
-     *          MinItemsConstraint object.
+     * @brief   Validate a value against a MinItemsConstraint
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * @param   constraint  Constraint that the target must validate against
      *
-     * @return  true if the constraint is satisfied, false otherwise.
+     * @return  \c true if the constraint is satisfied; \c false otherwise
      */
     virtual bool visit(const MinItemsConstraint &constraint)
     {
@@ -581,26 +518,25 @@ public:
             return true;
         }
 
-        if (target.asArray().size() >= constraint.minItems) {
+        const uint64_t minItems = constraint.getMinItems();
+        if (target.asArray().size() >= minItems) {
             return true;
         }
 
         if (results) {
             results->pushError(context, "Array should contain no fewer than " +
-                boost::lexical_cast<std::string>(constraint.minItems) +
-                " elements.");
+                boost::lexical_cast<std::string>(minItems) + " elements.");
         }
 
         return false;
     }
 
     /**
-     * @brief   Validate against the minLength constraint represented by a
-     *          MinLengthConstraint object.
+     * @brief   Validate a value against a MinLengthConstraint
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * @param   constraint  Constraint that the target must validate against
      *
-     * @return  true if the constraint is satisfied, false otherwise.
+     * @return  \c true if the constraint is satisfied; \c false otherwise
      */
     virtual bool visit(const MinLengthConstraint &constraint)
     {
@@ -609,67 +545,68 @@ public:
         }
 
         const std::string s = target.asString();
-        const int len = utils::u8_strlen(s.c_str());
-        if (len >= constraint.minLength) {
+        const uint64_t len = utils::u8_strlen(s.c_str());
+        const uint64_t minLength = constraint.getMinLength();
+        if (len >= minLength) {
             return true;
         }
 
         if (results) {
-            results->pushError(context, "String should be no fewer than " +
-                boost::lexical_cast<std::string>(constraint.minLength) +
-                " characters in length.");
+            results->pushError(context,
+                    "String should be no fewer than " +
+                    boost::lexical_cast<std::string>(minLength) +
+                    " characters in length.");
         }
 
         return false;
     }
 
     /**
-     * @brief   Validate against the minProperties constraint represented by a
-     *          MinPropertiesConstraint object.
+     * @brief   Validate a value against a MinPropertiesConstraint
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * @param   constraint  Constraint that the target must validate against
      *
-     * @return  true if the constraint is satisfied, false otherwise.
+     * @return  \c true if the constraint is satisfied; \c false otherwise
      */
     virtual bool visit(const MinPropertiesConstraint &constraint)
     {
-
         if ((strictTypes && !target.isObject()) || !target.maybeObject()) {
             return true;
         }
 
-        if (target.asObject().size() >= constraint.minProperties) {
+        const uint64_t minProperties = constraint.getMinProperties();
+
+        if (target.asObject().size() >= minProperties) {
             return true;
         }
 
         if (results) {
             results->pushError(context, "Object should have no fewer than" +
-                boost::lexical_cast<std::string>(constraint.minProperties) +
-                " properties.");
+                    boost::lexical_cast<std::string>(minProperties) +
+                    " properties.");
         }
 
         return false;
     }
 
     /**
-     * @brief   Validate against the multipleOf or divisibleBy constraints
-     *          represented by a MultipleOfDecimalConstraint object.
+     * @brief   Validate a value against a MultipleOfDoubleConstraint
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * @param   constraint  Constraint that the target must validate against
      *
-     * @return  true if the constraint is satisfied, false otherwise.
+     * @return  \c true if the constraint is satisfied; \c false otherwise
      */
-    virtual bool visit(const MultipleOfDecimalConstraint &constraint)
+    virtual bool visit(const MultipleOfDoubleConstraint &constraint)
     {
-        double d = 0.;
+        const double divisor = constraint.getDivisor();
 
+        double d = 0.;
         if (target.maybeDouble()) {
             if (!target.asDouble(d)) {
                 if (results) {
                     results->pushError(context, "Value could not be converted "
                         "to a number to check if it is a multiple of " +
-                        boost::lexical_cast<std::string>(
-                                constraint.multipleOf));
+                        boost::lexical_cast<std::string>(divisor));
                 }
                 return false;
             }
@@ -679,8 +616,7 @@ public:
                 if (results) {
                     results->pushError(context, "Value could not be converted "
                         "to a number to check if it is a multiple of " +
-                        boost::lexical_cast<std::string>(
-                                constraint.multipleOf));
+                        boost::lexical_cast<std::string>(divisor));
                 }
                 return false;
             }
@@ -693,12 +629,12 @@ public:
             return true;
         }
 
-        const double r = remainder(d, constraint.multipleOf);
+        const double r = remainder(d, divisor);
 
         if (fabs(r) > std::numeric_limits<double>::epsilon()) {
             if (results) {
                 results->pushError(context, "Value should be a multiple of " +
-                    boost::lexical_cast<std::string>(constraint.multipleOf));
+                    boost::lexical_cast<std::string>(divisor));
             }
             return false;
         }
@@ -707,17 +643,17 @@ public:
     }
 
     /**
-     * @brief   Validate against the multipleOf or divisibleBy constraints
-     *          represented by a MultipleOfIntegerConstraint object.
+     * @brief   Validate a value against a MultipleOfIntConstraint
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * @param   constraint  Constraint that the target must validate against
      *
-     * @return  true if the constraint is satisfied, false otherwise.
+     * @return  \c true if the constraint is satisfied; \c false otherwise
      */
-    virtual bool visit(const MultipleOfIntegerConstraint &constraint)
+    virtual bool visit(const MultipleOfIntConstraint &constraint)
     {
-        int64_t i = 0;
+        const int64_t divisor = constraint.getDivisor();
 
+        int64_t i = 0;
         if (target.maybeInteger()) {
             if (!target.asInteger(i)) {
                 if (results) {
@@ -744,10 +680,10 @@ public:
             return true;
         }
 
-        if (i % constraint.multipleOf != 0) {
+        if (i % divisor != 0) {
             if (results) {
                 results->pushError(context, "Value should be a multiple of " +
-                    boost::lexical_cast<std::string>(constraint.multipleOf));
+                    boost::lexical_cast<std::string>(divisor));
             }
             return false;
         }
@@ -756,21 +692,32 @@ public:
     }
 
     /**
-     * @brief   Validate against the not constraint represented by a
-     *          NotConstraint object.
+     * @brief   Validate a value against a NotConstraint
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * If the subschema NotConstraint currently holds a NULL pointer, the
+     * schema will be treated like the empty schema. Therefore validation
+     * will always fail.
      *
-     * @return  true if the constraint is satisfied, false otherwise.
+     * @param   constraint  Constraint that the target must validate against
+     *
+     * @return  \c true if the constraint is satisfied; \c false otherwise
      */
     virtual bool visit(const NotConstraint &constraint)
     {
-        ValidationVisitor<AdapterType> v(target, context, strictTypes, NULL);
+        const Subschema *subschema = constraint.getSubschema();
+        if (!subschema) {
+            // Treat NULL pointer like empty schema
+            return false;
+        }
 
-        if (v.validateSchema(*constraint.schema)) {
+        ValidationVisitor<AdapterType> v(target, context, strictTypes, NULL);
+        if (v.validateSchema(*subschema)) {
             if (results) {
-                results->pushError(context, "Target should not validate against schema specified in 'not' constraint.");
+                results->pushError(context,
+                        "Target should not validate against schema "
+                        "specified in 'not' constraint.");
             }
+
             return false;
         }
 
@@ -778,38 +725,38 @@ public:
     }
 
     /**
-     * @brief   Validate against the oneOf constraint represented by a
-     *          OneOfConstraint object.
+     * @brief   Validate a value against a OneOfConstraint
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * @param   constraint  Constraint that the target must validate against
      *
-     * @return  true if the constraint is satisfied, false otherwise.
+     * @return  \c true if the constraint is satisfied; \c false otherwise
      */
     virtual bool visit(const OneOfConstraint &constraint)
     {
         unsigned int numValidated = 0;
+
         ValidationResults newResults;
         ValidationResults *childResults = (results) ? &newResults : NULL;
 
-        BOOST_FOREACH( const Schema &schema, constraint.schemas ) {
-            ValidationVisitor<AdapterType> v(target, context, strictTypes, childResults);
-            if (v.validateSchema(schema)) {
-                numValidated++;
-            }
-        }
+        constraint.applyToSubschemas(ValidateSubschemas(target, context,
+                true, true, *this, childResults, &numValidated, NULL));
 
         if (numValidated == 0) {
             if (results) {
                 ValidationResults::Error childError;
                 while (childResults->popError(childError)) {
-                    results->pushError(childError.context, childError.description);
+                    results->pushError(
+                            childError.context,
+                            childError.description);
                 }
-                results->pushError(context, "Failed to validate against any child schemas allowed by oneOf constraint.");
+                results->pushError(context, "Failed to validate against any "
+                        "child schemas allowed by oneOf constraint.");
             }
             return false;
         } else if (numValidated != 1) {
             if (results) {
-                results->pushError(context, "Failed to validate against exactly one child schema.");
+                results->pushError(context,
+                        "Failed to validate against exactly one child schema.");
             }
             return false;
         }
@@ -818,12 +765,11 @@ public:
     }
 
     /**
-     * @brief   Validate against the pattern constraint represented by a
-     *          PatternConstraint object.
+     * @brief   Validate a value against a PatternConstraint
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * @param   constraint  Constraint that the target must validate against
      *
-     * @return  true if the constraint is satisfied, false otherwise.
+     * @return  \c true if the constraint is satisfied; \c false otherwise
      */
     virtual bool visit(const PatternConstraint &constraint)
     {
@@ -831,11 +777,17 @@ public:
             return true;
         }
 
-        const boost::regex r(constraint.pattern, boost::regex::perl);
-        if (!boost::regex_search(target.asString(), r)) {
+        const boost::regex patternRegex(
+                constraint.getPattern<std::string::allocator_type>(),
+                boost::regex::perl);
+
+        if (!boost::regex_search(target.asString(), patternRegex)) {
             if (results) {
-                results->pushError(context, "Failed to match regex specified by 'pattern' constraint.");
+                results->pushError(context,
+                        "Failed to match regex specified by 'pattern' "
+                        "constraint.");
             }
+
             return false;
         }
 
@@ -843,13 +795,28 @@ public:
     }
 
     /**
-     * @brief   Validate against the properties, patternProperties, and
-     *          additionalProperties constraints represented by a
-     *          PatternConstraint object.
+     * @brief   Validate a value against a PropertiesConstraint
      *
-     * @param   constraint  Constraint that the target must validate against.
+     * Validation of an object against a PropertiesConstraint proceeds in three
+     * stages. The first stage finds all properties in the object that have a
+     * corresponding subschema in the constraint, and validates those properties
+     * recursively.
      *
-     * @return  true if the constraint is satisfied, false otherwise.
+     * Next, the object's properties will be validated against the subschemas
+     * for any 'patternProperties' that match a given property name. A property
+     * is required to validate against the sub-schema for all patterns that it
+     * matches.
+     *
+     * Finally, any properties that have not yet been validated against at least
+     * one subschema will be validated against the 'additionalItems' subschema.
+     * If this subschema is not present, then all properties must have been
+     * validated at least once.
+     *
+     * Non-object values are always considered valid.
+     *
+     * @param   constraint  Constraint that the target must validate against
+     *
+     * @return  \c true if the constraint is satisfied; \c false otherwise
      */
     virtual bool visit(const PropertiesConstraint &constraint)
     {
@@ -859,83 +826,53 @@ public:
 
         bool validated = true;
 
-        const typename AdapterType::Object obj = target.asObject();
+        // Track which properties have already been validated
+        std::set<std::string> propertiesMatched;
 
-        // Validate each property in the target object
-        BOOST_FOREACH( const typename AdapterType::ObjectMember m, obj ) {
+        // Validate properties against subschemas for matching 'properties'
+        // constraints
+        const typename AdapterType::Object object = target.asObject();
+        constraint.applyToProperties(ValidatePropertySubschemas(object, context,
+                true, false, true, strictTypes, results, &propertiesMatched,
+                &validated));
 
-            const std::string propertyName = m.first;
-            bool propertyNameMatched = false;
+        // Exit early if validation failed, and we're not collecting exhaustive
+        // validation results
+        if (!validated && !results) {
+            return false;
+        }
 
-            std::vector<std::string> newContext = context;
-            newContext.push_back("[\"" + m.first + "\"]");
+        // Validate properties against subschemas for matching patternProperties
+        // constraints
+        constraint.applyToPatternProperties(ValidatePatternPropertySubschemas(
+                object, context, true, false, true, strictTypes, results,
+                &propertiesMatched, &validated));
 
-            ValidationVisitor<AdapterType> v(m.second,
-                newContext, strictTypes, results);
+        // Validate against additionalProperties subschema for any properties
+        // that have not yet been matched
+        const Subschema *additionalPropertiesSubschema =
+                constraint.getAdditionalPropertiesSubschema();
+        if (!additionalPropertiesSubschema) {
+            return propertiesMatched.size() == target.getObjectSize();
+        }
 
-            // Search for matching property name
-            PropertiesConstraint::PropertySchemaMap::const_iterator itr =
-                constraint.properties.find(propertyName);
-            if (itr != constraint.properties.end()) {
-                propertyNameMatched = true;
-                if (!v.validateSchema(*itr->second)) {
+        BOOST_FOREACH( const typename AdapterType::ObjectMember m, object ) {
+            if (propertiesMatched.find(m.first) == propertiesMatched.end()) {
+                // Update context
+                std::vector<std::string> newContext = context;
+                newContext.push_back("[" + m.first + "]");
+
+                // Create a validator to validate the property's value
+                ValidationVisitor validator(m.second, newContext, strictTypes,
+                        results);
+                if (!validator.validateSchema(*additionalPropertiesSubschema)) {
                     if (results) {
-                        results->pushError(context,
-                            "Failed to validate against schema associated with property name '" +
-                            propertyName + "' in properties constraint.");
-                        validated = false;
-                    } else {
-                        return false;
+                        results->pushError(context, "Failed to validate "
+                                "against additional properties schema");
                     }
-                }
-            }
 
-            // Search for a regex that matches the property name
-            for (itr = constraint.patternProperties.begin(); itr != constraint.patternProperties.end(); ++itr) {
-                const boost::regex r(itr->first, boost::regex::perl);
-                if (boost::regex_search(propertyName, r)) {
-                    propertyNameMatched = true;
-                    // Check schema
-                    if (!v.validateSchema(*itr->second)) {
-                        if (results) {
-                            results->pushError(context,
-                                "Failed to validate against schema associated with regex '" +
-                                itr->first + "' in patternProperties constraint.");
-                            validated = false;
-                        } else {
-                            return false;
-                        }
-                    }
-                }
-            }
-
-            // If the property name has been matched by a name in 'properties'
-            // or a regex in 'patternProperties', then it should not be
-            // validated against the 'additionalPatterns' schema.
-            if (propertyNameMatched) {
-                continue;
-            }
-
-            // If an additionalProperties schema has been provided, the values
-            // associated with unmatched property names should be validated
-            // against that schema.
-            if (constraint.additionalProperties) {
-                if (v.validateSchema(*constraint.additionalProperties)) {
-                    continue;
-                } else if (results) {
-                    results->pushError(context, "Failed to validate property '" +
-                        propertyName + "' against schema in additionalProperties constraint.");
                     validated = false;
-                } else {
-                    return false;
                 }
-            } else if (results) {
-                results->pushError(context, "Failed to match property name '" +
-                        propertyName + "' to any names in 'properties' or "
-                        "regexes in 'patternProperties'");
-                validated = false;
-            } else {
-                return false;
             }
         }
 
@@ -943,104 +880,126 @@ public:
     }
 
     /**
-     * @brief   Validate against the required constraint represented by a
-     *          RequiredConstraint object.
+     * @brief   Validate a value against a RequiredConstraint
      *
      * A required constraint specifies a list of properties that must be present
      * in the target.
      *
      * @param   constraint  Constraint that the target must validate against
      *
-     * @return  true if validation succeeds, false otherwise
+     * @return  \c true if validation succeeds; \c false otherwise
      */
     virtual bool visit(const RequiredConstraint &constraint)
     {
         if ((strictTypes && !target.isObject()) || !target.maybeObject()) {
             if (results) {
-                results->pushError(context, "Object required to validate 'required' properties.");
+                results->pushError(context,
+                        "Object required to validate 'required' properties.");
             }
             return false;
         }
 
         bool validated = true;
         const typename AdapterType::Object object = target.asObject();
-        BOOST_FOREACH( const std::string &requiredProperty, constraint.requiredProperties ) {
-            if (object.find(requiredProperty) == object.end()) {
+        constraint.applyToRequiredProperties(ValidateProperties(object, context,
+                true, results != NULL, results, &validated));
+
+        return validated;
+    }
+
+    /**
+     * @brief  Validate a value against a SingularItemsConstraint
+     *
+     * A SingularItemsConstraint represents an 'items' constraint that specifies
+     * a sub-schema against which all items in an array must validate. If the
+     * current value is not an array, validation always succeeds.
+     *
+     * @param  constraint  SingularItemsConstraint to validate against
+     *
+     * @returns  \c true if validation is successful; \c false otherwise
+     */
+    virtual bool visit(const SingularItemsConstraint &constraint)
+    {
+        // Ignore values that are not arrays
+        if (!target.isArray()) {
+            return true;
+        }
+
+        // Schema against which all items must validate
+        const Subschema *itemsSubschema = constraint.getItemsSubschema();
+
+        // Default items sub-schema accepts all values
+        if (!itemsSubschema) {
+            return true;
+        }
+
+        // Track whether validation has failed
+        bool validated = true;
+
+        unsigned int index = 0;
+        BOOST_FOREACH( const AdapterType &item, target.getArray() ) {
+            // Update context for current array item
+            std::vector<std::string> newContext = context;
+            newContext.push_back("[" +
+                    boost::lexical_cast<std::string>(index) + "]");
+
+            // Create a validator for the current array item
+            ValidationVisitor<AdapterType> validationVisitor(item,
+                    newContext, strictTypes, results);
+
+            // Perform validation
+            if (!validationVisitor.validateSchema(*itemsSubschema)) {
                 if (results) {
-                    results->pushError(context, "Missing required property '" + requiredProperty + "'.");
+                    results->pushError(context,
+                            "Failed to validate item #" +
+                            boost::lexical_cast<std::string>(index) +
+                            " in array.");
                     validated = false;
                 } else {
                     return false;
                 }
             }
+
+            index++;
         }
 
         return validated;
     }
 
     /**
-     * @brief   Validate against the type constraint represented by a
-     *          TypeConstraint object.
+     * @brief   Validate a value against a TypeConstraint
      *
-     * Checks that the target is of the expected type.
+     * Checks that the target is one of the valid named types, or matches one
+     * of a set of valid sub-schemas.
      *
-     * @param   constraint  Constraint that the target must validate against
+     * @param   constraint  TypeConstraint to validate against
      *
-     * @return  true if validation succeeds, false otherwise
+     * @return  \c true if validation is successful; \c false otherwise
      */
     virtual bool visit(const TypeConstraint &constraint)
     {
-        // Try to match the type to one of the types in the jsonTypes array
-        BOOST_FOREACH( const TypeConstraint::JsonType jsonType, constraint.jsonTypes ) {
-            switch (jsonType) {
-            case TypeConstraint::kAny:
-                return true;
-            case TypeConstraint::kArray:
-                if (target.isArray()) {
-                    return true;
-                }
-                break;
-            case TypeConstraint::kBoolean:
-                if (target.isBool() || (!strictTypes && target.maybeBool())) {
-                    return true;
-                }
-                break;
-            case TypeConstraint::kInteger:
-                if (target.isInteger() || (!strictTypes && target.maybeInteger())) {
-                    return true;
-                }
-                break;
-            case TypeConstraint::kNull:
-                if (target.isNull() || (!strictTypes && target.maybeNull())) {
-                    return true;
-                }
-                break;
-            case TypeConstraint::kNumber:
-                if (target.isNumber() || (!strictTypes && target.maybeDouble())) {
-                    return true;
-                }
-                break;
-            case TypeConstraint::kObject:
-                if (target.isObject()) {
-                    return true;
-                }
-                break;
-            case TypeConstraint::kString:
-                if (target.isString()) {
-                    return true;
-                }
-                break;
-            }
-        }
-
-        BOOST_FOREACH( const Schema &schema, constraint.schemas ) {
-            if (validateSchema(schema)) {
+        // Check named types
+        {
+            // ValidateNamedTypes functor assumes target is invalid
+            bool validated = false;
+            constraint.applyToNamedTypes(ValidateNamedTypes(target, false,
+                    true, strictTypes, &validated));
+            if (validated) {
                 return true;
             }
         }
 
-        if (results) {
-            results->pushError(context, "Value type not permitted by 'type' constraint.");
+        // Check schema-based types
+        {
+            unsigned int numValidated = 0;
+            constraint.applyToSchemaTypes(ValidateSubschemas(target, context,
+                    false, true, *this, NULL, &numValidated, NULL));
+            if (numValidated > 0) {
+                return true;
+            } else if (results) {
+                results->pushError(context,
+                        "Value type not permitted by 'type' constraint.");
+            }
         }
 
         return false;
@@ -1094,6 +1053,591 @@ public:
 private:
 
     /**
+     * @brief  Functor to compare a node with a collection of values
+     */
+    struct ValidateEquality
+    {
+        ValidateEquality(
+                const AdapterType &target,
+                const std::vector<std::string> &context,
+                bool continueOnSuccess,
+                bool continueOnFailure,
+                bool strictTypes,
+                ValidationResults *results,
+                unsigned int *numValidated)
+          : target(target),
+            context(context),
+            continueOnSuccess(continueOnSuccess),
+            continueOnFailure(continueOnFailure),
+            strictTypes(strictTypes),
+            results(results),
+            numValidated(numValidated) { }
+
+        template<typename OtherValue>
+        bool operator()(const OtherValue &value) const
+        {
+            if (value.equalTo(target, strictTypes)) {
+                if (numValidated) {
+                    (*numValidated)++;
+                }
+
+                return continueOnSuccess;
+            }
+
+            if (results) {
+                results->pushError(context,
+                        "Target value and comparison value are not equal");
+            }
+
+            return continueOnFailure;
+        }
+
+    private:
+        const AdapterType &target;
+        const std::vector<std::string> &context;
+        bool continueOnSuccess;
+        bool continueOnFailure;
+        bool strictTypes;
+        ValidationResults * const results;
+        unsigned int * const numValidated;
+    };
+
+    /**
+     * @brief  Functor to validate the presence of a set of properties
+     */
+    struct ValidateProperties
+    {
+        ValidateProperties(
+                const typename AdapterType::Object &object,
+                const std::vector<std::string> &context,
+                bool continueOnSuccess,
+                bool continueOnFailure,
+                ValidationResults *results,
+                bool *validated)
+          : object(object),
+            context(context),
+            continueOnSuccess(continueOnSuccess),
+            continueOnFailure(continueOnFailure),
+            results(results),
+            validated(validated) { }
+
+        template<typename StringType>
+        bool operator()(const StringType &property) const
+        {
+            if (object.find(property.c_str()) == object.end()) {
+                if (validated) {
+                    *validated = false;
+                }
+
+                if (results) {
+                    results->pushError(context, "Missing required property '" +
+                            std::string(property.c_str()) + "'.");
+                }
+
+                return continueOnFailure;
+            }
+
+            return continueOnSuccess;
+        }
+
+    private:
+        const typename AdapterType::Object &object;
+        const std::vector<std::string> &context;
+        bool continueOnSuccess;
+        bool continueOnFailure;
+        ValidationResults * const results;
+        bool * const validated;
+    };
+
+    /**
+     * @brief  Functor to validate property-based dependencies
+     */
+    struct ValidatePropertyDependencies
+    {
+        ValidatePropertyDependencies(
+                const typename AdapterType::Object &object,
+                const std::vector<std::string> &context,
+                ValidationResults *results,
+                bool *validated)
+          : object(object),
+            context(context),
+            results(results),
+            validated(validated) { }
+
+        template<typename StringType, typename ContainerType>
+        bool operator()(
+                const StringType &propertyName,
+                const ContainerType &dependencyNames) const
+        {
+            const std::string propertyNameKey(propertyName.c_str());
+            if (object.find(propertyNameKey) == object.end()) {
+                return true;
+            }
+
+            typedef typename ContainerType::value_type ValueType;
+            BOOST_FOREACH( const ValueType &dependencyName, dependencyNames ) {
+                const std::string dependencyNameKey(dependencyName.c_str());
+                if (object.find(dependencyNameKey) == object.end()) {
+                    if (validated) {
+                        *validated = false;
+                    }
+                    if (results) {
+                        results->pushError(context, "Missing dependency '" +
+                                dependencyNameKey + "'.");
+                    } else {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+    private:
+        const typename AdapterType::Object &object;
+        const std::vector<std::string> &context;
+        ValidationResults * const results;
+        bool * const validated;
+    };
+
+    /**
+     * @brief  Functor to validate against sub-schemas in 'items' constraint
+     */
+    struct ValidateItems
+    {
+        ValidateItems(
+                const typename AdapterType::Array &arr,
+                const std::vector<std::string> &context,
+                bool continueOnSuccess,
+                bool continueOnFailure,
+                bool strictTypes,
+                ValidationResults *results,
+                unsigned int *numValidated,
+                bool *validated)
+          : arr(arr),
+            context(context),
+            continueOnSuccess(continueOnSuccess),
+            continueOnFailure(continueOnFailure),
+            strictTypes(strictTypes),
+            results(results),
+            numValidated(numValidated),
+            validated(validated) { }
+
+        bool operator()(unsigned int index, const Subschema *subschema) const
+        {
+            // Check that there are more elements to validate
+            if (index >= arr.size()) {
+                return false;
+            }
+
+            // Update context
+            std::vector<std::string> newContext = context;
+            newContext.push_back(
+                    "[" + boost::lexical_cast<std::string>(index) + "]");
+
+            // Find array item
+            typename AdapterType::Array::const_iterator itr = arr.begin();
+            itr.advance(index);
+
+            // Validate current array item
+            ValidationVisitor validator(*itr, newContext, strictTypes, results);
+            if (validator.validateSchema(*subschema)) {
+                if (numValidated) {
+                    (*numValidated)++;
+                }
+
+                return continueOnSuccess;
+            }
+
+            if (validated) {
+                *validated = false;
+            }
+
+            if (results) {
+                results->pushError(newContext,
+                    "Failed to validate item #" +
+                    boost::lexical_cast<std::string>(index) +
+                    " against corresponding item schema.");
+            }
+
+            return continueOnFailure;
+        }
+
+    private:
+        const typename AdapterType::Array &arr;
+        const std::vector<std::string> &context;
+        bool continueOnSuccess;
+        bool continueOnFailure;
+        bool strictTypes;
+        ValidationResults * const results;
+        unsigned int * const numValidated;
+        bool * const validated;
+
+    };
+
+    /**
+     * @brief  Functor to validate value against named JSON types
+     */
+    struct ValidateNamedTypes
+    {
+        ValidateNamedTypes(
+                const AdapterType &target,
+                bool continueOnSuccess,
+                bool continueOnFailure,
+                bool strictTypes,
+                bool *validated)
+          : target(target),
+            continueOnSuccess(continueOnSuccess),
+            continueOnFailure(continueOnFailure),
+            strictTypes(strictTypes),
+            validated(validated) { }
+
+        bool operator()(constraints::TypeConstraint::JsonType jsonType) const
+        {
+            typedef constraints::TypeConstraint TypeConstraint;
+
+            bool valid = false;
+
+            switch (jsonType) {
+            case TypeConstraint::kAny:
+                valid = true;
+                break;
+            case TypeConstraint::kArray:
+                valid = target.isArray();
+                break;
+            case TypeConstraint::kBoolean:
+                valid = target.isBool() || (!strictTypes && target.maybeBool());
+                break;
+            case TypeConstraint::kInteger:
+                valid = target.isInteger() ||
+                        (!strictTypes && target.maybeInteger());
+                break;
+            case TypeConstraint::kNull:
+                valid = target.isNull() ||
+                        (!strictTypes && target.maybeNull());
+                break;
+            case TypeConstraint::kNumber:
+                valid = target.isNumber() ||
+                        (!strictTypes && target.maybeDouble());
+                break;
+            case TypeConstraint::kObject:
+                valid = target.isObject();
+                break;
+            case TypeConstraint::kString:
+                valid = target.isString();
+                break;
+            default:
+                break;
+            }
+
+            if (valid && validated) {
+                *validated = true;
+            }
+
+            return (valid && continueOnSuccess) || continueOnFailure;
+        }
+
+    private:
+        const AdapterType target;
+        const bool continueOnSuccess;
+        const bool continueOnFailure;
+        const bool strictTypes;
+        bool * const validated;
+    };
+
+    /**
+     * @brief  Functor to validate object properties against sub-schemas
+     *         defined by a 'patternProperties' constraint
+     */
+    struct ValidatePatternPropertySubschemas
+    {
+        ValidatePatternPropertySubschemas(
+                const typename AdapterType::Object &object,
+                const std::vector<std::string> &context,
+                bool continueOnSuccess,
+                bool continueOnFailure,
+                bool continueIfUnmatched,
+                bool strictTypes,
+                ValidationResults *results,
+                std::set<std::string> *propertiesMatched,
+                bool *validated)
+          : object(object),
+            context(context),
+            continueOnSuccess(continueOnSuccess),
+            continueOnFailure(continueOnFailure),
+            continueIfUnmatched(continueIfUnmatched),
+            strictTypes(strictTypes),
+            results(results),
+            propertiesMatched(propertiesMatched),
+            validated(validated) { }
+
+        template<typename StringType>
+        bool operator()(const StringType &patternProperty,
+                const Subschema *subschema) const
+        {
+            const std::string patternPropertyStr(patternProperty.c_str());
+
+            // It would be nice to store pre-allocated regex objects in the
+            // PropertiesConstraint, but boost::regex does not currently support
+            // custom allocators. This isn't an issue here, because Valijson's
+            // JSON Scheme validator does not yet support custom allocators.
+            const boost::regex r(patternPropertyStr, boost::regex::perl);
+
+            bool matchFound = false;
+
+            // Recursively validate all matching properties
+            typedef const typename AdapterType::ObjectMember ObjectMember;
+            BOOST_FOREACH( const ObjectMember m, object ) {
+                if (boost::regex_search(m.first, r)) {
+                    matchFound = true;
+                    if (propertiesMatched) {
+                        propertiesMatched->insert(m.first);
+                    }
+
+                    // Update context
+                    std::vector<std::string> newContext = context;
+                    newContext.push_back("[" + m.first + "]");
+
+                    // Recursively validate property's value
+                    ValidationVisitor validator(m.second, newContext,
+                            strictTypes, results);
+                    if (validator.validateSchema(*subschema)) {
+                        continue;
+                    }
+
+                    if (results) {
+                        results->pushError(context, "Failed to validate "
+                                "against schema associated with pattern '" +
+                                patternPropertyStr + "'.");
+                    }
+
+                    if (validated) {
+                        *validated = false;
+                    }
+
+                    if (!continueOnFailure) {
+                        return false;
+                    }
+                }
+            }
+
+            // Allow iteration to terminate if there was not at least one match
+            if (!matchFound && !continueIfUnmatched) {
+                return false;
+            }
+
+            return continueOnSuccess;
+        }
+
+    private:
+        const typename AdapterType::Object &object;
+        const std::vector<std::string> &context;
+        const bool continueOnSuccess;
+        const bool continueOnFailure;
+        const bool continueIfUnmatched;
+        const bool strictTypes;
+        ValidationResults * const results;
+        std::set<std::string> * const propertiesMatched;
+        bool * const validated;
+    };
+
+    /**
+     * @brief  Functor to validate object properties against sub-schemas defined
+     *         by a 'properties' constraint
+     */
+    struct ValidatePropertySubschemas
+    {
+        ValidatePropertySubschemas(
+                const typename AdapterType::Object &object,
+                const std::vector<std::string> &context,
+                bool continueOnSuccess,
+                bool continueOnFailure,
+                bool continueIfUnmatched,
+                bool strictTypes,
+                ValidationResults *results,
+                std::set<std::string> *propertiesMatched,
+                bool *validated)
+          : object(object),
+            context(context),
+            continueOnSuccess(continueOnSuccess),
+            continueOnFailure(continueOnFailure),
+            continueIfUnmatched(continueIfUnmatched),
+            strictTypes(strictTypes),
+            results(results),
+            propertiesMatched(propertiesMatched),
+            validated(validated) { }
+
+        template<typename StringType>
+        bool operator()(const StringType &propertyName,
+                const Subschema *subschema) const
+        {
+            const std::string propertyNameKey(propertyName.c_str());
+            const typename AdapterType::Object::const_iterator itr =
+                    object.find(propertyNameKey);
+            if (itr == object.end()) {
+                return continueIfUnmatched;
+            }
+
+            if (propertiesMatched) {
+                propertiesMatched->insert(propertyNameKey);
+            }
+
+            // Update context
+            std::vector<std::string> newContext = context;
+            newContext.push_back("[" + propertyNameKey + "]");
+
+            // Recursively validate property's value
+            ValidationVisitor validator(itr->second, newContext, strictTypes,
+                    results);
+            if (validator.validateSchema(*subschema)) {
+                return continueOnSuccess;
+            }
+
+            if (results) {
+                results->pushError(context, "Failed to validate against "
+                        "schema associated with property name '" +
+                        propertyNameKey + "'.");
+            }
+
+            if (validated) {
+                *validated = false;
+            }
+
+            return continueOnFailure;
+        }
+
+    private:
+        const typename AdapterType::Object &object;
+        const std::vector<std::string> &context;
+        const bool continueOnSuccess;
+        const bool continueOnFailure;
+        const bool continueIfUnmatched;
+        const bool strictTypes;
+        ValidationResults * const results;
+        std::set<std::string> * const propertiesMatched;
+        bool * const validated;
+    };
+
+    /**
+     * @brief  Functor to validate schema-based dependencies
+     */
+    struct ValidateSchemaDependencies
+    {
+        ValidateSchemaDependencies(
+                const typename AdapterType::Object &object,
+                const std::vector<std::string> &context,
+                ValidationVisitor &validationVisitor,
+                ValidationResults *results,
+                bool *validated)
+          : object(object),
+            context(context),
+            validationVisitor(validationVisitor),
+            results(results),
+            validated(validated) { }
+
+        template<typename StringType>
+        bool operator()(
+                const StringType &propertyName,
+                const Subschema *schemaDependency) const
+        {
+            const std::string propertyNameKey(propertyName.c_str());
+            if (object.find(propertyNameKey) == object.end()) {
+                return true;
+            }
+
+            if (!validationVisitor.validateSchema(*schemaDependency)) {
+                if (validated) {
+                    *validated = false;
+                }
+                if (results) {
+                    results->pushError(context,
+                            "Failed to validate against dependent schema.");
+                } else {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+    private:
+        const typename AdapterType::Object &object;
+        const std::vector<std::string> &context;
+        ValidationVisitor &validationVisitor;
+        ValidationResults * const results;
+        bool * const validated;
+    };
+
+    /**
+     * @brief  Functor that can be used to validate one or more subschemas
+     *
+     * This functor is designed to be applied to collections of subschemas
+     * contained within 'allOf', 'anyOf' and 'oneOf' constraints.
+     *
+     * The return value depends on whether a given schema validates, with the
+     * actual return value for a given case being decided at construction time.
+     * The return value is used by the 'applyToSubschemas' functions in the
+     * AllOfConstraint, AnyOfConstraint and OneOfConstrant classes to decide
+     * whether to terminate early.
+     *
+     * The functor uses output parameters (provided at construction) to update
+     * validation state that may be needed by the caller.
+     */
+    struct ValidateSubschemas
+    {
+        ValidateSubschemas(
+                const AdapterType &adapter,
+                const std::vector<std::string> &context,
+                bool continueOnSuccess,
+                bool continueOnFailure,
+                ValidationVisitor &validationVisitor,
+                ValidationResults *results,
+                unsigned int *numValidated,
+                bool *validated)
+          : adapter(adapter),
+            context(context),
+            continueOnSuccess(continueOnSuccess),
+            continueOnFailure(continueOnFailure),
+            validationVisitor(validationVisitor),
+            results(results),
+            numValidated(numValidated),
+            validated(validated) { }
+
+        bool operator()(unsigned int index, const Subschema *subschema) const
+        {
+            if (validationVisitor.validateSchema(*subschema)) {
+                if (numValidated) {
+                    (*numValidated)++;
+                }
+
+                return continueOnSuccess;
+            }
+
+            if (validated) {
+                *validated = false;
+            }
+
+            if (results) {
+                results->pushError(context,
+                        "Failed to validate against child schema #" +
+                        boost::lexical_cast<std::string>(index) + ".");
+            }
+
+            return continueOnFailure;
+        }
+
+    private:
+        const AdapterType &adapter;
+        const std::vector<std::string> &context;
+        bool continueOnSuccess;
+        bool continueOnFailure;
+        ValidationVisitor &validationVisitor;
+        ValidationResults * const results;
+        unsigned int * const numValidated;
+        bool * const validated;
+    };
+
+    /**
      * @brief  Callback function that passes a visitor to a constraint.
      *
      * @param  constraint  Reference to constraint to be visited
@@ -1107,8 +1651,8 @@ private:
         return constraint.accept(visitor);
     }
 
-    /// Reference to the JSON value being validated
-    const AdapterType &target;
+    /// The JSON value being validated
+    const AdapterType target;
 
     /// Vector of strings describing the current object context
     const std::vector<std::string> context;

@@ -2,6 +2,8 @@
 #ifndef __VALIJSON_UTILS_JSON11_UTILS_HPP
 #define __VALIJSON_UTILS_JSON11_UTILS_HPP
 
+#include <iostream>
+
 #include <json11.hpp>
 
 #include <valijson/utils/file_utils.hpp>

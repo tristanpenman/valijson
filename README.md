@@ -30,7 +30,14 @@ Include the necessary headers:
     #include <valijson/schema_parser.hpp>
     #include <valijson/validator.hpp>
 
-Loading a schema using RapidJSON:
+These are the classes that we'll be using:
+
+    using valijson::Schema;
+    using valijson::SchemaParser;
+    using valijson::Validator;
+    using valijson::adapters::RapidJsonAdapter;
+
+We are going to use RapidJSON to load the schema and the target document:
 
     // Load JSON document using RapidJSON with Valijson helper function
     rapidjson::Document mySchemaDoc;
@@ -53,13 +60,53 @@ Load a document to validate:
 
 Validate a document:
 
-    Validator validator(mySchema);
+    Validator validator;
     RapidJsonAdapter myTargetAdapter(myTargetDoc);
-    if (!validator.validate(myTargetAdapter, NULL)) {
+    if (!validator.validate(mySchema, myTargetAdapter, NULL)) {
         std::runtime_error("Validation failed.");
     }
 
 Note that Valijson's `SchemaParser` and `Validator` classes expect you to pass in a `RapidJsonAdapter` rather than a `rapidjson::Document`. This is due to the fact that `SchemaParser` and `Validator` are template classes that can be used with any of the JSON parsers supported by Valijson.
+
+## Memory Management ##
+
+Valijson has been designed to safely manage, and eventually free, the memory that is allocated while parsing a schema or validating a document. When working with an externally loaded schema (i.e. one that is populated using the `SchemaParser` class) you can rely on RAII semantics.
+
+Things get more interesting when you build a schema using custom code, as illustrated in the following snippet. This code demonstrates how you would create a schema to verify that the value of a 'description' property (if present) is always a string:
+
+    {
+        // Root schema object that manages memory allocated for
+        // constraints or sub-schemas
+        Schema schema;
+
+        // Allocating memory for a sub-schema returns a const pointer
+        // which allows inspection but not mutation. This memory will be
+        // freed only when the root schema goes out of scope
+        const Subschema *subschema = schema.createSubschema();
+
+        {   // Limited scope, for example purposes
+
+            // Construct a constraint on the stack
+            TypeConstraint typeConstraint;
+            typeConstraint.addNamedType(TypeConstraint::kString);
+
+            // Constraints are added to a sub-schema via the root schema,
+            // which will make a copy of the constraint
+            schema.addConstraintToSubschema(typeConstraint, subschema);
+
+            // Constraint on the stack goes out of scope, but the copy
+            // held by the root schema continues to exist
+        }
+
+        // Include subschema in properties constraint
+        PropertiesConstraint propertiesConstraint;
+        propertiesConstraint.addPropertySubschema("description", subschema);
+
+        // Add the properties constraint
+        schema.addConstraint(propertiesConstraint);
+
+        // Root schema goes out of scope and all allocated memory is freed
+    }
 
 ## Test Suite ##
 
@@ -132,7 +179,7 @@ Valijson supports JSON documents loaded using JsonCpp, RapidJson, Boost Property
  - [json11 (commit afcc8d0)](https://github.com/dropbox/json11/tree/afcc8d0d82b1ce2df587a7a0637d05ba493bf5e6)
  - [jsoncpp 0.9.4](https://github.com/open-source-parsers/jsoncpp/archive/0.9.4.tar.gz)
  - [nlohmann/json 1.1.0](https://github.com/nlohmann/json/archive/v1.1.0.tar.gz)
- - [rapidjson 0.1](https://code.google.com/p/rapidjson/downloads/detail?name=rapidjson-0.1.zip)
+ - [rapidjson 1.0.2](https://github.com/miloyip/rapidjson/releases/tag/v1.0.2)
  - [PicoJSON 1.3.0](https://github.com/kazuho/picojson/archive/v1.3.0.tar.gz)
 
 Version of JsonCpp going back to 0.5.0 should also work correctly, but versions from 1.0 onwards have not yet been tested.
