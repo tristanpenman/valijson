@@ -444,7 +444,7 @@ private:
         Schema &rootSchema,
         const std::string &jsonRef,
         const AdapterType &rootNode,
-        const AdapterType &node,
+        const AdapterType &,
         const Subschema &subschema,
         const boost::optional<std::string> currentScope,
         const std::string &nodePath,
