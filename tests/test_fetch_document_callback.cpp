@@ -13,43 +13,38 @@ using valijson::SchemaParser;
 using valijson::adapters::RapidJsonAdapter;
 using valijson::Validator;
 
-namespace {
-
-static rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator> allocator;
-static rapidjson::Value fetchedRoot;
-static RapidJsonAdapter fetchedRootAdapter;
-
-}
-
 class TestFetchDocumentCallback : public ::testing::Test
 {
 
 };
 
-const RapidJsonAdapter * fetchDocument(const std::string &uri)
+const rapidjson::Document * fetchDocument(const std::string &uri)
 {
     EXPECT_STREQ("http://localhost:1234/", uri.c_str());
 
+    rapidjson::Document *fetchedRoot = new rapidjson::Document();
+    fetchedRoot->SetObject();
+
     rapidjson::Value valueOfTypeAttribute;
-    valueOfTypeAttribute.SetString("string", allocator);
+    valueOfTypeAttribute.SetString("string", fetchedRoot->GetAllocator());
 
     rapidjson::Value schemaOfTestProperty;
     schemaOfTestProperty.SetObject();
-    schemaOfTestProperty.AddMember("type", valueOfTypeAttribute, allocator);
+    schemaOfTestProperty.AddMember("type", valueOfTypeAttribute,
+            fetchedRoot->GetAllocator());
 
     rapidjson::Value propertiesConstraint;
     propertiesConstraint.SetObject();
-    propertiesConstraint.AddMember("test", schemaOfTestProperty, allocator);
+    propertiesConstraint.AddMember("test", schemaOfTestProperty,
+            fetchedRoot->GetAllocator());
 
-    fetchedRoot.SetObject();
-    fetchedRoot.AddMember("properties", propertiesConstraint, allocator);
+    fetchedRoot->AddMember("properties", propertiesConstraint,
+            fetchedRoot->GetAllocator());
 
-    // Have to ensure that fetchedRoot exists for at least as long as the
-    // shared pointer that we return here
-    return new RapidJsonAdapter(fetchedRoot);
+    return fetchedRoot;
 }
 
-void freeDocument(const RapidJsonAdapter *adapter)
+void freeDocument(const rapidjson::Document *adapter)
 {
     delete adapter;
 }
@@ -60,7 +55,8 @@ TEST_F(TestFetchDocumentCallback, Basics)
     rapidjson::Document schemaDocument;
     RapidJsonAdapter schemaDocumentAdapter(schemaDocument);
     schemaDocument.SetObject();
-    schemaDocument.AddMember("$ref", "http://localhost:1234/#/", allocator);
+    schemaDocument.AddMember("$ref", "http://localhost:1234/#/",
+            schemaDocument.GetAllocator());
 
     // Parse schema document
     Schema schema;
@@ -71,7 +67,7 @@ TEST_F(TestFetchDocumentCallback, Basics)
     // Test resulting schema with a valid document
     rapidjson::Document validDocument;
     validDocument.SetObject();
-    validDocument.AddMember("test", "valid", allocator);
+    validDocument.AddMember("test", "valid", schemaDocument.GetAllocator());
     Validator validator;
     EXPECT_TRUE(validator.validate(schema, RapidJsonAdapter(validDocument),
             NULL));
@@ -79,7 +75,7 @@ TEST_F(TestFetchDocumentCallback, Basics)
     // Test resulting schema with an invalid document
     rapidjson::Document invalidDocument;
     invalidDocument.SetObject();
-    invalidDocument.AddMember("test", 123, allocator);
+    invalidDocument.AddMember("test", 123, schemaDocument.GetAllocator());
     EXPECT_FALSE(validator.validate(schema, RapidJsonAdapter(invalidDocument),
             NULL));
 }

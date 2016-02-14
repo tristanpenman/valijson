@@ -64,10 +64,10 @@ public:
                 DocumentType;
 
         /// Templated function pointer type for fetching remote documents
-        typedef const AdapterType * (*FetchDoc)(const std::string &uri);
+        typedef const DocumentType * (*FetchDoc)(const std::string &uri);
 
         /// Templated function pointer type for freeing fetched documents
-        typedef void (*FreeDoc)(const AdapterType *);
+        typedef void (*FreeDoc)(const DocumentType *);
     };
 
     /**
@@ -116,7 +116,7 @@ private:
         typedef typename adapters::AdapterTraits<AdapterType>::DocumentType
                 DocumentType;
 
-        typedef std::map<std::string, const AdapterType*> Type;
+        typedef std::map<std::string, const DocumentType*> Type;
     };
 
     typedef std::map<std::string, const Subschema *> SchemaCache;
@@ -395,7 +395,7 @@ private:
         }
 
         if (actualDocumentUri) {
-            const AdapterType *newDoc = NULL;
+            const typename FunctionPtrs<AdapterType>::DocumentType *newDoc = NULL;
 
             // Have we seen this document before?
             typename DocumentCache<AdapterType>::Type::iterator docCacheItr =
@@ -429,16 +429,18 @@ private:
                 newDoc = docCacheItr->second;
             }
 
+            const AdapterType newRootNode(*newDoc);
+
             // Find where we need to be in the document
             const AdapterType &referencedAdapter =
-                    internal::json_pointer::resolveJsonPointer(*newDoc,
+                    internal::json_pointer::resolveJsonPointer(newRootNode,
                             actualJsonPointer);
 
             newCacheKeys.push_back(queryKey);
 
             // Populate the schema, starting from the referenced node, with
             // nested JSON References resolved relative to the new root node
-            return makeOrReuseSchema(rootSchema, *newDoc, referencedAdapter,
+            return makeOrReuseSchema(rootSchema, newRootNode, referencedAdapter,
                     currentScope, actualJsonPointer, fetchDoc, parentSubschema,
                     ownName, docCache, schemaCache, newCacheKeys);
 
@@ -885,7 +887,8 @@ private:
                         "Fetching of remote JSON References not enabled.");
             }
 
-            const AdapterType *newDoc = fetchDoc(*documentUri);
+            const typename DocumentCache<AdapterType>::DocumentType *newDoc =
+                    fetchDoc(*documentUri);
 
             // Can't proceed without the remote document
             if (!newDoc) {
@@ -900,14 +903,16 @@ private:
 
             docCache.insert(DocCacheValueType(*documentUri, newDoc));
 
+            const AdapterType newRootNode(*newDoc);
+
             const AdapterType &referencedAdapter =
                 internal::json_pointer::resolveJsonPointer(
-                        *newDoc, actualJsonPointer);
+                        newRootNode, actualJsonPointer);
 
             // TODO: Need to detect degenerate circular references
-            resolveThenPopulateSchema(rootSchema, *newDoc, referencedAdapter,
-                    schema, boost::none, actualJsonPointer, fetchDoc,
-                    parentSchema, ownName, docCache, schemaCache);
+            resolveThenPopulateSchema(rootSchema, newRootNode,
+                    referencedAdapter, schema, boost::none, actualJsonPointer,
+                    fetchDoc, parentSchema, ownName, docCache, schemaCache);
 
         } else {
             const AdapterType &referencedAdapter =
