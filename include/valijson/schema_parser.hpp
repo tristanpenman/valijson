@@ -57,10 +57,16 @@ public:
      * @brief  Struct to contain templated function type for fetching documents
      */
     template<typename AdapterType>
-    struct FetchDocumentFunction {
-        /// Functor for dereferencing JSON References
-        typedef boost::function<boost::shared_ptr<const AdapterType>(
-                const std::string &uri)> Type;
+    struct FunctionPtrs
+    {
+        typedef typename adapters::AdapterTraits<AdapterType>::DocumentType
+                DocumentType;
+
+        /// Templated function pointer type for fetching remote documents
+        typedef const AdapterType * (*FetchDoc)(const std::string &uri);
+
+        /// Templated function pointer type for freeing fetched documents
+        typedef void (*FreeDoc)(const AdapterType *);
     };
 
     /**
@@ -79,13 +85,26 @@ public:
     void populateSchema(
         const AdapterType &node,
         Schema &schema,
-        boost::optional<typename FetchDocumentFunction<AdapterType>::Type>
-                fetchDoc = boost::none)
+        typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc = NULL,
+        typename FunctionPtrs<AdapterType>::FreeDoc freeDoc = NULL)
     {
+        if ((fetchDoc == NULL) ^ (freeDoc == NULL)) {
+            throw std::runtime_error(
+                    "Remote document fetching cannot be enabled without both "
+                    "fetch and free functions");
+        }
+
         typename DocumentCache<AdapterType>::Type docCache;
         SchemaCache schemaCache;
-        populateSchema(schema, node, node, schema, boost::none, "", fetchDoc,
-                NULL, NULL, docCache, schemaCache);
+        try {
+            populateSchema(schema, node, node, schema, boost::none, "",
+                    fetchDoc, NULL, NULL, docCache, schemaCache);
+        } catch (...) {
+            freeDocumentCache<AdapterType>(docCache, freeDoc);
+            throw;
+        }
+
+        freeDocumentCache<AdapterType>(docCache, freeDoc);
     }
 
 private:
@@ -96,10 +115,30 @@ private:
         typedef typename adapters::AdapterTraits<AdapterType>::DocumentType
                 DocumentType;
 
-        typedef std::map<std::string, const DocumentType*> Type;
+        typedef std::map<std::string, const AdapterType*> Type;
     };
 
     typedef std::map<std::string, boost::shared_ptr<Schema> > SchemaCache;
+
+    /**
+     * @brief  Free memory used by fetched documents
+     *
+     * If a custom 'free' function has not been provided, then the default
+     * delete operator will be used.
+     *
+     * @param  docCache  collection of fetched documents to free
+     * @param  freeDoc   optional custom free function
+     */
+    template<typename AdapterType>
+    void freeDocumentCache(const typename DocumentCache<AdapterType>::Type
+            &docCache, typename FunctionPtrs<AdapterType>::FreeDoc freeDoc)
+    {
+        typedef typename DocumentCache<AdapterType>::Type DocCacheType;
+
+        BOOST_FOREACH( const typename DocCacheType::value_type &v, docCache ) {
+            freeDoc(v.second);
+        }
+    }
 
     /**
      * @brief  Populate a Schema object from JSON Schema document
@@ -135,8 +174,7 @@ private:
         const Subschema &subschema,
         const boost::optional<std::string> currentScope,
         const std::string &nodePath,
-        const boost::optional<typename FetchDocumentFunction<AdapterType>::Type>
-                fetchDoc,
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         const Subschema *parentSubschema,
         const std::string *ownName,
         typename DocumentCache<AdapterType>::Type &docCache,
@@ -473,8 +511,7 @@ private:
         const Subschema &subschema,
         const boost::optional<std::string> currentScope,
         const std::string &nodePath,
-        const boost::optional<typename FetchDocumentFunction<AdapterType>::Type>
-                fetchDoc,
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         const Subschema *parentSubschema,
         const std::string *ownName,
         typename DocumentCache<AdapterType>::Type &docCache,
@@ -496,16 +533,27 @@ private:
                         "Support for JSON References not enabled.");
             }
 
-            // Returns a shared pointer to the remote document that was
-            // retrieved, or null if retrieval failed. The resulting document
-            // must remain in scope until populateSchema returns.
-            boost::shared_ptr<const AdapterType> docPtr =
-                    (*fetchDoc)(*documentUri);
+            const AdapterType * docPtr = NULL;
+            const typename DocumentCache<AdapterType>::Type::const_iterator
+                    docCacheItr = docCache.find(*documentUri);
+            if (docCacheItr == docCache.end()) {
+                // Returns a shared pointer to the remote document that was
+                // retrieved, or null if retrieval failed. The resulting
+                // document must remain in scope until populateSchema returns.
+                docPtr = (*fetchDoc)(*documentUri);
 
-            // Can't proceed without the remote document
-            if (!docPtr) {
-                throw std::runtime_error(
-                        "Failed to fetch referenced schema document.");
+                // Can't proceed without the remote document
+                if (!docPtr) {
+                    throw std::runtime_error(
+                            "Failed to fetch referenced schema document.");
+                }
+
+                // TODO: If this fails, how would the document be freed?
+                docCache.insert(
+                    typename DocumentCache<AdapterType>::Type::value_type(
+                            *documentUri, docPtr));
+            } else {
+                docPtr = docCacheItr->second;
             }
 
             const AdapterType &ref = internal::json_pointer::resolveJsonPointer(
@@ -552,8 +600,7 @@ private:
         const AdapterType &node,
         const boost::optional<std::string> currentScope,
         const std::string &nodePath,
-        const boost::optional<typename FetchDocumentFunction<AdapterType>::Type>
-                fetchDoc,
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
         SchemaCache &schemaCache)
     {
@@ -610,8 +657,7 @@ private:
         const AdapterType &node,
         const boost::optional<std::string> currentScope,
         const std::string &nodePath,
-        const boost::optional<typename FetchDocumentFunction<AdapterType>::Type>
-                fetchDoc,
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
         SchemaCache &schemaCache)
     {
@@ -686,8 +732,7 @@ private:
         const AdapterType &node,
         const boost::optional<std::string> currentScope,
         const std::string &nodePath,
-        const boost::optional<typename FetchDocumentFunction<AdapterType>::Type>
-                fetchDoc,
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
         SchemaCache &schemaCache)
     {
@@ -816,8 +861,7 @@ private:
         const boost::optional<std::string> currentScope,
         const std::string &itemsPath,
         const std::string &additionalItemsPath,
-        const boost::optional<typename FetchDocumentFunction<AdapterType>::Type>
-                fetchDoc,
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
         SchemaCache &schemaCache)
     {
@@ -923,8 +967,7 @@ private:
         const AdapterType &items,
         const boost::optional<std::string> currentScope,
         const std::string &itemsPath,
-        const boost::optional<typename FetchDocumentFunction<AdapterType>::Type>
-                fetchDoc,
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
         SchemaCache &schemaCache)
     {
@@ -1260,8 +1303,7 @@ private:
         const AdapterType &node,
         const boost::optional<std::string> currentScope,
         const std::string &nodePath,
-        const boost::optional<typename FetchDocumentFunction<AdapterType>::Type>
-                fetchDoc,
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
         SchemaCache &schemaCache)
     {
@@ -1303,8 +1345,7 @@ private:
         const AdapterType &node,
         const boost::optional<std::string> currentScope,
         const std::string &nodePath,
-        const boost::optional<typename FetchDocumentFunction<AdapterType>::Type>
-                fetchDoc,
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
         SchemaCache &schemaCache)
     {
@@ -1390,8 +1431,7 @@ private:
         const std::string &propertiesPath,
         const std::string &patternPropertiesPath,
         const std::string &additionalPropertiesPath,
-        const boost::optional<typename FetchDocumentFunction<AdapterType>::Type>
-                fetchDoc,
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         const Subschema *parentSubschema,
         typename DocumentCache<AdapterType>::Type &docCache,
         SchemaCache &schemaCache)
@@ -1551,8 +1591,7 @@ private:
         const AdapterType &node,
         const boost::optional<std::string> currentScope,
         const std::string &nodePath,
-        const boost::optional<typename FetchDocumentFunction<AdapterType>::Type>
-                fetchDoc,
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
         SchemaCache &schemaCache)
     {

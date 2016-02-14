@@ -13,9 +13,6 @@ using valijson::SchemaParser;
 using valijson::adapters::RapidJsonAdapter;
 using valijson::Validator;
 
-typedef SchemaParser::FetchDocumentFunction<RapidJsonAdapter>::Type
-        FetchDocumentFunction;
-
 namespace {
 
 static rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator> allocator;
@@ -29,7 +26,7 @@ class TestFetchDocumentCallback : public ::testing::Test
 
 };
 
-boost::shared_ptr<const RapidJsonAdapter> fetchDocument(const std::string &uri)
+const RapidJsonAdapter * fetchDocument(const std::string &uri)
 {
     EXPECT_STREQ("test", uri.c_str());
 
@@ -49,7 +46,12 @@ boost::shared_ptr<const RapidJsonAdapter> fetchDocument(const std::string &uri)
 
     // Have to ensure that fetchedRoot exists for at least as long as the
     // shared pointer that we return here
-    return boost::make_shared<RapidJsonAdapter>(fetchedRoot);
+    return new RapidJsonAdapter(fetchedRoot);
+}
+
+void freeDocument(const RapidJsonAdapter *adapter)
+{
+    delete adapter;
 }
 
 TEST_F(TestFetchDocumentCallback, Basics)
@@ -63,19 +65,21 @@ TEST_F(TestFetchDocumentCallback, Basics)
     // Parse schema document
     Schema schema;
     SchemaParser schemaParser;
-    schemaParser.populateSchema(schemaDocumentAdapter, schema,
-            boost::make_optional<FetchDocumentFunction>(fetchDocument));
+    schemaParser.populateSchema(schemaDocumentAdapter, schema, fetchDocument,
+            freeDocument);
 
     // Test resulting schema with a valid document
     rapidjson::Document validDocument;
     validDocument.SetObject();
     validDocument.AddMember("test", "valid", allocator);
     Validator validator;
-    EXPECT_TRUE(validator.validate(schema, RapidJsonAdapter(validDocument), NULL));
+    EXPECT_TRUE(validator.validate(schema, RapidJsonAdapter(validDocument),
+            NULL));
 
     // Test resulting schema with an invalid document
     rapidjson::Document invalidDocument;
     invalidDocument.SetObject();
     invalidDocument.AddMember("test", 123, allocator);
-    EXPECT_FALSE(validator.validate(schema, RapidJsonAdapter(invalidDocument), NULL));
+    EXPECT_FALSE(validator.validate(schema, RapidJsonAdapter(invalidDocument),
+            NULL));
 }
