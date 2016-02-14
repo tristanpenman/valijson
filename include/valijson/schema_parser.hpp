@@ -190,6 +190,59 @@ private:
     }
 
     /**
+     * @brief  Recursive helper function for retrieving or creating schemas
+     *
+     * This function will be applied recursively until a concrete node is found.
+     * A concrete node is a node that contains actual schema constraints rather
+     * than a JSON Reference.
+     *
+     * This termination condition may be trigged by visiting the concrete node
+     * at the end of a series of $ref nodes, or by finding a schema for one of
+     * those $ref nodes in the schema cache. An entry will be added to the
+     * schema cache for each node visited on the path to the concrete node.
+     *
+     * @param  rootSchema    The Schema instance, and root subschema, through
+     *                       which other subschemas can be created and
+     *                       modified
+     * @param  rootNode      Reference to the node from which JSON References
+     *                       will be resolved when they refer to the current
+     *                       document
+     * @param  node          Reference to the node to parse
+     * @param  currentScope  URI for current resolution scope
+     * @param  nodePath      JSON Pointer representing path to current node
+     * @param  fetchDoc      Function to fetch remote JSON documents (optional)
+     * @param  parentSchema  Optional pointer to the parent schema, used to
+     *                       support required keyword in Draft 3
+     * @param  ownName       Optional pointer to a node name, used to support
+     *                       the 'required' keyword in Draft 3
+     * @param  docCache      Cache of resolved and fetched remote documents
+     * @param  schemaCache   Cache of populated schemas
+     * @param  newCacheKeys  A list of keys that should be added to the cache
+     *                       when recursion terminates
+     */
+    template<typename AdapterType>
+    const Subschema * makeOrReuseSchema(
+        Schema &rootSchema,
+        const AdapterType &rootNode,
+        const AdapterType &node,
+        const boost::optional<std::string> currentScope,
+        const std::string &nodePath,
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
+        const Subschema *parentSubschema,
+        const std::string *ownName,
+        typename DocumentCache<AdapterType>::Type &docCache,
+        SchemaCache &schemaCache,
+        std::vector<std::string> &newCacheKeys)
+    {
+        const Subschema *subschema = rootSchema.createSubschema();
+        populateSchema<AdapterType>(rootSchema, rootNode, node, *subschema,
+                currentScope, nodePath, fetchDoc, parentSubschema, ownName,
+                docCache, schemaCache);
+
+        return subschema;
+    }
+
+    /**
      * @brief  Return pointer for the schema corresponding to a given node
      *
      * @todo   Implement support for schema cache
@@ -224,12 +277,11 @@ private:
         typename DocumentCache<AdapterType>::Type &docCache,
         SchemaCache &schemaCache)
     {
-        const Subschema *subschema = rootSchema.createSubschema();
-        populateSchema<AdapterType>(rootSchema, rootNode, node, *subschema,
-                currentScope, nodePath, fetchDoc, parentSubschema, ownName,
-                docCache, schemaCache);
+        std::vector<std::string> schemaCacheKeysToCreate;
 
-        return subschema;
+        return makeOrReuseSchema(rootSchema, rootNode, node, currentScope,
+                nodePath, fetchDoc, parentSubschema, ownName, docCache,
+                schemaCache, schemaCacheKeysToCreate);
     }
 
     /**
