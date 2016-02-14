@@ -141,6 +141,36 @@ private:
     }
 
     /**
+     * @brief  Extract a JSON Reference string from a node
+     *
+     * @param  node    node to extract the JSON Reference from
+     * @param  result  reference to string to set with the result
+     *
+     * @throws std::invalid_argument if node is an object containing a `$ref`
+     *         property but with a value that cannot be interpreted as a string
+     *
+     * @return \c true if a JSON Reference was extracted; \c false otherwise
+     */
+    template<typename AdapterType>
+    bool extractJsonReference(const AdapterType &node, std::string &result)
+    {
+        if (!node.isObject()) {
+            return false;
+        }
+
+        const typename AdapterType::Object o = node.getObject();
+        const typename AdapterType::Object::const_iterator itr = o.find("$ref");
+        if (itr == o.end()) {
+            return false;
+        } else if (!itr->second.asString(result)) {
+            throw std::invalid_argument(
+                    "$ref property expected to contain string value.");
+        }
+
+        return true;
+    }
+
+    /**
      * @brief  Populate a Schema object from JSON Schema document
      *
      * When processing Draft 3 schemas, the parentSubschema and ownName pointers
@@ -185,22 +215,12 @@ private:
             "SchemaParser::populateSchema must be invoked with an "
             "appropriate Adapter implementation");
 
-        // Check for JSON References and process them accordingly
-        if (node.isObject()) {
-            typename AdapterType::Object object = node.getObject();
-            const typename AdapterType::Object::const_iterator itr =
-                    object.find("$ref");
-            if (itr != object.end()) {
-                if (!itr->second.maybeString()) {
-                    throw std::runtime_error(
-                            "$ref property expected to contain string value.");
-                }
-                const std::string &jsonRef = itr->second.asString();
-                populateSchemaUsingJsonReference(rootSchema, jsonRef, rootNode,
-                        node, subschema, currentScope, nodePath, fetchDoc,
-                        parentSubschema, ownName, docCache, schemaCache);
-                return;
-            }
+        std::string jsonRef;
+        if (extractJsonReference(node, jsonRef)) {
+            populateSchemaUsingJsonReference(rootSchema, jsonRef, rootNode,
+                    node, subschema, currentScope, nodePath, fetchDoc,
+                    parentSubschema, ownName, docCache, schemaCache);
+            return;
         }
 
         const typename AdapterType::Object object = node.asObject();
