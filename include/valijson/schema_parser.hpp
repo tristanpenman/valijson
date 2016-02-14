@@ -171,6 +171,25 @@ private:
     }
 
     /**
+     * Sanitise an optional JSON Pointer, trimming trailing slashes
+     */
+    std::string sanitiseJsonPointer(const boost::optional<std::string> input)
+    {
+        if (input) {
+            // Trim trailing slash(es)
+            std::string sanitised = *input;
+            sanitised.erase(sanitised.find_last_not_of('/') + 1,
+                    std::string::npos);
+
+            return sanitised;
+        }
+
+        // If the JSON Pointer is not set, assume that the URI points to
+        // the root of the document
+        return "";
+    }
+
+    /**
      * @brief  Populate a Schema object from JSON Schema document
      *
      * When processing Draft 3 schemas, the parentSubschema and ownName pointers
@@ -543,8 +562,8 @@ private:
                 internal::json_reference::getJsonReferenceUri(jsonRef);
 
         // Extract JSON Pointer from JSON Reference
-        const std::string jsonPointer =
-                internal::json_reference::getJsonReferencePointer(jsonRef);
+        const std::string jsonPointer = sanitiseJsonPointer(
+                internal::json_reference::getJsonReferencePointer(jsonRef));
 
         if (documentUri) {
             // Resolve reference against remote document
