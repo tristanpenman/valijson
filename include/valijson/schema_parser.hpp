@@ -190,6 +190,49 @@ private:
     }
 
     /**
+     * @brief  Return pointer for the schema corresponding to a given node
+     *
+     * @todo   Implement support for schema cache
+     *
+     * @param  rootSchema    The Schema instance, and root subschema, through
+     *                       which other subschemas can be created and
+     *                       modified
+     * @param  rootNode      Reference to the node from which JSON References
+     *                       will be resolved when they refer to the current
+     *                       document
+     * @param  node          Reference to the node to parse
+     * @param  currentScope  URI for current resolution scope
+     * @param  nodePath      JSON Pointer representing path to current node
+     * @param  fetchDoc      Function to fetch remote JSON documents (optional)
+     * @param  parentSchema  Optional pointer to the parent schema, used to
+     *                       support required keyword in Draft 3
+     * @param  ownName       Optional pointer to a node name, used to support
+     *                       the 'required' keyword in Draft 3
+     * @param  docCache      Cache of resolved and fetched remote documents
+     * @param  schemaCache   Cache of populated schemas
+     */
+    template<typename AdapterType>
+    const Subschema * makeOrReuseSchema(
+        Schema &rootSchema,
+        const AdapterType &rootNode,
+        const AdapterType &node,
+        const boost::optional<std::string> currentScope,
+        const std::string &nodePath,
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
+        const Subschema *parentSubschema,
+        const std::string *ownName,
+        typename DocumentCache<AdapterType>::Type &docCache,
+        SchemaCache &schemaCache)
+    {
+        const Subschema *subschema = rootSchema.createSubschema();
+        populateSchema<AdapterType>(rootSchema, rootNode, node, *subschema,
+                currentScope, nodePath, fetchDoc, parentSubschema, ownName,
+                docCache, schemaCache);
+
+        return subschema;
+    }
+
+    /**
      * @brief  Populate a Schema object from JSON Schema document
      *
      * When processing Draft 3 schemas, the parentSubschema and ownName pointers
@@ -655,11 +698,10 @@ private:
             if (schemaNode.maybeObject()) {
                 const std::string childPath = nodePath + "/" +
                         boost::lexical_cast<std::string>(index);
-                const Subschema *subschema = rootSchema.createSubschema();
+                const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                        rootSchema, rootNode, schemaNode, currentScope,
+                        childPath, fetchDoc, NULL, NULL, docCache, schemaCache);
                 constraint.addSubschema(subschema);
-                populateSchema<AdapterType>(rootSchema, rootNode, schemaNode,
-                        *subschema, currentScope, childPath, fetchDoc, NULL,
-                        NULL, docCache, schemaCache);
                 index++;
             } else {
                 throw std::runtime_error(
@@ -712,11 +754,10 @@ private:
             if (schemaNode.maybeObject()) {
                 const std::string childPath = nodePath + "/" +
                         boost::lexical_cast<std::string>(index);
-                const Subschema *subschema = rootSchema.createSubschema();
+                const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                        rootSchema, rootNode, schemaNode, currentScope,
+                        childPath, fetchDoc, NULL, NULL, docCache, schemaCache);
                 constraint.addSubschema(subschema);
-                populateSchema<AdapterType>(rootSchema, rootNode, schemaNode,
-                        *subschema, currentScope, childPath, fetchDoc, NULL,
-                        NULL, docCache, schemaCache);
                 index++;
             } else {
                 throw std::runtime_error(
@@ -814,10 +855,10 @@ private:
             // process it as a dependent schema.
             } else if (member.second.isObject()) {
                 // Parse dependent subschema
-                const Subschema *childSubschema = rootSchema.createSubschema();
-                populateSchema<AdapterType>(rootSchema, rootNode, member.second,
-                        *childSubschema, currentScope, nodePath, fetchDoc, NULL,
-                        NULL, docCache, schemaCache);
+                const Subschema *childSubschema =
+                        makeOrReuseSchema<AdapterType>(rootSchema, rootNode,
+                                member.second, currentScope, nodePath, fetchDoc,
+                                NULL, NULL, docCache, schemaCache);
                 dependenciesConstraint.addSchemaDependency(member.first,
                         childSubschema);
 
@@ -921,12 +962,11 @@ private:
                 // If the value of the additionalItems property is an object,
                 // then it should be parsed into a Schema object, which will be
                 // used to validate additional array items.
-                const Subschema *subschema = rootSchema.createSubschema();
-                constraint.setAdditionalItemsSubschema(subschema);
-                populateSchema<AdapterType>(rootSchema, rootNode,
-                        *additionalItems, *subschema, currentScope,
+                const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                        rootSchema, rootNode, *additionalItems, currentScope,
                         additionalItemsPath, fetchDoc, NULL, NULL, docCache,
                         schemaCache);
+                constraint.setAdditionalItemsSubschema(subschema);
             } else {
                 // Any other format for the additionalItems property will result
                 // in an exception being thrown.
@@ -953,11 +993,10 @@ private:
                 BOOST_FOREACH( const AdapterType v, items->getArray() ) {
                     const std::string childPath = itemsPath + "/" +
                             boost::lexical_cast<std::string>(index);
-                    const Subschema *subschema = rootSchema.createSubschema();
+                    const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                            rootSchema, rootNode, v, currentScope, childPath,
+                            fetchDoc, NULL, NULL, docCache, schemaCache);
                     constraint.addItemSubschema(subschema);
-                    populateSchema<AdapterType>(rootSchema, rootNode, v,
-                            *subschema, currentScope, childPath, fetchDoc,
-                            NULL, NULL, docCache, schemaCache);
                     index++;
                 }
             } else {
@@ -1021,11 +1060,10 @@ private:
             // should contain a Schema that will be used to validate all
             // items in a target array. Any schema defined by the
             // additionalItems constraint will be ignored.
-            const Subschema *subschema = rootSchema.createSubschema();
+            const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                    rootSchema, rootNode, items, currentScope, itemsPath,
+                    fetchDoc, NULL, NULL, docCache, schemaCache);
             constraint.setItemsSubschema(subschema);
-            populateSchema<AdapterType>(rootSchema, rootNode, items,
-                    *subschema, currentScope, itemsPath, fetchDoc,
-                    NULL, NULL, docCache, schemaCache);
 
         } else if (items.maybeObject()) {
             // If a loosely-typed Adapter type is being used, then we'll
@@ -1347,13 +1385,11 @@ private:
         SchemaCache &schemaCache)
     {
         if (node.maybeObject()) {
-            const Subschema *subschema = rootSchema.createSubschema();
+            const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                    rootSchema, rootNode, node, currentScope, nodePath,
+                    fetchDoc, NULL, NULL, docCache, schemaCache);
             constraints::NotConstraint constraint;
             constraint.setSubschema(subschema);
-            populateSchema<AdapterType>(rootSchema, rootNode, node, *subschema,
-                    currentScope, nodePath, fetchDoc, NULL, NULL, docCache,
-                    schemaCache);
-
             return constraint;
         }
 
@@ -1394,11 +1430,10 @@ private:
         BOOST_FOREACH ( const AdapterType schemaNode, node.getArray() ) {
             const std::string childPath = nodePath + "/" +
                     boost::lexical_cast<std::string>(index);
-            const Subschema *subschema = rootSchema.createSubschema();
+            const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                rootSchema, rootNode, schemaNode, currentScope, childPath,
+                fetchDoc, NULL, NULL, docCache, schemaCache);
             constraint.addSubschema(subschema);
-            populateSchema<AdapterType>(rootSchema, rootNode, schemaNode,
-                *subschema, currentScope, childPath, fetchDoc, NULL, NULL,
-                docCache, schemaCache);
             index++;
         }
 
@@ -1484,11 +1519,11 @@ private:
             BOOST_FOREACH( const Member m, properties->getObject() ) {
                 const std::string &property = m.first;
                 const std::string childPath = propertiesPath + "/" + property;
-                const Subschema *subschema = rootSchema.createSubschema();
+                const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                        rootSchema, rootNode, m.second, currentScope, childPath,
+                        fetchDoc, parentSubschema, &property, docCache,
+                        schemaCache);
                 constraint.addPropertySubschema(property, subschema);
-                populateSchema<AdapterType>(rootSchema, rootNode, m.second,
-                        *subschema, currentScope, childPath, fetchDoc,
-                        parentSubschema, &property, docCache, schemaCache);
             }
         }
 
@@ -1498,11 +1533,11 @@ private:
                 const std::string &pattern = m.first;
                 const std::string childPath = patternPropertiesPath + "/" +
                         pattern;
-                const Subschema *subschema = rootSchema.createSubschema();
+                const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                        rootSchema, rootNode, m.second, currentScope, childPath,
+                        fetchDoc, parentSubschema, &pattern, docCache,
+                        schemaCache);
                 constraint.addPatternPropertySubschema(pattern, subschema);
-                populateSchema<AdapterType>(rootSchema, rootNode, m.second,
-                        *subschema, currentScope, childPath, fetchDoc,
-                        parentSubschema, &pattern, docCache, schemaCache);
             }
         }
 
@@ -1526,12 +1561,11 @@ private:
             } else if (additionalProperties->isObject()) {
                 // If additionalProperties is an object, it should be used as
                 // a child schema.
-                const Subschema *subschema = rootSchema.createSubschema();
+                const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                        rootSchema, rootNode, *additionalProperties,
+                        currentScope, additionalPropertiesPath, fetchDoc, NULL,
+                        NULL, docCache, schemaCache);
                 constraint.setAdditionalPropertiesSubschema(subschema);
-                populateSchema<AdapterType>(rootSchema, rootNode,
-                        *additionalProperties, *subschema, currentScope,
-                        additionalPropertiesPath, fetchDoc, NULL, NULL,
-                        docCache, schemaCache);
             } else {
                 // All other types are invalid
                 throw std::runtime_error(
@@ -1667,11 +1701,10 @@ private:
                 } else if (v.isObject() && version == kDraft3) {
                     const std::string childPath = nodePath + "/" +
                             boost::lexical_cast<std::string>(index);
-                    const Subschema *subschema = rootSchema.createSubschema();
+                    const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                            rootSchema, rootNode, v, currentScope, childPath,
+                            fetchDoc, NULL, NULL, docCache, schemaCache);
                     constraint.addSchemaType(subschema);
-                    populateSchema<AdapterType>(rootSchema, rootNode, v,
-                            *subschema, currentScope, childPath, fetchDoc,
-                            NULL, NULL, docCache, schemaCache);
 
                 } else {
                     throw std::runtime_error("Type name should be a string.");
@@ -1681,11 +1714,10 @@ private:
             }
 
         } else if (node.isObject() && version == kDraft3) {
-            const Subschema *subschema = rootSchema.createSubschema();
+            const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                    rootSchema, rootNode, node, currentScope, nodePath,
+                    fetchDoc, NULL, NULL, docCache, schemaCache);
             constraint.addSchemaType(subschema);
-            populateSchema<AdapterType>(rootSchema, rootNode, node, *subschema,
-                    currentScope, nodePath, fetchDoc, NULL, NULL, docCache,
-                    schemaCache);
 
         } else {
             throw std::runtime_error("Type name should be a string.");
