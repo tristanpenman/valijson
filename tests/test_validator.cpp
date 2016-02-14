@@ -23,6 +23,8 @@
 #include <valijson/utils/json11_utils.hpp>
 #endif // VALIJSON_BUILD_CXX11_ADAPTERS
 
+#define REMOTES_DIR "../thirdparty/JSON-Schema-Test-Suite/remotes/"
+
 #define TEST_SUITE_DIR "../thirdparty/JSON-Schema-Test-Suite/tests/"
 
 using valijson::adapters::AdapterTraits;
@@ -30,6 +32,52 @@ using valijson::adapters::RapidJsonAdapter;
 using valijson::Schema;
 using valijson::SchemaParser;
 using valijson::Validator;
+
+std::string getRelativePath(const std::string &uri)
+{
+   const std::string dummyUri = "http://localhost:1234/";
+   size_t n = uri.find(dummyUri);
+   if (n != std::string::npos) {
+       return REMOTES_DIR + uri.substr(dummyUri.size());
+   }
+
+   const std::string v3SchemaUri = "http://json-schema.org/draft-03/schema";
+   n = uri.find(v3SchemaUri);
+   if (n != std::string::npos) {
+       return "../doc/schema/draft-03.json";
+   }
+
+   const std::string v4SchemaUri = "http://json-schema.org/draft-04/schema";
+   n = uri.find(v4SchemaUri);
+   if (n != std::string::npos) {
+       return "../doc/schema/draft-04.json";
+   }
+
+   throw std::runtime_error("Attempt fetchDoc of " + uri);
+}
+
+template<typename AdapterType>
+const typename AdapterTraits<AdapterType>::DocumentType * fetchDocument(
+       const std::string &uri)
+{
+   const std::string relativePath = getRelativePath(uri);
+
+   typename AdapterTraits<AdapterType>::DocumentType *document =
+           new typename AdapterTraits<AdapterType>::DocumentType();
+
+   if (!valijson::utils::loadDocument(relativePath, *document)) {
+       delete document;
+       throw std::runtime_error("Failed fetchDoc of " + uri);
+   }
+
+   return document;
+}
+
+template<typename AdapterType>
+void freeDocument(const typename AdapterTraits<AdapterType>::DocumentType *ptr)
+{
+   delete ptr;
+}
 
 class TestValidator : public ::testing::TestWithParam<const char *>
 {
@@ -72,7 +120,8 @@ protected:
                 // Parse schema
                 Schema schema;
                 SchemaParser parser(version);
-                parser.populateSchema(itr->second, schema);
+                parser.populateSchema(itr->second, schema,
+                        fetchDocument<AdapterType>, freeDocument<AdapterType>);
 
                 // For each test in the 'tests' array
                 itr = object.find("tests");
@@ -212,6 +261,11 @@ TEST_F(TestValidator, Draft3_Properties)
     processDraft3TestFile(TEST_SUITE_DIR "draft3/properties.json");
 }
 
+TEST_F(TestValidator, Draft3_Ref)
+{
+   processDraft3TestFile(TEST_SUITE_DIR "draft3/ref.json");
+}
+
 TEST_F(TestValidator, Draft3_Required)
 {
     processDraft3TestFile(TEST_SUITE_DIR "draft3/required.json");
@@ -330,6 +384,11 @@ TEST_F(TestValidator, Draft4_PatternProperties)
 TEST_F(TestValidator, Draft4_Properties)
 {
     processDraft4TestFile(TEST_SUITE_DIR "draft4/properties.json");
+}
+
+TEST_F(TestValidator, Draft4_Ref)
+{
+    processDraft4TestFile(TEST_SUITE_DIR "draft4/ref.json");
 }
 
 TEST_F(TestValidator, Draft4_Required)
