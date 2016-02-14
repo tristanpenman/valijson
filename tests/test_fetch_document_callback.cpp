@@ -28,7 +28,7 @@ class TestFetchDocumentCallback : public ::testing::Test
 
 const RapidJsonAdapter * fetchDocument(const std::string &uri)
 {
-    EXPECT_STREQ("test", uri.c_str());
+    EXPECT_STREQ("http://localhost:1234/", uri.c_str());
 
     rapidjson::Value valueOfTypeAttribute;
     valueOfTypeAttribute.SetString("string", allocator);
@@ -60,7 +60,7 @@ TEST_F(TestFetchDocumentCallback, Basics)
     rapidjson::Document schemaDocument;
     RapidJsonAdapter schemaDocumentAdapter(schemaDocument);
     schemaDocument.SetObject();
-    schemaDocument.AddMember("$ref", "test#/", allocator);
+    schemaDocument.AddMember("$ref", "http://localhost:1234/#/", allocator);
 
     // Parse schema document
     Schema schema;
