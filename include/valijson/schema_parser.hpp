@@ -551,16 +551,26 @@ private:
         const typename AdapterType::Object object = node.asObject();
         typename AdapterType::Object::const_iterator itr(object.end());
 
-        if ((itr = object.find("id")) != object.end()) {
-            if (itr->second.maybeString()) {
-                rootSchema.setSubschemaId(&subschema, itr->second.asString());
+        // Check for 'id' attribute and update current scope
+        boost::optional<std::string> updatedScope;
+        if ((itr = object.find("id")) != object.end() &&
+                itr->second.maybeString()) {
+            const std::string id = itr->second.asString();
+            rootSchema.setSubschemaId(&subschema, itr->second.asString());
+            if (!currentScope || internal::uri::isUriAbsolute(id)) {
+                updatedScope = id;
+            } else {
+                updatedScope = internal::uri::resolveRelativeUri(
+                        *currentScope, id);
             }
+        } else {
+            updatedScope = currentScope;
         }
 
         if ((itr = object.find("allOf")) != object.end()) {
             rootSchema.addConstraintToSubschema(
                     makeAllOfConstraint(rootSchema, rootNode, itr->second,
-                            currentScope, nodePath + "/allOf", fetchDoc,
+                            updatedScope, nodePath + "/allOf", fetchDoc,
                             docCache, schemaCache),
                     &subschema);
         }
@@ -568,7 +578,7 @@ private:
         if ((itr = object.find("anyOf")) != object.end()) {
             rootSchema.addConstraintToSubschema(
                     makeAnyOfConstraint(rootSchema, rootNode, itr->second,
-                            currentScope, nodePath + "/anyOf", fetchDoc,
+                            updatedScope, nodePath + "/anyOf", fetchDoc,
                             docCache, schemaCache),
                     &subschema);
         }
@@ -576,7 +586,7 @@ private:
         if ((itr = object.find("dependencies")) != object.end()) {
             rootSchema.addConstraintToSubschema(
                     makeDependenciesConstraint(rootSchema, rootNode,
-                            itr->second, currentScope,
+                            itr->second, updatedScope,
                             nodePath + "/dependencies", fetchDoc, docCache,
                             schemaCache),
                     &subschema);
@@ -625,7 +635,7 @@ private:
                 if (!itemsItr->second.isArray()) {
                     rootSchema.addConstraintToSubschema(
                             makeSingularItemsConstraint(rootSchema, rootNode,
-                                    itemsItr->second, currentScope,
+                                    itemsItr->second, updatedScope,
                                     nodePath + "/items", fetchDoc, docCache,
                                     schemaCache),
                             &subschema);
@@ -639,7 +649,7 @@ private:
                                             &itemsItr->second : NULL,
                                     additionalItemsItr != object.end() ?
                                             &additionalItemsItr->second : NULL,
-                                    currentScope, nodePath + "/items",
+                                    updatedScope, nodePath + "/items",
                                     nodePath + "/additionalItems", fetchDoc,
                                     docCache, schemaCache),
                             &subschema);
@@ -734,7 +744,7 @@ private:
         if ((itr = object.find("not")) != object.end()) {
             rootSchema.addConstraintToSubschema(
                     makeNotConstraint(rootSchema, rootNode, itr->second,
-                            currentScope, nodePath + "/not", fetchDoc, docCache,
+                            updatedScope, nodePath + "/not", fetchDoc, docCache,
                             schemaCache),
                     &subschema);
         }
@@ -742,7 +752,7 @@ private:
         if ((itr = object.find("oneOf")) != object.end()) {
             rootSchema.addConstraintToSubschema(
                     makeOneOfConstraint(rootSchema, rootNode, itr->second,
-                            currentScope, nodePath + "/oneOf", fetchDoc,
+                            updatedScope, nodePath + "/oneOf", fetchDoc,
                             docCache, schemaCache),
                     &subschema);
         }
@@ -770,7 +780,7 @@ private:
                                         &patternPropertiesItr->second : NULL,
                                 additionalPropertiesItr != object.end() ?
                                         &additionalPropertiesItr->second : NULL,
-                                currentScope, nodePath + "/properties",
+                                updatedScope, nodePath + "/properties",
                                 nodePath + "/patternProperties",
                                 nodePath + "/additionalProperties",
                                 fetchDoc, &subschema, docCache, schemaCache),
@@ -810,7 +820,7 @@ private:
         if ((itr = object.find("type")) != object.end()) {
             rootSchema.addConstraintToSubschema(
                     makeTypeConstraint(rootSchema, rootNode, itr->second,
-                            currentScope, nodePath + "/type", fetchDoc,
+                            updatedScope, nodePath + "/type", fetchDoc,
                             docCache, schemaCache),
                     &subschema);
         }
