@@ -853,7 +853,17 @@ public:
         const Subschema *additionalPropertiesSubschema =
                 constraint.getAdditionalPropertiesSubschema();
         if (!additionalPropertiesSubschema) {
-            return propertiesMatched.size() == target.getObjectSize();
+            if (propertiesMatched.size() != target.getObjectSize()) {
+                if (results) {
+                    results->pushError(context, "Object contains properties "
+                            "that could not be validated using 'properties' "
+                            "or 'additionalProperties' constraints");
+                }
+
+                return false;
+            }
+
+            return validated;
         }
 
         BOOST_FOREACH( const typename AdapterType::ObjectMember m, object ) {
