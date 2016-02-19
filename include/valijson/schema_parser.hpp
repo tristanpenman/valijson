@@ -464,7 +464,13 @@ private:
     /**
      * @brief  Return pointer for the schema corresponding to a given node
      *
-     * @todo   Implement support for schema cache
+     * This function makes use of a schema cache, so that if the path to the
+     * current node is the same as one that has already been parsed and
+     * populated, a pointer to the existing Subschema will be returned.
+     *
+     * Should a series of $ref, or reference, nodes be resolved before reaching
+     * a concrete node, an entry will be added to the schema cache for each of
+     * the nodes in that path.
      *
      * @param  rootSchema    The Schema instance, and root subschema, through
      *                       which other subschemas can be created and
@@ -658,7 +664,8 @@ private:
         }
 
         if ((itr = object.find("maximum")) != object.end()) {
-            typename AdapterType::Object::const_iterator exclusiveMaximumItr = object.find("exclusiveMaximum");
+            typename AdapterType::Object::const_iterator exclusiveMaximumItr =
+                    object.find("exclusiveMaximum");
             if (exclusiveMaximumItr == object.end()) {
                 rootSchema.addConstraintToSubschema(
                         makeMaximumConstraint<AdapterType>(itr->second, NULL),
@@ -691,7 +698,8 @@ private:
         }
 
         if ((itr = object.find("minimum")) != object.end()) {
-            typename AdapterType::Object::const_iterator exclusiveMinimumItr = object.find("exclusiveMinimum");
+            typename AdapterType::Object::const_iterator exclusiveMinimumItr =
+                    object.find("exclusiveMinimum");
             if (exclusiveMinimumItr == object.end()) {
                 rootSchema.addConstraintToSubschema(
                         makeMinimumConstraint<AdapterType>(itr->second, NULL),
@@ -799,7 +807,8 @@ private:
                                 parentSubschema);
                     }
                 } else {
-                    throw std::runtime_error("'required' constraint not valid here");
+                    throw std::runtime_error(
+                            "'required' constraint not valid here");
                 }
             } else {
                 rootSchema.addConstraintToSubschema(
