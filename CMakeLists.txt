@@ -1,7 +1,10 @@
 cmake_minimum_required (VERSION 2.6)
 project (valijson)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
+option (INSTALL_HEADERS "Install valijson Headers." TRUE)
+option (BUILD_EXAMPLES "Build valijson Examples." FALSE)
+option (BUILD_TESTS "Build valijson Tests." FALSE)
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall ")
 SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 if(VALIJSON_CXX11_ADAPTERS STREQUAL "disabled")
     message(STATUS "Building with C++11 support disabled")
