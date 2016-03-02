@@ -66,9 +66,9 @@ public:
         try {
             for (std::vector<const Constraint *>::iterator itr =
                     constraints.begin(); itr != constraints.end(); ++itr) {
-                const Constraint *constraint = *itr;
+                Constraint *constraint = const_cast<Constraint *>(*itr);
                 constraint->~Constraint();
-                freeFn((void*)(constraint));
+                freeFn(constraint);
             }
             constraints.clear();
         } catch (const std::exception &e) {

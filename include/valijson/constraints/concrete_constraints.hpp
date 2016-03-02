@@ -441,7 +441,7 @@ public:
     }
 
 private:
-    uint64_t maxItems;
+    size_t maxItems;
 };
 
 /**
@@ -495,7 +495,7 @@ public:
     }
 
 private:
-    uint64_t maxProperties;
+    size_t maxProperties;
 };
 
 /**
@@ -562,7 +562,7 @@ public:
     }
 
 private:
-    uint64_t minItems;
+    size_t minItems;
 };
 
 /**
@@ -616,7 +616,7 @@ public:
     }
 
 private:
-    uint64_t minProperties;
+    size_t minProperties;
 };
 
 /**

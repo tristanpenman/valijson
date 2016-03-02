@@ -46,7 +46,7 @@ public:
     virtual ~Schema()
     {
         sharedEmptySubschema->~Subschema();
-        freeFn((void*)(sharedEmptySubschema));
+        freeFn(const_cast<Subschema *>(sharedEmptySubschema));
         sharedEmptySubschema = NULL;
 
         try {

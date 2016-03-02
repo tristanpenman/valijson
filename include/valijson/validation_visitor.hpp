@@ -1026,7 +1026,7 @@ public:
      *
      * @return  true if validation succeeds, false otherwise
      */
-    virtual bool visit(const UniqueItemsConstraint &constraint)
+    virtual bool visit(const UniqueItemsConstraint &)
     {
         if ((strictTypes && !target.isArray()) || !target.maybeArray()) {
             return true;
