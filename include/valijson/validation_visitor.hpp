@@ -372,7 +372,7 @@ public:
         } else if (target.asDouble() > maximum) {
             if (results) {
                 results->pushError(context,
-                        "Expected number less than or equal to" +
+                        "Expected number less than or equal to " +
                         boost::lexical_cast<std::string>(maximum));
             }
 
@@ -458,7 +458,7 @@ public:
         }
 
         if (results) {
-            results->pushError(context, "Object should have no more than" +
+            results->pushError(context, "Object should have no more than " +
                     boost::lexical_cast<std::string>(maxProperties) +
                     " properties.");
         }
@@ -495,7 +495,7 @@ public:
         } else if (target.asDouble() < minimum) {
             if (results) {
                 results->pushError(context,
-                        "Expected number greater than or equal to" +
+                        "Expected number greater than or equal to " +
                         boost::lexical_cast<std::string>(minimum));
             }
 
@@ -581,7 +581,7 @@ public:
         }
 
         if (results) {
-            results->pushError(context, "Object should have no fewer than" +
+            results->pushError(context, "Object should have no fewer than " +
                     boost::lexical_cast<std::string>(minProperties) +
                     " properties.");
         }
