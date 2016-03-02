@@ -833,8 +833,8 @@ public:
         // constraints
         const typename AdapterType::Object object = target.asObject();
         constraint.applyToProperties(ValidatePropertySubschemas(object, context,
-                true, false, true, strictTypes, results, &propertiesMatched,
-                &validated));
+                true, results != NULL, true, strictTypes, results,
+                &propertiesMatched, &validated));
 
         // Exit early if validation failed, and we're not collecting exhaustive
         // validation results
