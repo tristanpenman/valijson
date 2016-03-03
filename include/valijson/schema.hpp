@@ -82,6 +82,25 @@ public:
     }
 
     /**
+     * @brief  Copy a constraint to a specific sub-schema
+     *
+     * @param  constraint  reference to a constraint that will be copied into
+     *                     the sub-schema
+     * @param  subschema   pointer to the sub-schema that will own the copied
+     *                     constraint
+     *
+     * @throws std::runtime_error if the sub-schema is not owned by this Schema
+     *         instance
+     */
+    void addConstraintToSubschema(std::unique_ptr<Constraint> constraint,
+            const Subschema *subschema)
+    {
+        // TODO: Check heirarchy for subschemas that do not belong...
+
+        mutableSubschema(subschema)->addConstraint(std::move(constraint));
+    }
+
+    /**
      * @brief  Create a new Subschema instance that is owned by this Schema
      *
      * @returns  const pointer to the new Subschema instance

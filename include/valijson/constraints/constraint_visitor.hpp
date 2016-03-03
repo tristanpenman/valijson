@@ -28,6 +28,7 @@ class RequiredConstraint;
 class SingularItemsConstraint;
 class TypeConstraint;
 class UniqueItemsConstraint;
+class PolyConstraint;
 
 /// Interface to allow usage of the visitor pattern with Constraints
 class ConstraintVisitor
@@ -58,6 +59,7 @@ protected:
     typedef constraints::SingularItemsConstraint SingularItemsConstraint;
     typedef constraints::TypeConstraint TypeConstraint;
     typedef constraints::UniqueItemsConstraint UniqueItemsConstraint;
+    typedef constraints::PolyConstraint PolyConstraint;
 
 public:
 
@@ -84,6 +86,7 @@ public:
     virtual bool visit(const SingularItemsConstraint &) = 0;
     virtual bool visit(const TypeConstraint &) = 0;
     virtual bool visit(const UniqueItemsConstraint &) = 0;
+    virtual bool visit(const PolyConstraint &) = 0;
 
 };
 

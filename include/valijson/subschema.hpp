@@ -7,6 +7,7 @@
 #include <boost/foreach.hpp>
 #include <boost/function.hpp>
 #include <boost/optional.hpp>
+#include <memory>
 
 #include <valijson/constraints/constraint.hpp>
 
@@ -91,6 +92,21 @@ public:
     void addConstraint(const Constraint &constraint)
     {
         constraints.push_back(constraint.clone(allocFn, freeFn));
+    }
+    /**
+     * @brief  Add a constraint to this sub-schema
+     *
+     * The constraint will be copied before being added to the list of
+     * constraints for this Subschema. Note that constraints will be copied
+     * only as deep as references to other Subschemas - e.g. copies of
+     * constraints that refer to sub-schemas, will continue to refer to the
+     * same Subschema instances.
+     *
+     * @param  constraint  Reference to the constraint to copy
+     */
+    void addConstraint(std::unique_ptr<Constraint>constraint)
+    {
+        constraints.push_back(constraint.release());
     }
 
     /**
