@@ -1063,7 +1063,7 @@ public:
 
 class PolyConstraint : public BasicConstraint<PolyConstraint> {
     public:
-    virtual bool validate(const adapters::Adapter &target, const std::vector<std::string>& context, valijson::ValidationResults *results) const {throw std::runtime_error("attempt to validate incomplete"); }
+    virtual bool validate(const adapters::Adapter &, const std::vector<std::string>& , valijson::ValidationResults *) const {throw std::runtime_error("attempt to validate incomplete"); }
     virtual PolyConstraint * clone() const {throw std::runtime_error("attempt to validate incomplete"); }
 };
 
