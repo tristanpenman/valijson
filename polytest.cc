@@ -96,7 +96,11 @@ std::string err2String(ValidationResults& results) {
 
 using namespace constraints;
 
-Json::Value *root; // needs to be a better way to do this.
+class PolyResults : public ValidationResults {
+  public:
+    Json::Value &root;
+    PolyResults(Json::Value &root) : root(root) {}
+};
 
 class PathConstraint : public valijson::constraints::PolyConstraint {
     const std::string path;
@@ -110,9 +114,10 @@ public:
      };
 
     virtual bool validate(const adapters::Adapter &target, const std::vector<std::string> &context, ValidationResults *results) const {
+        PolyResults presult = dynamic_cast<PolyResults &>(*results);
         std::string spath(path + "." + target.asString());
         const Json::Path jpath(spath);
-        const Json::Value& find(jpath.resolve(*root));
+        const Json::Value& find(jpath.resolve(presult.root));
         if (!find) {
             std::string estring("Failed to find " + spath + " in input");
             if (results) {
@@ -160,12 +165,11 @@ int main(int argc,char ** argv) {
     parser.populateSchema(schemaDocumentAdapter, schema);
 
     Json::Value doc = jsonParse(emplrec);
-    root = &doc;
 
     JsonCppAdapter targetDocumentAdapter(doc);
     deblog("doc " << doc);
     deblog("schema" << schemaJson);
-    ValidationResults results;
+    PolyResults results(doc) ;
     Validator validator;
     std::regex John("Failed.*John");
     std::regex Jane("Failed.*Jane");
