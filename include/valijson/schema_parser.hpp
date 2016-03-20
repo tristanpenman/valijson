@@ -930,8 +930,9 @@ private:
 
             // TODO: Need to detect degenerate circular references
             resolveThenPopulateSchema(rootSchema, newRootNode,
-                    referencedAdapter, schema, boost::none, actualJsonPointer,
-                    fetchDoc, parentSchema, ownName, docCache, schemaCache);
+                    referencedAdapter, subschema, boost::none,
+                    actualJsonPointer, fetchDoc, parentSchema, ownName,
+                    docCache, schemaCache);
 
         } else {
             const AdapterType &referencedAdapter =
@@ -940,7 +941,7 @@ private:
 
             // TODO: Need to detect degenerate circular references
             resolveThenPopulateSchema(rootSchema, rootNode, referencedAdapter,
-                    schema, boost::none, actualJsonPointer, fetchDoc,
+                    subschema, boost::none, actualJsonPointer, fetchDoc,
                     parentSchema, ownName, docCache, schemaCache);
         }
     }
