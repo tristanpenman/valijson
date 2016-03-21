@@ -13,10 +13,14 @@
 #include <boost/regex.hpp>
 
 #include <valijson/adapters/jsoncpp_adapter.hpp>
+#include <valijson/adapters/property_tree_adapter.hpp>
+#include <valijson/adapters/adapter.hpp>
 #include <valijson/schema.hpp>
 #include <valijson/schema_parser.hpp>
 #include <valijson/validation_results.hpp>
 #include <valijson/validator.hpp>
+#include "temp/AdapterPath.h"
+#include <boost/property_tree/json_parser.hpp>
 
 using namespace valijson;
 using valijson::Schema;
@@ -24,20 +28,10 @@ using valijson::SchemaParser;
 using valijson::Validator;
 using valijson::ValidationResults;
 using valijson::adapters::JsonCppAdapter;
+using valijson::adapters::PropertyTreeAdapter;
+using valijson::adapters::Adapter;
 
 using namespace std;
-
-Json::Value jsonParse(const string &jsonStr) {
-     Json::Value retJson;
-     Json::Reader json_reader;
-     if (jsonStr.length() != 0) {
-         if (!json_reader.parse(jsonStr, retJson)) {
-             throw runtime_error("json parse failure\n"
-                 + json_reader.getFormattedErrorMessages());
-         }
-     }
-     return retJson;
-}
 
 const static string emplrec (R"(
 { 
@@ -62,7 +56,7 @@ const static string emplrec (R"(
 //            "type": "string",
 //            "pattern": "1.1.1.1"
 //        },
-const static string tschema(R"(
+const static string emplschema(R"(
 {
     "type" : "object",
     "properties" : {
@@ -96,37 +90,53 @@ std::string err2String(ValidationResults& results) {
 
 using namespace constraints;
 
-class PolyResults : public ValidationResults {
+
+template <typename DocType>
+class RootResults : public ValidationResults {
   public:
-    Json::Value &root;
-    PolyResults(Json::Value &root) : root(root) {}
+    RootResults(const DocType& root)
+        : root(root) {}
+    const DocType& root;
 };
 
 class PathConstraint : public valijson::constraints::PolyConstraint {
-    const std::string path;
+    const Path jpath;
 
 public:
-    PathConstraint(const std::string &path) : path(path){ }
+    PathConstraint(const std::string &path) : jpath(path){ }
     
     virtual valijson::constraints::PolyConstraint * clone() const {
         deblog("clone !");
-        return new  PathConstraint(path);
+        return new PathConstraint(*this);
      };
 
-    virtual bool validate(const adapters::Adapter &target, const std::vector<std::string> &context, ValidationResults *results) const {
-        PolyResults presult = dynamic_cast<PolyResults &>(*results);
-        std::string spath(path + "." + target.asString());
-        const Json::Path jpath(spath);
-        const Json::Value& find(jpath.resolve(presult.root));
-        if (!find) {
-            std::string estring("Failed to find " + spath + " in input");
-            if (results) {
-                results->pushError(context, estring);
-            }
+    virtual bool validate(const Adapter& target,
+            const std::vector<std::string>&context,
+            ValidationResults* results) const {
+
+        // determine type of Adapter, and call appropriate validator.
+        // This will throw for any other type of adapter.
+        auto target2 = dynamic_cast<PropertyTreeAdapter const * const>(&target);
+        if (target2) 
+            return validate2(*target2, context, results);
+         else 
+            return validate2(dynamic_cast<const JsonCppAdapter &>(target), context, results);
+        
+    }
+
+    template <typename DocType>
+    bool validate2(const DocType &target, const std::vector<std::string> &context, ValidationResults *results) const {
+        RootResults<DocType> &presult = dynamic_cast<RootResults<DocType >&>(*results);
+
+        const DocType base(jpath.resolve(presult.root));
+        Path local(target.asString());
+        std::string err(local.resolveErr(base));
+        if (err.length()) {
+            if (results)
+                results->pushError(context, err);
             return false;
-        } else {
-            return true;
-        } 
+        }
+        return true;
     }
     virtual Constraint * clone(CustomAlloc allocFn, CustomFree freeFn) const
     {
@@ -146,34 +156,42 @@ public:
     }
 };
 
+
 class PathConstraintBuilder : public valijson::ConstraintBuilder {
      std::unique_ptr<Constraint> make (adapters::Adapter &val) {
          return std::unique_ptr<Constraint>(new PathConstraint(val.asString()));
      }
 };
 
-int main(int argc,char ** argv) {
+void
+readTree(const std::string& json, Json::Value& doc) {
+    Json::Reader json_reader;
+    if (!json_reader.parse(json, doc)) {
+        throw std::runtime_error(
+            "json parse failure\n" + json_reader.getFormattedErrorMessages());
+    }
+}
 
-    Json::Value schemaJson(jsonParse(tschema));
+void
+readTree(const std::string& json, boost::property_tree::ptree& ptree) {
+    std::istringstream gstream(json);
+    boost::property_tree::json_parser::read_json(gstream, ptree);
+}
 
-    JsonCppAdapter schemaDocumentAdapter(schemaJson);
+template <typename AdapterType, typename DocType>
+int doTest(const AdapterType &schemaDoc, const DocType &doc) {
 
     SchemaParser parser;
     PathConstraintBuilder pcb;
     parser.addConstraintBuilder("jsonpath", pcb);
     Schema schema;
-    parser.populateSchema(schemaDocumentAdapter, schema);
+    parser.populateSchema(schemaDoc, schema);
 
-    Json::Value doc = jsonParse(emplrec);
-
-    JsonCppAdapter targetDocumentAdapter(doc);
-    deblog("doc " << doc);
-    deblog("schema" << schemaJson);
-    PolyResults results(doc) ;
+    RootResults<DocType> results(doc) ;
     Validator validator;
     std::regex John("Failed.*John");
     std::regex Jane("Failed.*Jane");
-    if (validator.validate(schema,targetDocumentAdapter, &results)) {
+    if (validator.validate(schema, doc, &results)) {
         deblog("oops, should have failed " << err2String(results));
     } else {
         std::string err(err2String(results));
@@ -188,3 +206,24 @@ int main(int argc,char ** argv) {
     }
 }
 
+int main(int argc,char ** argv) {
+    Json::Value jschema;
+    readTree(emplschema,jschema);
+    Json::Value jdoc;
+    readTree(emplrec,jdoc);
+
+    doTest(JsonCppAdapter(jschema),JsonCppAdapter(jdoc));
+
+    boost::property_tree::ptree tschema;
+    readTree(emplschema,tschema);
+    boost::property_tree::ptree tdoc;
+    readTree(emplrec,tdoc);
+
+    doTest(PropertyTreeAdapter(tschema),PropertyTreeAdapter(tdoc));
+
+
+    doTest(JsonCppAdapter(jschema),PropertyTreeAdapter(tdoc));
+    doTest(PropertyTreeAdapter(tschema),JsonCppAdapter(jdoc));
+}
+
+#include "temp/AdapterPath.cc"

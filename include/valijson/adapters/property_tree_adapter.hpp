@@ -64,7 +64,7 @@ public:
     typedef PropertyTreeArrayValueIterator const_iterator;
     typedef PropertyTreeArrayValueIterator iterator;
 
-    /// Construct a PropertyTreeArra7 referencing an empty property tree
+   /// Construct a PropertyTreeArray referencing an empty property tree
     /// singleton.
     PropertyTreeArray()
       : array(emptyTree()) { }
@@ -93,6 +93,7 @@ public:
         return array.size();
     }
 
+    const boost::property_tree::ptree &operator [](const size_t index) const;
 private:
 
     /**
@@ -543,6 +544,9 @@ public:
         const boost::property_tree::ptree::const_iterator &itr)
       : itr(itr) { }
 
+    const boost::property_tree::ptree & drefx() {
+        return itr->second;
+    }
     /// Returns a PropertyTreeAdapter that contains the value of the current
     /// element.
     PropertyTreeAdapter dereference() const
@@ -593,6 +597,14 @@ private:
 
     boost::property_tree::ptree::const_iterator itr;
 };
+
+inline const boost::property_tree::ptree &PropertyTreeArray::operator [](const size_t index) const {
+    if (index >= size())
+        throw std::runtime_error("array overflow");
+    auto it(begin());
+    it.advance(index);
+    return it.drefx();
+}
 
 /**
  * @brief   Class for iterating over the members belonging to a JSON object.

@@ -421,20 +421,18 @@ public:
         if (value.isString()) {
             return value.getString(result);
         } else if (value.isNull()) {
-            result.clear();
+            result =  "[null]";
             return true;
         } else if (value.isArray()) {
-            size_t arraySize;
-            if (value.getArraySize(arraySize) && arraySize == 0) {
-                result.clear();
-                return true;
-            }
+            size_t arraySize = -1;
+            value.getArraySize(arraySize);
+            result += "array[" + boost::lexical_cast<std::string>(arraySize) + "]";
+            return true;
         } else if (value.isObject()) {
-            size_t objectSize;
-            if (value.getObjectSize(objectSize) && objectSize == 0) {
-                result.clear();
-                return true;
-            }
+            size_t objectSize = -1;
+            value.getObjectSize(objectSize);
+            result += "obj[" + boost::lexical_cast<std::string>(objectSize) + "]";
+            return true;
         } else if (value.isBool()) {
             bool boolValue;
             if (value.getBool(boolValue)) {
@@ -457,6 +455,8 @@ public:
                     return true;
                 } catch (boost::bad_lexical_cast &) { }
             }
+        } else {
+            throw std::runtime_error("mystery JSON type cannot be converted to a string");
         }
 
         return false;
