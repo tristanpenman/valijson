@@ -107,6 +107,10 @@ public:
         return value.size();
     }
 
+    const Json::Value &operator [](const size_t index) const {
+        return value[(int)index];
+    }
+
 private:
 
     /**
@@ -194,7 +198,10 @@ public:
     {
         return value.size();
     }
-
+//    // useful for debugging
+//    const Json::Value & getVal() const {
+//        return value;
+//    }
 private:
 
     /// Return a reference to an empty JsonCpp object
