@@ -41,11 +41,10 @@ namespace json_reference {
      *
      * @param   jsonRef  JSON Reference to extract from
      *
-     * @return  string containing JSON Pointer
-     *
-     * @throw   std::runtime_error if the string does not contain a JSON Pointer
+     * @return  Optional string containing JSON Pointer
      */
-    inline std::string getJsonReferencePointer(const std::string &jsonRef)
+    inline boost::optional<std::string> getJsonReferencePointer(
+        const std::string &jsonRef)
     {
         // Attempt to extract JSON Pointer if '#' character is present. Note
         // that a valid pointer would contain at least a leading forward
@@ -55,9 +54,9 @@ namespace json_reference {
             return jsonRef.substr(ptrPos + 1);
         }
 
-        throw std::runtime_error(
-                "JSON Reference value does not contain a valid JSON Pointer");
+        return boost::none;
     }
+
 
 } // namespace json_reference
 } // namespace internal

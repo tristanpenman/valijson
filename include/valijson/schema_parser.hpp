@@ -14,6 +14,7 @@
 #include <valijson/constraints/concrete_constraints.hpp>
 #include <valijson/internal/json_pointer.hpp>
 #include <valijson/internal/json_reference.hpp>
+#include <valijson/internal/uri.hpp>
 #include <valijson/schema.hpp>
 
 #ifdef __clang__
@@ -57,10 +58,16 @@ public:
      * @brief  Struct to contain templated function type for fetching documents
      */
     template<typename AdapterType>
-    struct FetchDocumentFunction {
-        /// Functor for dereferencing JSON References
-        typedef boost::function<boost::shared_ptr<const AdapterType>(
-                const std::string &uri)> Type;
+    struct FunctionPtrs
+    {
+        typedef typename adapters::AdapterTraits<AdapterType>::DocumentType
+                DocumentType;
+
+        /// Templated function pointer type for fetching remote documents
+        typedef const DocumentType * (*FetchDoc)(const std::string &uri);
+
+        /// Templated function pointer type for freeing fetched documents
+        typedef void (*FreeDoc)(const DocumentType *);
     };
 
     /**
@@ -79,14 +86,428 @@ public:
     void populateSchema(
         const AdapterType &node,
         Schema &schema,
-        boost::optional<typename FetchDocumentFunction<AdapterType>::Type>
-                fetchDoc = boost::none)
+        typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc = NULL,
+        typename FunctionPtrs<AdapterType>::FreeDoc freeDoc = NULL)
     {
-        populateSchema(schema, node, node, schema, boost::none, "",
-                fetchDoc, NULL, NULL);
+        if ((fetchDoc == NULL) ^ (freeDoc == NULL)) {
+            throw std::runtime_error(
+                    "Remote document fetching cannot be enabled without both "
+                    "fetch and free functions");
+        }
+
+        typename DocumentCache<AdapterType>::Type docCache;
+        SchemaCache schemaCache;
+        try {
+            resolveThenPopulateSchema(schema, node, node, schema, boost::none, "",
+                    fetchDoc, NULL, NULL, docCache, schemaCache);
+        } catch (...) {
+            freeDocumentCache<AdapterType>(docCache, freeDoc);
+            throw;
+        }
+
+        freeDocumentCache<AdapterType>(docCache, freeDoc);
     }
 
 private:
+
+    template<typename AdapterType>
+    struct DocumentCache
+    {
+        typedef typename adapters::AdapterTraits<AdapterType>::DocumentType
+                DocumentType;
+
+        typedef std::map<std::string, const DocumentType*> Type;
+    };
+
+    typedef std::map<std::string, const Subschema *> SchemaCache;
+
+    /**
+     * @brief  Free memory used by fetched documents
+     *
+     * If a custom 'free' function has not been provided, then the default
+     * delete operator will be used.
+     *
+     * @param  docCache  collection of fetched documents to free
+     * @param  freeDoc   optional custom free function
+     */
+    template<typename AdapterType>
+    void freeDocumentCache(const typename DocumentCache<AdapterType>::Type
+            &docCache, typename FunctionPtrs<AdapterType>::FreeDoc freeDoc)
+    {
+        typedef typename DocumentCache<AdapterType>::Type DocCacheType;
+
+        BOOST_FOREACH( const typename DocCacheType::value_type &v, docCache ) {
+            freeDoc(v.second);
+        }
+    }
+
+    /**
+     * @brief  Find the absolute URI for a document, within a resolution scope
+     *
+     * This function captures five different cases that can occur when
+     * attempting to resolve a document URI within a particular resolution
+     * scope:
+     *
+     *  - resolution scope not present, but absolute document URI is
+     *       => document URI as-is
+     *  - resolution scope not present, and document URI is relative or absent
+     *       => no result
+     *  - resolution scope is present, and document URI is a relative path
+     *       => resolve document URI relative to resolution scope
+     *  - resolution scope is present, and document URI is absolute
+     *       => document URI as-is
+     *  - resolution scope is present, but document URI is not
+     *       => resolution scope as-is
+     *
+     * This function assumes that the resolution scope is absolute.
+     *
+     * When resolving a document URI relative to the resolution scope, the
+     * document URI should be used to replace the path, query and fragment
+     * portions of URI provided by the resolution scope.
+     */
+    static boost::optional<std::string> findAbsoluteDocumentUri(
+            const boost::optional<std::string> resolutionScope,
+            const boost::optional<std::string> documentUri)
+    {
+        if (resolutionScope) {
+            if (documentUri) {
+                if (internal::uri::isUriAbsolute(*documentUri)) {
+                    return *documentUri;
+                } else {
+                    return internal::uri::resolveRelativeUri(
+                            *resolutionScope, *documentUri);
+                }
+            } else {
+                return *resolutionScope;
+            }
+        } else if (documentUri && internal::uri::isUriAbsolute(*documentUri)) {
+            return *documentUri;
+        } else {
+            return boost::none;
+        }
+    }
+
+    /**
+     * @brief  Extract a JSON Reference string from a node
+     *
+     * @param  node    node to extract the JSON Reference from
+     * @param  result  reference to string to set with the result
+     *
+     * @throws std::invalid_argument if node is an object containing a `$ref`
+     *         property but with a value that cannot be interpreted as a string
+     *
+     * @return \c true if a JSON Reference was extracted; \c false otherwise
+     */
+    template<typename AdapterType>
+    bool extractJsonReference(const AdapterType &node, std::string &result)
+    {
+        if (!node.isObject()) {
+            return false;
+        }
+
+        const typename AdapterType::Object o = node.getObject();
+        const typename AdapterType::Object::const_iterator itr = o.find("$ref");
+        if (itr == o.end()) {
+            return false;
+        } else if (!itr->second.asString(result)) {
+            throw std::invalid_argument(
+                    "$ref property expected to contain string value.");
+        }
+
+        return true;
+    }
+
+    /**
+     * Sanitise an optional JSON Pointer, trimming trailing slashes
+     */
+    std::string sanitiseJsonPointer(const boost::optional<std::string> input)
+    {
+        if (input) {
+            // Trim trailing slash(es)
+            std::string sanitised = *input;
+            sanitised.erase(sanitised.find_last_not_of('/') + 1,
+                    std::string::npos);
+
+            return sanitised;
+        }
+
+        // If the JSON Pointer is not set, assume that the URI points to
+        // the root of the document
+        return "";
+    }
+
+    /**
+     * @brief  Search the schema cache for a schema matching a given key
+     *
+     * If the key is not present in the query cache, a NULL pointer will be
+     * returned, and the contents of the cache will remain unchanged. This is
+     * in contrast to the behaviour of the std::map [] operator, which would
+     * add the NULL pointer to the cache.
+     *
+     * @param  schemaCache  schema cache to query
+     * @param  queryKey     key to search for
+     *
+     * @return shared pointer to Schema if found, NULL pointer otherwise
+     */
+    static const Subschema * querySchemaCache(SchemaCache &schemaCache,
+            const std::string &queryKey)
+    {
+        const SchemaCache::iterator itr = schemaCache.find(queryKey);
+        if (itr == schemaCache.end()) {
+            return NULL;
+        }
+
+        return itr->second;
+    }
+
+    /**
+     * @brief  Add entries to the schema cache for a given list of keys
+     *
+     * @param  schemaCache   schema cache to update
+     * @param  keysToCreate  list of keys to create entries for
+     * @param  schema        shared pointer to schema that keys will map to
+     *
+     * @throws std::logic_error if any of the keys are already present in the
+     *         schema cache. This behaviour is intended to help detect incorrect
+     *         usage of the schema cache during development, and is not expected
+     *         to occur otherwise, even for malformed schemas.
+     */
+    void updateSchemaCache(SchemaCache &schemaCache,
+            const std::vector<std::string> &keysToCreate,
+            const Subschema *schema)
+    {
+        BOOST_FOREACH( const std::string &keyToCreate, keysToCreate ) {
+            const SchemaCache::value_type value(keyToCreate, schema);
+            if (!schemaCache.insert(value).second) {
+                throw std::logic_error(
+                        "Key '" + keyToCreate + "' already in schema cache.");
+            }
+        }
+    }
+
+    /**
+     * @brief  Recursive helper function for retrieving or creating schemas
+     *
+     * This function will be applied recursively until a concrete node is found.
+     * A concrete node is a node that contains actual schema constraints rather
+     * than a JSON Reference.
+     *
+     * This termination condition may be trigged by visiting the concrete node
+     * at the end of a series of $ref nodes, or by finding a schema for one of
+     * those $ref nodes in the schema cache. An entry will be added to the
+     * schema cache for each node visited on the path to the concrete node.
+     *
+     * @param  rootSchema    The Schema instance, and root subschema, through
+     *                       which other subschemas can be created and
+     *                       modified
+     * @param  rootNode      Reference to the node from which JSON References
+     *                       will be resolved when they refer to the current
+     *                       document
+     * @param  node          Reference to the node to parse
+     * @param  currentScope  URI for current resolution scope
+     * @param  nodePath      JSON Pointer representing path to current node
+     * @param  fetchDoc      Function to fetch remote JSON documents (optional)
+     * @param  parentSchema  Optional pointer to the parent schema, used to
+     *                       support required keyword in Draft 3
+     * @param  ownName       Optional pointer to a node name, used to support
+     *                       the 'required' keyword in Draft 3
+     * @param  docCache      Cache of resolved and fetched remote documents
+     * @param  schemaCache   Cache of populated schemas
+     * @param  newCacheKeys  A list of keys that should be added to the cache
+     *                       when recursion terminates
+     */
+    template<typename AdapterType>
+    const Subschema * makeOrReuseSchema(
+        Schema &rootSchema,
+        const AdapterType &rootNode,
+        const AdapterType &node,
+        const boost::optional<std::string> currentScope,
+        const std::string &nodePath,
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
+        const Subschema *parentSubschema,
+        const std::string *ownName,
+        typename DocumentCache<AdapterType>::Type &docCache,
+        SchemaCache &schemaCache,
+        std::vector<std::string> &newCacheKeys)
+    {
+        std::string jsonRef;
+
+        // Check for the first termination condition (found a non-$ref node)
+        if (!extractJsonReference(node, jsonRef)) {
+
+            // Construct a key that we can use to search the schema cache for
+            // a schema corresponding to the current node
+            const std::string schemaCacheKey =
+                    currentScope ? (*currentScope + nodePath) : nodePath;
+
+            // Retrieve an existing schema from the cache if possible
+            const Subschema *cachedPtr =
+                    querySchemaCache(schemaCache, schemaCacheKey);
+
+            // Create a new schema otherwise
+            const Subschema *subschema = cachedPtr ? cachedPtr :
+                    rootSchema.createSubschema();
+
+            // Add cache entries for keys belonging to any $ref nodes that were
+            // visited before arriving at the current node
+            updateSchemaCache(schemaCache, newCacheKeys, subschema);
+
+            // Schema cache did not contain a pre-existing schema corresponding
+            // to the current node, so the schema that was returned will need
+            // to be populated
+            if (!cachedPtr) {
+                populateSchema(rootSchema, rootNode, node, *subschema,
+                        currentScope, nodePath, fetchDoc, parentSubschema,
+                        ownName, docCache, schemaCache);
+            }
+
+            return subschema;
+        }
+
+        // Returns a document URI if the reference points somewhere
+        // other than the current document
+        const boost::optional<std::string> documentUri =
+                internal::json_reference::getJsonReferenceUri(jsonRef);
+
+        // Extract JSON Pointer from JSON Reference, with any trailing
+        // slashes removed so that keys in the schema cache end
+        // consistently
+        const std::string actualJsonPointer = sanitiseJsonPointer(
+                internal::json_reference::getJsonReferencePointer(jsonRef));
+
+        // Determine the actual document URI based on the resolution
+        // scope. An absolute document URI will take precedence when
+        // present, otherwise we need to resolve the URI relative to
+        // the current resolution scope
+        const boost::optional<std::string> actualDocumentUri =
+                findAbsoluteDocumentUri(currentScope, documentUri);
+
+        // Construct a key to search the schema cache for an existing schema
+        const std::string queryKey = actualDocumentUri ?
+                (*actualDocumentUri + actualJsonPointer) : actualJsonPointer;
+
+        // Check for the second termination condition (found a $ref node that
+        // already has an entry in the schema cache)
+        const Subschema *cachedPtr = querySchemaCache(schemaCache, queryKey);
+        if (cachedPtr) {
+            updateSchemaCache(schemaCache, newCacheKeys, cachedPtr);
+            return cachedPtr;
+        }
+
+        if (actualDocumentUri) {
+            const typename FunctionPtrs<AdapterType>::DocumentType *newDoc = NULL;
+
+            // Have we seen this document before?
+            typename DocumentCache<AdapterType>::Type::iterator docCacheItr =
+                    docCache.find(*actualDocumentUri);
+            if (docCacheItr == docCache.end()) {
+                // Resolve reference against remote document
+                if (!fetchDoc) {
+                    throw std::runtime_error(
+                            "Fetching of remote JSON References not enabled.");
+                }
+
+                // Returns a pointer to the remote document that was
+                // retrieved, or null if retrieval failed. This class
+                // will take ownership of the pointer, and call freeDoc
+                // when it is no longer needed.
+                newDoc = fetchDoc(*actualDocumentUri);
+
+                // Can't proceed without the remote document
+                if (!newDoc) {
+                    throw std::runtime_error(
+                            "Failed to fetch referenced schema document: " +
+                            *actualDocumentUri);
+                }
+
+                typedef typename DocumentCache<AdapterType>::Type::value_type
+                        DocCacheValueType;
+
+                docCache.insert(DocCacheValueType(*actualDocumentUri, newDoc));
+
+            } else {
+                newDoc = docCacheItr->second;
+            }
+
+            const AdapterType newRootNode(*newDoc);
+
+            // Find where we need to be in the document
+            const AdapterType &referencedAdapter =
+                    internal::json_pointer::resolveJsonPointer(newRootNode,
+                            actualJsonPointer);
+
+            newCacheKeys.push_back(queryKey);
+
+            // Populate the schema, starting from the referenced node, with
+            // nested JSON References resolved relative to the new root node
+            return makeOrReuseSchema(rootSchema, newRootNode, referencedAdapter,
+                    currentScope, actualJsonPointer, fetchDoc, parentSubschema,
+                    ownName, docCache, schemaCache, newCacheKeys);
+
+        }
+
+        // JSON References in nested schema will be resolved relative to the
+        // current document
+        const AdapterType &referencedAdapter =
+                internal::json_pointer::resolveJsonPointer(
+                        rootNode, actualJsonPointer);
+
+        newCacheKeys.push_back(queryKey);
+
+        // Populate the schema, starting from the referenced node, with
+        // nested JSON References resolved relative to the new root node
+        return makeOrReuseSchema(rootSchema, rootNode, referencedAdapter,
+                currentScope, actualJsonPointer, fetchDoc, parentSubschema,
+                ownName, docCache, schemaCache, newCacheKeys);
+    }
+
+    /**
+     * @brief  Return pointer for the schema corresponding to a given node
+     *
+     * This function makes use of a schema cache, so that if the path to the
+     * current node is the same as one that has already been parsed and
+     * populated, a pointer to the existing Subschema will be returned.
+     *
+     * Should a series of $ref, or reference, nodes be resolved before reaching
+     * a concrete node, an entry will be added to the schema cache for each of
+     * the nodes in that path.
+     *
+     * @param  rootSchema    The Schema instance, and root subschema, through
+     *                       which other subschemas can be created and
+     *                       modified
+     * @param  rootNode      Reference to the node from which JSON References
+     *                       will be resolved when they refer to the current
+     *                       document
+     * @param  node          Reference to the node to parse
+     * @param  currentScope  URI for current resolution scope
+     * @param  nodePath      JSON Pointer representing path to current node
+     * @param  fetchDoc      Function to fetch remote JSON documents (optional)
+     * @param  parentSchema  Optional pointer to the parent schema, used to
+     *                       support required keyword in Draft 3
+     * @param  ownName       Optional pointer to a node name, used to support
+     *                       the 'required' keyword in Draft 3
+     * @param  docCache      Cache of resolved and fetched remote documents
+     * @param  schemaCache   Cache of populated schemas
+     */
+    template<typename AdapterType>
+    const Subschema * makeOrReuseSchema(
+        Schema &rootSchema,
+        const AdapterType &rootNode,
+        const AdapterType &node,
+        const boost::optional<std::string> currentScope,
+        const std::string &nodePath,
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
+        const Subschema *parentSubschema,
+        const std::string *ownName,
+        typename DocumentCache<AdapterType>::Type &docCache,
+        SchemaCache &schemaCache)
+    {
+        std::vector<std::string> schemaCacheKeysToCreate;
+
+        return makeOrReuseSchema(rootSchema, rootNode, node, currentScope,
+                nodePath, fetchDoc, parentSubschema, ownName, docCache,
+                schemaCache, schemaCacheKeysToCreate);
+    }
 
     /**
      * @brief  Populate a Schema object from JSON Schema document
@@ -111,6 +532,8 @@ private:
      *                          support required keyword in Draft 3
      * @param  ownName          Optional pointer to a node name, used to support
      *                          the 'required' keyword in Draft 3
+     * @param  docCache         Cache of resolved and fetched remote documents
+     * @param  schemaCache      Cache of populated schemas
      */
     template<typename AdapterType>
     void populateSchema(
@@ -120,62 +543,58 @@ private:
         const Subschema &subschema,
         const boost::optional<std::string> currentScope,
         const std::string &nodePath,
-        const boost::optional<typename FetchDocumentFunction<AdapterType>::Type>
-                fetchDoc = boost::none,
-        const Subschema *parentSubschema = NULL,
-        const std::string *ownName = NULL)
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
+        const Subschema *parentSubschema,
+        const std::string *ownName,
+        typename DocumentCache<AdapterType>::Type &docCache,
+        SchemaCache &schemaCache)
     {
         BOOST_STATIC_ASSERT_MSG((boost::is_convertible<AdapterType,
             const valijson::adapters::Adapter &>::value),
             "SchemaParser::populateSchema must be invoked with an "
             "appropriate Adapter implementation");
 
-        // Check for JSON References and process them accordingly
-        if (node.isObject()) {
-            typename AdapterType::Object object = node.getObject();
-            const typename AdapterType::Object::const_iterator itr =
-                    object.find("$ref");
-            if (itr != object.end()) {
-                if (!itr->second.maybeString()) {
-                    throw std::runtime_error(
-                            "$ref property expected to contain string value.");
-                }
-                const std::string &jsonRef = itr->second.asString();
-                populateSchemaUsingJsonReference(rootSchema, jsonRef, rootNode,
-                        node, subschema, currentScope, nodePath, fetchDoc,
-                        parentSubschema, ownName);
-                return;
-            }
-        }
-
         const typename AdapterType::Object object = node.asObject();
         typename AdapterType::Object::const_iterator itr(object.end());
 
-        if ((itr = object.find("id")) != object.end()) {
-            if (itr->second.maybeString()) {
-                rootSchema.setSubschemaId(&subschema, itr->second.asString());
+        // Check for 'id' attribute and update current scope
+        boost::optional<std::string> updatedScope;
+        if ((itr = object.find("id")) != object.end() &&
+                itr->second.maybeString()) {
+            const std::string id = itr->second.asString();
+            rootSchema.setSubschemaId(&subschema, itr->second.asString());
+            if (!currentScope || internal::uri::isUriAbsolute(id)) {
+                updatedScope = id;
+            } else {
+                updatedScope = internal::uri::resolveRelativeUri(
+                        *currentScope, id);
             }
+        } else {
+            updatedScope = currentScope;
         }
 
         if ((itr = object.find("allOf")) != object.end()) {
             rootSchema.addConstraintToSubschema(
                     makeAllOfConstraint(rootSchema, rootNode, itr->second,
-                            currentScope, nodePath + "/allOf", fetchDoc),
+                            updatedScope, nodePath + "/allOf", fetchDoc,
+                            docCache, schemaCache),
                     &subschema);
         }
 
         if ((itr = object.find("anyOf")) != object.end()) {
             rootSchema.addConstraintToSubschema(
                     makeAnyOfConstraint(rootSchema, rootNode, itr->second,
-                            currentScope, nodePath + "/anyOf", fetchDoc),
+                            updatedScope, nodePath + "/anyOf", fetchDoc,
+                            docCache, schemaCache),
                     &subschema);
         }
 
         if ((itr = object.find("dependencies")) != object.end()) {
             rootSchema.addConstraintToSubschema(
                     makeDependenciesConstraint(rootSchema, rootNode,
-                            itr->second, currentScope,
-                            nodePath + "/dependencies", fetchDoc),
+                            itr->second, updatedScope,
+                            nodePath + "/dependencies", fetchDoc, docCache,
+                            schemaCache),
                     &subschema);
         }
 
@@ -222,8 +641,9 @@ private:
                 if (!itemsItr->second.isArray()) {
                     rootSchema.addConstraintToSubschema(
                             makeSingularItemsConstraint(rootSchema, rootNode,
-                                    itemsItr->second, currentScope,
-                                    nodePath + "/items", fetchDoc),
+                                    itemsItr->second, updatedScope,
+                                    nodePath + "/items", fetchDoc, docCache,
+                                    schemaCache),
                             &subschema);
 
                 } else {
@@ -235,15 +655,17 @@ private:
                                             &itemsItr->second : NULL,
                                     additionalItemsItr != object.end() ?
                                             &additionalItemsItr->second : NULL,
-                                    currentScope, nodePath + "/items",
-                                    nodePath + "/additionalItems", fetchDoc),
+                                    updatedScope, nodePath + "/items",
+                                    nodePath + "/additionalItems", fetchDoc,
+                                    docCache, schemaCache),
                             &subschema);
                 }
             }
         }
 
         if ((itr = object.find("maximum")) != object.end()) {
-            typename AdapterType::Object::const_iterator exclusiveMaximumItr = object.find("exclusiveMaximum");
+            typename AdapterType::Object::const_iterator exclusiveMaximumItr =
+                    object.find("exclusiveMaximum");
             if (exclusiveMaximumItr == object.end()) {
                 rootSchema.addConstraintToSubschema(
                         makeMaximumConstraint<AdapterType>(itr->second, NULL),
@@ -276,7 +698,8 @@ private:
         }
 
         if ((itr = object.find("minimum")) != object.end()) {
-            typename AdapterType::Object::const_iterator exclusiveMinimumItr = object.find("exclusiveMinimum");
+            typename AdapterType::Object::const_iterator exclusiveMinimumItr =
+                    object.find("exclusiveMinimum");
             if (exclusiveMinimumItr == object.end()) {
                 rootSchema.addConstraintToSubschema(
                         makeMinimumConstraint<AdapterType>(itr->second, NULL),
@@ -329,14 +752,16 @@ private:
         if ((itr = object.find("not")) != object.end()) {
             rootSchema.addConstraintToSubschema(
                     makeNotConstraint(rootSchema, rootNode, itr->second,
-                            currentScope, nodePath + "/not", fetchDoc),
+                            updatedScope, nodePath + "/not", fetchDoc, docCache,
+                            schemaCache),
                     &subschema);
         }
 
         if ((itr = object.find("oneOf")) != object.end()) {
             rootSchema.addConstraintToSubschema(
                     makeOneOfConstraint(rootSchema, rootNode, itr->second,
-                            currentScope, nodePath + "/oneOf", fetchDoc),
+                            updatedScope, nodePath + "/oneOf", fetchDoc,
+                            docCache, schemaCache),
                     &subschema);
         }
 
@@ -363,10 +788,10 @@ private:
                                         &patternPropertiesItr->second : NULL,
                                 additionalPropertiesItr != object.end() ?
                                         &additionalPropertiesItr->second : NULL,
-                                currentScope, nodePath + "/properties",
+                                updatedScope, nodePath + "/properties",
                                 nodePath + "/patternProperties",
                                 nodePath + "/additionalProperties",
-                                fetchDoc, &subschema),
+                                fetchDoc, &subschema, docCache, schemaCache),
                         &subschema);
             }
         }
@@ -382,7 +807,8 @@ private:
                                 parentSubschema);
                     }
                 } else {
-                    throw std::runtime_error("'required' constraint not valid here");
+                    throw std::runtime_error(
+                            "'required' constraint not valid here");
                 }
             } else {
                 rootSchema.addConstraintToSubschema(
@@ -403,7 +829,8 @@ private:
         if ((itr = object.find("type")) != object.end()) {
             rootSchema.addConstraintToSubschema(
                     makeTypeConstraint(rootSchema, rootNode, itr->second,
-                            currentScope, nodePath + "/type", fetchDoc),
+                            updatedScope, nodePath + "/type", fetchDoc,
+                            docCache, schemaCache),
                     &subschema);
         }
 
@@ -417,84 +844,105 @@ private:
     }
 
     /**
-     * @brief  Populate a schema using a JSON Reference
+     * @brief  Resolves a chain of JSON References before populating a schema
      *
-     * Allows JSON references to be used with minimal changes to the parser
-     * helper functions.
+     * This helper function is used directly by the publicly visible
+     * populateSchema function. It ensures that the node being parsed is a
+     * concrete node, and not a JSON Reference. This function will call itself
+     * recursively to resolve references until a concrete node is found.
      *
-     * @param  rootSchema       The Schema instance, and root subschema, through
-     *                          which other subschemas can be created and 
-     *                          modified
-     * @param  jsonRef          String containing JSON Reference value
-     * @param  rootNode         Reference to the node from which JSON References
-     *                          will be resolved when they refer to the current
-     *                          document; used for recursive parsing of schemas
-     * @param  node             Reference to node to parse
-     * @param  schema           Reference to Schema to populate
-     * @param  currentScope     URI for current resolution scope
-     * @param  nodePath         JSON Pointer representing path to current node
-     * @param  fetchDoc         Optional function to fetch remote JSON documents
-     * @param  parentSubschema  Optional pointer to the parent schema, used to
-     *                          support required keyword in Draft 3
-     * @param  ownName          Optional pointer to a node name, used to support
-     *                          the 'required' keyword in Draft 3
-    */
+     * @param  rootSchema    The Schema instance, and root subschema, through
+     *                       which other subschemas can be created and modified
+     * @param  rootNode      Reference to the node from which JSON References
+     *                       will be resolved when they refer to the current
+     *                       document
+     * @param  node          Reference to node to parse
+     * @param  subschema     Reference to Schema to populate
+     * @param  currentScope  URI for current resolution scope
+     * @param  nodePath      JSON Pointer representing path to current node
+     * @param  fetchDoc      Function to fetch remote JSON documents (optional)
+     * @param  parentSchema  Optional pointer to the parent schema, used to
+     *                       support required keyword in Draft 3
+     * @param  ownName       Optional pointer to a node name, used to support
+     *                       the 'required' keyword in Draft 3
+     * @param  docCache      Cache of resolved and fetched remote documents
+     * @param  schemaCache   Cache of populated schemas
+     */
     template<typename AdapterType>
-    void populateSchemaUsingJsonReference(
+    void resolveThenPopulateSchema(
         Schema &rootSchema,
-        const std::string &jsonRef,
         const AdapterType &rootNode,
-        const AdapterType &,
+        const AdapterType &node,
         const Subschema &subschema,
         const boost::optional<std::string> currentScope,
         const std::string &nodePath,
-        const boost::optional<typename FetchDocumentFunction<AdapterType>::Type>
-                fetchDoc,
-        const Subschema *parentSubschema = NULL,
-        const std::string *ownName = NULL)
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
+        const Subschema *parentSchema,
+        const std::string *ownName,
+        typename DocumentCache<AdapterType>::Type &docCache,
+        SchemaCache &schemaCache)
     {
+        std::string jsonRef;
+        if (!extractJsonReference(node, jsonRef)) {
+            populateSchema(rootSchema, rootNode, node, subschema, currentScope, 
+                    nodePath, fetchDoc, parentSchema, ownName, docCache,
+                    schemaCache);
+            return;
+        }
+
         // Returns a document URI if the reference points somewhere
         // other than the current document
         const boost::optional<std::string> documentUri =
                 internal::json_reference::getJsonReferenceUri(jsonRef);
 
         // Extract JSON Pointer from JSON Reference
-        const std::string jsonPointer =
-                internal::json_reference::getJsonReferencePointer(jsonRef);
+        const std::string actualJsonPointer = sanitiseJsonPointer(
+                internal::json_reference::getJsonReferencePointer(jsonRef));
 
-        if (documentUri) {
+        if (documentUri && internal::uri::isUriAbsolute(*documentUri)) {
             // Resolve reference against remote document
             if (!fetchDoc) {
                 throw std::runtime_error(
-                        "Support for JSON References not enabled.");
+                        "Fetching of remote JSON References not enabled.");
             }
 
-            // Returns a shared pointer to the remote document that was
-            // retrieved, or null if retrieval failed. The resulting document
-            // must remain in scope until populateSchema returns.
-            boost::shared_ptr<const AdapterType> docPtr =
-                    (*fetchDoc)(*documentUri);
+            const typename DocumentCache<AdapterType>::DocumentType *newDoc =
+                    fetchDoc(*documentUri);
 
             // Can't proceed without the remote document
-            if (!docPtr) {
+            if (!newDoc) {
                 throw std::runtime_error(
-                        "Failed to fetch referenced schema document.");
+                        "Failed to fetch referenced schema document: " +
+                        *documentUri);
             }
 
-            const AdapterType &ref = internal::json_pointer::resolveJsonPointer(
-                    *docPtr, jsonPointer);
+            // Add to document cache
+            typedef typename DocumentCache<AdapterType>::Type::value_type
+                    DocCacheValueType;
 
-            // Resolve reference against retrieved document
-            populateSchema<AdapterType>(rootSchema, ref, ref, subschema,
-                    currentScope, nodePath, fetchDoc, parentSubschema, ownName);
+            docCache.insert(DocCacheValueType(*documentUri, newDoc));
+
+            const AdapterType newRootNode(*newDoc);
+
+            const AdapterType &referencedAdapter =
+                internal::json_pointer::resolveJsonPointer(
+                        newRootNode, actualJsonPointer);
+
+            // TODO: Need to detect degenerate circular references
+            resolveThenPopulateSchema(rootSchema, newRootNode,
+                    referencedAdapter, subschema, boost::none,
+                    actualJsonPointer, fetchDoc, parentSchema, ownName,
+                    docCache, schemaCache);
 
         } else {
-            const AdapterType &ref = internal::json_pointer::resolveJsonPointer(
-                    rootNode, jsonPointer);
+            const AdapterType &referencedAdapter =
+                internal::json_pointer::resolveJsonPointer(
+                        rootNode, actualJsonPointer);
 
-            // Resolve reference against current document
-            populateSchema<AdapterType>(rootSchema, rootNode, ref, subschema,
-                    currentScope, nodePath, fetchDoc, parentSubschema, ownName);
+            // TODO: Need to detect degenerate circular references
+            resolveThenPopulateSchema(rootSchema, rootNode, referencedAdapter,
+                    subschema, boost::none, actualJsonPointer, fetchDoc,
+                    parentSchema, ownName, docCache, schemaCache);
         }
     }
 
@@ -510,6 +958,8 @@ private:
      * @param   currentScope  URI for current resolution scope
      * @param   nodePath      JSON Pointer representing path to current node
      * @param   fetchDoc      Function to fetch remote JSON documents (optional)
+     * @param   docCache      Cache of resolved and fetched remote documents
+     * @param   schemaCache   Cache of populated schemas
      *
      * @return  pointer to a new AllOfConstraint object that belongs to the
      *          caller
@@ -521,8 +971,9 @@ private:
         const AdapterType &node,
         const boost::optional<std::string> currentScope,
         const std::string &nodePath,
-        const boost::optional<
-                typename FetchDocumentFunction<AdapterType>::Type > fetchDoc)
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
+        typename DocumentCache<AdapterType>::Type &docCache,
+        SchemaCache &schemaCache)
     {
         if (!node.maybeArray()) {
             throw std::runtime_error(
@@ -536,10 +987,10 @@ private:
             if (schemaNode.maybeObject()) {
                 const std::string childPath = nodePath + "/" +
                         boost::lexical_cast<std::string>(index);
-                const Subschema *subschema = rootSchema.createSubschema();
+                const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                        rootSchema, rootNode, schemaNode, currentScope,
+                        childPath, fetchDoc, NULL, NULL, docCache, schemaCache);
                 constraint.addSubschema(subschema);
-                populateSchema<AdapterType>(rootSchema, rootNode, schemaNode,
-                        *subschema, currentScope, childPath, fetchDoc);
                 index++;
             } else {
                 throw std::runtime_error(
@@ -563,6 +1014,8 @@ private:
      * @param   currentScope  URI for current resolution scope
      * @param   nodePath      JSON Pointer representing path to current node
      * @param   fetchDoc      Function to fetch remote JSON documents (optional)
+     * @param   docCache      Cache of resolved and fetched remote documents
+     * @param   schemaCache   Cache of populated schemas
      *
      * @return  pointer to a new AnyOfConstraint object that belongs to the
      *          caller
@@ -574,8 +1027,9 @@ private:
         const AdapterType &node,
         const boost::optional<std::string> currentScope,
         const std::string &nodePath,
-        const boost::optional<
-                typename FetchDocumentFunction<AdapterType>::Type > fetchDoc)
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
+        typename DocumentCache<AdapterType>::Type &docCache,
+        SchemaCache &schemaCache)
     {
         if (!node.maybeArray()) {
             throw std::runtime_error(
@@ -589,10 +1043,10 @@ private:
             if (schemaNode.maybeObject()) {
                 const std::string childPath = nodePath + "/" +
                         boost::lexical_cast<std::string>(index);
-                const Subschema *subschema = rootSchema.createSubschema();
+                const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                        rootSchema, rootNode, schemaNode, currentScope,
+                        childPath, fetchDoc, NULL, NULL, docCache, schemaCache);
                 constraint.addSubschema(subschema);
-                populateSchema<AdapterType>(rootSchema, rootNode, schemaNode,
-                        *subschema, currentScope, childPath, fetchDoc);
                 index++;
             } else {
                 throw std::runtime_error(
@@ -634,6 +1088,8 @@ private:
      * @param   currentScope  URI for current resolution scope
      * @param   nodePath      JSON Pointer representing path to current node
      * @param   fetchDoc      Function to fetch remote JSON documents (optional)
+     * @param   docCache      Cache of resolved and fetched remote documents
+     * @param   schemaCache   Cache of populated schemas
      *
      * @return  pointer to a new DependencyConstraint that belongs to the
      *          caller
@@ -645,8 +1101,9 @@ private:
         const AdapterType &node,
         const boost::optional<std::string> currentScope,
         const std::string &nodePath,
-        const boost::optional<
-                typename FetchDocumentFunction<AdapterType>::Type > fetchDoc)
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
+        typename DocumentCache<AdapterType>::Type &docCache,
+        SchemaCache &schemaCache)
     {
         if (!node.maybeObject()) {
             throw std::runtime_error("Expected object value for 'dependencies' constraint.");
@@ -687,9 +1144,10 @@ private:
             // process it as a dependent schema.
             } else if (member.second.isObject()) {
                 // Parse dependent subschema
-                const Subschema *childSubschema = rootSchema.createSubschema();
-                populateSchema<AdapterType>(rootSchema, rootNode, member.second,
-                        *childSubschema, currentScope, nodePath, fetchDoc);
+                const Subschema *childSubschema =
+                        makeOrReuseSchema<AdapterType>(rootSchema, rootNode,
+                                member.second, currentScope, nodePath, fetchDoc,
+                                NULL, NULL, docCache, schemaCache);
                 dependenciesConstraint.addSchemaDependency(member.first,
                         childSubschema);
 
@@ -757,6 +1215,9 @@ private:
      *                               the 'additionalItems' node
      * @param   fetchDoc             Function to fetch remote JSON documents
      *                               (optional)
+     * @param   docCache             Cache of resolved and fetched remote
+     *                               documents
+     * @param   schemaCache          Cache of populated schemas
      *
      * @return  pointer to a new ItemsConstraint that belongs to the caller
      */
@@ -769,8 +1230,9 @@ private:
         const boost::optional<std::string> currentScope,
         const std::string &itemsPath,
         const std::string &additionalItemsPath,
-        const boost::optional<
-                typename FetchDocumentFunction<AdapterType>::Type > fetchDoc)
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
+        typename DocumentCache<AdapterType>::Type &docCache,
+        SchemaCache &schemaCache)
     {
         constraints::LinearItemsConstraint constraint;
 
@@ -789,11 +1251,11 @@ private:
                 // If the value of the additionalItems property is an object,
                 // then it should be parsed into a Schema object, which will be
                 // used to validate additional array items.
-                const Subschema *subschema = rootSchema.createSubschema();
+                const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                        rootSchema, rootNode, *additionalItems, currentScope,
+                        additionalItemsPath, fetchDoc, NULL, NULL, docCache,
+                        schemaCache);
                 constraint.setAdditionalItemsSubschema(subschema);
-                populateSchema<AdapterType>(rootSchema, rootNode,
-                        *additionalItems, *subschema, currentScope,
-                        additionalItemsPath, fetchDoc);
             } else {
                 // Any other format for the additionalItems property will result
                 // in an exception being thrown.
@@ -820,10 +1282,10 @@ private:
                 BOOST_FOREACH( const AdapterType v, items->getArray() ) {
                     const std::string childPath = itemsPath + "/" +
                             boost::lexical_cast<std::string>(index);
-                    const Subschema *subschema = rootSchema.createSubschema();
+                    const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                            rootSchema, rootNode, v, currentScope, childPath,
+                            fetchDoc, NULL, NULL, docCache, schemaCache);
                     constraint.addItemSubschema(subschema);
-                    populateSchema<AdapterType>(rootSchema, rootNode, v,
-                            *subschema, currentScope, childPath, fetchDoc);
                     index++;
                 }
             } else {
@@ -859,6 +1321,9 @@ private:
      *                               the 'additionalItems' node
      * @param   fetchDoc             Function to fetch remote JSON documents
      *                               (optional)
+     * @param   docCache             Cache of resolved and fetched remote
+     *                               documents
+     * @param   schemaCache          Cache of populated schemas
      *
      * @return  pointer to a new ItemsConstraint that belongs to the caller
      */
@@ -869,8 +1334,9 @@ private:
         const AdapterType &items,
         const boost::optional<std::string> currentScope,
         const std::string &itemsPath,
-        const boost::optional<
-                typename FetchDocumentFunction<AdapterType>::Type > fetchDoc)
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
+        typename DocumentCache<AdapterType>::Type &docCache,
+        SchemaCache &schemaCache)
     {
         constraints::SingularItemsConstraint constraint;
 
@@ -883,10 +1349,10 @@ private:
             // should contain a Schema that will be used to validate all
             // items in a target array. Any schema defined by the
             // additionalItems constraint will be ignored.
-            const Subschema *subschema = rootSchema.createSubschema();
+            const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                    rootSchema, rootNode, items, currentScope, itemsPath,
+                    fetchDoc, NULL, NULL, docCache, schemaCache);
             constraint.setItemsSubschema(subschema);
-            populateSchema<AdapterType>(rootSchema, rootNode, items,
-                    *subschema, currentScope, itemsPath, fetchDoc);
 
         } else if (items.maybeObject()) {
             // If a loosely-typed Adapter type is being used, then we'll
@@ -1191,6 +1657,8 @@ private:
      * @param   currentScope  URI for current resolution scope
      * @param   nodePath      JSON Pointer representing path to current node
      * @param   fetchDoc      Function to fetch remote JSON documents (optional)
+     * @param   docCache      Cache of resolved and fetched remote documents
+     * @param   schemaCache   Cache of populated schemas
      *
      * @return  pointer to a new NotConstraint object that belongs to the caller
      */
@@ -1201,16 +1669,16 @@ private:
         const AdapterType &node,
         const boost::optional<std::string> currentScope,
         const std::string &nodePath,
-        const boost::optional<
-                typename FetchDocumentFunction<AdapterType>::Type > fetchDoc)
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
+        typename DocumentCache<AdapterType>::Type &docCache,
+        SchemaCache &schemaCache)
     {
         if (node.maybeObject()) {
-            const Subschema *subschema = rootSchema.createSubschema();
+            const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                    rootSchema, rootNode, node, currentScope, nodePath,
+                    fetchDoc, NULL, NULL, docCache, schemaCache);
             constraints::NotConstraint constraint;
             constraint.setSubschema(subschema);
-            populateSchema<AdapterType>(rootSchema, rootNode, node, *subschema,
-                    currentScope, nodePath, fetchDoc);
-
             return constraint;
         }
 
@@ -1229,6 +1697,8 @@ private:
      * @param   currentScope  URI for current resolution scope
      * @param   nodePath      JSON Pointer representing path to current node
      * @param   fetchDoc      Function to fetch remote JSON documents (optional)
+     * @param   docCache      Cache of resolved and fetched remote documents
+     * @param   schemaCache   Cache of populated schemas
      *
      * @return  pointer to a new OneOfConstraint that belongs to the caller
      */
@@ -1239,8 +1709,9 @@ private:
         const AdapterType &node,
         const boost::optional<std::string> currentScope,
         const std::string &nodePath,
-        const boost::optional<
-                typename FetchDocumentFunction<AdapterType>::Type > fetchDoc)
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
+        typename DocumentCache<AdapterType>::Type &docCache,
+        SchemaCache &schemaCache)
     {
         constraints::OneOfConstraint constraint;
 
@@ -1248,10 +1719,10 @@ private:
         BOOST_FOREACH ( const AdapterType schemaNode, node.getArray() ) {
             const std::string childPath = nodePath + "/" +
                     boost::lexical_cast<std::string>(index);
-            const Subschema *subschema = rootSchema.createSubschema();
+            const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                rootSchema, rootNode, schemaNode, currentScope, childPath,
+                fetchDoc, NULL, NULL, docCache, schemaCache);
             constraint.addSubschema(subschema);
-            populateSchema<AdapterType>(rootSchema, rootNode, schemaNode,
-                *subschema, currentScope, childPath, fetchDoc);
             index++;
         }
 
@@ -1306,6 +1777,9 @@ private:
      * @param   parentSubschema           Optional pointer to the Schema of the
      *                                    parent object, needed to support the
      *                                    'required' keyword in Draft 3
+     * @param   docCache                  Cache of resolved and fetched remote
+     *                                    documents
+     * @param   schemaCache               Cache of populated schemas
      *
      * @return  pointer to a new Properties that belongs to the caller
      */
@@ -1320,9 +1794,10 @@ private:
         const std::string &propertiesPath,
         const std::string &patternPropertiesPath,
         const std::string &additionalPropertiesPath,
-        const boost::optional<
-                typename FetchDocumentFunction<AdapterType>::Type > fetchDoc,
-        const Subschema *parentSubschema)
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
+        const Subschema *parentSubschema,
+        typename DocumentCache<AdapterType>::Type &docCache,
+        SchemaCache &schemaCache)
     {
         typedef typename AdapterType::ObjectMember Member;
 
@@ -1333,11 +1808,11 @@ private:
             BOOST_FOREACH( const Member m, properties->getObject() ) {
                 const std::string &property = m.first;
                 const std::string childPath = propertiesPath + "/" + property;
-                const Subschema *subschema = rootSchema.createSubschema();
+                const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                        rootSchema, rootNode, m.second, currentScope, childPath,
+                        fetchDoc, parentSubschema, &property, docCache,
+                        schemaCache);
                 constraint.addPropertySubschema(property, subschema);
-                populateSchema<AdapterType>(rootSchema, rootNode, m.second,
-                        *subschema, currentScope, childPath, fetchDoc,
-                        parentSubschema, &property);
             }
         }
 
@@ -1347,11 +1822,11 @@ private:
                 const std::string &pattern = m.first;
                 const std::string childPath = patternPropertiesPath + "/" +
                         pattern;
-                const Subschema *subschema = rootSchema.createSubschema();
+                const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                        rootSchema, rootNode, m.second, currentScope, childPath,
+                        fetchDoc, parentSubschema, &pattern, docCache,
+                        schemaCache);
                 constraint.addPatternPropertySubschema(pattern, subschema);
-                populateSchema<AdapterType>(rootSchema, rootNode, m.second,
-                        *subschema, currentScope, childPath, fetchDoc,
-                        parentSubschema, &pattern);
             }
         }
 
@@ -1375,11 +1850,11 @@ private:
             } else if (additionalProperties->isObject()) {
                 // If additionalProperties is an object, it should be used as
                 // a child schema.
-                const Subschema *subschema = rootSchema.createSubschema();
+                const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                        rootSchema, rootNode, *additionalProperties,
+                        currentScope, additionalPropertiesPath, fetchDoc, NULL,
+                        NULL, docCache, schemaCache);
                 constraint.setAdditionalPropertiesSubschema(subschema);
-                populateSchema<AdapterType>(rootSchema, rootNode,
-                        *additionalProperties, *subschema, currentScope,
-                        additionalPropertiesPath, fetchDoc);
             } else {
                 // All other types are invalid
                 throw std::runtime_error(
@@ -1466,7 +1941,8 @@ private:
      * @param   currentScope  URI for current resolution scope
      * @param   nodePath      JSON Pointer representing path to current node
      * @param   fetchDoc      Function to fetch remote JSON documents (optional)
-
+     * @param   docCache      Cache of resolved and fetched remote documents
+     * @param   schemaCache   Cache of populated schemas
      *
      * @return  pointer to a new TypeConstraint object.
      */
@@ -1477,8 +1953,9 @@ private:
         const AdapterType &node,
         const boost::optional<std::string> currentScope,
         const std::string &nodePath,
-        const boost::optional<
-                typename FetchDocumentFunction<AdapterType>::Type > fetchDoc)
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
+        typename DocumentCache<AdapterType>::Type &docCache,
+        SchemaCache &schemaCache)
     {
         typedef constraints::TypeConstraint TypeConstraint;
 
@@ -1513,10 +1990,10 @@ private:
                 } else if (v.isObject() && version == kDraft3) {
                     const std::string childPath = nodePath + "/" +
                             boost::lexical_cast<std::string>(index);
-                    const Subschema *subschema = rootSchema.createSubschema();
+                    const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                            rootSchema, rootNode, v, currentScope, childPath,
+                            fetchDoc, NULL, NULL, docCache, schemaCache);
                     constraint.addSchemaType(subschema);
-                    populateSchema<AdapterType>(rootSchema, rootNode, v,
-                            *subschema, currentScope, childPath, fetchDoc);
 
                 } else {
                     throw std::runtime_error("Type name should be a string.");
@@ -1526,10 +2003,10 @@ private:
             }
 
         } else if (node.isObject() && version == kDraft3) {
-            const Subschema *subschema = rootSchema.createSubschema();
+            const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                    rootSchema, rootNode, node, currentScope, nodePath,
+                    fetchDoc, NULL, NULL, docCache, schemaCache);
             constraint.addSchemaType(subschema);
-            populateSchema<AdapterType>(rootSchema, rootNode, node,
-                    *subschema, currentScope, nodePath, fetchDoc);
 
         } else {
             throw std::runtime_error("Type name should be a string.");
