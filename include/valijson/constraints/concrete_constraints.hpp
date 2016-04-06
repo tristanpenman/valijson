@@ -784,6 +784,40 @@ private:
     String pattern;
 };
 
+class PolyConstraint : public Constraint
+{
+public:
+    virtual bool accept(ConstraintVisitor &visitor) const
+    {
+        return visitor.visit(*static_cast<const PolyConstraint*>(this));
+    }
+
+    virtual Constraint * clone(CustomAlloc allocFn, CustomFree freeFn) const
+    {
+        void *ptr = allocFn(sizeOf());
+        if (!ptr) {
+            throw std::runtime_error(
+                    "Failed to allocate memory for cloned constraint");
+        }
+
+        try {
+            return cloneInto(ptr);
+        } catch (...) {
+            freeFn(ptr);
+            throw;
+        }
+    }
+
+    virtual bool validate(const adapters::Adapter &target,
+            const std::vector<std::string>& context,
+            valijson::ValidationResults *results) const = 0;
+
+protected:
+    virtual Constraint * cloneInto(void *) const = 0;
+
+    virtual size_t sizeOf() const = 0;
+};
+
 /**
  * @brief   Represents a combination of 'properties', 'patternProperties' and
  *          'additionalProperties' constraints
@@ -1059,12 +1093,6 @@ public:
 
     UniqueItemsConstraint(CustomAlloc allocFn, CustomFree freeFn)
       : BasicConstraint(allocFn, freeFn) { }
-};
-
-class PolyConstraint : public BasicConstraint<PolyConstraint> {
-    public:
-    virtual bool validate(const adapters::Adapter &target, const std::vector<std::string>& context, valijson::ValidationResults *results) const {throw std::runtime_error("attempt to validate incomplete"); }
-    virtual PolyConstraint * clone() const {throw std::runtime_error("attempt to validate incomplete"); }
 };
 
 } // namespace constraints
