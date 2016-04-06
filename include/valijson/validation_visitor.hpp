@@ -795,6 +795,18 @@ public:
     }
 
     /**
+     * @brief   Validate a value against a PatternConstraint
+     *
+     * @param   constraint  Constraint that the target must validate against
+     *
+     * @return  \c true if the constraint is satisfied; \c false otherwise
+     */
+    virtual bool visit(const constraints::PolyConstraint &constraint)
+    {
+        return constraint.validate(target, context, results);
+    }
+
+    /**
      * @brief   Validate a value against a PropertiesConstraint
      *
      * Validation of an object against a PropertiesConstraint proceeds in three
