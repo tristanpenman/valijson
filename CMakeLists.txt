@@ -44,16 +44,18 @@ add_subdirectory(thirdparty/gtest-1.7.0)
 # Include path
 include_directories(
   include
+)
+
+include_directories(SYSTEM 
+  ${Boost_INCLUDE_DIRS}
   thirdparty/gtest-1.7.0/include
   thirdparty/jsoncpp-0.9.4/include
   thirdparty/rapidjson-1.0.2/include
   thirdparty/picojson-1.3.0
   thirdparty/nlohmann-json-1.1.0
-  ${Boost_INCLUDE_DIRS}
 )
-
 if(VALIJSON_CXX11_ADAPTERS_ARE_ENABLED)
-    include_directories(
+    include_directories(SYSTEM
         thirdparty/json11-2016-01-26
         )
 endif()
@@ -78,6 +80,7 @@ set(TEST_SOURCES
     tests/test_picojson_adapter.cpp
     tests/test_validation_errors.cpp
     tests/test_validator.cpp
+    tests/test_poly_constraint.cpp
     )
 
 if(VALIJSON_CXX11_ADAPTERS_ARE_ENABLED)
