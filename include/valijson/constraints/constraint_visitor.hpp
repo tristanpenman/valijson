@@ -23,12 +23,12 @@ class MultipleOfIntConstraint;
 class NotConstraint;
 class OneOfConstraint;
 class PatternConstraint;
+class PolyConstraint;
 class PropertiesConstraint;
 class RequiredConstraint;
 class SingularItemsConstraint;
 class TypeConstraint;
 class UniqueItemsConstraint;
-class PolyConstraint;
 
 /// Interface to allow usage of the visitor pattern with Constraints
 class ConstraintVisitor
@@ -54,12 +54,12 @@ protected:
     typedef constraints::NotConstraint NotConstraint;
     typedef constraints::OneOfConstraint OneOfConstraint;
     typedef constraints::PatternConstraint PatternConstraint;
+    typedef constraints::PolyConstraint PolyConstraint;
     typedef constraints::PropertiesConstraint PropertiesConstraint;
     typedef constraints::RequiredConstraint RequiredConstraint;
     typedef constraints::SingularItemsConstraint SingularItemsConstraint;
     typedef constraints::TypeConstraint TypeConstraint;
     typedef constraints::UniqueItemsConstraint UniqueItemsConstraint;
-    typedef constraints::PolyConstraint PolyConstraint;
 
 public:
 
@@ -81,13 +81,12 @@ public:
     virtual bool visit(const NotConstraint &) = 0;
     virtual bool visit(const OneOfConstraint &) = 0;
     virtual bool visit(const PatternConstraint &) = 0;
+    virtual bool visit(const PolyConstraint &) = 0;
     virtual bool visit(const PropertiesConstraint &) = 0;
     virtual bool visit(const RequiredConstraint &) = 0;
     virtual bool visit(const SingularItemsConstraint &) = 0;
     virtual bool visit(const TypeConstraint &) = 0;
     virtual bool visit(const UniqueItemsConstraint &) = 0;
-    virtual bool visit(const PolyConstraint &) = 0;
-
 };
 
 }  // namespace constraints
