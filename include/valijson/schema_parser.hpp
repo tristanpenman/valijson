@@ -884,11 +884,13 @@ private:
             }
         }
 
-        for (auto &builder : constraintBuilders) {
-            if ((itr = object.find(builder.first)) != object.end()) {
+        for (ConstraintBuilders::const_iterator
+                builderItr  = constraintBuilders.begin();
+                builderItr != constraintBuilders.end(); ++builderItr) {
+            if ((itr = object.find(builderItr->first)) != object.end()) {
                 constraints::Constraint *constraint = NULL;
                 try {
-                    constraint = builder.second->make(itr->second);
+                    constraint = builderItr->second->make(itr->second);
                     rootSchema.addConstraintToSubschema(*constraint,
                             &subschema);
                     delete constraint;
