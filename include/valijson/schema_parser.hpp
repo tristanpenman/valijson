@@ -4,6 +4,8 @@
 
 #include <stdexcept>
 #include <iostream>
+#include <vector>
+#include <memory>
 
 #include <boost/foreach.hpp>
 #include <boost/shared_ptr.hpp>
@@ -24,6 +26,12 @@
 
 namespace valijson {
 
+class ConstraintBuilder {
+    public:
+    virtual ~ConstraintBuilder() {}
+    virtual std::unique_ptr<constraints::Constraint> make(adapters::Adapter &node) = 0;
+};
+
 /**
  * @brief  Parser for populating a Schema based on a JSON Schema document.
  *
@@ -36,6 +44,10 @@ namespace valijson {
 class SchemaParser
 {
 public:
+
+    void addConstraintBuilder(const std::string &key, ConstraintBuilder &builder) {
+        regConstraints.emplace_back(key, &builder);
+    }
 
     /// Supported versions of JSON Schema
     enum Version {
@@ -509,6 +521,9 @@ private:
                 schemaCache, schemaCacheKeysToCreate);
     }
 
+
+    std::vector<std::pair<std::string, ConstraintBuilder *>> regConstraints;
+
     /**
      * @brief  Populate a Schema object from JSON Schema document
      *
@@ -768,6 +783,13 @@ private:
         if ((itr = object.find("pattern")) != object.end()) {
             rootSchema.addConstraintToSubschema(
                     makePatternConstraint(itr->second), &subschema);
+        }
+
+        for (auto &builder : regConstraints) {
+            if ((itr = object.find(builder.first)) != object.end()) {
+                auto pcons = builder.second->make(itr->second);
+                rootSchema.addConstraintToSubschema(*pcons, &subschema);
+            }
         }
 
         {
