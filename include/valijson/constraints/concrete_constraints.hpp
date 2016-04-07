@@ -812,7 +812,7 @@ public:
             const std::vector<std::string>& context,
             valijson::ValidationResults *results) const = 0;
 
-protected:
+private:
     virtual Constraint * cloneInto(void *) const = 0;
 
     virtual size_t sizeOf() const = 0;
