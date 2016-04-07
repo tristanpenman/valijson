@@ -91,41 +91,15 @@ public:
      */
     void addConstraint(const Constraint &constraint)
     {
-        constraints.push_back(constraint.clone(allocFn, freeFn));
-    }
-
-    /**
-     * @brief  move a constraint to this sub-schema
-     *
-     * The constraint will be added to the list of constraints for this
-     * Subschema.
-     *
-     * @param  constraint  pointer to the constraint to be added.  Ownership
-     * assumed.
-     */
-    void addConstraint(const Constraint *constraint)
-    {
-        constraints.push_back(constraint);
-    }
-
-    //#if _cplusplus >=201103L
-    #if 0
-        /**
-         * @brief  Add a constraint to this sub-schema
-         *
-         * The constraint will be copied before being added to the list of
-         * constraints for this Subschema. Note that constraints will be copied
-         * only as deep as references to other Subschemas - e.g. copies of
-         * constraints that refer to sub-schemas, will continue to refer to the
-         * same Subschema instances.
-         *
-         * @param  constraint  Reference to the constraint to copy
-         */
-        void addConstraint(std::unique_ptr<Constraint>constraint)
-        {
-            constraints.push_back(constraint.release());
+        Constraint *newConstraint = constraint.clone(allocFn, freeFn);
+        try {
+            constraints.push_back(newConstraint);
+        } catch (...) {
+            newConstraint->~Constraint();
+            freeFn(newConstraint);
+            throw;
         }
-    #endif
+    }
 
     /**
      * @brief  Invoke a function on each child Constraint

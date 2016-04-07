@@ -360,17 +360,17 @@ public:
         return false;
     }
 
-    bool getBool(bool &result) const
+    bool getBool(bool &) const
     {
         return false;
     }
 
-    bool getDouble(double &result) const
+    bool getDouble(double &) const
     {
         return false;
     }
 
-    bool getInteger(int64_t &result) const
+    bool getInteger(int64_t &) const
     {
         return false;
     }
