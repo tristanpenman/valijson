@@ -17,6 +17,7 @@
 #include <valijson/internal/json_pointer.hpp>
 #include <valijson/internal/json_reference.hpp>
 #include <valijson/internal/uri.hpp>
+#include <valijson/constraint_builder.hpp>
 #include <valijson/schema.hpp>
 
 #ifdef __clang__
@@ -25,12 +26,6 @@
 #endif
 
 namespace valijson {
-
-class ConstraintBuilder {
-    public:
-    virtual ~ConstraintBuilder() {}
-    virtual std::unique_ptr<constraints::Constraint> make(adapters::Adapter &node) = 0;
-};
 
 /**
  * @brief  Parser for populating a Schema based on a JSON Schema document.
@@ -44,11 +39,6 @@ class ConstraintBuilder {
 class SchemaParser
 {
 public:
-
-    void addConstraintBuilder(const std::string &key, ConstraintBuilder &builder) {
-        regConstraints.emplace_back(key, &builder);
-    }
-
     /// Supported versions of JSON Schema
     enum Version {
         kDraft3,      ///< @deprecated JSON Schema v3 has been superseded by v4
@@ -67,6 +57,17 @@ public:
       : version(version) { }
 
     /**
+     * @brief  Release memory associated with custom ConstraintBuilders
+     */
+    ~SchemaParser()
+    {
+        for (ConstraintBuilders::iterator itr = constraintBuilders.begin();
+                itr != constraintBuilders.end(); ++itr) {
+            delete (*itr).second;
+        }
+    }
+
+    /**
      * @brief  Struct to contain templated function type for fetching documents
      */
     template<typename AdapterType>
@@ -81,6 +82,30 @@ public:
         /// Templated function pointer type for freeing fetched documents
         typedef void (*FreeDoc)(const DocumentType *);
     };
+
+    /**
+     * @brief  Add a custom contraint to this SchemaParser
+
+     * @param  key      name that will be used to identify relevant constraints
+     *                  while parsing a schema document
+     * @param  builder  pointer to a subclass of ConstraintBuilder that can
+     *                  parse custom constraints found in a schema document,
+     *                  and return an appropriate instance of Constraint; this
+     *                  class guarantees that it will take ownership of this
+     *                  pointer - unless this function throws an exception
+     *
+     * @todo   consider accepting a list of custom ConstraintBuilders in
+     *         constructor, so that this class remains immutable after
+     *         construction
+     *
+     * @todo   Add additional checks for key conflicts, empty keys, and
+     *         potential restrictions relating to case sensitivity
+     */
+    void addConstraintBuilder(const std::string &key,
+            const ConstraintBuilder *builder)
+    {
+        constraintBuilders.push_back(std::make_pair(key, builder));
+    }
 
     /**
      * @brief  Populate a Schema object from JSON Schema document
@@ -121,6 +146,11 @@ public:
     }
 
 private:
+
+    typedef std::vector<std::pair<std::string, const ConstraintBuilder *>>
+        ConstraintBuilders;
+
+    ConstraintBuilders constraintBuilders;
 
     template<typename AdapterType>
     struct DocumentCache
@@ -521,9 +551,6 @@ private:
                 schemaCache, schemaCacheKeysToCreate);
     }
 
-
-    std::vector<std::pair<std::string, ConstraintBuilder *>> regConstraints;
-
     /**
      * @brief  Populate a Schema object from JSON Schema document
      *
@@ -785,13 +812,6 @@ private:
                     makePatternConstraint(itr->second), &subschema);
         }
 
-        for (auto &builder : regConstraints) {
-            if ((itr = object.find(builder.first)) != object.end()) {
-                auto pcons = builder.second->make(itr->second);
-                rootSchema.addConstraintToSubschema(*pcons, &subschema);
-            }
-        }
-
         {
             // Check for schema keywords that require the creation of a
             // PropertiesConstraint instance.
@@ -861,6 +881,21 @@ private:
                     makeUniqueItemsConstraint(itr->second);
             if (constraint) {
                 rootSchema.addConstraintToSubschema(*constraint, &subschema);
+            }
+        }
+
+        for (auto &builder : constraintBuilders) {
+            if ((itr = object.find(builder.first)) != object.end()) {
+                constraints::Constraint *constraint = NULL;
+                try {
+                    constraint = builder.second->make(itr->second);
+                    rootSchema.addConstraintToSubschema(*constraint,
+                            &subschema);
+                    delete constraint;
+                } catch (...) {
+                    delete constraint;
+                    throw;
+                }
             }
         }
     }

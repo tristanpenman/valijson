@@ -171,6 +171,7 @@
 		6A869A2517CD8641006864FA /* type.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = type.json; sourceTree = "<group>"; };
 		6A869A2617CD8641006864FA /* uniqueItems.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = uniqueItems.json; sourceTree = "<group>"; };
 		6A869A3017CD8A92006864FA /* rapidjson_utils.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = rapidjson_utils.hpp; sourceTree = "<group>"; };
+		6A8BA11C1CB71163001CA087 /* constraint_builder.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = constraint_builder.hpp; sourceTree = "<group>"; };
 		6A9297071C4B1A3500737891 /* allocators.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = allocators.h; sourceTree = "<group>"; };
 		6A9297081C4B1A3500737891 /* document.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = document.h; sourceTree = "<group>"; };
 		6A9297091C4B1A3500737891 /* encodedstream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = encodedstream.h; sourceTree = "<group>"; };
@@ -858,6 +859,7 @@
 				6AC78BE317C5FC6A00674114 /* constraints */,
 				6A506D1D1AF88D5E00C2C818 /* internal */,
 				6A869A2F17CD8A81006864FA /* utils */,
+				6A8BA11C1CB71163001CA087 /* constraint_builder.hpp */,
 				6AC78BE917C5FC6A00674114 /* schema.hpp */,
 				6AC78BEA17C5FC6A00674114 /* schema_parser.hpp */,
 				6A309D2D1C28C1FD00EF761C /* subschema.hpp */,
