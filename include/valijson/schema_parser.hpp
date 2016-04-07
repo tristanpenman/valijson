@@ -147,7 +147,7 @@ public:
 
 private:
 
-    typedef std::vector<std::pair<std::string, const ConstraintBuilder *>>
+    typedef std::vector<std::pair<std::string, const ConstraintBuilder *> >
         ConstraintBuilders;
 
     ConstraintBuilders constraintBuilders;
