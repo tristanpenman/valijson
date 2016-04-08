@@ -1,9 +1,9 @@
 cmake_minimum_required (VERSION 2.6)
 project (valijson)
 
-option (INSTALL_HEADERS "Install valijson Headers." TRUE)
+option (INSTALL_HEADERS "Install valijson Headers." FALSE)
 option (BUILD_EXAMPLES "Build valijson Examples." FALSE)
-option (BUILD_TESTS "Build valijson Tests." FALSE)
+option (BUILD_TESTS "Build valijson Tests." TRUE)
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall ")
 if (BUILD_TESTS OR BUILD_EXAMPLES)
 SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
