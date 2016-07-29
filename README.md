@@ -150,7 +150,6 @@ The exceptions for Draft 3 are:
 
 The exceptions for Draft 4 are:
 
- - definitions
  - format (optional)
 
 Support for JSON References is in development.
