@@ -2,9 +2,6 @@
 
 #include <iostream>
 
-#include <boost/foreach.hpp>
-#include <boost/lexical_cast.hpp>
-
 #include <gtest/gtest.h>
 
 #include <valijson/adapters/jsoncpp_adapter.hpp>
@@ -99,7 +96,7 @@ protected:
             ASSERT_TRUE( testCases.isArray() );
 
             // Process each test case in the file
-            BOOST_FOREACH( const AdapterType testCase, testCases.getArray() ) {
+            for( const AdapterType testCase : testCases.getArray() ) {
 
                 currentTestCase.clear();
                 currentTest.clear();
@@ -127,7 +124,7 @@ protected:
                 itr = object.find("tests");
                 ASSERT_NE( object.end(), itr );
                 ASSERT_TRUE( itr->second.isArray() );
-                BOOST_FOREACH( const AdapterType test, itr->second.getArray() ) {
+                for( const AdapterType test : itr->second.getArray() ) {
 
                     const bool strict = itr->second.hasStrictTypes();
 

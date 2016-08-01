@@ -1,5 +1,3 @@
-#include <boost/foreach.hpp>
-#include <boost/lexical_cast.hpp>
 
 #include <gtest/gtest.h>
 
@@ -19,7 +17,7 @@ TEST_F(TestPropertyTreeAdapter, BasicArrayIteration)
     boost::property_tree::ptree document;
     for (unsigned int i = 0; i < numElements; i++) {
         document.push_back(std::make_pair(std::string(),
-            boost::property_tree::ptree(boost::lexical_cast<std::string>(i))));
+            boost::property_tree::ptree(std::to_string(i))));
     }
 
     // Ensure that wrapping the document preserves the array and does not allow
@@ -36,7 +34,7 @@ TEST_F(TestPropertyTreeAdapter, BasicArrayIteration)
 
     // Ensure that the elements are returned in the order they were inserted
     unsigned int expectedValue = 0;
-    BOOST_FOREACH( const valijson::adapters::PropertyTreeAdapter value, adapter.getArray() ) {
+    for( const valijson::adapters::PropertyTreeAdapter value : adapter.getArray() ) {
         ASSERT_TRUE( value.isString() );
         ASSERT_FALSE( value.isNumber() );
         ASSERT_TRUE( value.maybeDouble() );
@@ -56,9 +54,9 @@ TEST_F(TestPropertyTreeAdapter, BasicObjectIteration)
     // strings their corresponding numeric values
     boost::property_tree::ptree document;
     for (unsigned int i = 0; i < numElements; i++) {
-        std::string name(boost::lexical_cast<std::string>(i));
+        std::string name(std::to_string(i));
         document.push_back(std::make_pair(name, boost::property_tree::ptree(
-            boost::lexical_cast<std::string>(double(i)))));
+            std::to_string(double(i)))));
     }
 
     // Ensure that wrapping the document preserves the object and does not
@@ -75,11 +73,11 @@ TEST_F(TestPropertyTreeAdapter, BasicObjectIteration)
 
     // Ensure that the members are returned in the order they were inserted
     unsigned int expectedValue = 0;
-    BOOST_FOREACH( const valijson::adapters::PropertyTreeAdapter::ObjectMember member, adapter.getObject() ) {
+    for( const valijson::adapters::PropertyTreeAdapter::ObjectMember member : adapter.getObject() ) {
         ASSERT_TRUE( member.second.isString() );
         ASSERT_FALSE( member.second.isNumber() );
         ASSERT_TRUE( member.second.maybeDouble() );
-        EXPECT_EQ( boost::lexical_cast<std::string>(expectedValue), member.first );
+        EXPECT_EQ( std::to_string(expectedValue), member.first );
         EXPECT_EQ( double(expectedValue), member.second.asDouble() );
         expectedValue++;
     }

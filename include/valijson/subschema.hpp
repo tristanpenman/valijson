@@ -4,10 +4,16 @@
 
 #include <vector>
 
-#include <boost/foreach.hpp>
-#include <boost/function.hpp>
-#include <boost/optional.hpp>
 #include <memory>
+
+// This should be removed once C++17 is widely available
+#if __has_include(<optional>)
+#  include <optional>
+namespace opt = std;
+#else
+#  include <compat/optional.hpp>
+namespace opt = std::experimental;
+#endif
 
 #include <valijson/constraints/constraint.hpp>
 
@@ -37,7 +43,7 @@ public:
 
     /// Typedef for a function that can be applied to each of the Constraint
     /// instances owned by a Schema.
-    typedef boost::function<bool (const Constraint &)> ApplyFunction;
+    typedef std::function<bool (const Constraint &)> ApplyFunction;
 
     /**
      * @brief  Construct a new Subschema object
@@ -115,7 +121,7 @@ public:
     bool apply(ApplyFunction &applyFunction) const
     {
         bool allTrue = true;
-        BOOST_FOREACH( const Constraint *constraint, constraints ) {
+        for( const Constraint *constraint : constraints ) {
             allTrue = allTrue && applyFunction(*constraint);
         }
 
@@ -134,7 +140,7 @@ public:
      */
     bool applyStrict(ApplyFunction &applyFunction) const
     {
-        BOOST_FOREACH( const Constraint *constraint, constraints ) {
+        for( const Constraint *constraint : constraints ) {
             if (!applyFunction(*constraint)) {
                 return false;
             }
@@ -198,7 +204,7 @@ public:
      */
     bool hasDescription() const
     {
-        return description != boost::none;
+        return static_cast<bool>(description);
     }
 
     /**
@@ -208,7 +214,7 @@ public:
      */
     bool hasId() const
     {
-        return id != boost::none;
+        return static_cast<bool>(id);
     }
 
     /**
@@ -218,7 +224,7 @@ public:
      */
     bool hasTitle() const
     {
-        return title != boost::none;
+        return static_cast<bool>(title);
     }
 
     /**
@@ -274,13 +280,13 @@ private:
     std::vector<const Constraint *> constraints;
 
     /// Schema description (optional)
-    boost::optional<std::string> description;
+    opt::optional<std::string> description;
 
     /// Id to apply when resolving the schema URI
-    boost::optional<std::string> id;
+    opt::optional<std::string> id;
 
     /// Title string associated with the schema (optional)
-    boost::optional<std::string> title;
+    opt::optional<std::string> title;
 };
 
 } // namespace valijson
