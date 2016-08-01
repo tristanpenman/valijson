@@ -2,7 +2,7 @@
 #ifndef __VALIJSON_ADAPTERS_ADAPTER_HPP
 #define __VALIJSON_ADAPTERS_ADAPTER_HPP
 
-#include <boost/function.hpp>
+#include <functional>
 
 namespace valijson {
 namespace adapters {
@@ -26,11 +26,11 @@ class Adapter
 public:
 
     /// Typedef for callback function supplied to applyToArray.
-    typedef boost::function<bool (const Adapter &)>
+    typedef std::function<bool (const Adapter &)>
         ArrayValueCallback;
 
     /// Typedef for callback function supplied to applyToObject.
-    typedef boost::function<bool (const std::string &, const Adapter &)>
+    typedef std::function<bool (const std::string &, const Adapter &)>
         ObjectMemberCallback;
 
     /**

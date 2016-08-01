@@ -5,7 +5,6 @@
 #include <stdint.h>
 #include <sstream>
 
-#include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/optional.hpp>
 
@@ -216,7 +215,7 @@ public:
         // definitely an array.
         if (value.isArray()) {
             const boost::optional<Array> array = value.getArrayOptional();
-            BOOST_FOREACH( const AdapterType element, *array ) {
+			for( const AdapterType element : *array ) {
                 if (!fn(element)) {
                     return false;
                 }
@@ -234,7 +233,7 @@ public:
 
         if (value.isObject()) {
             const boost::optional<Object> object = value.getObjectOptional();
-            BOOST_FOREACH( const ObjectMemberType member, *object ) {
+			for( const ObjectMemberType member : *object ) {
                 if (!fn(member.first, AdapterType(member.second))) {
                     return false;
                 }
