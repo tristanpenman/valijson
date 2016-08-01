@@ -50,7 +50,7 @@ inline uint64_t u8_strlen(const char *s)
         if (i == maxLength) {
             throw std::runtime_error(
                     "String exceeded maximum size of " +
-                    boost::lexical_cast<std::string>(maxLength) + " bytes.");
+                    std::to_string(maxLength) + " bytes.");
         }
         count++;
     }

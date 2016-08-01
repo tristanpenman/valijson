@@ -1,5 +1,4 @@
-#include <boost/foreach.hpp>
-#include <boost/lexical_cast.hpp>
+#include <string>
 
 #include <gtest/gtest.h>
 
@@ -36,7 +35,7 @@ TEST_F(TestPicoJsonAdapter, BasicArrayIteration)
 
     // Ensure that the elements are returned in the order they were inserted
     unsigned int expectedValue = 0;
-    BOOST_FOREACH( const valijson::adapters::PicoJsonAdapter value, adapter.getArray() ) {
+    for( const valijson::adapters::PicoJsonAdapter value : adapter.getArray() ) {
         ASSERT_TRUE( value.isNumber() );
         EXPECT_EQ( double(expectedValue), value.getDouble() );
         expectedValue++;
@@ -54,7 +53,7 @@ TEST_F(TestPicoJsonAdapter, BasicObjectIteration)
     // strings their corresponding numeric values
     picojson::object object;
     for (unsigned int i = 0; i < numElements; i++) {
-        std::string name(boost::lexical_cast<std::string>(i));
+        std::string name(std::to_string(i));
         object[name] = picojson::value(static_cast<double>(i));
     }
     picojson::value document(object);
@@ -73,9 +72,9 @@ TEST_F(TestPicoJsonAdapter, BasicObjectIteration)
 
     // Ensure that the members are returned in the order they were inserted
     unsigned int expectedValue = 0;
-    BOOST_FOREACH( const valijson::adapters::PicoJsonAdapter::ObjectMember member, adapter.getObject() ) {
+    for( const valijson::adapters::PicoJsonAdapter::ObjectMember member : adapter.getObject() ) {
         ASSERT_TRUE( member.second.isNumber() );
-        EXPECT_EQ( boost::lexical_cast<std::string>(expectedValue), member.first );
+        EXPECT_EQ( std::to_string(expectedValue), member.first );
         EXPECT_EQ( double(expectedValue), member.second.getDouble() );
         expectedValue++;
     }
