@@ -5,8 +5,12 @@
 #include <stdint.h>
 #include <sstream>
 
-#include <boost/lexical_cast.hpp>
-#include <boost/optional.hpp>
+#if __has_include(<optional>)
+#  include <optional>
+#else
+#  include <compat/optional.hpp>
+#  define HAVE_EXPERIMENTAL_OPTIONAL 1
+#endif
 
 #include <valijson/adapters/adapter.hpp>
 
@@ -214,7 +218,7 @@ public:
         // effort of constructing an ArrayType instance if the value is
         // definitely an array.
         if (value.isArray()) {
-            const boost::optional<Array> array = value.getArrayOptional();
+			const std::experimental::optional<Array> array = value.getArrayOptional();
 			for( const AdapterType element : *array ) {
                 if (!fn(element)) {
                     return false;
@@ -232,7 +236,7 @@ public:
         }
 
         if (value.isObject()) {
-            const boost::optional<Object> object = value.getObjectOptional();
+			const std::experimental::optional<Object> object = value.getObjectOptional();
 			for( const ObjectMemberType member : *object ) {
                 if (!fn(member.first, AdapterType(member.second))) {
                     return false;
@@ -443,18 +447,18 @@ public:
         } else if (value.isInteger()) {
             int64_t integerValue;
             if (value.getInteger(integerValue)) {
-                try {
-                    result = boost::lexical_cast<std::string>(integerValue);
-                    return true;
-                } catch (boost::bad_lexical_cast &) { }
+				std::stringstream ss;
+				ss << integerValue;
+				result = ss.str();
+				return true;
             }
         } else if (value.isDouble()) {
             double doubleValue;
             if (value.getDouble(doubleValue)) {
-                try {
-                    result = boost::lexical_cast<std::string>(doubleValue);
-                    return true;
-                } catch (boost::bad_lexical_cast &) { }
+				std::stringstream ss;
+				ss << doubleValue;
+				result = ss.str();
+				return true;
             }
         }
 
@@ -481,7 +485,7 @@ public:
                 other.asString() == asString();
         } else if (isArray()) {
             if (other.isArray() && getArraySize() == other.getArraySize()) {
-                const boost::optional<ArrayType> array = value.getArrayOptional();
+                const std::experimental::optional<ArrayType> array = value.getArrayOptional();
                 if (array) {
                     ArrayComparisonFunctor fn(*array, strict);
                     return other.applyToArray(fn);
@@ -491,7 +495,7 @@ public:
             }
         } else if (isObject()) {
             if (other.isObject() && other.getObjectSize() == getObjectSize()) {
-                const boost::optional<ObjectType> object = value.getObjectOptional();
+                const std::experimental::optional<ObjectType> object = value.getObjectOptional();
                 if (object) {
                     ObjectComparisonFunctor fn(*object, strict);
                     return other.applyToObject(fn);
@@ -520,7 +524,7 @@ public:
      */
     ArrayType getArray() const
     {
-        boost::optional<ArrayType> arrayValue = value.getArrayOptional();
+        std::experimental::optional<ArrayType> arrayValue = value.getArrayOptional();
         if (arrayValue) {
             return *arrayValue;
         }
@@ -629,7 +633,7 @@ public:
      */
     ObjectType getObject() const
     {
-        boost::optional<ObjectType> objectValue = value.getObjectOptional();
+        std::experimental::optional<ObjectType> objectValue = value.getObjectOptional();
         if (objectValue) {
             return *objectValue;
         }

@@ -281,7 +281,7 @@ public:
     {
         if (tree.data().empty()) {    // No string content
             if (tree.size() == 0) {   // No children
-                array = tree;         // Treat as empty array
+                array.emplace(tree);         // Treat as empty array
             } else {
                 bool isArray = true;
                 boost::property_tree::ptree::const_iterator itr;
@@ -293,9 +293,9 @@ public:
                 }
 
                 if (isArray) {
-                    array = tree;
+                    array.emplace(tree);
                 } else {
-                    object = tree;
+                    object.emplace(tree);
                 }
             }
         } else {
@@ -325,18 +325,18 @@ public:
      * @brief  Return an instance of PropertyTreeArrayAdapter.
      *
      * If the referenced property tree value is an array, this function will
-     * return a boost::optional containing a PropertyTreeArray instance
+     * return a std::optional containing a PropertyTreeArray instance
      * referencing the array.
      *
-     * Otherwise it will return boost::none.
+     * Otherwise it will return an empty optional.
      */
-    boost::optional<PropertyTreeArray> getArrayOptional() const
+	std::experimental::optional<PropertyTreeArray> getArrayOptional() const
     {
         if (array) {
-            return boost::make_optional(PropertyTreeArray(*array));
+			return std::experimental::make_optional(PropertyTreeArray(*array));
         }
 
-        return boost::none;
+        return std::experimental::optional<PropertyTreeArray>();
     }
 
     /**
@@ -379,18 +379,18 @@ public:
      * @brief   Optionally return a PropertyTreeObject instance.
      *
      * If the referenced property tree is an object, this function will return a
-     * boost::optional containing a PropertyTreeObject instance referencing the
+     * std::optional containing a PropertyTreeObject instance referencing the
      * object.
      *
-     * Otherwise it will return boost::none.
+     * Otherwise it will return an empty optional.
      */
-    boost::optional<PropertyTreeObject> getObjectOptional() const
+	std::experimental::optional<PropertyTreeObject> getObjectOptional() const
     {
         if (object) {
-            return boost::make_optional(PropertyTreeObject(*object));
+			return std::experimental::make_optional(PropertyTreeObject(*object));
         }
 
-        return boost::none;
+        return std::experimental::optional<PropertyTreeObject>();
     }
 
     /**
@@ -431,7 +431,7 @@ public:
 
     bool isArray() const
     {
-        return array != boost::none;
+		return static_cast<bool>(array);
     }
 
     bool isBool() const
@@ -461,12 +461,12 @@ public:
 
     bool isObject() const
     {
-        return object != boost::none;
+		return static_cast<bool>(object);
     }
 
     bool isString() const
     {
-        return value != boost::none;
+        return static_cast<bool>(value);
     }
 
 private:
@@ -478,13 +478,13 @@ private:
     }
 
     /// Reference used if the value is known to be an array
-    boost::optional<const boost::property_tree::ptree &> array;
+	std::experimental::optional<const boost::property_tree::ptree &> array;
 
     /// Reference used if the value is known to be an object
-    boost::optional<const boost::property_tree::ptree &> object;
+    std::experimental::optional<const boost::property_tree::ptree &> object;
 
     /// Reference used if the value is known to be a POD type
-    boost::optional<std::string> value;
+	std::experimental::optional<std::string> value;
 };
 
 /**

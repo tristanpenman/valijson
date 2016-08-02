@@ -29,7 +29,6 @@
 
 #include <string>
 #include <json11.hpp>
-#include <boost/optional.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 
 #include <valijson/adapters/adapter.hpp>
@@ -289,18 +288,18 @@ public:
      * @brief   Optionally return a Json11Array instance.
      *
      * If the referenced Json11 value is an array, this function will return
-     * a boost::optional containing a Json11Array instance referencing the
+     * a std::optional containing a Json11Array instance referencing the
      * array.
      *
-     * Otherwise it will return boost::none.
+     * Otherwise it will return an empty optional.
      */
-    boost::optional<Json11Array> getArrayOptional() const
+	std::experimental::optional<Json11Array> getArrayOptional() const
     {
         if (value.is_array()) {
-            return boost::make_optional(Json11Array(value));
+			return std::experimental::make_optional(Json11Array(value));
         }
 
-        return boost::none;
+		return std::experimental::optional<Json11Array>();
     }
 
     /**
@@ -357,18 +356,18 @@ public:
      * @brief   Optionally return a Json11Object instance.
      *
      * If the referenced Json11 value is an object, this function will return a
-     * boost::optional containing a Json11Object instance referencing the
+     * std::optional containing a Json11Object instance referencing the
      * object.
      *
-     * Otherwise it will return boost::none.
+     * Otherwise it will return an empty optional.
      */
-    boost::optional<Json11Object> getObjectOptional() const
+	std::experimental::optional<Json11Object> getObjectOptional() const
     {
         if (value.is_object()) {
-            return boost::make_optional(Json11Object(value));
+			return std::experimental::make_optional(Json11Object(value));
         }
 
-        return boost::none;
+		return std::experimental::optional<Json11Object>();
     }
 
     /**

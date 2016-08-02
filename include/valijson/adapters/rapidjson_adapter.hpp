@@ -403,18 +403,18 @@ public:
      * @brief   Optionally return a GenericRapidJsonArray instance.
      *
      * If the referenced RapidJson value is an array, this function will return
-     * a boost::optional containing a GenericRapidJsonArray instance referencing
+     * a std::optional containing a GenericRapidJsonArray instance referencing
      * the array.
      *
-     * Otherwise it will return boost::none.
+     * Otherwise it will return an empty optional.
      */
-    boost::optional<GenericRapidJsonArray<ValueType> > getArrayOptional() const
+	std::experimental::optional<GenericRapidJsonArray<ValueType> > getArrayOptional() const
     {
         if (value.IsArray()) {
-            return boost::make_optional(GenericRapidJsonArray<ValueType>(value));
+			return std::experimental::make_optional(GenericRapidJsonArray<ValueType>(value));
         }
 
-        return boost::none;
+        return std::experimental::optional<GenericRapidJsonArray<ValueType> >();
     }
 
     /**
@@ -481,18 +481,18 @@ public:
      * @brief   Optionally return a GenericRapidJsonObject instance.
      *
      * If the referenced RapidJson value is an object, this function will return
-     * a boost::optional containing a GenericRapidJsonObject instance
+     * a std::optional containing a GenericRapidJsonObject instance
      * referencing the object.
      *
-     * Otherwise it will return boost::none.
+     * Otherwise it will return an empty optional.
      */
-    boost::optional<GenericRapidJsonObject<ValueType> > getObjectOptional() const
+	std::experimental::optional<GenericRapidJsonObject<ValueType> > getObjectOptional() const
     {
         if (value.IsObject()) {
-            return boost::make_optional(GenericRapidJsonObject<ValueType>(value));
+            return std::experimental::make_optional(GenericRapidJsonObject<ValueType>(value));
         }
 
-        return boost::none;
+        return std::experimental::optional<GenericRapidJsonObject<ValueType> >();
     }
 
     /**

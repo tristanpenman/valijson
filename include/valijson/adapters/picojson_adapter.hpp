@@ -293,18 +293,18 @@ public:
      * @brief   Optionally return a PicoJsonArray instance.
      *
      * If the referenced PicoJson value is an array, this function will return
-     * a boost::optional containing a PicoJsonArray instance referencing the
+     * a std::optional containing a PicoJsonArray instance referencing the
      * array.
      *
-     * Otherwise it will return boost::none.
+     * Otherwise it will return an empty optional.
      */
-    boost::optional<PicoJsonArray> getArrayOptional() const
+	std::experimental::optional<PicoJsonArray> getArrayOptional() const
     {
         if (value.is<picojson::array>()) {
-            return boost::make_optional(PicoJsonArray(value));
+			return std::experimental::make_optional(PicoJsonArray(value));
         }
 
-        return boost::none;
+        return std::experimental::optional<PicoJsonArray>();
     }
 
     /**
@@ -363,18 +363,18 @@ public:
      * @brief   Optionally return a PicoJsonObject instance.
      *
      * If the referenced PicoJson value is an object, this function will return a
-     * boost::optional containing a PicoJsonObject instance referencing the
+     * std::optional containing a PicoJsonObject instance referencing the
      * object.
      *
-     * Otherwise it will return boost::none.
+     * Otherwise it will return an empty optional.
      */
-    boost::optional<PicoJsonObject> getObjectOptional() const
+	std::experimental::optional<PicoJsonObject> getObjectOptional() const
     {
         if (value.is<picojson::object>()) {
-            return boost::make_optional(PicoJsonObject(value));
+			return std::experimental::make_optional(PicoJsonObject(value));
         }
 
-        return boost::none;
+        return std::experimental::optional<PicoJsonObject>();
     }
 
     /**

@@ -291,19 +291,19 @@ public:
      * @brief   Optionally return a NlohmannJsonArray instance.
      *
      * If the referenced NlohmannJson value is an array, this function will return
-     * a boost::optional containing a NlohmannJsonArray instance referencing the
+     * a std::optional containing a NlohmannJsonArray instance referencing the
      * array.
      *
-     * Otherwise it will return boost::none.
+     * Otherwise it will return an empty optional.
      */
-    boost::optional<NlohmannJsonArray> getArrayOptional() const
+	std::experimental::optional<NlohmannJsonArray> getArrayOptional() const
     {
         if (value.is_array()) {
-            return boost::make_optional(NlohmannJsonArray(value));
+			return std::experimental::make_optional(NlohmannJsonArray(value));
         }
 
-        return boost::none;
-    }
+		return std::experimental::optional<NlohmannJsonArray>();
+	}
 
     /**
      * @brief   Retrieve the number of elements in the array
@@ -359,18 +359,18 @@ public:
      * @brief   Optionally return a NlohmannJsonObject instance.
      *
      * If the referenced NlohmannJson value is an object, this function will return a
-     * boost::optional containing a NlohmannJsonObject instance referencing the
+     * std::optional containing a NlohmannJsonObject instance referencing the
      * object.
      *
-     * Otherwise it will return boost::none.
+     * Otherwise it will return an empty optional.
      */
-    boost::optional<NlohmannJsonObject> getObjectOptional() const
+	std::experimental::optional<NlohmannJsonObject> getObjectOptional() const
     {
         if (value.is_object()) {
-            return boost::make_optional(NlohmannJsonObject(value));
+			return std::experimental::make_optional(NlohmannJsonObject(value));
         }
 
-        return boost::none;
+        return std::experimental::optional<NlohmannJsonObject>();
     }
 
     /**

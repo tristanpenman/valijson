@@ -284,18 +284,18 @@ public:
      * @brief   Optionally return a JsonCppArray instance.
      *
      * If the referenced JsonCpp value is an array, this function will return a
-     * boost::optional containing a JsonCppArray instance referencing the
+     * std::optional containing a JsonCppArray instance referencing the
      * array.
      *
-     * Otherwise it will return boost::none.
+     * Otherwise it will return an empty optional.
      */
-    boost::optional<JsonCppArray> getArrayOptional() const
+    std::experimental::optional<JsonCppArray> getArrayOptional() const
     {
         if (value.isArray()) {
-            return boost::make_optional(JsonCppArray(value));
+			return std::experimental::make_optional(JsonCppArray(value));
         }
 
-        return boost::none;
+		return std::experimental::optional<JsonCppArray>();
     }
 
     /**
@@ -353,18 +353,18 @@ public:
      * @brief   Optionally return a JsonCppObject instance.
      *
      * If the referenced JsonCpp value is an object, this function will return a
-     * boost::optional containing a JsonCppObject instance referencing the
+     * std::optional containing a JsonCppObject instance referencing the
      * object.
      *
-     * Otherwise it will return boost::none.
+     * Otherwise it will return an empty optional.
      */
-    boost::optional<JsonCppObject> getObjectOptional() const
+    std::experimental::optional<JsonCppObject> getObjectOptional() const
     {
         if (value.isObject()) {
-            return boost::make_optional(JsonCppObject(value));
+            return std::experimental::make_optional(JsonCppObject(value));
         }
 
-        return boost::none;
+		return std::experimental::optional<JsonCppObject>();
     }
 
     /**
