@@ -60,7 +60,7 @@ public:
     void applyToSubschemas(const FunctorType &fn) const
     {
         unsigned int index = 0;
-        BOOST_FOREACH( const Subschema *subschema, subschemas ) {
+		for( const Subschema *subschema : subschemas ) {
             if (!fn(index, subschema)) {
                 return;
             }
@@ -103,7 +103,7 @@ public:
     void applyToSubschemas(const FunctorType &fn) const
     {
         unsigned int index = 0;
-        BOOST_FOREACH( const Subschema *subschema, subschemas ) {
+		for( const Subschema *subschema : subschemas ) {
             if (!fn(index, subschema)) {
                 return;
             }
@@ -170,7 +170,7 @@ public:
         }
 
         typedef typename ContainerType::value_type ValueType;
-        BOOST_FOREACH( const ValueType &dependencyName, dependencyNames ) {
+		for( const ValueType &dependencyName : dependencyNames ) {
             itr->second.insert(String(dependencyName.c_str(), allocator));
         }
 
@@ -196,7 +196,7 @@ public:
     template<typename FunctorType>
     void applyToPropertyDependencies(const FunctorType &fn) const
     {
-        BOOST_FOREACH( const PropertyDependencies::value_type &v,
+		for( const PropertyDependencies::value_type &v :
                 propertyDependencies ) {
             if (!fn(v.first, v.second)) {
                 return;
@@ -207,7 +207,7 @@ public:
     template<typename FunctorType>
     void applyToSchemaDependencies(const FunctorType &fn) const
     {
-        BOOST_FOREACH( const SchemaDependencies::value_type &v,
+		for( const SchemaDependencies::value_type &v :
                 schemaDependencies ) {
             if (!fn(v.first, v.second)) {
                 return;
@@ -254,7 +254,7 @@ public:
     {
         try {
             // Clone individual enum values
-            BOOST_FOREACH( const EnumValue *otherValue, other.enumValues ) {
+			for( const EnumValue *otherValue : other.enumValues ) {
                 const EnumValue *value = otherValue->clone();
                 try {
                     enumValues.push_back(value);
@@ -266,7 +266,7 @@ public:
 
         } catch (...) {
             // Delete values already added to constraint
-            BOOST_FOREACH( const EnumValue *value, enumValues ) {
+			for( const EnumValue *value : enumValues ) {
                 delete value;
             }
             throw;
@@ -275,7 +275,7 @@ public:
 
     virtual ~EnumConstraint()
     {
-        BOOST_FOREACH( const EnumValue *value, enumValues ) {
+		for( const EnumValue *value : enumValues ) {
             delete value;
         }
     }
@@ -295,7 +295,7 @@ public:
     template<typename FunctorType>
     void applyToValues(const FunctorType &fn) const
     {
-        BOOST_FOREACH( const EnumValue *value, enumValues ) {
+		for( const EnumValue *value : enumValues ) {
             if (!fn(*value)) {
                 return;
             }
@@ -345,7 +345,7 @@ public:
     void applyToItemSubschemas(const FunctorType &fn) const
     {
         unsigned int index = 0;
-        BOOST_FOREACH( const Subschema *subschema, itemSubschemas ) {
+		for( const Subschema *subschema : itemSubschemas ) {
             if (!fn(index, subschema)) {
                 return;
             }
@@ -727,7 +727,7 @@ public:
     void applyToSubschemas(const FunctorType &fn) const
     {
         unsigned int index = 0;
-        BOOST_FOREACH( const Subschema *subschema, subschemas ) {
+		for( const Subschema *subschema : subschemas ) {
             if (!fn(index, subschema)) {
                 return;
             }
@@ -870,7 +870,7 @@ public:
     void applyToPatternProperties(const FunctorType &fn) const
     {
         typedef typename PropertySchemaMap::value_type ValueType;
-        BOOST_FOREACH( const ValueType &value, patternProperties ) {
+		for( const ValueType &value : patternProperties ) {
             if (!fn(value.first, value.second)) {
                 return;
             }
@@ -881,7 +881,7 @@ public:
     void applyToProperties(const FunctorType &fn) const
     {
         typedef typename PropertySchemaMap::value_type ValueType;
-        BOOST_FOREACH( const ValueType &value, properties ) {
+		for( const ValueType &value : properties ) {
             if (!fn(value.first, value.second)) {
                 return;
             }
@@ -937,7 +937,7 @@ public:
     template<typename FunctorType>
     void applyToRequiredProperties(const FunctorType &fn) const
     {
-        BOOST_FOREACH( const String &propertyName, requiredProperties ) {
+		for( const String &propertyName : requiredProperties ) {
             if (!fn(propertyName)) {
                 return;
             }
@@ -1024,7 +1024,7 @@ public:
     template<typename FunctorType>
     void applyToNamedTypes(const FunctorType &fn) const
     {
-        BOOST_FOREACH( const JsonType namedType, namedTypes ) {
+		for( const JsonType namedType : namedTypes ) {
             if (!fn(namedType)) {
                 return;
             }
@@ -1035,7 +1035,7 @@ public:
     void applyToSchemaTypes(const FunctorType &fn) const
     {
         unsigned int index = 0;
-        BOOST_FOREACH( const Subschema *subschema, schemaTypes ) {
+		for( const Subschema *subschema : schemaTypes ) {
             if (!fn(index, subschema)) {
                 return;
             }

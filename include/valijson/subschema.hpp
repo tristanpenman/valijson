@@ -4,9 +4,7 @@
 
 #include <vector>
 
-#include <boost/foreach.hpp>
 #include <boost/function.hpp>
-#include <boost/optional.hpp>
 #include <memory>
 
 #include <valijson/constraints/constraint.hpp>
@@ -115,7 +113,7 @@ public:
     bool apply(ApplyFunction &applyFunction) const
     {
         bool allTrue = true;
-        BOOST_FOREACH( const Constraint *constraint, constraints ) {
+		for( const Constraint *constraint : constraints ) {
             allTrue = allTrue && applyFunction(*constraint);
         }
 
@@ -134,7 +132,7 @@ public:
      */
     bool applyStrict(ApplyFunction &applyFunction) const
     {
-        BOOST_FOREACH( const Constraint *constraint, constraints ) {
+		for( const Constraint *constraint : constraints ) {
             if (!applyFunction(*constraint)) {
                 return false;
             }
