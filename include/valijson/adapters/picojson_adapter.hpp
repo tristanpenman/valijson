@@ -298,13 +298,13 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-	std::experimental::optional<PicoJsonArray> getArrayOptional() const
+	opt::optional<PicoJsonArray> getArrayOptional() const
     {
         if (value.is<picojson::array>()) {
-			return std::experimental::make_optional(PicoJsonArray(value));
+			return opt::make_optional(PicoJsonArray(value));
         }
 
-        return std::experimental::optional<PicoJsonArray>();
+        return opt::optional<PicoJsonArray>();
     }
 
     /**
@@ -368,13 +368,13 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-	std::experimental::optional<PicoJsonObject> getObjectOptional() const
+	opt::optional<PicoJsonObject> getObjectOptional() const
     {
         if (value.is<picojson::object>()) {
-			return std::experimental::make_optional(PicoJsonObject(value));
+			return opt::make_optional(PicoJsonObject(value));
         }
 
-        return std::experimental::optional<PicoJsonObject>();
+        return opt::optional<PicoJsonObject>();
     }
 
     /**

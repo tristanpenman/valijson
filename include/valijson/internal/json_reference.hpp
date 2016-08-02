@@ -19,14 +19,14 @@ namespace json_reference {
      *
      * @return  Optional string containing URI
      */
-	inline std::experimental::optional<std::string> getJsonReferenceUri(
+	inline opt::optional<std::string> getJsonReferenceUri(
         const std::string &jsonRef)
     {
         const size_t ptrPos = jsonRef.find("#");
         if (ptrPos == 0) {
             // The JSON Reference does not contain a URI, but might contain a
             // JSON Pointer that refers to the current document
-			return std::experimental::optional<std::string>();
+			return opt::optional<std::string>();
         } else if (ptrPos != std::string::npos) {
             // The JSON Reference contains a URI and possibly a JSON Pointer
             return jsonRef.substr(0, ptrPos);
@@ -43,7 +43,7 @@ namespace json_reference {
      *
      * @return  Optional string containing JSON Pointer
      */
-	inline std::experimental::optional<std::string> getJsonReferencePointer(
+	inline opt::optional<std::string> getJsonReferencePointer(
         const std::string &jsonRef)
     {
         // Attempt to extract JSON Pointer if '#' character is present. Note
@@ -54,7 +54,7 @@ namespace json_reference {
             return jsonRef.substr(ptrPos + 1);
         }
 
-        return std::experimental::optional<std::string>();
+        return opt::optional<std::string>();
     }
 
 

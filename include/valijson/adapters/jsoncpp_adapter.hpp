@@ -289,13 +289,13 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-    std::experimental::optional<JsonCppArray> getArrayOptional() const
+    opt::optional<JsonCppArray> getArrayOptional() const
     {
         if (value.isArray()) {
-			return std::experimental::make_optional(JsonCppArray(value));
+			return opt::make_optional(JsonCppArray(value));
         }
 
-		return std::experimental::optional<JsonCppArray>();
+		return opt::optional<JsonCppArray>();
     }
 
     /**
@@ -358,13 +358,13 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-    std::experimental::optional<JsonCppObject> getObjectOptional() const
+    opt::optional<JsonCppObject> getObjectOptional() const
     {
         if (value.isObject()) {
-            return std::experimental::make_optional(JsonCppObject(value));
+            return opt::make_optional(JsonCppObject(value));
         }
 
-		return std::experimental::optional<JsonCppObject>();
+		return opt::optional<JsonCppObject>();
     }
 
     /**

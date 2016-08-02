@@ -296,13 +296,13 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-	std::experimental::optional<NlohmannJsonArray> getArrayOptional() const
+	opt::optional<NlohmannJsonArray> getArrayOptional() const
     {
         if (value.is_array()) {
-			return std::experimental::make_optional(NlohmannJsonArray(value));
+			return opt::make_optional(NlohmannJsonArray(value));
         }
 
-		return std::experimental::optional<NlohmannJsonArray>();
+		return opt::optional<NlohmannJsonArray>();
 	}
 
     /**
@@ -364,13 +364,13 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-	std::experimental::optional<NlohmannJsonObject> getObjectOptional() const
+	opt::optional<NlohmannJsonObject> getObjectOptional() const
     {
         if (value.is_object()) {
-			return std::experimental::make_optional(NlohmannJsonObject(value));
+			return opt::make_optional(NlohmannJsonObject(value));
         }
 
-        return std::experimental::optional<NlohmannJsonObject>();
+        return opt::optional<NlohmannJsonObject>();
     }
 
     /**

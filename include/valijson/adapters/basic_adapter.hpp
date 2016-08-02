@@ -7,9 +7,11 @@
 
 #if __has_include(<optional>)
 #  include <optional>
+namespace opt = std;
 #else
 #  include <compat/optional.hpp>
 #  define HAVE_EXPERIMENTAL_OPTIONAL 1
+namespace opt = std::experimental;
 #endif
 
 #include <valijson/adapters/adapter.hpp>
@@ -218,7 +220,7 @@ public:
         // effort of constructing an ArrayType instance if the value is
         // definitely an array.
         if (value.isArray()) {
-			const std::experimental::optional<Array> array = value.getArrayOptional();
+			const opt::optional<Array> array = value.getArrayOptional();
 			for( const AdapterType element : *array ) {
                 if (!fn(element)) {
                     return false;
@@ -236,7 +238,7 @@ public:
         }
 
         if (value.isObject()) {
-			const std::experimental::optional<Object> object = value.getObjectOptional();
+			const opt::optional<Object> object = value.getObjectOptional();
 			for( const ObjectMemberType member : *object ) {
                 if (!fn(member.first, AdapterType(member.second))) {
                     return false;
@@ -485,7 +487,7 @@ public:
                 other.asString() == asString();
         } else if (isArray()) {
             if (other.isArray() && getArraySize() == other.getArraySize()) {
-                const std::experimental::optional<ArrayType> array = value.getArrayOptional();
+                const opt::optional<ArrayType> array = value.getArrayOptional();
                 if (array) {
                     ArrayComparisonFunctor fn(*array, strict);
                     return other.applyToArray(fn);
@@ -495,7 +497,7 @@ public:
             }
         } else if (isObject()) {
             if (other.isObject() && other.getObjectSize() == getObjectSize()) {
-                const std::experimental::optional<ObjectType> object = value.getObjectOptional();
+                const opt::optional<ObjectType> object = value.getObjectOptional();
                 if (object) {
                     ObjectComparisonFunctor fn(*object, strict);
                     return other.applyToObject(fn);
@@ -524,7 +526,7 @@ public:
      */
     ArrayType getArray() const
     {
-        std::experimental::optional<ArrayType> arrayValue = value.getArrayOptional();
+        opt::optional<ArrayType> arrayValue = value.getArrayOptional();
         if (arrayValue) {
             return *arrayValue;
         }
@@ -633,7 +635,7 @@ public:
      */
     ObjectType getObject() const
     {
-        std::experimental::optional<ObjectType> objectValue = value.getObjectOptional();
+        opt::optional<ObjectType> objectValue = value.getObjectOptional();
         if (objectValue) {
             return *objectValue;
         }

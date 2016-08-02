@@ -293,13 +293,13 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-	std::experimental::optional<Json11Array> getArrayOptional() const
+	opt::optional<Json11Array> getArrayOptional() const
     {
         if (value.is_array()) {
-			return std::experimental::make_optional(Json11Array(value));
+			return opt::make_optional(Json11Array(value));
         }
 
-		return std::experimental::optional<Json11Array>();
+		return opt::optional<Json11Array>();
     }
 
     /**
@@ -361,13 +361,13 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-	std::experimental::optional<Json11Object> getObjectOptional() const
+	opt::optional<Json11Object> getObjectOptional() const
     {
         if (value.is_object()) {
-			return std::experimental::make_optional(Json11Object(value));
+			return opt::make_optional(Json11Object(value));
         }
 
-		return std::experimental::optional<Json11Object>();
+		return opt::optional<Json11Object>();
     }
 
     /**

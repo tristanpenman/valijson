@@ -330,13 +330,13 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-	std::experimental::optional<PropertyTreeArray> getArrayOptional() const
+	opt::optional<PropertyTreeArray> getArrayOptional() const
     {
         if (array) {
-			return std::experimental::make_optional(PropertyTreeArray(*array));
+			return opt::make_optional(PropertyTreeArray(*array));
         }
 
-        return std::experimental::optional<PropertyTreeArray>();
+        return opt::optional<PropertyTreeArray>();
     }
 
     /**
@@ -384,13 +384,13 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-	std::experimental::optional<PropertyTreeObject> getObjectOptional() const
+	opt::optional<PropertyTreeObject> getObjectOptional() const
     {
         if (object) {
-			return std::experimental::make_optional(PropertyTreeObject(*object));
+			return opt::make_optional(PropertyTreeObject(*object));
         }
 
-        return std::experimental::optional<PropertyTreeObject>();
+        return opt::optional<PropertyTreeObject>();
     }
 
     /**
@@ -478,13 +478,13 @@ private:
     }
 
     /// Reference used if the value is known to be an array
-	std::experimental::optional<const boost::property_tree::ptree &> array;
+	opt::optional<const boost::property_tree::ptree &> array;
 
     /// Reference used if the value is known to be an object
-    std::experimental::optional<const boost::property_tree::ptree &> object;
+    opt::optional<const boost::property_tree::ptree &> object;
 
     /// Reference used if the value is known to be a POD type
-	std::experimental::optional<std::string> value;
+	opt::optional<std::string> value;
 };
 
 /**

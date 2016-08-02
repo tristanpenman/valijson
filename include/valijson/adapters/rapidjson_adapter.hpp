@@ -408,13 +408,13 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-	std::experimental::optional<GenericRapidJsonArray<ValueType> > getArrayOptional() const
+	opt::optional<GenericRapidJsonArray<ValueType> > getArrayOptional() const
     {
         if (value.IsArray()) {
-			return std::experimental::make_optional(GenericRapidJsonArray<ValueType>(value));
+			return opt::make_optional(GenericRapidJsonArray<ValueType>(value));
         }
 
-        return std::experimental::optional<GenericRapidJsonArray<ValueType> >();
+        return opt::optional<GenericRapidJsonArray<ValueType> >();
     }
 
     /**
@@ -486,13 +486,13 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-	std::experimental::optional<GenericRapidJsonObject<ValueType> > getObjectOptional() const
+	opt::optional<GenericRapidJsonObject<ValueType> > getObjectOptional() const
     {
         if (value.IsObject()) {
-            return std::experimental::make_optional(GenericRapidJsonObject<ValueType>(value));
+            return opt::make_optional(GenericRapidJsonObject<ValueType>(value));
         }
 
-        return std::experimental::optional<GenericRapidJsonObject<ValueType> >();
+        return opt::optional<GenericRapidJsonObject<ValueType> >();
     }
 
     /**
