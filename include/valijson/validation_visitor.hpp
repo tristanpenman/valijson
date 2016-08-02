@@ -4,8 +4,9 @@
 
 #include <cmath>
 
+#include <regex>
+
 #include <boost/lexical_cast.hpp>
-#include <boost/regex.hpp>
 #include <boost/variant/get.hpp>
 
 #include <valijson/constraints/concrete_constraints.hpp>
@@ -777,11 +778,10 @@ public:
             return true;
         }
 
-        const boost::regex patternRegex(
-                constraint.getPattern<std::string::allocator_type>(),
-                boost::regex::perl);
+		const std::regex patternRegex(
+                constraint.getPattern<std::string::allocator_type>());
 
-        if (!boost::regex_search(target.asString(), patternRegex)) {
+        if (!std::regex_search(target.asString(), patternRegex)) {
             if (results) {
                 results->pushError(context,
                         "Failed to match regex specified by 'pattern' "
@@ -1405,17 +1405,17 @@ private:
             const std::string patternPropertyStr(patternProperty.c_str());
 
             // It would be nice to store pre-allocated regex objects in the
-            // PropertiesConstraint, but boost::regex does not currently support
-            // custom allocators. This isn't an issue here, because Valijson's
+            // PropertiesConstraint. does std::regex currently support
+            // custom allocators? Anyway, this isn't an issue here, because Valijson's
             // JSON Scheme validator does not yet support custom allocators.
-            const boost::regex r(patternPropertyStr, boost::regex::perl);
+            const std::regex r(patternPropertyStr);
 
             bool matchFound = false;
 
             // Recursively validate all matching properties
             typedef const typename AdapterType::ObjectMember ObjectMember;
 			for( const ObjectMember m : object ) {
-                if (boost::regex_search(m.first, r)) {
+                if (std::regex_search(m.first, r)) {
                     matchFound = true;
                     if (propertiesMatched) {
                         propertiesMatched->insert(m.first);
