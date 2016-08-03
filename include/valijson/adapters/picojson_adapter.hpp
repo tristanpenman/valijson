@@ -500,7 +500,7 @@ public:
  *
  * This class provides a JSON array iterator that dereferences as an instance of
  * PicoJsonAdapter representing a value stored in the array. It has been
- * implemented using the boost iterator_facade template.
+ * implemented using the std::iterator template.
  *
  * @see PicoJsonArray
  */

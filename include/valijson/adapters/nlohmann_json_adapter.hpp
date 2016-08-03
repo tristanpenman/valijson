@@ -496,11 +496,9 @@ public:
  * @see NlohmannJsonArray
  */
 class NlohmannJsonArrayValueIterator:
-    public boost::iterator_facade<
-        NlohmannJsonArrayValueIterator,      // name of derived type
-        NlohmannJsonAdapter,                 // value type
-        boost::bidirectional_traversal_tag,  // bi-directional iterator
-        NlohmannJsonAdapter>                 // type returned when dereferenced
+    public std::iterator<
+	    std::bidirectional_iterator_tag,  // bi-directional iterator
+        NlohmannJsonAdapter>                 // value type
 {
 public:
 
@@ -515,10 +513,15 @@ public:
 
     /// Returns a NlohmannJsonAdapter that contains the value of the current
     /// element.
-    NlohmannJsonAdapter dereference() const
+    NlohmannJsonAdapter operator*() const
     {
         return NlohmannJsonAdapter(*itr);
     }
+
+	DerefProxy<NlohmannJsonAdapter> operator->() const
+	{
+		return DerefProxy<NlohmannJsonAdapter>(**this);
+	}
 
     /**
      * @brief   Compare this iterator against another iterator.
@@ -531,20 +534,36 @@ public:
      *
      * @returns true   if the iterators are equal, false otherwise.
      */
-    bool equal(const NlohmannJsonArrayValueIterator &other) const
+    bool operator==(const NlohmannJsonArrayValueIterator &other) const
     {
         return itr == other.itr;
     }
 
-    void increment()
+	bool operator!=(const NlohmannJsonArrayValueIterator &other) const
+	{
+		return !(itr == other.itr);
+	}
+
+    const NlohmannJsonArrayValueIterator& operator++()
     {
         itr++;
+
+		return *this;
     }
 
-    void decrement()
-    {
-        itr--;
-    }
+	NlohmannJsonArrayValueIterator operator++(int)
+	{
+		NlohmannJsonArrayValueIterator iterator_pre(itr);
+		++(*this);
+		return iterator_pre;
+	}
+
+	const NlohmannJsonArrayValueIterator& operator--()
+	{
+		itr--;
+
+		return *this;
+	}
 
     void advance(std::ptrdiff_t n)
     {
@@ -567,11 +586,9 @@ private:
  * @see NlohmannJsonObjectMember
  */
 class NlohmannJsonObjectMemberIterator:
-    public boost::iterator_facade<
-        NlohmannJsonObjectMemberIterator,    // name of derived type
-        NlohmannJsonObjectMember,            // value type
-        boost::bidirectional_traversal_tag,  // bi-directional iterator
-        NlohmannJsonObjectMember>            // type returned when dereferenced
+    public std::iterator<
+	    std::bidirectional_iterator_tag,     // bi-directional iterator
+        NlohmannJsonObjectMember>            // value type
 {
 public:
 
@@ -587,10 +604,15 @@ public:
      * @brief   Returns a NlohmannJsonObjectMember that contains the key and value
      *          belonging to the object member identified by the iterator.
      */
-    NlohmannJsonObjectMember dereference() const
+    NlohmannJsonObjectMember operator*() const
     {
         return NlohmannJsonObjectMember(itr.key(), itr.value());
     }
+
+	DerefProxy<NlohmannJsonObjectMember> operator->() const
+	{
+		return DerefProxy<NlohmannJsonObjectMember>(**this);
+	}
 
     /**
      * @brief   Compare this iterator with another iterator.
@@ -603,20 +625,36 @@ public:
      *
      * @returns true if the underlying iterators are equal, false otherwise
      */
-    bool equal(const NlohmannJsonObjectMemberIterator &other) const
+    bool operator==(const NlohmannJsonObjectMemberIterator &other) const
     {
         return itr == other.itr;
     }
 
-    void increment()
+	bool operator!=(const NlohmannJsonObjectMemberIterator &other) const
+	{
+		return !(itr == other.itr);
+	}
+
+    const NlohmannJsonObjectMemberIterator& operator++()
     {
         itr++;
+
+		return *this;
     }
 
-    void decrement()
-    {
-        itr--;
-    }
+	NlohmannJsonObjectMemberIterator operator++(int)
+	{
+		NlohmannJsonObjectMemberIterator iterator_pre(itr);
+		++(*this);
+		return iterator_pre;
+	}
+
+	const NlohmannJsonObjectMemberIterator& operator--()
+	{
+		itr--;
+
+		return *this;
+	}
 
 private:
 

@@ -496,11 +496,9 @@ public:
  * @see Json11Array
  */
 class Json11ArrayValueIterator:
-    public boost::iterator_facade<
-        Json11ArrayValueIterator,          // name of derived type
-        Json11Adapter,                     // value type
-        boost::bidirectional_traversal_tag,  // bi-directional iterator
-        Json11Adapter>                     // type returned when dereferenced
+    public std::iterator<
+	    std::bidirectional_iterator_tag,  // bi-directional iterator
+        Json11Adapter>                    // value type
 {
 public:
 
@@ -516,10 +514,15 @@ public:
 
     /// Returns a Json11Adapter that contains the value of the current
     /// element.
-    Json11Adapter dereference() const
+    Json11Adapter operator*() const
     {
         return Json11Adapter(*itr);
     }
+
+	DerefProxy<Json11Adapter> operator->() const
+	{
+		return DerefProxy<Json11Adapter>(**this);
+	}
 
     /**
      * @brief   Compare this iterator against another iterator.
@@ -532,20 +535,36 @@ public:
      *
      * @returns true   if the iterators are equal, false otherwise.
      */
-    bool equal(const Json11ArrayValueIterator &other) const
+    bool operator==(const Json11ArrayValueIterator &other) const
     {
         return itr == other.itr;
     }
 
-    void increment()
+	bool operator!=(const Json11ArrayValueIterator &other) const
+	{
+		return !(itr == other.itr);
+	}
+
+    const Json11ArrayValueIterator& operator++()
     {
         itr++;
+
+		return *this;
     }
 
-    void decrement()
+	Json11ArrayValueIterator operator++(int)
+	{
+		Json11ArrayValueIterator iterator_pre(itr);
+		++(*this);
+		return iterator_pre;
+	}
+
+	const Json11ArrayValueIterator& operator--()
     {
         itr--;
-    }
+
+		return *this;
+	}
 
     void advance(std::ptrdiff_t n)
     {
@@ -568,11 +587,9 @@ private:
  * @see Json11ObjectMember
  */
 class Json11ObjectMemberIterator:
-    public boost::iterator_facade<
-        Json11ObjectMemberIterator,        // name of derived type
-        Json11ObjectMember,                // value type
-        boost::bidirectional_traversal_tag,  // bi-directional iterator
-        Json11ObjectMember>                // type returned when dereferenced
+    public std::iterator<
+	    std::bidirectional_iterator_tag,   // bi-directional iterator
+        Json11ObjectMember>                // value type
 {
 public:
 
@@ -589,10 +606,15 @@ public:
      * @brief   Returns a Json11ObjectMember that contains the key and value
      *          belonging to the object member identified by the iterator.
      */
-    Json11ObjectMember dereference() const
+    Json11ObjectMember operator*() const
     {
         return Json11ObjectMember(itr->first, itr->second);
     }
+
+	DerefProxy<Json11ObjectMember> operator->() const
+	{
+		return DerefProxy<Json11ObjectMember>(**this);
+	}
 
     /**
      * @brief   Compare this iterator with another iterator.
@@ -605,20 +627,36 @@ public:
      *
      * @returns true if the underlying iterators are equal, false otherwise
      */
-    bool equal(const Json11ObjectMemberIterator &other) const
+    bool operator==(const Json11ObjectMemberIterator &other) const
     {
         return itr == other.itr;
     }
 
-    void increment()
+	bool operator!=(const Json11ObjectMemberIterator &other) const
+	{
+		return !(itr == other.itr);
+	}
+
+    const Json11ObjectMemberIterator& operator++()
     {
         itr++;
+
+		return *this;
     }
 
-    void decrement()
-    {
-        itr--;
-    }
+	Json11ObjectMemberIterator operator++(int)
+	{
+		Json11ObjectMemberIterator iterator_pre(itr);
+		++(*this);
+		return iterator_pre;
+	}
+
+	const Json11ObjectMemberIterator& operator--()
+	{
+		itr--;
+
+		return *this;
+	}
 
 private:
 

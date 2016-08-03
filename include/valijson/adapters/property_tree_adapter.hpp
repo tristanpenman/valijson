@@ -524,11 +524,9 @@ public:
  * @see PropertyTreeArray
  */
 class PropertyTreeArrayValueIterator:
-    public boost::iterator_facade<
-        PropertyTreeArrayValueIterator,      // name of derived type
-        PropertyTreeAdapter,                 // value type
-        boost::bidirectional_traversal_tag,  // bi-directional iterator
-        PropertyTreeAdapter>                 // type returned when dereferenced
+    public std::iterator<
+	    std::bidirectional_iterator_tag,    // bi-directional iterator
+        PropertyTreeAdapter>                // value type
 {
 public:
 
@@ -544,10 +542,15 @@ public:
 
     /// Returns a PropertyTreeAdapter that contains the value of the current
     /// element.
-    PropertyTreeAdapter dereference() const
+    PropertyTreeAdapter operator*() const
     {
         return PropertyTreeAdapter(itr->second);
     }
+
+	DerefProxy<PropertyTreeAdapter> operator->() const
+	{
+		return DerefProxy<PropertyTreeAdapter>(**this);
+	}
 
     /**
      * @brief   Compare this iterator against another iterator.
@@ -560,20 +563,36 @@ public:
      *
      * @returns true if the iterators are equal, false otherwise.
      */
-    bool equal(const PropertyTreeArrayValueIterator &rhs) const
+    bool operator==(const PropertyTreeArrayValueIterator &rhs) const
     {
         return itr == rhs.itr;
     }
 
-    void increment()
+	bool operator!=(const PropertyTreeArrayValueIterator &rhs) const
+	{
+		return !(itr == rhs.itr);
+	}
+
+    const PropertyTreeArrayValueIterator& operator++()
     {
         itr++;
+
+		return *this;
     }
 
-    void decrement()
-    {
-        itr--;
-    }
+	PropertyTreeArrayValueIterator operator++(int)
+	{
+		PropertyTreeArrayValueIterator iterator_pre(itr);
+		++(*this);
+		return iterator_pre;
+	}
+
+	const PropertyTreeArrayValueIterator& operator--()
+	{
+		itr--;
+
+		return *this;
+	}
 
     void advance(std::ptrdiff_t n)
     {
