@@ -467,17 +467,13 @@ public:
         } else if (value.isInteger()) {
             int64_t integerValue;
             if (value.getInteger(integerValue)) {
-				std::stringstream ss;
-				ss << integerValue;
-				result = ss.str();
+				result = std::to_string(integerValue);
 				return true;
             }
         } else if (value.isDouble()) {
             double doubleValue;
             if (value.getDouble(doubleValue)) {
-				std::stringstream ss;
-				ss << doubleValue;
-				result = ss.str();
+				result = std::to_string(doubleValue);
 				return true;
             }
         }
