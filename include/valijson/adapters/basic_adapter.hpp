@@ -20,6 +20,24 @@ namespace valijson {
 namespace adapters {
 
 /**
+ * @brief  A helper for the array and object member iterators.
+ *
+ * See http://www.stlsoft.org/doc-1.9/group__group____pattern____dereference__proxy.html
+ * for motivation
+ *
+ * @tparam Value       Name of the value type
+ */
+template<class Value>
+struct DerefProxy
+{
+	explicit DerefProxy(const Value& x) : m_ref(x) {}
+	Value* operator->() { return std::addressof(m_ref); }
+	operator Value*() { return std::addressof(m_ref); }
+
+	Value m_ref;
+};
+
+/**
  * @brief  Template class that implements the expected semantics of an Adapter.
  *
  * Implementing all of the type-casting functionality for each Adapter is error

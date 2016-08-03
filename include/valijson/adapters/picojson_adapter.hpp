@@ -509,17 +509,6 @@ class PicoJsonArrayValueIterator:
 	    std::bidirectional_iterator_tag,     // bi-directional iterator
         PicoJsonAdapter>                     // value type
 {
-private:
-
-	struct proxy
-	{
-		explicit proxy(const PicoJsonAdapter& x) : m_ref(x) {}
-		PicoJsonAdapter* operator->() { return std::addressof(m_ref); }
-		operator PicoJsonAdapter*() { return std::addressof(m_ref); }
-
-		PicoJsonAdapter m_ref;
-	};
-
 public:
 
     /**
@@ -539,9 +528,9 @@ public:
         return PicoJsonAdapter(*itr);
     }
 
-	proxy operator->() const
+	DerefProxy<PicoJsonAdapter> operator->() const
 	{
-		return proxy(**this);
+		return DerefProxy<PicoJsonAdapter>(**this);
 	}
 
     /**
@@ -611,17 +600,6 @@ class PicoJsonObjectMemberIterator:
 	    std::bidirectional_iterator_tag,  // bi-directional iterator
         PicoJsonObjectMember>             // value type
 {
-private:
-
-	struct proxy
-	{
-		explicit proxy(const PicoJsonObjectMember& x) : m_ref(x) {}
-		PicoJsonObjectMember* operator->() { return std::addressof(m_ref); }
-		operator PicoJsonObjectMember*() { return std::addressof(m_ref); }
-
-		PicoJsonObjectMember m_ref;
-	};
-
 public:
 
     /**
@@ -642,9 +620,9 @@ public:
         return PicoJsonObjectMember(itr->first, itr->second);
     }
 
-	proxy operator->() const
+	DerefProxy<PicoJsonObjectMember> operator->() const
 	{
-		return proxy(**this);
+		return DerefProxy<PicoJsonObjectMember>(**this);
 	}
 
     /**

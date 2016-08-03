@@ -634,17 +634,6 @@ class GenericRapidJsonArrayValueIterator:
 	    std::bidirectional_iterator_tag,                 // bi-directional iterator
 	    GenericRapidJsonAdapter<ValueType> >             // value type
 {
-private:
-
-	struct proxy
-	{
-		explicit proxy(const GenericRapidJsonAdapter<ValueType>& x) : m_ref(x) {}
-		GenericRapidJsonAdapter<ValueType>* operator->() { return std::addressof(m_ref); }
-		operator GenericRapidJsonAdapter<ValueType>*() { return std::addressof(m_ref); }
-
-		GenericRapidJsonAdapter<ValueType> m_ref;
-	};
-
 public:
 
     /**
@@ -665,9 +654,9 @@ public:
     }
 
 	/// Returns a proxy for the value of the current element
-	proxy operator->() const
+	DerefProxy<GenericRapidJsonAdapter<ValueType> > operator->() const
 	{
-		return proxy(**this);
+		return DerefProxy<GenericRapidJsonAdapter<ValueType> >(**this);
 	}
 
     /**
@@ -742,17 +731,6 @@ class GenericRapidJsonObjectMemberIterator:
 	    std::bidirectional_iterator_tag,                 // bi-directional iterator
         GenericRapidJsonObjectMember<ValueType> >        // value type
 {
-private:
-
-	struct proxy
-	{
-		explicit proxy(const GenericRapidJsonObjectMember<ValueType>& x) : m_ref(x) {}
-		GenericRapidJsonObjectMember<ValueType>* operator->() { return std::addressof(m_ref); }
-		operator GenericRapidJsonObjectMember<ValueType>*() { return std::addressof(m_ref); }
-
-		GenericRapidJsonObjectMember<ValueType> m_ref;
-	};
-
 public:
 
     /**
@@ -777,9 +755,9 @@ public:
     }
 
 	/// Returns a proxy for the value of the current element
-	proxy operator->() const
+	DerefProxy<GenericRapidJsonObjectMember<ValueType> > operator->() const
 	{
-		return proxy(**this);
+		return DerefProxy<GenericRapidJsonObjectMember<ValueType> >(**this);
 	}
 
     /**

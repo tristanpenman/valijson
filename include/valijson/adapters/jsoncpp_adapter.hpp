@@ -496,16 +496,6 @@ class JsonCppArrayValueIterator:
 	    std::bidirectional_iterator_tag,     // bi-directional iterator
         JsonCppAdapter>                      // value type
 {
-private:
-
-	struct proxy
-	{
-		explicit proxy(const JsonCppAdapter& x) : m_ref(x) {}
-		JsonCppAdapter* operator->() { return std::addressof(m_ref); }
-		operator JsonCppAdapter*() { return std::addressof(m_ref); }
-
-		JsonCppAdapter m_ref;
-	};
 
 public:
 
@@ -524,9 +514,9 @@ public:
         return JsonCppAdapter(*itr);
     }
 
-	proxy operator->() const
+	DerefProxy<JsonCppAdapter> operator->() const
 	{
-		return proxy(**this);
+		return DerefProxy<JsonCppAdapter>(**this);
 	}
 
     /**
@@ -604,17 +594,6 @@ class JsonCppObjectMemberIterator:
 	    std::bidirectional_iterator_tag,     // bi-directional iterator
         JsonCppObjectMember>                 // value type
 {
-private:
-
-	struct proxy
-	{
-		explicit proxy(const JsonCppObjectMember& x) : m_ref(x) {}
-		JsonCppObjectMember* operator->() { return std::addressof(m_ref); }
-		operator JsonCppObjectMember*() { return std::addressof(m_ref); }
-
-		JsonCppObjectMember m_ref;
-	};
-
 public:
 
     /**
@@ -634,9 +613,9 @@ public:
         return JsonCppObjectMember(itr.key().asString(), *itr);
     }
 
-	proxy operator->() const
+	DerefProxy<JsonCppObjectMember> operator->() const
 	{
-		return proxy(**this);
+		return DerefProxy<JsonCppObjectMember>(**this);
 	}
 
     /**
