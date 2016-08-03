@@ -29,8 +29,6 @@
 
 #include <string>
 #include <json.hpp>
-#include <boost/optional.hpp>
-#include <boost/iterator/iterator_facade.hpp>
 
 #include <valijson/adapters/adapter.hpp>
 #include <valijson/adapters/basic_adapter.hpp>

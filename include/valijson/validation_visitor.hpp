@@ -3,11 +3,8 @@
 #define __VALIJSON_VALIDATION_VISITOR_HPP
 
 #include <cmath>
-
+#include <string>
 #include <regex>
-
-#include <boost/lexical_cast.hpp>
-#include <boost/variant/get.hpp>
 
 #include <valijson/constraints/concrete_constraints.hpp>
 #include <valijson/constraints/constraint_visitor.hpp>
@@ -71,7 +68,7 @@ public:
         // Wrap the validationCallback() function below so that it will be
         // passed a reference to a constraint (_1), and a reference to the
         // visitor (*this).
-        Subschema::ApplyFunction fn(boost::bind(validationCallback, _1, *this));
+		Subschema::ApplyFunction fn(std::bind(validationCallback, std::placeholders::_1, *this));
 
         // Perform validation against each constraint defined in the schema
         if (results == NULL) {
@@ -309,7 +306,7 @@ public:
                     // Update context for current array item
                     std::vector<std::string> newContext = context;
                     newContext.push_back("[" +
-                            boost::lexical_cast<std::string>(index) + "]");
+                            std::to_string(index) + "]");
 
                     ValidationVisitor<AdapterType> validator(*itr, newContext,
                             strictTypes, results);
@@ -318,7 +315,7 @@ public:
                         if (results) {
                             results->pushError(context,
                                     "Failed to validate item #" +
-                                    boost::lexical_cast<std::string>(index) +
+                                    std::to_string(index) +
                                     " against additional items schema.");
                             validated = false;
                         } else {
@@ -331,7 +328,7 @@ public:
 
             } else if (results) {
                 results->pushError(context, "Cannot validate item #" +
-                    boost::lexical_cast<std::string>(numValidated) + " or "
+                    std::to_string(numValidated) + " or "
                     "greater using 'items' constraint or 'additionalItems' "
                     "constraint.");
                 validated = false;
@@ -364,7 +361,7 @@ public:
             if (target.asDouble() >= maximum) {
                 if (results) {
                     results->pushError(context, "Expected number less than " +
-                            boost::lexical_cast<std::string>(maximum));
+                            std::to_string(maximum));
                 }
 
                 return false;
@@ -374,7 +371,7 @@ public:
             if (results) {
                 results->pushError(context,
                         "Expected number less than or equal to " +
-                        boost::lexical_cast<std::string>(maximum));
+                        std::to_string(maximum));
             }
 
             return false;
@@ -403,7 +400,7 @@ public:
 
         if (results) {
             results->pushError(context, "Array should contain no more than " +
-                    boost::lexical_cast<std::string>(maxItems) + " elements.");
+                    std::to_string(maxItems) + " elements.");
         }
 
         return false;
@@ -432,7 +429,7 @@ public:
         if (results) {
             results->pushError(context,
                     "String should be no more than " +
-                    boost::lexical_cast<std::string>(maxLength) +
+                    std::to_string(maxLength) +
                     " characters in length.");
         }
 
@@ -460,7 +457,7 @@ public:
 
         if (results) {
             results->pushError(context, "Object should have no more than " +
-                    boost::lexical_cast<std::string>(maxProperties) +
+                    std::to_string(maxProperties) +
                     " properties.");
         }
 
@@ -488,7 +485,7 @@ public:
                 if (results) {
                     results->pushError(context,
                         "Expected number greater than " +
-                        boost::lexical_cast<std::string>(minimum));
+                        std::to_string(minimum));
                 }
 
                 return false;
@@ -497,7 +494,7 @@ public:
             if (results) {
                 results->pushError(context,
                         "Expected number greater than or equal to " +
-                        boost::lexical_cast<std::string>(minimum));
+                        std::to_string(minimum));
             }
 
             return false;
@@ -526,7 +523,7 @@ public:
 
         if (results) {
             results->pushError(context, "Array should contain no fewer than " +
-                boost::lexical_cast<std::string>(minItems) + " elements.");
+                std::to_string(minItems) + " elements.");
         }
 
         return false;
@@ -555,7 +552,7 @@ public:
         if (results) {
             results->pushError(context,
                     "String should be no fewer than " +
-                    boost::lexical_cast<std::string>(minLength) +
+                    std::to_string(minLength) +
                     " characters in length.");
         }
 
@@ -583,7 +580,7 @@ public:
 
         if (results) {
             results->pushError(context, "Object should have no fewer than " +
-                    boost::lexical_cast<std::string>(minProperties) +
+                    std::to_string(minProperties) +
                     " properties.");
         }
 
@@ -607,7 +604,7 @@ public:
                 if (results) {
                     results->pushError(context, "Value could not be converted "
                         "to a number to check if it is a multiple of " +
-                        boost::lexical_cast<std::string>(divisor));
+                        std::to_string(divisor));
                 }
                 return false;
             }
@@ -617,7 +614,7 @@ public:
                 if (results) {
                     results->pushError(context, "Value could not be converted "
                         "to a number to check if it is a multiple of " +
-                        boost::lexical_cast<std::string>(divisor));
+                        std::to_string(divisor));
                 }
                 return false;
             }
@@ -635,7 +632,7 @@ public:
         if (fabs(r) > std::numeric_limits<double>::epsilon()) {
             if (results) {
                 results->pushError(context, "Value should be a multiple of " +
-                    boost::lexical_cast<std::string>(divisor));
+                    std::to_string(divisor));
             }
             return false;
         }
@@ -684,7 +681,7 @@ public:
         if (i % divisor != 0) {
             if (results) {
                 results->pushError(context, "Value should be a multiple of " +
-                    boost::lexical_cast<std::string>(divisor));
+                    std::to_string(divisor));
             }
             return false;
         }
@@ -963,7 +960,7 @@ public:
             // Update context for current array item
             std::vector<std::string> newContext = context;
             newContext.push_back("[" +
-                    boost::lexical_cast<std::string>(index) + "]");
+                    std::to_string(index) + "]");
 
             // Create a validator for the current array item
             ValidationVisitor<AdapterType> validationVisitor(item,
@@ -974,7 +971,7 @@ public:
                 if (results) {
                     results->pushError(context,
                             "Failed to validate item #" +
-                            boost::lexical_cast<std::string>(index) +
+                            std::to_string(index) +
                             " in array.");
                     validated = false;
                 } else {
@@ -1062,8 +1059,8 @@ public:
                 if (outerItr->equalTo(*innerItr, true)) {
                     if (results) {
                         results->pushError(context, "Elements at indexes #" +
-                            boost::lexical_cast<std::string>(outerIndex) + " and #" +
-                            boost::lexical_cast<std::string>(innerIndex) + " violate uniqueness constraint.");
+                            std::to_string(outerIndex) + " and #" +
+                            std::to_string(innerIndex) + " violate uniqueness constraint.");
                         validated = false;
                     } else {
                         return false;
@@ -1260,7 +1257,7 @@ private:
             // Update context
             std::vector<std::string> newContext = context;
             newContext.push_back(
-                    "[" + boost::lexical_cast<std::string>(index) + "]");
+                    "[" + std::to_string(index) + "]");
 
             // Find array item
             typename AdapterType::Array::const_iterator itr = arr.begin();
@@ -1283,7 +1280,7 @@ private:
             if (results) {
                 results->pushError(newContext,
                     "Failed to validate item #" +
-                    boost::lexical_cast<std::string>(index) +
+                    std::to_string(index) +
                     " against corresponding item schema.");
             }
 
@@ -1647,7 +1644,7 @@ private:
             if (results) {
                 results->pushError(context,
                         "Failed to validate against child schema #" +
-                        boost::lexical_cast<std::string>(index) + ".");
+								   std::to_string(index) + ".");
             }
 
             return continueOnFailure;

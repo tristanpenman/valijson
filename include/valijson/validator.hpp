@@ -2,9 +2,6 @@
 #ifndef __VALIJSON_VALIDATOR_HPP
 #define __VALIJSON_VALIDATOR_HPP
 
-#include <boost/bind.hpp>
-#include <boost/scoped_ptr.hpp>
-
 #include <valijson/schema.hpp>
 #include <valijson/validation_visitor.hpp>
 

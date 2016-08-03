@@ -5,7 +5,13 @@
 #include <stdexcept>
 #include <string>
 
-#include <boost/optional.hpp>
+#if __has_include(<optional>)
+#  include <optional>
+namespace opt = std;
+#else
+#  include <compat/optional.hpp>
+namespace opt = std::experimental;
+#endif
 
 namespace valijson {
 namespace internal {

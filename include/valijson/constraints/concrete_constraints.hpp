@@ -16,9 +16,6 @@
 #ifndef __VALIJSON_CONSTRAINTS_CONCRETE_CONSTRAINTS_HPP
 #define __VALIJSON_CONSTRAINTS_CONCRETE_CONSTRAINTS_HPP
 
-#include <boost/ptr_container/ptr_vector.hpp>
-#include <boost/variant.hpp>
-
 #include <limits>
 #include <map>
 #include <set>

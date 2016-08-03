@@ -28,8 +28,7 @@
 #define __VALIJSON_ADAPTERS_PROPERTY_TREE_ADAPTER_HPP
 
 #include <string>
-#include <boost/bind.hpp>
-#include <boost/iterator/iterator_facade.hpp>
+
 #include <boost/property_tree/ptree.hpp>
 
 #include <valijson/adapters/adapter.hpp>

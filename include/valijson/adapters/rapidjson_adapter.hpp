@@ -43,9 +43,7 @@
 #define __VALIJSON_ADAPTERS_RAPIDJSON_ADAPTER_HPP
 
 #include <string>
-#include <boost/bind.hpp>
-#include <boost/optional.hpp>
-#include <boost/iterator/iterator_facade.hpp>
+#include <iterator>
 
 #include <rapidjson/document.h>
 
@@ -626,18 +624,27 @@ public:
  *
  * This class provides a JSON array iterator that dereferences as an instance of
  * RapidJsonAdapter representing a value stored in the array. It has been
- * implemented using the boost iterator_facade template.
+ * implemented using the std::iterator template.
  *
  * @see RapidJsonArray
  */
 template<class ValueType>
 class GenericRapidJsonArrayValueIterator:
-    public boost::iterator_facade<
-        GenericRapidJsonArrayValueIterator<ValueType>, // name of derived type
-        GenericRapidJsonAdapter<ValueType>,            // value type
-        boost::bidirectional_traversal_tag,            // bi-directional iterator
-        GenericRapidJsonAdapter<ValueType> >           // type returned when dereferenced
+    public std::iterator<
+	    std::bidirectional_iterator_tag,                 // bi-directional iterator
+	    GenericRapidJsonAdapter<ValueType> >             // value type
 {
+private:
+
+	struct proxy
+	{
+		explicit proxy(const GenericRapidJsonAdapter<ValueType>& x) : m_ref(x) {}
+		GenericRapidJsonAdapter<ValueType>* operator->() { return std::addressof(m_ref); }
+		operator GenericRapidJsonAdapter<ValueType>*() { return std::addressof(m_ref); }
+
+		GenericRapidJsonAdapter<ValueType> m_ref;
+	};
+
 public:
 
     /**
@@ -652,10 +659,16 @@ public:
 
     /// Returns a GenericRapidJsonAdapter that contains the value of the current
     /// element.
-    GenericRapidJsonAdapter<ValueType> dereference() const
+    GenericRapidJsonAdapter<ValueType> operator*() const
     {
         return GenericRapidJsonAdapter<ValueType>(*itr);
     }
+
+	/// Returns a proxy for the value of the current element
+	proxy operator->() const
+	{
+		return proxy(**this);
+	}
 
     /**
      * @brief   Compare this iterator against another iterator.
@@ -668,19 +681,34 @@ public:
      *
      * @returns true if the iterators are equal, false otherwise.
      */
-    bool equal(const GenericRapidJsonArrayValueIterator &other) const
+    bool operator==(const GenericRapidJsonArrayValueIterator<ValueType> &other) const
     {
         return itr == other.itr;
     }
 
-    void increment()
+	bool operator!=(const GenericRapidJsonArrayValueIterator<ValueType>& other) const
+	{
+		return !(itr == other.itr);
+	}
+
+    GenericRapidJsonArrayValueIterator<ValueType>& operator++()
     {
         itr++;
+
+		return *this;
     }
 
-    void decrement()
+	GenericRapidJsonArrayValueIterator<ValueType> operator++(int) {
+		GenericRapidJsonArrayValueIterator<ValueType> iterator_pre(itr);
+		++(*this);
+		return iterator_pre;
+	}
+
+	GenericRapidJsonArrayValueIterator<ValueType>& operator--()
     {
         itr--;
+
+		return *this;
     }
 
     void advance(std::ptrdiff_t n)
@@ -688,7 +716,7 @@ public:
         itr += n;
     }
 
-    std::ptrdiff_t difference(const GenericRapidJsonArrayValueIterator &other)
+    std::ptrdiff_t difference(const GenericRapidJsonArrayValueIterator<ValueType> &other)
     {
         return std::distance(itr, other.itr);
     }
@@ -703,19 +731,28 @@ private:
  *
  * This class provides a JSON object iterator that dereferences as an instance
  * of GenericRapidJsonObjectMember representing one of the members of the
- * object. It has been implemented using the boost iterator_facade template.
+ * object. It has been implemented using the std::iterator template.
  *
  * @see GenericRapidJsonObject
  * @see GenericRapidJsonObjectMember
  */
 template<class ValueType>
 class GenericRapidJsonObjectMemberIterator:
-    public boost::iterator_facade<
-        GenericRapidJsonObjectMemberIterator<ValueType>, // name of derived type
-        GenericRapidJsonObjectMember<ValueType>,         // value type
-        boost::bidirectional_traversal_tag,              // bi-directional iterator
-        GenericRapidJsonObjectMember<ValueType> >        // type returned when dereferenced
+    public std::iterator<
+	    std::bidirectional_iterator_tag,                 // bi-directional iterator
+        GenericRapidJsonObjectMember<ValueType> >        // value type
 {
+private:
+
+	struct proxy
+	{
+		explicit proxy(const GenericRapidJsonObjectMember<ValueType>& x) : m_ref(x) {}
+		GenericRapidJsonObjectMember<ValueType>* operator->() { return std::addressof(m_ref); }
+		operator GenericRapidJsonObjectMember<ValueType>*() { return std::addressof(m_ref); }
+
+		GenericRapidJsonObjectMember<ValueType> m_ref;
+	};
+
 public:
 
     /**
@@ -727,16 +764,23 @@ public:
         const typename ValueType::ConstMemberIterator &itr)
       : itr(itr) { }
 
+
     /**
      * @brief   Returns a GenericRapidJsonObjectMember that contains the key and
      *          value belonging to the object member identified by the iterator.
      */
-    GenericRapidJsonObjectMember<ValueType> dereference() const
+    GenericRapidJsonObjectMember<ValueType> operator*() const
     {
         return GenericRapidJsonObjectMember<ValueType>(
             std::string(itr->name.GetString(), itr->name.GetStringLength()),
             itr->value);
     }
+
+	/// Returns a proxy for the value of the current element
+	proxy operator->() const
+	{
+		return proxy(**this);
+	}
 
     /**
      * @brief   Compare this iterator with another iterator.
@@ -749,19 +793,35 @@ public:
      *
      * @returns true if the underlying iterators are equal, false otherwise
      */
-    bool equal(const GenericRapidJsonObjectMemberIterator &other) const
+    bool operator==(const GenericRapidJsonObjectMemberIterator<ValueType> &other) const
     {
         return itr == other.itr;
     }
 
-    void increment()
+	bool operator!=(const GenericRapidJsonObjectMemberIterator<ValueType> &other) const
+	{
+		return !(itr == other.itr);
+	}
+
+    GenericRapidJsonObjectMemberIterator<ValueType>& operator++()
     {
         itr++;
+
+		return *this;
     }
 
-    void decrement()
+	GenericRapidJsonObjectMemberIterator<ValueType> operator++(int)
+	{
+		GenericRapidJsonObjectMemberIterator<ValueType> iterator_pre(itr);
+		++(*this);
+		return iterator_pre;
+	}
+
+    GenericRapidJsonObjectMemberIterator<ValueType>& operator--()
     {
         itr--;
+
+		return *this;
     }
 
     std::ptrdiff_t difference(const GenericRapidJsonObjectMemberIterator &other)

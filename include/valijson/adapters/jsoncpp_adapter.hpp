@@ -29,8 +29,7 @@
 
 #include <stdint.h>
 #include <string>
-#include <boost/bind.hpp>
-#include <boost/iterator/iterator_facade.hpp>
+#include <iterator>
 
 #include <json/json.h>
 
@@ -493,12 +492,21 @@ public:
  * @see JsonCppArray
  */
 class JsonCppArrayValueIterator:
-    public boost::iterator_facade<
-        JsonCppArrayValueIterator,           // name of derived type
-        JsonCppAdapter,                      // value type
-        boost::bidirectional_traversal_tag,  // bi-directional iterator
-        JsonCppAdapter>                      // type returned when dereferenced
+    public std::iterator<
+	    std::bidirectional_iterator_tag,     // bi-directional iterator
+        JsonCppAdapter>                      // value type
 {
+private:
+
+	struct proxy
+	{
+		explicit proxy(const JsonCppAdapter& x) : m_ref(x) {}
+		JsonCppAdapter* operator->() { return std::addressof(m_ref); }
+		operator JsonCppAdapter*() { return std::addressof(m_ref); }
+
+		JsonCppAdapter m_ref;
+	};
+
 public:
 
     /**
@@ -511,10 +519,15 @@ public:
       : itr(itr) { }
 
     /// Returns a JsonCppAdapter that contains the value of the current element.
-    JsonCppAdapter dereference() const
+    JsonCppAdapter operator*() const
     {
         return JsonCppAdapter(*itr);
     }
+
+	proxy operator->() const
+	{
+		return proxy(**this);
+	}
 
     /**
      * @brief   Compare this iterator against another iterator.
@@ -527,20 +540,36 @@ public:
      *
      * @returns true if the iterators are equal, false otherwise.
      */
-    bool equal(const JsonCppArrayValueIterator &rhs) const
+    bool operator==(const JsonCppArrayValueIterator &rhs) const
     {
         return itr == rhs.itr;
     }
 
-    void increment()
-    {
-        itr++;
-    }
+	bool operator!=(const JsonCppArrayValueIterator &rhs) const
+	{
+		return !(itr == rhs.itr);
+	}
 
-    void decrement()
-    {
-        itr--;
-    }
+	JsonCppArrayValueIterator& operator++()
+	{
+		itr++;
+
+		return *this;
+	}
+
+	JsonCppArrayValueIterator operator++(int)
+	{
+		JsonCppArrayValueIterator iterator_pre(itr);
+		++(*this);
+		return iterator_pre;
+	}
+
+	JsonCppArrayValueIterator& operator--()
+	{
+		itr--;
+
+		return *this;
+	}
 
     void advance(std::ptrdiff_t n)
     {
@@ -571,12 +600,21 @@ private:
  * @see JsonCppObjectMember
  */
 class JsonCppObjectMemberIterator:
-    public boost::iterator_facade<
-        JsonCppObjectMemberIterator,         // name of derived type
-        JsonCppObjectMember,                 // value type
-        boost::bidirectional_traversal_tag,  // bi-directional iterator
-        JsonCppObjectMember>                 // type returned when dereferenced
+    public std::iterator<
+	    std::bidirectional_iterator_tag,     // bi-directional iterator
+        JsonCppObjectMember>                 // value type
 {
+private:
+
+	struct proxy
+	{
+		explicit proxy(const JsonCppObjectMember& x) : m_ref(x) {}
+		JsonCppObjectMember* operator->() { return std::addressof(m_ref); }
+		operator JsonCppObjectMember*() { return std::addressof(m_ref); }
+
+		JsonCppObjectMember m_ref;
+	};
+
 public:
 
     /**
@@ -591,10 +629,15 @@ public:
      * @brief   Returns a JsonCppObjectMember that contains the key and value
      *          belonging to the object member identified by the iterator.
      */
-    JsonCppObjectMember dereference() const
+    JsonCppObjectMember operator*() const
     {
         return JsonCppObjectMember(itr.key().asString(), *itr);
     }
+
+	proxy operator->() const
+	{
+		return proxy(**this);
+	}
 
     /**
      * @brief   Compare this iterator with another iterator.
@@ -607,19 +650,35 @@ public:
      *
      * @returns true if the underlying iterators are equal, false otherwise
      */
-    bool equal(const JsonCppObjectMemberIterator &rhs) const
+    bool operator==(const JsonCppObjectMemberIterator &rhs) const
     {
         return itr == rhs.itr;
     }
 
-    void increment()
+	bool operator!=(const JsonCppObjectMemberIterator &rhs) const
+	{
+		return !(itr == rhs.itr);
+	}
+
+    const JsonCppObjectMemberIterator& operator++()
     {
         itr++;
+
+		return *this;
     }
 
-    void decrement()
+	JsonCppObjectMemberIterator operator++(int)
+	{
+		JsonCppObjectMemberIterator iterator_pre(itr);
+		++(*this);
+		return iterator_pre;
+	}
+
+	JsonCppObjectMemberIterator operator--()
     {
         itr--;
+
+		return *this;
     }
 
 private:

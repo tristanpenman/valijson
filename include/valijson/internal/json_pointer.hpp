@@ -6,9 +6,15 @@
 #include <stdexcept>
 #include <string>
 
+#if __has_include(<optional>)
+#  include <optional>
+namespace opt = std;
+#else
+#  include <compat/optional.hpp>
+namespace opt = std::experimental;
+#endif
+
 #include <boost/algorithm/string/replace.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/optional.hpp>
 
 #include <valijson/adapters/adapter.hpp>
 
@@ -169,8 +175,7 @@ inline AdapterType resolveJsonPointer(
 
         try {
             // Fragment must be non-negative integer
-            const uint64_t index = boost::lexical_cast<uint64_t>(
-                    referenceToken);
+			const uint64_t index = std::stoul(referenceToken);
             typedef typename AdapterType::Array Array;
             typename Array::const_iterator itr = node.asArray().begin();
 
@@ -182,7 +187,7 @@ inline AdapterType resolveJsonPointer(
 
             if (index > static_cast<uint64_t>(std::numeric_limits<ptrdiff_t>::max())) {
                 throw std::runtime_error("Array index out of bounds; hard "
-                        "limit is " + boost::lexical_cast<std::string>(
+                        "limit is " + std::to_string(
                                 std::numeric_limits<ptrdiff_t>::max()));
             }
 
@@ -191,7 +196,7 @@ inline AdapterType resolveJsonPointer(
             // Recursively process the remaining tokens
             return resolveJsonPointer(*itr, jsonPointer, jsonPointerNext);
 
-        } catch (boost::bad_lexical_cast &) {
+		} catch (std::invalid_argument &) {
             throw std::runtime_error("Expected reference token to contain a "
                     "non-negative integer to identify an element in the "
                     "current array; actual token: " + referenceToken);

@@ -5,12 +5,12 @@
 #include <stdint.h>
 #include <sstream>
 
+// This should be removed once C++17 is widely available
 #if __has_include(<optional>)
 #  include <optional>
 namespace opt = std;
 #else
 #  include <compat/optional.hpp>
-#  define HAVE_EXPERIMENTAL_OPTIONAL 1
 namespace opt = std::experimental;
 #endif
 

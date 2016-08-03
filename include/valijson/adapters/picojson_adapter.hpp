@@ -28,9 +28,6 @@
 #define __VALIJSON_ADAPTERS_PICOJSON_ADAPTER_HPP
 
 #include <string>
-#include <boost/bind.hpp>
-#include <boost/optional.hpp>
-#include <boost/iterator/iterator_facade.hpp>
 
 #include <picojson.h>
 
@@ -508,12 +505,21 @@ public:
  * @see PicoJsonArray
  */
 class PicoJsonArrayValueIterator:
-    public boost::iterator_facade<
-        PicoJsonArrayValueIterator,          // name of derived type
-        PicoJsonAdapter,                     // value type
-        boost::bidirectional_traversal_tag,  // bi-directional iterator
-        PicoJsonAdapter>                     // type returned when dereferenced
+    public std::iterator<
+	    std::bidirectional_iterator_tag,     // bi-directional iterator
+        PicoJsonAdapter>                     // value type
 {
+private:
+
+	struct proxy
+	{
+		explicit proxy(const PicoJsonAdapter& x) : m_ref(x) {}
+		PicoJsonAdapter* operator->() { return std::addressof(m_ref); }
+		operator PicoJsonAdapter*() { return std::addressof(m_ref); }
+
+		PicoJsonAdapter m_ref;
+	};
+
 public:
 
     /**
@@ -528,10 +534,15 @@ public:
 
     /// Returns a PicoJsonAdapter that contains the value of the current
     /// element.
-    PicoJsonAdapter dereference() const
+    PicoJsonAdapter operator*() const
     {
         return PicoJsonAdapter(*itr);
     }
+
+	proxy operator->() const
+	{
+		return proxy(**this);
+	}
 
     /**
      * @brief   Compare this iterator against another iterator.
@@ -544,20 +555,36 @@ public:
      *
      * @returns true   if the iterators are equal, false otherwise.
      */
-    bool equal(const PicoJsonArrayValueIterator &other) const
+    bool operator==(const PicoJsonArrayValueIterator &other) const
     {
         return itr == other.itr;
     }
 
-    void increment()
+	bool operator!=(const PicoJsonArrayValueIterator &other) const
+	{
+		return !(itr == other.itr);
+	}
+
+    const PicoJsonArrayValueIterator& operator++()
     {
         itr++;
+
+		return *this;
     }
 
-    void decrement()
-    {
-        itr--;
-    }
+	PicoJsonArrayValueIterator operator++(int)
+	{
+		PicoJsonArrayValueIterator iterator_pre(itr);
+		++(*this);
+		return iterator_pre;
+	}
+
+	const PicoJsonArrayValueIterator& operator--()
+	{
+		itr--;
+
+		return *this;
+	}
 
     void advance(std::ptrdiff_t n)
     {
@@ -580,12 +607,21 @@ private:
  * @see PicoJsonObjectMember
  */
 class PicoJsonObjectMemberIterator:
-    public boost::iterator_facade<
-        PicoJsonObjectMemberIterator,        // name of derived type
-        PicoJsonObjectMember,                // value type
-        boost::bidirectional_traversal_tag,  // bi-directional iterator
-        PicoJsonObjectMember>                // type returned when dereferenced
+    public std::iterator<
+	    std::bidirectional_iterator_tag,  // bi-directional iterator
+        PicoJsonObjectMember>             // value type
 {
+private:
+
+	struct proxy
+	{
+		explicit proxy(const PicoJsonObjectMember& x) : m_ref(x) {}
+		PicoJsonObjectMember* operator->() { return std::addressof(m_ref); }
+		operator PicoJsonObjectMember*() { return std::addressof(m_ref); }
+
+		PicoJsonObjectMember m_ref;
+	};
+
 public:
 
     /**
@@ -601,10 +637,15 @@ public:
      * @brief   Returns a PicoJsonObjectMember that contains the key and value
      *          belonging to the object member identified by the iterator.
      */
-    PicoJsonObjectMember dereference() const
+    PicoJsonObjectMember operator*() const
     {
         return PicoJsonObjectMember(itr->first, itr->second);
     }
+
+	proxy operator->() const
+	{
+		return proxy(**this);
+	}
 
     /**
      * @brief   Compare this iterator with another iterator.
@@ -617,19 +658,35 @@ public:
      *
      * @returns true if the underlying iterators are equal, false otherwise
      */
-    bool equal(const PicoJsonObjectMemberIterator &other) const
+    bool operator==(const PicoJsonObjectMemberIterator &other) const
     {
         return itr == other.itr;
     }
 
-    void increment()
+	bool operator!=(const PicoJsonObjectMemberIterator &other) const
+	{
+		return !(itr == other.itr);
+	}
+
+    const PicoJsonObjectMemberIterator& operator++()
     {
         itr++;
+
+		return *this;
     }
 
-    void decrement()
+	PicoJsonObjectMemberIterator operator++(int)
+	{
+		PicoJsonObjectMemberIterator iterator_pre(itr);
+		++(*this);
+		return iterator_pre;
+	}
+
+	const PicoJsonObjectMemberIterator& operator--(int)
     {
         itr--;
+
+		return *this;
     }
 
 private:

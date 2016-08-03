@@ -1042,7 +1042,7 @@ private:
 		for ( const AdapterType schemaNode : node.asArray() ) {
             if (schemaNode.maybeObject()) {
                 const std::string childPath = nodePath + "/" +
-                        boost::lexical_cast<std::string>(index);
+                        std::to_string(index);
                 const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                         rootSchema, rootNode, schemaNode, currentScope,
                         childPath, fetchDoc, NULL, NULL, docCache, schemaCache);
@@ -1098,7 +1098,7 @@ private:
 		for ( const AdapterType schemaNode : node.asArray() ) {
             if (schemaNode.maybeObject()) {
                 const std::string childPath = nodePath + "/" +
-                        boost::lexical_cast<std::string>(index);
+                        std::to_string(index);
                 const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                         rootSchema, rootNode, schemaNode, currentScope,
                         childPath, fetchDoc, NULL, NULL, docCache, schemaCache);
@@ -1337,7 +1337,7 @@ private:
                 int index = 0;
 				for( const AdapterType v : items->getArray() ) {
                     const std::string childPath = itemsPath + "/" +
-                            boost::lexical_cast<std::string>(index);
+                            std::to_string(index);
                     const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                             rootSchema, rootNode, v, currentScope, childPath,
                             fetchDoc, NULL, NULL, docCache, schemaCache);
@@ -1774,7 +1774,7 @@ private:
         int index = 0;
 		for ( const AdapterType schemaNode : node.getArray() ) {
             const std::string childPath = nodePath + "/" +
-                    boost::lexical_cast<std::string>(index);
+                    std::to_string(index);
             const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                 rootSchema, rootNode, schemaNode, currentScope, childPath,
                 fetchDoc, NULL, NULL, docCache, schemaCache);
@@ -2045,7 +2045,7 @@ private:
 
                 } else if (v.isObject() && version == kDraft3) {
                     const std::string childPath = nodePath + "/" +
-                            boost::lexical_cast<std::string>(index);
+                            std::to_string(index);
                     const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                             rootSchema, rootNode, v, currentScope, childPath,
                             fetchDoc, NULL, NULL, docCache, schemaCache);
