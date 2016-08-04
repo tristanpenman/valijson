@@ -623,11 +623,9 @@ private:
  * @see PropertyTreeObjectMember
  */
 class PropertyTreeObjectMemberIterator:
-    public boost::iterator_facade<
-        PropertyTreeObjectMemberIterator,    // name of derived type
-        PropertyTreeObjectMember,            // value type
-        boost::bidirectional_traversal_tag,  // bi-directional iterator
-        PropertyTreeObjectMember>            // type returned when dereferenced
+    public std::iterator<
+	    std::bidirectional_iterator_tag,     // bi-directional iterator
+        PropertyTreeObjectMember>            // value type
 {
 public:
 
@@ -644,10 +642,15 @@ public:
      * @brief   Returns a PropertyTreeObjectMember that contains the key and
      *          value belonging to the object member identified by the iterator.
      */
-    PropertyTreeObjectMember dereference() const
+    PropertyTreeObjectMember operator*() const
     {
         return PropertyTreeObjectMember(itr->first, itr->second);
     }
+
+	DerefProxy<PropertyTreeObjectMember> operator->() const
+	{
+		return DerefProxy<PropertyTreeObjectMember>(**this);
+	}
 
     /**
      * @brief   Compare this iterator with another iterator.
@@ -660,20 +663,36 @@ public:
      *
      * @returns true if the underlying iterators are equal, false otherwise
      */
-    bool equal(const PropertyTreeObjectMemberIterator &rhs) const
+    bool operator==(const PropertyTreeObjectMemberIterator &rhs) const
     {
         return itr == rhs.itr;
     }
 
-    void increment()
+	bool operator!=(const PropertyTreeObjectMemberIterator &rhs) const
+	{
+		return !(itr == rhs.itr);
+	}
+
+    const PropertyTreeObjectMemberIterator& operator++()
     {
         itr++;
+
+		return *this;
     }
 
-    void decrement()
-    {
-        itr--;
-    }
+	PropertyTreeObjectMemberIterator operator++(int)
+	{
+		PropertyTreeObjectMemberIterator iterator_pre(itr);
+		++(*this);
+		return iterator_pre;
+	}
+
+	const PropertyTreeObjectMemberIterator& operator--()
+	{
+		itr++;
+
+		return *this;
+	}
 
 private:
 

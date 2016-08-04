@@ -1,8 +1,5 @@
 #include <picojson.h>
 
-#include <boost/foreach.hpp>
-#include <boost/lexical_cast.hpp>
-
 #include <gtest/gtest.h>
 
 #include <valijson/adapters/jsoncpp_adapter.hpp>

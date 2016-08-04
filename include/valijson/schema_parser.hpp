@@ -587,7 +587,7 @@ private:
         typename DocumentCache<AdapterType>::Type &docCache,
         SchemaCache &schemaCache)
     {
-        BOOST_STATIC_ASSERT_MSG((boost::is_convertible<AdapterType,
+        static_assert((std::is_convertible<AdapterType,
             const valijson::adapters::Adapter &>::value),
             "SchemaParser::populateSchema must be invoked with an "
             "appropriate Adapter implementation");

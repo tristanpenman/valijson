@@ -14,13 +14,30 @@ namespace opt = std;
 namespace opt = std::experimental;
 #endif
 
-#include <boost/algorithm/string/replace.hpp>
-
 #include <valijson/adapters/adapter.hpp>
 
 namespace valijson {
 namespace internal {
 namespace json_pointer {
+
+/**
+ * @brief   Replace all occurrences of `search` with `replace`. Modifies `subject` in place
+ *
+ * @param   subject  string to operate on
+ * @param   search   string to search
+ * @param   replace  replacement string
+ */
+
+inline void replace_all_inplace(std::string& subject, const char* search,
+								const char* replace)
+{
+	size_t pos = 0;
+
+	while((pos = subject.find(search, pos)) != std::string::npos) {
+		subject.replace(pos, strlen(search), replace);
+		pos += strlen(replace);
+	}
+}
 
 /**
  * @brief   Return the char value corresponding to a 2-digit hexadecimal string
@@ -84,8 +101,8 @@ inline std::string extractReferenceToken(std::string::const_iterator begin,
     std::string token(begin, end);
 
     // Replace JSON Pointer-specific escaped character sequences
-    boost::replace_all(token, "~1", "/");
-    boost::replace_all(token, "~0", "~");
+    replace_all_inplace(token, "~1", "/");
+    replace_all_inplace(token, "~0", "~");
 
     // Replace %-encoded character sequences with their actual characters
     for (size_t n = token.find('%'); n != std::string::npos;
