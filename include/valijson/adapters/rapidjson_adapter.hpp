@@ -406,10 +406,10 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-	opt::optional<GenericRapidJsonArray<ValueType> > getArrayOptional() const
+    opt::optional<GenericRapidJsonArray<ValueType> > getArrayOptional() const
     {
         if (value.IsArray()) {
-			return opt::make_optional(GenericRapidJsonArray<ValueType>(value));
+            return opt::make_optional(GenericRapidJsonArray<ValueType>(value));
         }
 
         return opt::optional<GenericRapidJsonArray<ValueType> >();
@@ -484,7 +484,7 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-	opt::optional<GenericRapidJsonObject<ValueType> > getObjectOptional() const
+    opt::optional<GenericRapidJsonObject<ValueType> > getObjectOptional() const
     {
         if (value.IsObject()) {
             return opt::make_optional(GenericRapidJsonObject<ValueType>(value));
@@ -631,8 +631,8 @@ public:
 template<class ValueType>
 class GenericRapidJsonArrayValueIterator:
     public std::iterator<
-	    std::bidirectional_iterator_tag,                 // bi-directional iterator
-	    GenericRapidJsonAdapter<ValueType> >             // value type
+        std::bidirectional_iterator_tag,                 // bi-directional iterator
+        GenericRapidJsonAdapter<ValueType> >             // value type
 {
 public:
 
@@ -653,11 +653,11 @@ public:
         return GenericRapidJsonAdapter<ValueType>(*itr);
     }
 
-	/// Returns a proxy for the value of the current element
-	DerefProxy<GenericRapidJsonAdapter<ValueType> > operator->() const
-	{
-		return DerefProxy<GenericRapidJsonAdapter<ValueType> >(**this);
-	}
+    /// Returns a proxy for the value of the current element
+    DerefProxy<GenericRapidJsonAdapter<ValueType> > operator->() const
+    {
+        return DerefProxy<GenericRapidJsonAdapter<ValueType> >(**this);
+    }
 
     /**
      * @brief   Compare this iterator against another iterator.
@@ -675,29 +675,29 @@ public:
         return itr == other.itr;
     }
 
-	bool operator!=(const GenericRapidJsonArrayValueIterator<ValueType>& other) const
-	{
-		return !(itr == other.itr);
-	}
+    bool operator!=(const GenericRapidJsonArrayValueIterator<ValueType>& other) const
+    {
+        return !(itr == other.itr);
+    }
 
     GenericRapidJsonArrayValueIterator<ValueType>& operator++()
     {
         itr++;
 
-		return *this;
+        return *this;
     }
 
-	GenericRapidJsonArrayValueIterator<ValueType> operator++(int) {
-		GenericRapidJsonArrayValueIterator<ValueType> iterator_pre(itr);
-		++(*this);
-		return iterator_pre;
-	}
+    GenericRapidJsonArrayValueIterator<ValueType> operator++(int) {
+        GenericRapidJsonArrayValueIterator<ValueType> iterator_pre(itr);
+        ++(*this);
+        return iterator_pre;
+    }
 
-	GenericRapidJsonArrayValueIterator<ValueType>& operator--()
+    GenericRapidJsonArrayValueIterator<ValueType>& operator--()
     {
         itr--;
 
-		return *this;
+        return *this;
     }
 
     void advance(std::ptrdiff_t n)
@@ -728,7 +728,7 @@ private:
 template<class ValueType>
 class GenericRapidJsonObjectMemberIterator:
     public std::iterator<
-	    std::bidirectional_iterator_tag,                 // bi-directional iterator
+        std::bidirectional_iterator_tag,                 // bi-directional iterator
         GenericRapidJsonObjectMember<ValueType> >        // value type
 {
 public:
@@ -754,11 +754,11 @@ public:
             itr->value);
     }
 
-	/// Returns a proxy for the value of the current element
-	DerefProxy<GenericRapidJsonObjectMember<ValueType> > operator->() const
-	{
-		return DerefProxy<GenericRapidJsonObjectMember<ValueType> >(**this);
-	}
+    /// Returns a proxy for the value of the current element
+    DerefProxy<GenericRapidJsonObjectMember<ValueType> > operator->() const
+    {
+        return DerefProxy<GenericRapidJsonObjectMember<ValueType> >(**this);
+    }
 
     /**
      * @brief   Compare this iterator with another iterator.
@@ -776,30 +776,30 @@ public:
         return itr == other.itr;
     }
 
-	bool operator!=(const GenericRapidJsonObjectMemberIterator<ValueType> &other) const
-	{
-		return !(itr == other.itr);
-	}
+    bool operator!=(const GenericRapidJsonObjectMemberIterator<ValueType> &other) const
+    {
+        return !(itr == other.itr);
+    }
 
     GenericRapidJsonObjectMemberIterator<ValueType>& operator++()
     {
         itr++;
 
-		return *this;
+        return *this;
     }
 
-	GenericRapidJsonObjectMemberIterator<ValueType> operator++(int)
-	{
-		GenericRapidJsonObjectMemberIterator<ValueType> iterator_pre(itr);
-		++(*this);
-		return iterator_pre;
-	}
+    GenericRapidJsonObjectMemberIterator<ValueType> operator++(int)
+    {
+        GenericRapidJsonObjectMemberIterator<ValueType> iterator_pre(itr);
+        ++(*this);
+        return iterator_pre;
+    }
 
     GenericRapidJsonObjectMemberIterator<ValueType>& operator--()
     {
         itr--;
 
-		return *this;
+        return *this;
     }
 
     std::ptrdiff_t difference(const GenericRapidJsonObjectMemberIterator &other)

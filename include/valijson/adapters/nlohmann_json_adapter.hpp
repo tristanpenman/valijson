@@ -294,14 +294,14 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-	opt::optional<NlohmannJsonArray> getArrayOptional() const
+    opt::optional<NlohmannJsonArray> getArrayOptional() const
     {
         if (value.is_array()) {
-			return opt::make_optional(NlohmannJsonArray(value));
+            return opt::make_optional(NlohmannJsonArray(value));
         }
 
-		return opt::optional<NlohmannJsonArray>();
-	}
+        return opt::optional<NlohmannJsonArray>();
+    }
 
     /**
      * @brief   Retrieve the number of elements in the array
@@ -362,10 +362,10 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-	opt::optional<NlohmannJsonObject> getObjectOptional() const
+    opt::optional<NlohmannJsonObject> getObjectOptional() const
     {
         if (value.is_object()) {
-			return opt::make_optional(NlohmannJsonObject(value));
+            return opt::make_optional(NlohmannJsonObject(value));
         }
 
         return opt::optional<NlohmannJsonObject>();
@@ -497,7 +497,7 @@ public:
  */
 class NlohmannJsonArrayValueIterator:
     public std::iterator<
-	    std::bidirectional_iterator_tag,  // bi-directional iterator
+        std::bidirectional_iterator_tag,  // bi-directional iterator
         NlohmannJsonAdapter>                 // value type
 {
 public:
@@ -518,10 +518,10 @@ public:
         return NlohmannJsonAdapter(*itr);
     }
 
-	DerefProxy<NlohmannJsonAdapter> operator->() const
-	{
-		return DerefProxy<NlohmannJsonAdapter>(**this);
-	}
+    DerefProxy<NlohmannJsonAdapter> operator->() const
+    {
+        return DerefProxy<NlohmannJsonAdapter>(**this);
+    }
 
     /**
      * @brief   Compare this iterator against another iterator.
@@ -539,31 +539,31 @@ public:
         return itr == other.itr;
     }
 
-	bool operator!=(const NlohmannJsonArrayValueIterator &other) const
-	{
-		return !(itr == other.itr);
-	}
+    bool operator!=(const NlohmannJsonArrayValueIterator &other) const
+    {
+        return !(itr == other.itr);
+    }
 
     const NlohmannJsonArrayValueIterator& operator++()
     {
         itr++;
 
-		return *this;
+        return *this;
     }
 
-	NlohmannJsonArrayValueIterator operator++(int)
-	{
-		NlohmannJsonArrayValueIterator iterator_pre(itr);
-		++(*this);
-		return iterator_pre;
-	}
+    NlohmannJsonArrayValueIterator operator++(int)
+    {
+        NlohmannJsonArrayValueIterator iterator_pre(itr);
+        ++(*this);
+        return iterator_pre;
+    }
 
-	const NlohmannJsonArrayValueIterator& operator--()
-	{
-		itr--;
+    const NlohmannJsonArrayValueIterator& operator--()
+    {
+        itr--;
 
-		return *this;
-	}
+        return *this;
+    }
 
     void advance(std::ptrdiff_t n)
     {
@@ -587,7 +587,7 @@ private:
  */
 class NlohmannJsonObjectMemberIterator:
     public std::iterator<
-	    std::bidirectional_iterator_tag,     // bi-directional iterator
+        std::bidirectional_iterator_tag,     // bi-directional iterator
         NlohmannJsonObjectMember>            // value type
 {
 public:
@@ -609,10 +609,10 @@ public:
         return NlohmannJsonObjectMember(itr.key(), itr.value());
     }
 
-	DerefProxy<NlohmannJsonObjectMember> operator->() const
-	{
-		return DerefProxy<NlohmannJsonObjectMember>(**this);
-	}
+    DerefProxy<NlohmannJsonObjectMember> operator->() const
+    {
+        return DerefProxy<NlohmannJsonObjectMember>(**this);
+    }
 
     /**
      * @brief   Compare this iterator with another iterator.
@@ -630,31 +630,31 @@ public:
         return itr == other.itr;
     }
 
-	bool operator!=(const NlohmannJsonObjectMemberIterator &other) const
-	{
-		return !(itr == other.itr);
-	}
+    bool operator!=(const NlohmannJsonObjectMemberIterator &other) const
+    {
+        return !(itr == other.itr);
+    }
 
     const NlohmannJsonObjectMemberIterator& operator++()
     {
         itr++;
 
-		return *this;
+        return *this;
     }
 
-	NlohmannJsonObjectMemberIterator operator++(int)
-	{
-		NlohmannJsonObjectMemberIterator iterator_pre(itr);
-		++(*this);
-		return iterator_pre;
-	}
+    NlohmannJsonObjectMemberIterator operator++(int)
+    {
+        NlohmannJsonObjectMemberIterator iterator_pre(itr);
+        ++(*this);
+        return iterator_pre;
+    }
 
-	const NlohmannJsonObjectMemberIterator& operator--()
-	{
-		itr--;
+    const NlohmannJsonObjectMemberIterator& operator--()
+    {
+        itr--;
 
-		return *this;
-	}
+        return *this;
+    }
 
 private:
 

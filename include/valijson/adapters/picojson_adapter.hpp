@@ -295,10 +295,10 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-	opt::optional<PicoJsonArray> getArrayOptional() const
+    opt::optional<PicoJsonArray> getArrayOptional() const
     {
         if (value.is<picojson::array>()) {
-			return opt::make_optional(PicoJsonArray(value));
+            return opt::make_optional(PicoJsonArray(value));
         }
 
         return opt::optional<PicoJsonArray>();
@@ -365,10 +365,10 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-	opt::optional<PicoJsonObject> getObjectOptional() const
+    opt::optional<PicoJsonObject> getObjectOptional() const
     {
         if (value.is<picojson::object>()) {
-			return opt::make_optional(PicoJsonObject(value));
+            return opt::make_optional(PicoJsonObject(value));
         }
 
         return opt::optional<PicoJsonObject>();
@@ -506,7 +506,7 @@ public:
  */
 class PicoJsonArrayValueIterator:
     public std::iterator<
-	    std::bidirectional_iterator_tag,     // bi-directional iterator
+        std::bidirectional_iterator_tag,     // bi-directional iterator
         PicoJsonAdapter>                     // value type
 {
 public:
@@ -528,10 +528,10 @@ public:
         return PicoJsonAdapter(*itr);
     }
 
-	DerefProxy<PicoJsonAdapter> operator->() const
-	{
-		return DerefProxy<PicoJsonAdapter>(**this);
-	}
+    DerefProxy<PicoJsonAdapter> operator->() const
+    {
+        return DerefProxy<PicoJsonAdapter>(**this);
+    }
 
     /**
      * @brief   Compare this iterator against another iterator.
@@ -549,31 +549,31 @@ public:
         return itr == other.itr;
     }
 
-	bool operator!=(const PicoJsonArrayValueIterator &other) const
-	{
-		return !(itr == other.itr);
-	}
+    bool operator!=(const PicoJsonArrayValueIterator &other) const
+    {
+        return !(itr == other.itr);
+    }
 
     const PicoJsonArrayValueIterator& operator++()
     {
         itr++;
 
-		return *this;
+        return *this;
     }
 
-	PicoJsonArrayValueIterator operator++(int)
-	{
-		PicoJsonArrayValueIterator iterator_pre(itr);
-		++(*this);
-		return iterator_pre;
-	}
+    PicoJsonArrayValueIterator operator++(int)
+    {
+        PicoJsonArrayValueIterator iterator_pre(itr);
+        ++(*this);
+        return iterator_pre;
+    }
 
-	const PicoJsonArrayValueIterator& operator--()
-	{
-		itr--;
+    const PicoJsonArrayValueIterator& operator--()
+    {
+        itr--;
 
-		return *this;
-	}
+        return *this;
+    }
 
     void advance(std::ptrdiff_t n)
     {
@@ -597,7 +597,7 @@ private:
  */
 class PicoJsonObjectMemberIterator:
     public std::iterator<
-	    std::bidirectional_iterator_tag,  // bi-directional iterator
+        std::bidirectional_iterator_tag,  // bi-directional iterator
         PicoJsonObjectMember>             // value type
 {
 public:
@@ -620,10 +620,10 @@ public:
         return PicoJsonObjectMember(itr->first, itr->second);
     }
 
-	DerefProxy<PicoJsonObjectMember> operator->() const
-	{
-		return DerefProxy<PicoJsonObjectMember>(**this);
-	}
+    DerefProxy<PicoJsonObjectMember> operator->() const
+    {
+        return DerefProxy<PicoJsonObjectMember>(**this);
+    }
 
     /**
      * @brief   Compare this iterator with another iterator.
@@ -641,30 +641,30 @@ public:
         return itr == other.itr;
     }
 
-	bool operator!=(const PicoJsonObjectMemberIterator &other) const
-	{
-		return !(itr == other.itr);
-	}
+    bool operator!=(const PicoJsonObjectMemberIterator &other) const
+    {
+        return !(itr == other.itr);
+    }
 
     const PicoJsonObjectMemberIterator& operator++()
     {
         itr++;
 
-		return *this;
+        return *this;
     }
 
-	PicoJsonObjectMemberIterator operator++(int)
-	{
-		PicoJsonObjectMemberIterator iterator_pre(itr);
-		++(*this);
-		return iterator_pre;
-	}
+    PicoJsonObjectMemberIterator operator++(int)
+    {
+        PicoJsonObjectMemberIterator iterator_pre(itr);
+        ++(*this);
+        return iterator_pre;
+    }
 
-	const PicoJsonObjectMemberIterator& operator--(int)
+    const PicoJsonObjectMemberIterator& operator--(int)
     {
         itr--;
 
-		return *this;
+        return *this;
     }
 
 private:

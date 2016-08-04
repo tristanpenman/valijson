@@ -291,10 +291,10 @@ public:
     opt::optional<JsonCppArray> getArrayOptional() const
     {
         if (value.isArray()) {
-			return opt::make_optional(JsonCppArray(value));
+            return opt::make_optional(JsonCppArray(value));
         }
 
-		return opt::optional<JsonCppArray>();
+        return opt::optional<JsonCppArray>();
     }
 
     /**
@@ -363,7 +363,7 @@ public:
             return opt::make_optional(JsonCppObject(value));
         }
 
-		return opt::optional<JsonCppObject>();
+        return opt::optional<JsonCppObject>();
     }
 
     /**
@@ -493,7 +493,7 @@ public:
  */
 class JsonCppArrayValueIterator:
     public std::iterator<
-	    std::bidirectional_iterator_tag,     // bi-directional iterator
+        std::bidirectional_iterator_tag,     // bi-directional iterator
         JsonCppAdapter>                      // value type
 {
 
@@ -514,10 +514,10 @@ public:
         return JsonCppAdapter(*itr);
     }
 
-	DerefProxy<JsonCppAdapter> operator->() const
-	{
-		return DerefProxy<JsonCppAdapter>(**this);
-	}
+    DerefProxy<JsonCppAdapter> operator->() const
+    {
+        return DerefProxy<JsonCppAdapter>(**this);
+    }
 
     /**
      * @brief   Compare this iterator against another iterator.
@@ -535,31 +535,31 @@ public:
         return itr == rhs.itr;
     }
 
-	bool operator!=(const JsonCppArrayValueIterator &rhs) const
-	{
-		return !(itr == rhs.itr);
-	}
+    bool operator!=(const JsonCppArrayValueIterator &rhs) const
+    {
+        return !(itr == rhs.itr);
+    }
 
-	JsonCppArrayValueIterator& operator++()
-	{
-		itr++;
+    JsonCppArrayValueIterator& operator++()
+    {
+        itr++;
 
-		return *this;
-	}
+        return *this;
+    }
 
-	JsonCppArrayValueIterator operator++(int)
-	{
-		JsonCppArrayValueIterator iterator_pre(itr);
-		++(*this);
-		return iterator_pre;
-	}
+    JsonCppArrayValueIterator operator++(int)
+    {
+        JsonCppArrayValueIterator iterator_pre(itr);
+        ++(*this);
+        return iterator_pre;
+    }
 
-	JsonCppArrayValueIterator& operator--()
-	{
-		itr--;
+    JsonCppArrayValueIterator& operator--()
+    {
+        itr--;
 
-		return *this;
-	}
+        return *this;
+    }
 
     void advance(std::ptrdiff_t n)
     {
@@ -591,7 +591,7 @@ private:
  */
 class JsonCppObjectMemberIterator:
     public std::iterator<
-	    std::bidirectional_iterator_tag,     // bi-directional iterator
+        std::bidirectional_iterator_tag,     // bi-directional iterator
         JsonCppObjectMember>                 // value type
 {
 public:
@@ -613,10 +613,10 @@ public:
         return JsonCppObjectMember(itr.key().asString(), *itr);
     }
 
-	DerefProxy<JsonCppObjectMember> operator->() const
-	{
-		return DerefProxy<JsonCppObjectMember>(**this);
-	}
+    DerefProxy<JsonCppObjectMember> operator->() const
+    {
+        return DerefProxy<JsonCppObjectMember>(**this);
+    }
 
     /**
      * @brief   Compare this iterator with another iterator.
@@ -634,30 +634,30 @@ public:
         return itr == rhs.itr;
     }
 
-	bool operator!=(const JsonCppObjectMemberIterator &rhs) const
-	{
-		return !(itr == rhs.itr);
-	}
+    bool operator!=(const JsonCppObjectMemberIterator &rhs) const
+    {
+        return !(itr == rhs.itr);
+    }
 
     const JsonCppObjectMemberIterator& operator++()
     {
         itr++;
 
-		return *this;
+        return *this;
     }
 
-	JsonCppObjectMemberIterator operator++(int)
-	{
-		JsonCppObjectMemberIterator iterator_pre(itr);
-		++(*this);
-		return iterator_pre;
-	}
+    JsonCppObjectMemberIterator operator++(int)
+    {
+        JsonCppObjectMemberIterator iterator_pre(itr);
+        ++(*this);
+        return iterator_pre;
+    }
 
-	JsonCppObjectMemberIterator operator--()
+    JsonCppObjectMemberIterator operator--()
     {
         itr--;
 
-		return *this;
+        return *this;
     }
 
 private:

@@ -292,13 +292,13 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-	opt::optional<Json11Array> getArrayOptional() const
+    opt::optional<Json11Array> getArrayOptional() const
     {
         if (value.is_array()) {
-			return opt::make_optional(Json11Array(value));
+            return opt::make_optional(Json11Array(value));
         }
 
-		return opt::optional<Json11Array>();
+        return opt::optional<Json11Array>();
     }
 
     /**
@@ -360,13 +360,13 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-	opt::optional<Json11Object> getObjectOptional() const
+    opt::optional<Json11Object> getObjectOptional() const
     {
         if (value.is_object()) {
-			return opt::make_optional(Json11Object(value));
+            return opt::make_optional(Json11Object(value));
         }
 
-		return opt::optional<Json11Object>();
+        return opt::optional<Json11Object>();
     }
 
     /**
@@ -497,7 +497,7 @@ public:
  */
 class Json11ArrayValueIterator:
     public std::iterator<
-	    std::bidirectional_iterator_tag,  // bi-directional iterator
+        std::bidirectional_iterator_tag,  // bi-directional iterator
         Json11Adapter>                    // value type
 {
 public:
@@ -519,10 +519,10 @@ public:
         return Json11Adapter(*itr);
     }
 
-	DerefProxy<Json11Adapter> operator->() const
-	{
-		return DerefProxy<Json11Adapter>(**this);
-	}
+    DerefProxy<Json11Adapter> operator->() const
+    {
+        return DerefProxy<Json11Adapter>(**this);
+    }
 
     /**
      * @brief   Compare this iterator against another iterator.
@@ -540,31 +540,31 @@ public:
         return itr == other.itr;
     }
 
-	bool operator!=(const Json11ArrayValueIterator &other) const
-	{
-		return !(itr == other.itr);
-	}
+    bool operator!=(const Json11ArrayValueIterator &other) const
+    {
+        return !(itr == other.itr);
+    }
 
     const Json11ArrayValueIterator& operator++()
     {
         itr++;
 
-		return *this;
+        return *this;
     }
 
-	Json11ArrayValueIterator operator++(int)
-	{
-		Json11ArrayValueIterator iterator_pre(itr);
-		++(*this);
-		return iterator_pre;
-	}
+    Json11ArrayValueIterator operator++(int)
+    {
+        Json11ArrayValueIterator iterator_pre(itr);
+        ++(*this);
+        return iterator_pre;
+    }
 
-	const Json11ArrayValueIterator& operator--()
+    const Json11ArrayValueIterator& operator--()
     {
         itr--;
 
-		return *this;
-	}
+        return *this;
+    }
 
     void advance(std::ptrdiff_t n)
     {
@@ -588,7 +588,7 @@ private:
  */
 class Json11ObjectMemberIterator:
     public std::iterator<
-	    std::bidirectional_iterator_tag,   // bi-directional iterator
+        std::bidirectional_iterator_tag,   // bi-directional iterator
         Json11ObjectMember>                // value type
 {
 public:
@@ -611,10 +611,10 @@ public:
         return Json11ObjectMember(itr->first, itr->second);
     }
 
-	DerefProxy<Json11ObjectMember> operator->() const
-	{
-		return DerefProxy<Json11ObjectMember>(**this);
-	}
+    DerefProxy<Json11ObjectMember> operator->() const
+    {
+        return DerefProxy<Json11ObjectMember>(**this);
+    }
 
     /**
      * @brief   Compare this iterator with another iterator.
@@ -632,31 +632,31 @@ public:
         return itr == other.itr;
     }
 
-	bool operator!=(const Json11ObjectMemberIterator &other) const
-	{
-		return !(itr == other.itr);
-	}
+    bool operator!=(const Json11ObjectMemberIterator &other) const
+    {
+        return !(itr == other.itr);
+    }
 
     const Json11ObjectMemberIterator& operator++()
     {
         itr++;
 
-		return *this;
+        return *this;
     }
 
-	Json11ObjectMemberIterator operator++(int)
-	{
-		Json11ObjectMemberIterator iterator_pre(itr);
-		++(*this);
-		return iterator_pre;
-	}
+    Json11ObjectMemberIterator operator++(int)
+    {
+        Json11ObjectMemberIterator iterator_pre(itr);
+        ++(*this);
+        return iterator_pre;
+    }
 
-	const Json11ObjectMemberIterator& operator--()
-	{
-		itr--;
+    const Json11ObjectMemberIterator& operator--()
+    {
+        itr--;
 
-		return *this;
-	}
+        return *this;
+    }
 
 private:
 

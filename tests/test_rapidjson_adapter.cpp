@@ -37,7 +37,7 @@ void testBasicArrayIteration()
 
     // Ensure that the elements are returned in the order they were inserted
     unsigned int expectedValue = 0;
-	for( const valijson::adapters::RapidJsonAdapter value : adapter.getArray() ) {
+    for( const valijson::adapters::RapidJsonAdapter value : adapter.getArray() ) {
         ASSERT_TRUE( value.isNumber() );
         EXPECT_EQ( double(expectedValue), value.getDouble() );
         expectedValue++;
@@ -77,7 +77,7 @@ void testBasicObjectIteration()
 
     // Ensure that the members are returned in the order they were inserted
     unsigned int expectedValue = 0;
-	for( const valijson::adapters::RapidJsonAdapter::ObjectMember member : adapter.getObject() ) {
+    for( const valijson::adapters::RapidJsonAdapter::ObjectMember member : adapter.getObject() ) {
         ASSERT_TRUE( member.second.isNumber() );
         EXPECT_EQ( std::to_string(expectedValue), member.first );
         EXPECT_EQ( double(expectedValue), member.second.getDouble() );

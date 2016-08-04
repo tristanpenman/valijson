@@ -329,10 +329,10 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-	opt::optional<PropertyTreeArray> getArrayOptional() const
+    opt::optional<PropertyTreeArray> getArrayOptional() const
     {
         if (array) {
-			return opt::make_optional(PropertyTreeArray(*array));
+            return opt::make_optional(PropertyTreeArray(*array));
         }
 
         return opt::optional<PropertyTreeArray>();
@@ -383,10 +383,10 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-	opt::optional<PropertyTreeObject> getObjectOptional() const
+    opt::optional<PropertyTreeObject> getObjectOptional() const
     {
         if (object) {
-			return opt::make_optional(PropertyTreeObject(*object));
+            return opt::make_optional(PropertyTreeObject(*object));
         }
 
         return opt::optional<PropertyTreeObject>();
@@ -430,7 +430,7 @@ public:
 
     bool isArray() const
     {
-		return static_cast<bool>(array);
+        return static_cast<bool>(array);
     }
 
     bool isBool() const
@@ -460,7 +460,7 @@ public:
 
     bool isObject() const
     {
-		return static_cast<bool>(object);
+        return static_cast<bool>(object);
     }
 
     bool isString() const
@@ -477,13 +477,13 @@ private:
     }
 
     /// Reference used if the value is known to be an array
-	opt::optional<const boost::property_tree::ptree &> array;
+    opt::optional<const boost::property_tree::ptree &> array;
 
     /// Reference used if the value is known to be an object
     opt::optional<const boost::property_tree::ptree &> object;
 
     /// Reference used if the value is known to be a POD type
-	opt::optional<std::string> value;
+    opt::optional<std::string> value;
 };
 
 /**
@@ -525,7 +525,7 @@ public:
  */
 class PropertyTreeArrayValueIterator:
     public std::iterator<
-	    std::bidirectional_iterator_tag,    // bi-directional iterator
+        std::bidirectional_iterator_tag,    // bi-directional iterator
         PropertyTreeAdapter>                // value type
 {
 public:
@@ -547,10 +547,10 @@ public:
         return PropertyTreeAdapter(itr->second);
     }
 
-	DerefProxy<PropertyTreeAdapter> operator->() const
-	{
-		return DerefProxy<PropertyTreeAdapter>(**this);
-	}
+    DerefProxy<PropertyTreeAdapter> operator->() const
+    {
+        return DerefProxy<PropertyTreeAdapter>(**this);
+    }
 
     /**
      * @brief   Compare this iterator against another iterator.
@@ -568,31 +568,31 @@ public:
         return itr == rhs.itr;
     }
 
-	bool operator!=(const PropertyTreeArrayValueIterator &rhs) const
-	{
-		return !(itr == rhs.itr);
-	}
+    bool operator!=(const PropertyTreeArrayValueIterator &rhs) const
+    {
+        return !(itr == rhs.itr);
+    }
 
     const PropertyTreeArrayValueIterator& operator++()
     {
         itr++;
 
-		return *this;
+        return *this;
     }
 
-	PropertyTreeArrayValueIterator operator++(int)
-	{
-		PropertyTreeArrayValueIterator iterator_pre(itr);
-		++(*this);
-		return iterator_pre;
-	}
+    PropertyTreeArrayValueIterator operator++(int)
+    {
+        PropertyTreeArrayValueIterator iterator_pre(itr);
+        ++(*this);
+        return iterator_pre;
+    }
 
-	const PropertyTreeArrayValueIterator& operator--()
-	{
-		itr--;
+    const PropertyTreeArrayValueIterator& operator--()
+    {
+        itr--;
 
-		return *this;
-	}
+        return *this;
+    }
 
     void advance(std::ptrdiff_t n)
     {
@@ -624,7 +624,7 @@ private:
  */
 class PropertyTreeObjectMemberIterator:
     public std::iterator<
-	    std::bidirectional_iterator_tag,     // bi-directional iterator
+        std::bidirectional_iterator_tag,     // bi-directional iterator
         PropertyTreeObjectMember>            // value type
 {
 public:
@@ -647,10 +647,10 @@ public:
         return PropertyTreeObjectMember(itr->first, itr->second);
     }
 
-	DerefProxy<PropertyTreeObjectMember> operator->() const
-	{
-		return DerefProxy<PropertyTreeObjectMember>(**this);
-	}
+    DerefProxy<PropertyTreeObjectMember> operator->() const
+    {
+        return DerefProxy<PropertyTreeObjectMember>(**this);
+    }
 
     /**
      * @brief   Compare this iterator with another iterator.
@@ -668,31 +668,31 @@ public:
         return itr == rhs.itr;
     }
 
-	bool operator!=(const PropertyTreeObjectMemberIterator &rhs) const
-	{
-		return !(itr == rhs.itr);
-	}
+    bool operator!=(const PropertyTreeObjectMemberIterator &rhs) const
+    {
+        return !(itr == rhs.itr);
+    }
 
     const PropertyTreeObjectMemberIterator& operator++()
     {
         itr++;
 
-		return *this;
+        return *this;
     }
 
-	PropertyTreeObjectMemberIterator operator++(int)
-	{
-		PropertyTreeObjectMemberIterator iterator_pre(itr);
-		++(*this);
-		return iterator_pre;
-	}
+    PropertyTreeObjectMemberIterator operator++(int)
+    {
+        PropertyTreeObjectMemberIterator iterator_pre(itr);
+        ++(*this);
+        return iterator_pre;
+    }
 
-	const PropertyTreeObjectMemberIterator& operator--()
-	{
-		itr++;
+    const PropertyTreeObjectMemberIterator& operator--()
+    {
+        itr++;
 
-		return *this;
-	}
+        return *this;
+    }
 
 private:
 

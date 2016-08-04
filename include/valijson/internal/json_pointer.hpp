@@ -29,14 +29,14 @@ namespace json_pointer {
  */
 
 inline void replace_all_inplace(std::string& subject, const char* search,
-								const char* replace)
+                                const char* replace)
 {
-	size_t pos = 0;
+    size_t pos = 0;
 
-	while((pos = subject.find(search, pos)) != std::string::npos) {
-		subject.replace(pos, strlen(search), replace);
-		pos += strlen(replace);
-	}
+    while((pos = subject.find(search, pos)) != std::string::npos) {
+        subject.replace(pos, strlen(search), replace);
+        pos += strlen(replace);
+    }
 }
 
 /**
@@ -192,7 +192,7 @@ inline AdapterType resolveJsonPointer(
 
         try {
             // Fragment must be non-negative integer
-			const uint64_t index = std::stoul(referenceToken);
+            const uint64_t index = std::stoul(referenceToken);
             typedef typename AdapterType::Array Array;
             typename Array::const_iterator itr = node.asArray().begin();
 
@@ -213,7 +213,7 @@ inline AdapterType resolveJsonPointer(
             // Recursively process the remaining tokens
             return resolveJsonPointer(*itr, jsonPointer, jsonPointerNext);
 
-		} catch (std::invalid_argument &) {
+        } catch (std::invalid_argument &) {
             throw std::runtime_error("Expected reference token to contain a "
                     "non-negative integer to identify an element in the "
                     "current array; actual token: " + referenceToken);

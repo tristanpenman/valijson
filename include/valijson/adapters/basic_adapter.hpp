@@ -30,11 +30,11 @@ namespace adapters {
 template<class Value>
 struct DerefProxy
 {
-	explicit DerefProxy(const Value& x) : m_ref(x) {}
-	Value* operator->() { return std::addressof(m_ref); }
-	operator Value*() { return std::addressof(m_ref); }
+    explicit DerefProxy(const Value& x) : m_ref(x) {}
+    Value* operator->() { return std::addressof(m_ref); }
+    operator Value*() { return std::addressof(m_ref); }
 
-	Value m_ref;
+    Value m_ref;
 };
 
 /**
@@ -238,8 +238,8 @@ public:
         // effort of constructing an ArrayType instance if the value is
         // definitely an array.
         if (value.isArray()) {
-			const opt::optional<Array> array = value.getArrayOptional();
-			for( const AdapterType element : *array ) {
+            const opt::optional<Array> array = value.getArrayOptional();
+            for( const AdapterType element : *array ) {
                 if (!fn(element)) {
                     return false;
                 }
@@ -256,8 +256,8 @@ public:
         }
 
         if (value.isObject()) {
-			const opt::optional<Object> object = value.getObjectOptional();
-			for( const ObjectMemberType member : *object ) {
+            const opt::optional<Object> object = value.getObjectOptional();
+            for( const ObjectMemberType member : *object ) {
                 if (!fn(member.first, AdapterType(member.second))) {
                     return false;
                 }
@@ -467,14 +467,14 @@ public:
         } else if (value.isInteger()) {
             int64_t integerValue;
             if (value.getInteger(integerValue)) {
-				result = std::to_string(integerValue);
-				return true;
+                result = std::to_string(integerValue);
+                return true;
             }
         } else if (value.isDouble()) {
             double doubleValue;
             if (value.getDouble(doubleValue)) {
-				result = std::to_string(doubleValue);
-				return true;
+                result = std::to_string(doubleValue);
+                return true;
             }
         }
 
