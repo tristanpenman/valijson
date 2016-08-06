@@ -1,5 +1,3 @@
-#include <boost/foreach.hpp>
-#include <boost/lexical_cast.hpp>
 
 #include <gtest/gtest.h>
 
@@ -34,7 +32,7 @@ TEST_F(TestJsonCppAdapter, BasicArrayIteration)
 
     // Ensure that the elements are returned in the order they were inserted
     unsigned int expectedValue = 0;
-    BOOST_FOREACH( const valijson::adapters::JsonCppAdapter value, adapter.getArray() ) {
+	for( const valijson::adapters::JsonCppAdapter value : adapter.getArray() ) {
         ASSERT_TRUE( value.isNumber() );
         EXPECT_EQ( double(expectedValue), value.getNumber() );
         expectedValue++;
@@ -52,7 +50,7 @@ TEST_F(TestJsonCppAdapter, BasicObjectIteration)
     // strings their corresponding numeric values
     Json::Value document(Json::objectValue);
     for (unsigned int i = 0; i < numElements; i++) {
-        std::string name(boost::lexical_cast<std::string>(i));
+        std::string name(std::to_string(i));
         document[name] = Json::Value(double(i));
     }
 
@@ -70,9 +68,9 @@ TEST_F(TestJsonCppAdapter, BasicObjectIteration)
 
     // Ensure that the members are returned in the order they were inserted
     unsigned int expectedValue = 0;
-    BOOST_FOREACH( const valijson::adapters::JsonCppAdapter::ObjectMember member, adapter.getObject() ) {
+	for( const valijson::adapters::JsonCppAdapter::ObjectMember member : adapter.getObject() ) {
         ASSERT_TRUE( member.second.isNumber() );
-        EXPECT_EQ( boost::lexical_cast<std::string>(expectedValue), member.first );
+        EXPECT_EQ( std::to_string(expectedValue), member.first );
         EXPECT_EQ( double(expectedValue), member.second.getDouble() );
         expectedValue++;
     }

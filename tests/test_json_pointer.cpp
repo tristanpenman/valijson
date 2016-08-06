@@ -1,5 +1,3 @@
-#include <boost/make_shared.hpp>
-#include <boost/shared_ptr.hpp>
 
 #include <gtest/gtest.h>
 
@@ -36,43 +34,43 @@ struct JsonPointerTestCase
     rapidjson::Value *expectedValue;
 };
 
-std::vector<boost::shared_ptr<JsonPointerTestCase> >
+std::vector<std::shared_ptr<JsonPointerTestCase> >
         testCasesForSingleLevelObjectPointers(
                 RapidJsonCrtAllocator &allocator)
 {
-    typedef boost::shared_ptr<JsonPointerTestCase> TestCase;
+    typedef std::shared_ptr<JsonPointerTestCase> TestCase;
 
     std::vector<TestCase> testCases;
 
-    TestCase testCase = boost::make_shared<JsonPointerTestCase>(
+    TestCase testCase = std::make_shared<JsonPointerTestCase>(
             "Resolving '#' should cause an exception to be thrown");
     testCase->value.SetNull();
     testCase->jsonPointer = "#";
     testCase->expectedValue = NULL;
     testCases.push_back(testCase);
 
-    testCase = boost::make_shared<JsonPointerTestCase>(
+    testCase = std::make_shared<JsonPointerTestCase>(
             "Resolving an empty string should return the root node");
     testCase->value.SetNull();
     testCase->jsonPointer = "";
     testCase->expectedValue = &testCase->value;
     testCases.push_back(testCase);
 
-    testCase = boost::make_shared<JsonPointerTestCase>(
+    testCase = std::make_shared<JsonPointerTestCase>(
             "Resolving '/' should return the root node");
     testCase->value.SetNull();
     testCase->jsonPointer = "/";
     testCase->expectedValue = &testCase->value;
     testCases.push_back(testCase);
 
-    testCase = boost::make_shared<JsonPointerTestCase>(
+    testCase = std::make_shared<JsonPointerTestCase>(
             "Resolving '//' should return the root node");
     testCase->value.SetNull();
     testCase->jsonPointer = "//";
     testCase->expectedValue = &testCase->value;
     testCases.push_back(testCase);
 
-    testCase = boost::make_shared<JsonPointerTestCase>(
+    testCase = std::make_shared<JsonPointerTestCase>(
             "Resolve '/test' in object containing one member named 'test'");
     testCase->value.SetObject();
     testCase->value.AddMember("test", "test", allocator);
@@ -80,7 +78,7 @@ std::vector<boost::shared_ptr<JsonPointerTestCase> >
     testCase->expectedValue = &testCase->value.FindMember("test")->value;
     testCases.push_back(testCase);
 
-    testCase = boost::make_shared<JsonPointerTestCase>(
+    testCase = std::make_shared<JsonPointerTestCase>(
             "Resolve '/test/' in object containing one member named 'test'");
     testCase->value.SetObject();
     testCase->value.AddMember("test", "test", allocator);
@@ -88,7 +86,7 @@ std::vector<boost::shared_ptr<JsonPointerTestCase> >
     testCase->expectedValue = &testCase->value.FindMember("test")->value;
     testCases.push_back(testCase);
 
-    testCase = boost::make_shared<JsonPointerTestCase>(
+    testCase = std::make_shared<JsonPointerTestCase>(
             "Resolve '//test//' in object containing one member named 'test'");
     testCase->value.SetObject();
     testCase->value.AddMember("test", "test", allocator);
@@ -96,7 +94,7 @@ std::vector<boost::shared_ptr<JsonPointerTestCase> >
     testCase->expectedValue = &testCase->value.FindMember("test")->value;
     testCases.push_back(testCase);
 
-    testCase = boost::make_shared<JsonPointerTestCase>(
+    testCase = std::make_shared<JsonPointerTestCase>(
             "Resolve '/missing' in object containing one member name 'test'");
     testCase->value.SetObject();
     testCase->value.AddMember("test", "test", allocator);
@@ -111,7 +109,7 @@ std::vector<boost::shared_ptr<JsonPointerTestCase> >
         testArray.PushBack("test1", allocator);
         testArray.PushBack("test2", allocator);
 
-        testCase = boost::make_shared<JsonPointerTestCase>(
+        testCase = std::make_shared<JsonPointerTestCase>(
                 "Resolve '/test/0' in object containing one member containing "
                 "an array with 3 elements");
         testCase->value.SetObject();
@@ -128,7 +126,7 @@ std::vector<boost::shared_ptr<JsonPointerTestCase> >
         testArray.PushBack("test1", allocator);
         testArray.PushBack("test2", allocator);
 
-        testCase = boost::make_shared<JsonPointerTestCase>(
+        testCase = std::make_shared<JsonPointerTestCase>(
                 "Resolve '/test/1' in object containing one member containing "
                 "an array with 3 elements");
         testCase->value.SetObject();
@@ -145,7 +143,7 @@ std::vector<boost::shared_ptr<JsonPointerTestCase> >
         testArray.PushBack("test1", allocator);
         testArray.PushBack("test2", allocator);
 
-        testCase = boost::make_shared<JsonPointerTestCase>(
+        testCase = std::make_shared<JsonPointerTestCase>(
                 "Resolve '/test/2' in object containing one member containing "
                 "an array with 3 elements");
         testCase->value.SetObject();
@@ -162,7 +160,7 @@ std::vector<boost::shared_ptr<JsonPointerTestCase> >
         testArray.PushBack("test1", allocator);
         testArray.PushBack("test2", allocator);
 
-        testCase = boost::make_shared<JsonPointerTestCase>(
+        testCase = std::make_shared<JsonPointerTestCase>(
                 "Resolving '/test/3' in object containing one member containing "
                 "an array with 3 elements should throw an exception");
         testCase->value.SetObject();
@@ -193,7 +191,7 @@ std::vector<boost::shared_ptr<JsonPointerTestCase> >
         testArray.PushBack("test1", allocator);
         testArray.PushBack("test2", allocator);
 
-        testCase = boost::make_shared<JsonPointerTestCase>(
+        testCase = std::make_shared<JsonPointerTestCase>(
                 "Resolving '/test/-' in object containing one member containing "
                 "an array with 3 elements should throw an exception");
         testCase->value.SetNull();
@@ -221,7 +219,7 @@ std::vector<boost::shared_ptr<JsonPointerTestCase> >
         rapidjson::Value value;
         value.SetDouble(10.);
 
-        testCase = boost::make_shared<JsonPointerTestCase>(
+        testCase = std::make_shared<JsonPointerTestCase>(
                 "Resolving '/hello~1world' in object containing one member named "
                 "'hello/world' should return the associated value");
         testCase->value.SetObject();
@@ -235,7 +233,7 @@ std::vector<boost::shared_ptr<JsonPointerTestCase> >
         rapidjson::Value value;
         value.SetDouble(10.);
 
-        testCase = boost::make_shared<JsonPointerTestCase>(
+        testCase = std::make_shared<JsonPointerTestCase>(
                 "Resolving '/hello~0world' in object containing one member named "
                 "'hello~world' should return the associated value");
         testCase->value.SetObject();
@@ -249,7 +247,7 @@ std::vector<boost::shared_ptr<JsonPointerTestCase> >
         rapidjson::Value value;
         value.SetDouble(10.);
 
-        testCase = boost::make_shared<JsonPointerTestCase>(
+        testCase = std::make_shared<JsonPointerTestCase>(
                 "Resolving '/hello~01world' in object containing one member named "
                 "'hello~1world' should return the associated value");
         testCase->value.SetObject();
@@ -264,7 +262,7 @@ std::vector<boost::shared_ptr<JsonPointerTestCase> >
 
 TEST_F(TestJsonPointer, JsonPointerTestCases)
 {
-    typedef std::vector<boost::shared_ptr<JsonPointerTestCase> > TestCases;
+    typedef std::vector<std::shared_ptr<JsonPointerTestCase> > TestCases;
 
     // Ensure memory used for test cases is freed when test function completes
     rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator> allocator;

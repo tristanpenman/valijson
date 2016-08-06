@@ -1,4 +1,3 @@
-#include <boost/make_shared.hpp>
 
 #include <gtest/gtest.h>
 

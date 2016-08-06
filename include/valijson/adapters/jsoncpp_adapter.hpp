@@ -29,8 +29,7 @@
 
 #include <stdint.h>
 #include <string>
-#include <boost/bind.hpp>
-#include <boost/iterator/iterator_facade.hpp>
+#include <iterator>
 
 #include <json/json.h>
 
@@ -284,18 +283,18 @@ public:
      * @brief   Optionally return a JsonCppArray instance.
      *
      * If the referenced JsonCpp value is an array, this function will return a
-     * boost::optional containing a JsonCppArray instance referencing the
+     * std::optional containing a JsonCppArray instance referencing the
      * array.
      *
-     * Otherwise it will return boost::none.
+     * Otherwise it will return an empty optional.
      */
-    boost::optional<JsonCppArray> getArrayOptional() const
+    opt::optional<JsonCppArray> getArrayOptional() const
     {
         if (value.isArray()) {
-            return boost::make_optional(JsonCppArray(value));
+            return opt::make_optional(JsonCppArray(value));
         }
 
-        return boost::none;
+        return opt::optional<JsonCppArray>();
     }
 
     /**
@@ -353,18 +352,18 @@ public:
      * @brief   Optionally return a JsonCppObject instance.
      *
      * If the referenced JsonCpp value is an object, this function will return a
-     * boost::optional containing a JsonCppObject instance referencing the
+     * std::optional containing a JsonCppObject instance referencing the
      * object.
      *
-     * Otherwise it will return boost::none.
+     * Otherwise it will return an empty optional.
      */
-    boost::optional<JsonCppObject> getObjectOptional() const
+    opt::optional<JsonCppObject> getObjectOptional() const
     {
         if (value.isObject()) {
-            return boost::make_optional(JsonCppObject(value));
+            return opt::make_optional(JsonCppObject(value));
         }
 
-        return boost::none;
+        return opt::optional<JsonCppObject>();
     }
 
     /**
@@ -493,12 +492,11 @@ public:
  * @see JsonCppArray
  */
 class JsonCppArrayValueIterator:
-    public boost::iterator_facade<
-        JsonCppArrayValueIterator,           // name of derived type
-        JsonCppAdapter,                      // value type
-        boost::bidirectional_traversal_tag,  // bi-directional iterator
-        JsonCppAdapter>                      // type returned when dereferenced
+    public std::iterator<
+        std::bidirectional_iterator_tag,     // bi-directional iterator
+        JsonCppAdapter>                      // value type
 {
+
 public:
 
     /**
@@ -511,9 +509,14 @@ public:
       : itr(itr) { }
 
     /// Returns a JsonCppAdapter that contains the value of the current element.
-    JsonCppAdapter dereference() const
+    JsonCppAdapter operator*() const
     {
         return JsonCppAdapter(*itr);
+    }
+
+    DerefProxy<JsonCppAdapter> operator->() const
+    {
+        return DerefProxy<JsonCppAdapter>(**this);
     }
 
     /**
@@ -527,19 +530,35 @@ public:
      *
      * @returns true if the iterators are equal, false otherwise.
      */
-    bool equal(const JsonCppArrayValueIterator &rhs) const
+    bool operator==(const JsonCppArrayValueIterator &rhs) const
     {
         return itr == rhs.itr;
     }
 
-    void increment()
+    bool operator!=(const JsonCppArrayValueIterator &rhs) const
     {
-        itr++;
+        return !(itr == rhs.itr);
     }
 
-    void decrement()
+    JsonCppArrayValueIterator& operator++()
+    {
+        itr++;
+
+        return *this;
+    }
+
+    JsonCppArrayValueIterator operator++(int)
+    {
+        JsonCppArrayValueIterator iterator_pre(itr);
+        ++(*this);
+        return iterator_pre;
+    }
+
+    JsonCppArrayValueIterator& operator--()
     {
         itr--;
+
+        return *this;
     }
 
     void advance(std::ptrdiff_t n)
@@ -571,11 +590,9 @@ private:
  * @see JsonCppObjectMember
  */
 class JsonCppObjectMemberIterator:
-    public boost::iterator_facade<
-        JsonCppObjectMemberIterator,         // name of derived type
-        JsonCppObjectMember,                 // value type
-        boost::bidirectional_traversal_tag,  // bi-directional iterator
-        JsonCppObjectMember>                 // type returned when dereferenced
+    public std::iterator<
+        std::bidirectional_iterator_tag,     // bi-directional iterator
+        JsonCppObjectMember>                 // value type
 {
 public:
 
@@ -591,9 +608,14 @@ public:
      * @brief   Returns a JsonCppObjectMember that contains the key and value
      *          belonging to the object member identified by the iterator.
      */
-    JsonCppObjectMember dereference() const
+    JsonCppObjectMember operator*() const
     {
         return JsonCppObjectMember(itr.key().asString(), *itr);
+    }
+
+    DerefProxy<JsonCppObjectMember> operator->() const
+    {
+        return DerefProxy<JsonCppObjectMember>(**this);
     }
 
     /**
@@ -607,19 +629,35 @@ public:
      *
      * @returns true if the underlying iterators are equal, false otherwise
      */
-    bool equal(const JsonCppObjectMemberIterator &rhs) const
+    bool operator==(const JsonCppObjectMemberIterator &rhs) const
     {
         return itr == rhs.itr;
     }
 
-    void increment()
+    bool operator!=(const JsonCppObjectMemberIterator &rhs) const
     {
-        itr++;
+        return !(itr == rhs.itr);
     }
 
-    void decrement()
+    const JsonCppObjectMemberIterator& operator++()
+    {
+        itr++;
+
+        return *this;
+    }
+
+    JsonCppObjectMemberIterator operator++(int)
+    {
+        JsonCppObjectMemberIterator iterator_pre(itr);
+        ++(*this);
+        return iterator_pre;
+    }
+
+    JsonCppObjectMemberIterator operator--()
     {
         itr--;
+
+        return *this;
     }
 
 private:
