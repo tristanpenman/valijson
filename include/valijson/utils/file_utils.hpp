@@ -3,6 +3,7 @@
 #define __VALIJSON_FILE_UTILS_HPP
 
 #include <fstream>
+#include <limits>
 
 namespace valijson {
 namespace utils {

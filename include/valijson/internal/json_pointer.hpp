@@ -2,7 +2,9 @@
 #ifndef __VALIJSON_INTERNAL_JSON_POINTER_HPP
 #define __VALIJSON_INTERNAL_JSON_POINTER_HPP
 
+#include <algorithm>
 #include <cerrno>
+#include <cstddef>
 #include <stdexcept>
 #include <string>
 
@@ -202,13 +204,13 @@ inline AdapterType resolveJsonPointer(
                         "out of bounds; actual token: " + referenceToken);
             }
 
-            if (index > static_cast<uint64_t>(std::numeric_limits<ptrdiff_t>::max())) {
+            if (index > static_cast<uint64_t>(std::numeric_limits<std::ptrdiff_t>::max())) {
                 throw std::runtime_error("Array index out of bounds; hard "
                         "limit is " + std::to_string(
-                                std::numeric_limits<ptrdiff_t>::max()));
+                                std::numeric_limits<std::ptrdiff_t>::max()));
             }
 
-            itr.advance(static_cast<ptrdiff_t>(index));
+            itr.advance(static_cast<std::ptrdiff_t>(index));
 
             // Recursively process the remaining tokens
             return resolveJsonPointer(*itr, jsonPointer, jsonPointerNext);
