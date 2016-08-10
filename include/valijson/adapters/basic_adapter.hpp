@@ -25,15 +25,25 @@ namespace adapters {
  * See http://www.stlsoft.org/doc-1.9/group__group____pattern____dereference__proxy.html
  * for motivation
  *
- * @tparam Value       Name of the value type
+ * @tparam Value  Name of the value type
  */
 template<class Value>
 struct DerefProxy
 {
-    explicit DerefProxy(const Value& x) : m_ref(x) {}
-    Value* operator->() { return std::addressof(m_ref); }
-    operator Value*() { return std::addressof(m_ref); }
+    explicit DerefProxy(const Value& x)
+      : m_ref(x) { }
 
+    Value* operator->()
+    {
+        return std::addressof(m_ref);
+    }
+
+    operator Value*()
+    {
+        return std::addressof(m_ref);
+    }
+
+private:
     Value m_ref;
 };
 
@@ -239,7 +249,7 @@ public:
         // definitely an array.
         if (value.isArray()) {
             const opt::optional<Array> array = value.getArrayOptional();
-            for( const AdapterType element : *array ) {
+            for (const AdapterType element : *array) {
                 if (!fn(element)) {
                     return false;
                 }
@@ -257,7 +267,7 @@ public:
 
         if (value.isObject()) {
             const opt::optional<Object> object = value.getObjectOptional();
-            for( const ObjectMemberType member : *object ) {
+            for (const ObjectMemberType member : *object) {
                 if (!fn(member.first, AdapterType(member.second))) {
                     return false;
                 }

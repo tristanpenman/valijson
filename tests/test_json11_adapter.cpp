@@ -35,7 +35,7 @@ TEST_F(TestJson11Adapter, BasicArrayIteration)
 
     // Ensure that the elements are returned in the order they were inserted
     unsigned int expectedValue = 0;
-    for( const valijson::adapters::Json11Adapter value : adapter.getArray() ) {
+    for (const valijson::adapters::Json11Adapter value : adapter.getArray()) {
         ASSERT_TRUE( value.isNumber() );
         EXPECT_EQ( double(expectedValue), value.getDouble() );
         expectedValue++;
@@ -72,7 +72,7 @@ TEST_F(TestJson11Adapter, BasicObjectIteration)
 
     // Ensure that the members are returned in the order they were inserted
     unsigned int expectedValue = 0;
-    for( const valijson::adapters::Json11Adapter::ObjectMember member : adapter.getObject() ) {
+    for (const valijson::adapters::Json11Adapter::ObjectMember member : adapter.getObject()) {
         ASSERT_TRUE( member.second.isNumber() );
         EXPECT_EQ( std::to_string(expectedValue), member.first );
         EXPECT_EQ( double(expectedValue), member.second.getDouble() );

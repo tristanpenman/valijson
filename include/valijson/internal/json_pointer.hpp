@@ -29,7 +29,6 @@ namespace json_pointer {
  * @param   search   string to search
  * @param   replace  replacement string
  */
-
 inline void replace_all_inplace(std::string& subject, const char* search,
                                 const char* replace)
 {

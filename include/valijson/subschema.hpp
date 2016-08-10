@@ -121,7 +121,7 @@ public:
     bool apply(ApplyFunction &applyFunction) const
     {
         bool allTrue = true;
-        for( const Constraint *constraint : constraints ) {
+        for (const Constraint *constraint : constraints) {
             allTrue = allTrue && applyFunction(*constraint);
         }
 
@@ -140,7 +140,7 @@ public:
      */
     bool applyStrict(ApplyFunction &applyFunction) const
     {
-        for( const Constraint *constraint : constraints ) {
+        for (const Constraint *constraint : constraints) {
             if (!applyFunction(*constraint)) {
                 return false;
             }

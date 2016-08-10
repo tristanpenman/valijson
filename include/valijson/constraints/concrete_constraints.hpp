@@ -57,7 +57,7 @@ public:
     void applyToSubschemas(const FunctorType &fn) const
     {
         unsigned int index = 0;
-        for( const Subschema *subschema : subschemas ) {
+        for (const Subschema *subschema : subschemas) {
             if (!fn(index, subschema)) {
                 return;
             }
@@ -100,7 +100,7 @@ public:
     void applyToSubschemas(const FunctorType &fn) const
     {
         unsigned int index = 0;
-        for( const Subschema *subschema : subschemas ) {
+        for (const Subschema *subschema : subschemas) {
             if (!fn(index, subschema)) {
                 return;
             }
@@ -167,7 +167,7 @@ public:
         }
 
         typedef typename ContainerType::value_type ValueType;
-        for( const ValueType &dependencyName : dependencyNames ) {
+        for (const ValueType &dependencyName : dependencyNames) {
             itr->second.insert(String(dependencyName.c_str(), allocator));
         }
 
@@ -193,8 +193,7 @@ public:
     template<typename FunctorType>
     void applyToPropertyDependencies(const FunctorType &fn) const
     {
-        for( const PropertyDependencies::value_type &v :
-                propertyDependencies ) {
+        for (const PropertyDependencies::value_type &v : propertyDependencies) {
             if (!fn(v.first, v.second)) {
                 return;
             }
@@ -204,8 +203,7 @@ public:
     template<typename FunctorType>
     void applyToSchemaDependencies(const FunctorType &fn) const
     {
-        for( const SchemaDependencies::value_type &v :
-                schemaDependencies ) {
+        for (const SchemaDependencies::value_type &v : schemaDependencies) {
             if (!fn(v.first, v.second)) {
                 return;
             }
@@ -251,7 +249,7 @@ public:
     {
         try {
             // Clone individual enum values
-            for( const EnumValue *otherValue : other.enumValues ) {
+            for (const EnumValue *otherValue : other.enumValues) {
                 const EnumValue *value = otherValue->clone();
                 try {
                     enumValues.push_back(value);
@@ -263,7 +261,7 @@ public:
 
         } catch (...) {
             // Delete values already added to constraint
-            for( const EnumValue *value : enumValues ) {
+            for (const EnumValue *value : enumValues) {
                 delete value;
             }
             throw;
@@ -272,7 +270,7 @@ public:
 
     virtual ~EnumConstraint()
     {
-        for( const EnumValue *value : enumValues ) {
+        for (const EnumValue *value : enumValues) {
             delete value;
         }
     }
@@ -292,7 +290,7 @@ public:
     template<typename FunctorType>
     void applyToValues(const FunctorType &fn) const
     {
-        for( const EnumValue *value : enumValues ) {
+        for (const EnumValue *value : enumValues) {
             if (!fn(*value)) {
                 return;
             }

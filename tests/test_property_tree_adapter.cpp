@@ -34,7 +34,7 @@ TEST_F(TestPropertyTreeAdapter, BasicArrayIteration)
 
     // Ensure that the elements are returned in the order they were inserted
     unsigned int expectedValue = 0;
-    for( const valijson::adapters::PropertyTreeAdapter value : adapter.getArray() ) {
+    for (const valijson::adapters::PropertyTreeAdapter value : adapter.getArray()) {
         ASSERT_TRUE( value.isString() );
         ASSERT_FALSE( value.isNumber() );
         ASSERT_TRUE( value.maybeDouble() );
@@ -73,7 +73,7 @@ TEST_F(TestPropertyTreeAdapter, BasicObjectIteration)
 
     // Ensure that the members are returned in the order they were inserted
     unsigned int expectedValue = 0;
-    for( const valijson::adapters::PropertyTreeAdapter::ObjectMember member : adapter.getObject() ) {
+    for (const valijson::adapters::PropertyTreeAdapter::ObjectMember member : adapter.getObject()) {
         ASSERT_TRUE( member.second.isString() );
         ASSERT_FALSE( member.second.isNumber() );
         ASSERT_TRUE( member.second.maybeDouble() );

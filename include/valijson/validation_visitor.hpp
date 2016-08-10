@@ -875,7 +875,7 @@ public:
             return validated;
         }
 
-        for( const typename AdapterType::ObjectMember m : object ) {
+        for (const typename AdapterType::ObjectMember m : object) {
             if (propertiesMatched.find(m.first) == propertiesMatched.end()) {
                 // Update context
                 std::vector<std::string> newContext = context;
@@ -956,7 +956,7 @@ public:
         bool validated = true;
 
         unsigned int index = 0;
-        for( const AdapterType &item : target.getArray() ) {
+        for (const AdapterType &item : target.getArray()) {
             // Update context for current array item
             std::vector<std::string> newContext = context;
             newContext.push_back("[" +
@@ -1199,7 +1199,7 @@ private:
             }
 
             typedef typename ContainerType::value_type ValueType;
-            for( const ValueType &dependencyName : dependencyNames ) {
+            for (const ValueType &dependencyName : dependencyNames) {
                 const std::string dependencyNameKey(dependencyName.c_str());
                 if (object.find(dependencyNameKey) == object.end()) {
                     if (validated) {
@@ -1411,7 +1411,7 @@ private:
 
             // Recursively validate all matching properties
             typedef const typename AdapterType::ObjectMember ObjectMember;
-            for( const ObjectMember m : object ) {
+            for (const ObjectMember m : object) {
                 if (std::regex_search(m.first, r)) {
                     matchFound = true;
                     if (propertiesMatched) {

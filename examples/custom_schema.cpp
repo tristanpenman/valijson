@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
         while (results.popError(error)) {
             cerr << "Error #" << errorNum << std::endl;
             cerr << "  ";
-            for( const std::string contextElement : error.context ) {
+            for (const std::string &contextElement : error.context) {
                 cerr << contextElement << " ";
             }
             cerr << endl;

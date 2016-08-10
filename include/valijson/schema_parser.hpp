@@ -174,7 +174,7 @@ private:
     {
         typedef typename DocumentCache<AdapterType>::Type DocCacheType;
 
-        for( const typename DocCacheType::value_type &v : docCache ) {
+        for (const typename DocCacheType::value_type &v : docCache) {
             freeDoc(v.second);
         }
     }
@@ -314,7 +314,7 @@ private:
             const std::vector<std::string> &keysToCreate,
             const Subschema *schema)
     {
-        for( const std::string &keyToCreate : keysToCreate ) {
+        for (const std::string &keyToCreate : keysToCreate) {
             const SchemaCache::value_type value(keyToCreate, schema);
             if (!schemaCache.insert(value).second) {
                 throw std::logic_error(
@@ -1180,7 +1180,7 @@ private:
             if (member.second.maybeArray()) {
                 // Parse an array of dependency names
                 std::vector<std::string> dependentPropertyNames;
-                for( const AdapterType dependencyName : member.second.asArray() ) {
+                for (const AdapterType dependencyName : member.second.asArray()) {
                     if (dependencyName.maybeString()) {
                         dependentPropertyNames.push_back(dependencyName.getString());
                     } else {
@@ -1237,7 +1237,7 @@ private:
     {
         // Make a copy of each value in the enum array
         constraints::EnumConstraint constraint;
-        for( const AdapterType value : node.getArray() ) {
+        for (const AdapterType value : node.getArray()) {
             constraint.addValue(value);
         }
 
@@ -1335,7 +1335,7 @@ private:
                 // validate the values at the corresponding indexes in a target
                 // array.
                 int index = 0;
-                for( const AdapterType v : items->getArray() ) {
+                for (const AdapterType v : items->getArray()) {
                     const std::string childPath = itemsPath + "/" +
                             std::to_string(index);
                     const Subschema *subschema = makeOrReuseSchema<AdapterType>(
@@ -1861,7 +1861,7 @@ private:
 
         // Create subschemas for 'properties' constraint
         if (properties) {
-            for( const Member m : properties->getObject() ) {
+            for (const Member m : properties->getObject()) {
                 const std::string &property = m.first;
                 const std::string childPath = propertiesPath + "/" + property;
                 const Subschema *subschema = makeOrReuseSchema<AdapterType>(
@@ -1874,7 +1874,7 @@ private:
 
         // Create subschemas for 'patternProperties' constraint
         if (patternProperties) {
-            for( const Member m : patternProperties->getObject() ) {
+            for (const Member m : patternProperties->getObject()) {
                 const std::string &pattern = m.first;
                 const std::string childPath = patternPropertiesPath + "/" +
                         pattern;
@@ -1973,7 +1973,7 @@ private:
     {
         constraints::RequiredConstraint constraint;
 
-        for( const AdapterType v : node.getArray() ) {
+        for (const AdapterType v : node.getArray()) {
             if (!v.isString()) {
                 throw std::runtime_error("Expected required property name to "
                         "be a string value");
@@ -2030,7 +2030,7 @@ private:
 
         } else if (node.isArray()) {
             int index = 0;
-            for( const AdapterType v : node.getArray() ) {
+            for (const AdapterType v : node.getArray()) {
                 if (v.isString()) {
                     const TypeConstraint::JsonType type =
                             TypeConstraint::jsonTypeFromString(v.getString());

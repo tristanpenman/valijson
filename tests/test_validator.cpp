@@ -96,7 +96,7 @@ protected:
             ASSERT_TRUE( testCases.isArray() );
 
             // Process each test case in the file
-            for( const AdapterType testCase : testCases.getArray() ) {
+            for (const AdapterType testCase : testCases.getArray()) {
 
                 currentTestCase.clear();
                 currentTest.clear();
@@ -124,7 +124,7 @@ protected:
                 itr = object.find("tests");
                 ASSERT_NE( object.end(), itr );
                 ASSERT_TRUE( itr->second.isArray() );
-                for( const AdapterType test : itr->second.getArray() ) {
+                for (const AdapterType test : itr->second.getArray()) {
 
                     const bool strict = itr->second.hasStrictTypes();
 
