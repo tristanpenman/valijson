@@ -689,7 +689,7 @@ public:
 
     const PropertyTreeObjectMemberIterator& operator--()
     {
-        itr++;
+        itr--;
 
         return *this;
     }
