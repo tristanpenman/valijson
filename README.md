@@ -2,13 +2,13 @@
 
 ## Overview ##
 
-Valijson is a header-only [JSON Schema](http://json-schema.org/) Validation library for C++.
+Valijson is a header-only [JSON Schema](http://json-schema.org/) Validation library for C++11.
 
 Valijson provides a simple validation API that allows you load JSON Schemas, and validate documents loaded by one of several supported parser libraries.
 
 ## Project Goals ##
 
-The goal of this project is to support validation of all constraints available in JSON Schema v4, while being competitive with the performance of hand-written JSON validators.
+The goal of this project is to support validation of all constraints available in JSON Schema v4, while being competitive with the performance of a hand-written schema validator.
 
 ## Usage ##
 
@@ -104,9 +104,9 @@ Things get more interesting when you build a schema using custom code, as illust
 
 ## JSON References ##
 
-The library includes support for local JSON References, as well as remote JSON References when the appropriate callback functions are provided.
+The library includes support for local JSON References. Remote JSON References are supported only when the appropriate callback functions are provided.
 
-Two callback functions are required. The first is expected to return a pointer to a newly fetched document. Valijson takes ownership of this pointer. The second callback function is used to release ownership of that pointer back to the application. Typically, this would immediately free the memory that was allocated for the document.
+Valijson's JSON Reference implementation requires that two callback functions are required. The first is expected to return a pointer to a newly fetched document. Valijson takes ownership of this pointer. The second callback function is used to release ownership of that pointer back to the application. Typically, this would immediately free the memory that was allocated for the document.
 
 ## Test Suite ##
 
@@ -160,11 +160,7 @@ Doxygen documentation can be built by running 'doxygen' from the project root di
 
 ## Dependencies ##
 
-Required:
-
- - boost 1.54
-
-Later versions of boost (up to 1.59) are also known to work correctly.
+Valijson requires a compiler with robust C++11 support.
 
 ## Supported Parsers ##
 
@@ -177,11 +173,17 @@ Valijson supports JSON documents loaded using JsonCpp, RapidJson, Boost Property
  - [rapidjson 1.0.2](https://github.com/miloyip/rapidjson/releases/tag/v1.0.2)
  - [PicoJSON 1.3.0](https://github.com/kazuho/picojson/archive/v1.3.0.tar.gz)
 
-Version of JsonCpp going back to 0.5.0 should also work correctly, but versions from 1.0 onwards have not yet been tested.
+Other versions of these libraries may work, but have not been tested. In particular, versions of JsonCpp going back to 0.5.0 should also work correctly, but versions from 1.0 onwards have not yet been tested.
 
-Also note that when using PicoJSON, it may be necessary to include the `picojson.h` before other headers to ensure that the appropriate macros have been enabled.
+## Test Suite Requirements ##
 
-Other versions of these libraries may work, but have not been tested.
+Supported versions of these libraries have been included in the 'thirdparty' directory so as to support Valijson's examples and test suite. 
+
+The only exception to this is boost, which due to its sheer size must be installed to a location that CMake can find.
+
+## Known Issues ##
+
+Note that when using PicoJSON, it may be necessary to include the `picojson.h` before other headers to ensure that the appropriate macros have been enabled.
 
 ## License ##
 
