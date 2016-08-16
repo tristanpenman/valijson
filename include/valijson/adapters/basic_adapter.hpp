@@ -5,14 +5,47 @@
 #include <stdint.h>
 #include <sstream>
 
-#include <boost/foreach.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/optional.hpp>
+// This should be removed once C++17 is widely available
+#if __has_include(<optional>)
+#  include <optional>
+namespace opt = std;
+#else
+#  include <compat/optional.hpp>
+namespace opt = std::experimental;
+#endif
 
 #include <valijson/adapters/adapter.hpp>
 
 namespace valijson {
 namespace adapters {
+
+/**
+ * @brief  A helper for the array and object member iterators.
+ *
+ * See http://www.stlsoft.org/doc-1.9/group__group____pattern____dereference__proxy.html
+ * for motivation
+ *
+ * @tparam Value  Name of the value type
+ */
+template<class Value>
+struct DerefProxy
+{
+    explicit DerefProxy(const Value& x)
+      : m_ref(x) { }
+
+    Value* operator->()
+    {
+        return std::addressof(m_ref);
+    }
+
+    operator Value*()
+    {
+        return std::addressof(m_ref);
+    }
+
+private:
+    Value m_ref;
+};
 
 /**
  * @brief  Template class that implements the expected semantics of an Adapter.
@@ -215,8 +248,8 @@ public:
         // effort of constructing an ArrayType instance if the value is
         // definitely an array.
         if (value.isArray()) {
-            const boost::optional<Array> array = value.getArrayOptional();
-            BOOST_FOREACH( const AdapterType element, *array ) {
+            const opt::optional<Array> array = value.getArrayOptional();
+            for (const AdapterType element : *array) {
                 if (!fn(element)) {
                     return false;
                 }
@@ -233,8 +266,8 @@ public:
         }
 
         if (value.isObject()) {
-            const boost::optional<Object> object = value.getObjectOptional();
-            BOOST_FOREACH( const ObjectMemberType member, *object ) {
+            const opt::optional<Object> object = value.getObjectOptional();
+            for (const ObjectMemberType member : *object) {
                 if (!fn(member.first, AdapterType(member.second))) {
                     return false;
                 }
@@ -444,18 +477,14 @@ public:
         } else if (value.isInteger()) {
             int64_t integerValue;
             if (value.getInteger(integerValue)) {
-                try {
-                    result = boost::lexical_cast<std::string>(integerValue);
-                    return true;
-                } catch (boost::bad_lexical_cast &) { }
+                result = std::to_string(integerValue);
+                return true;
             }
         } else if (value.isDouble()) {
             double doubleValue;
             if (value.getDouble(doubleValue)) {
-                try {
-                    result = boost::lexical_cast<std::string>(doubleValue);
-                    return true;
-                } catch (boost::bad_lexical_cast &) { }
+                result = std::to_string(doubleValue);
+                return true;
             }
         }
 
@@ -482,7 +511,7 @@ public:
                 other.asString() == asString();
         } else if (isArray()) {
             if (other.isArray() && getArraySize() == other.getArraySize()) {
-                const boost::optional<ArrayType> array = value.getArrayOptional();
+                const opt::optional<ArrayType> array = value.getArrayOptional();
                 if (array) {
                     ArrayComparisonFunctor fn(*array, strict);
                     return other.applyToArray(fn);
@@ -492,7 +521,7 @@ public:
             }
         } else if (isObject()) {
             if (other.isObject() && other.getObjectSize() == getObjectSize()) {
-                const boost::optional<ObjectType> object = value.getObjectOptional();
+                const opt::optional<ObjectType> object = value.getObjectOptional();
                 if (object) {
                     ObjectComparisonFunctor fn(*object, strict);
                     return other.applyToObject(fn);
@@ -521,7 +550,7 @@ public:
      */
     ArrayType getArray() const
     {
-        boost::optional<ArrayType> arrayValue = value.getArrayOptional();
+        opt::optional<ArrayType> arrayValue = value.getArrayOptional();
         if (arrayValue) {
             return *arrayValue;
         }
@@ -630,7 +659,7 @@ public:
      */
     ObjectType getObject() const
     {
-        boost::optional<ObjectType> objectValue = value.getObjectOptional();
+        opt::optional<ObjectType> objectValue = value.getObjectOptional();
         if (objectValue) {
             return *objectValue;
         }

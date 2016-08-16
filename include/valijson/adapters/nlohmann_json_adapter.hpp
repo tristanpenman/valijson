@@ -29,8 +29,6 @@
 
 #include <string>
 #include <json.hpp>
-#include <boost/optional.hpp>
-#include <boost/iterator/iterator_facade.hpp>
 
 #include <valijson/adapters/adapter.hpp>
 #include <valijson/adapters/basic_adapter.hpp>
@@ -291,18 +289,18 @@ public:
      * @brief   Optionally return a NlohmannJsonArray instance.
      *
      * If the referenced NlohmannJson value is an array, this function will return
-     * a boost::optional containing a NlohmannJsonArray instance referencing the
+     * a std::optional containing a NlohmannJsonArray instance referencing the
      * array.
      *
-     * Otherwise it will return boost::none.
+     * Otherwise it will return an empty optional.
      */
-    boost::optional<NlohmannJsonArray> getArrayOptional() const
+    opt::optional<NlohmannJsonArray> getArrayOptional() const
     {
         if (value.is_array()) {
-            return boost::make_optional(NlohmannJsonArray(value));
+            return opt::make_optional(NlohmannJsonArray(value));
         }
 
-        return boost::none;
+        return opt::optional<NlohmannJsonArray>();
     }
 
     /**
@@ -359,18 +357,18 @@ public:
      * @brief   Optionally return a NlohmannJsonObject instance.
      *
      * If the referenced NlohmannJson value is an object, this function will return a
-     * boost::optional containing a NlohmannJsonObject instance referencing the
+     * std::optional containing a NlohmannJsonObject instance referencing the
      * object.
      *
-     * Otherwise it will return boost::none.
+     * Otherwise it will return an empty optional.
      */
-    boost::optional<NlohmannJsonObject> getObjectOptional() const
+    opt::optional<NlohmannJsonObject> getObjectOptional() const
     {
         if (value.is_object()) {
-            return boost::make_optional(NlohmannJsonObject(value));
+            return opt::make_optional(NlohmannJsonObject(value));
         }
 
-        return boost::none;
+        return opt::optional<NlohmannJsonObject>();
     }
 
     /**
@@ -498,11 +496,9 @@ public:
  * @see NlohmannJsonArray
  */
 class NlohmannJsonArrayValueIterator:
-    public boost::iterator_facade<
-        NlohmannJsonArrayValueIterator,      // name of derived type
-        NlohmannJsonAdapter,                 // value type
-        boost::bidirectional_traversal_tag,  // bi-directional iterator
-        NlohmannJsonAdapter>                 // type returned when dereferenced
+    public std::iterator<
+        std::bidirectional_iterator_tag,  // bi-directional iterator
+        NlohmannJsonAdapter>                 // value type
 {
 public:
 
@@ -517,9 +513,14 @@ public:
 
     /// Returns a NlohmannJsonAdapter that contains the value of the current
     /// element.
-    NlohmannJsonAdapter dereference() const
+    NlohmannJsonAdapter operator*() const
     {
         return NlohmannJsonAdapter(*itr);
+    }
+
+    DerefProxy<NlohmannJsonAdapter> operator->() const
+    {
+        return DerefProxy<NlohmannJsonAdapter>(**this);
     }
 
     /**
@@ -533,19 +534,35 @@ public:
      *
      * @returns true   if the iterators are equal, false otherwise.
      */
-    bool equal(const NlohmannJsonArrayValueIterator &other) const
+    bool operator==(const NlohmannJsonArrayValueIterator &other) const
     {
         return itr == other.itr;
     }
 
-    void increment()
+    bool operator!=(const NlohmannJsonArrayValueIterator &other) const
     {
-        itr++;
+        return !(itr == other.itr);
     }
 
-    void decrement()
+    const NlohmannJsonArrayValueIterator& operator++()
+    {
+        itr++;
+
+        return *this;
+    }
+
+    NlohmannJsonArrayValueIterator operator++(int)
+    {
+        NlohmannJsonArrayValueIterator iterator_pre(itr);
+        ++(*this);
+        return iterator_pre;
+    }
+
+    const NlohmannJsonArrayValueIterator& operator--()
     {
         itr--;
+
+        return *this;
     }
 
     void advance(std::ptrdiff_t n)
@@ -569,11 +586,9 @@ private:
  * @see NlohmannJsonObjectMember
  */
 class NlohmannJsonObjectMemberIterator:
-    public boost::iterator_facade<
-        NlohmannJsonObjectMemberIterator,    // name of derived type
-        NlohmannJsonObjectMember,            // value type
-        boost::bidirectional_traversal_tag,  // bi-directional iterator
-        NlohmannJsonObjectMember>            // type returned when dereferenced
+    public std::iterator<
+        std::bidirectional_iterator_tag,     // bi-directional iterator
+        NlohmannJsonObjectMember>            // value type
 {
 public:
 
@@ -589,9 +604,14 @@ public:
      * @brief   Returns a NlohmannJsonObjectMember that contains the key and value
      *          belonging to the object member identified by the iterator.
      */
-    NlohmannJsonObjectMember dereference() const
+    NlohmannJsonObjectMember operator*() const
     {
         return NlohmannJsonObjectMember(itr.key(), itr.value());
+    }
+
+    DerefProxy<NlohmannJsonObjectMember> operator->() const
+    {
+        return DerefProxy<NlohmannJsonObjectMember>(**this);
     }
 
     /**
@@ -605,19 +625,35 @@ public:
      *
      * @returns true if the underlying iterators are equal, false otherwise
      */
-    bool equal(const NlohmannJsonObjectMemberIterator &other) const
+    bool operator==(const NlohmannJsonObjectMemberIterator &other) const
     {
         return itr == other.itr;
     }
 
-    void increment()
+    bool operator!=(const NlohmannJsonObjectMemberIterator &other) const
     {
-        itr++;
+        return !(itr == other.itr);
     }
 
-    void decrement()
+    const NlohmannJsonObjectMemberIterator& operator++()
+    {
+        itr++;
+
+        return *this;
+    }
+
+    NlohmannJsonObjectMemberIterator operator++(int)
+    {
+        NlohmannJsonObjectMemberIterator iterator_pre(itr);
+        ++(*this);
+        return iterator_pre;
+    }
+
+    const NlohmannJsonObjectMemberIterator& operator--()
     {
         itr--;
+
+        return *this;
     }
 
 private:

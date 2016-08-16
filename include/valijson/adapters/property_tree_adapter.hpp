@@ -28,8 +28,7 @@
 #define __VALIJSON_ADAPTERS_PROPERTY_TREE_ADAPTER_HPP
 
 #include <string>
-#include <boost/bind.hpp>
-#include <boost/iterator/iterator_facade.hpp>
+
 #include <boost/property_tree/ptree.hpp>
 
 #include <valijson/adapters/adapter.hpp>
@@ -281,7 +280,7 @@ public:
     {
         if (tree.data().empty()) {    // No string content
             if (tree.size() == 0) {   // No children
-                array = tree;         // Treat as empty array
+                array.emplace(tree);         // Treat as empty array
             } else {
                 bool isArray = true;
                 boost::property_tree::ptree::const_iterator itr;
@@ -293,9 +292,9 @@ public:
                 }
 
                 if (isArray) {
-                    array = tree;
+                    array.emplace(tree);
                 } else {
-                    object = tree;
+                    object.emplace(tree);
                 }
             }
         } else {
@@ -325,18 +324,18 @@ public:
      * @brief  Return an instance of PropertyTreeArrayAdapter.
      *
      * If the referenced property tree value is an array, this function will
-     * return a boost::optional containing a PropertyTreeArray instance
+     * return a std::optional containing a PropertyTreeArray instance
      * referencing the array.
      *
-     * Otherwise it will return boost::none.
+     * Otherwise it will return an empty optional.
      */
-    boost::optional<PropertyTreeArray> getArrayOptional() const
+    opt::optional<PropertyTreeArray> getArrayOptional() const
     {
         if (array) {
-            return boost::make_optional(PropertyTreeArray(*array));
+            return opt::make_optional(PropertyTreeArray(*array));
         }
 
-        return boost::none;
+        return opt::optional<PropertyTreeArray>();
     }
 
     /**
@@ -379,18 +378,18 @@ public:
      * @brief   Optionally return a PropertyTreeObject instance.
      *
      * If the referenced property tree is an object, this function will return a
-     * boost::optional containing a PropertyTreeObject instance referencing the
+     * std::optional containing a PropertyTreeObject instance referencing the
      * object.
      *
-     * Otherwise it will return boost::none.
+     * Otherwise it will return an empty optional.
      */
-    boost::optional<PropertyTreeObject> getObjectOptional() const
+    opt::optional<PropertyTreeObject> getObjectOptional() const
     {
         if (object) {
-            return boost::make_optional(PropertyTreeObject(*object));
+            return opt::make_optional(PropertyTreeObject(*object));
         }
 
-        return boost::none;
+        return opt::optional<PropertyTreeObject>();
     }
 
     /**
@@ -431,7 +430,7 @@ public:
 
     bool isArray() const
     {
-        return array != boost::none;
+        return static_cast<bool>(array);
     }
 
     bool isBool() const
@@ -461,12 +460,12 @@ public:
 
     bool isObject() const
     {
-        return object != boost::none;
+        return static_cast<bool>(object);
     }
 
     bool isString() const
     {
-        return value != boost::none;
+        return static_cast<bool>(value);
     }
 
 private:
@@ -478,13 +477,13 @@ private:
     }
 
     /// Reference used if the value is known to be an array
-    boost::optional<const boost::property_tree::ptree &> array;
+    opt::optional<const boost::property_tree::ptree &> array;
 
     /// Reference used if the value is known to be an object
-    boost::optional<const boost::property_tree::ptree &> object;
+    opt::optional<const boost::property_tree::ptree &> object;
 
     /// Reference used if the value is known to be a POD type
-    boost::optional<std::string> value;
+    opt::optional<std::string> value;
 };
 
 /**
@@ -525,11 +524,9 @@ public:
  * @see PropertyTreeArray
  */
 class PropertyTreeArrayValueIterator:
-    public boost::iterator_facade<
-        PropertyTreeArrayValueIterator,      // name of derived type
-        PropertyTreeAdapter,                 // value type
-        boost::bidirectional_traversal_tag,  // bi-directional iterator
-        PropertyTreeAdapter>                 // type returned when dereferenced
+    public std::iterator<
+        std::bidirectional_iterator_tag,    // bi-directional iterator
+        PropertyTreeAdapter>                // value type
 {
 public:
 
@@ -545,9 +542,14 @@ public:
 
     /// Returns a PropertyTreeAdapter that contains the value of the current
     /// element.
-    PropertyTreeAdapter dereference() const
+    PropertyTreeAdapter operator*() const
     {
         return PropertyTreeAdapter(itr->second);
+    }
+
+    DerefProxy<PropertyTreeAdapter> operator->() const
+    {
+        return DerefProxy<PropertyTreeAdapter>(**this);
     }
 
     /**
@@ -561,19 +563,35 @@ public:
      *
      * @returns true if the iterators are equal, false otherwise.
      */
-    bool equal(const PropertyTreeArrayValueIterator &rhs) const
+    bool operator==(const PropertyTreeArrayValueIterator &rhs) const
     {
         return itr == rhs.itr;
     }
 
-    void increment()
+    bool operator!=(const PropertyTreeArrayValueIterator &rhs) const
     {
-        itr++;
+        return !(itr == rhs.itr);
     }
 
-    void decrement()
+    const PropertyTreeArrayValueIterator& operator++()
+    {
+        itr++;
+
+        return *this;
+    }
+
+    PropertyTreeArrayValueIterator operator++(int)
+    {
+        PropertyTreeArrayValueIterator iterator_pre(itr);
+        ++(*this);
+        return iterator_pre;
+    }
+
+    const PropertyTreeArrayValueIterator& operator--()
     {
         itr--;
+
+        return *this;
     }
 
     void advance(std::ptrdiff_t n)
@@ -605,11 +623,9 @@ private:
  * @see PropertyTreeObjectMember
  */
 class PropertyTreeObjectMemberIterator:
-    public boost::iterator_facade<
-        PropertyTreeObjectMemberIterator,    // name of derived type
-        PropertyTreeObjectMember,            // value type
-        boost::bidirectional_traversal_tag,  // bi-directional iterator
-        PropertyTreeObjectMember>            // type returned when dereferenced
+    public std::iterator<
+        std::bidirectional_iterator_tag,     // bi-directional iterator
+        PropertyTreeObjectMember>            // value type
 {
 public:
 
@@ -626,9 +642,14 @@ public:
      * @brief   Returns a PropertyTreeObjectMember that contains the key and
      *          value belonging to the object member identified by the iterator.
      */
-    PropertyTreeObjectMember dereference() const
+    PropertyTreeObjectMember operator*() const
     {
         return PropertyTreeObjectMember(itr->first, itr->second);
+    }
+
+    DerefProxy<PropertyTreeObjectMember> operator->() const
+    {
+        return DerefProxy<PropertyTreeObjectMember>(**this);
     }
 
     /**
@@ -642,19 +663,35 @@ public:
      *
      * @returns true if the underlying iterators are equal, false otherwise
      */
-    bool equal(const PropertyTreeObjectMemberIterator &rhs) const
+    bool operator==(const PropertyTreeObjectMemberIterator &rhs) const
     {
         return itr == rhs.itr;
     }
 
-    void increment()
+    bool operator!=(const PropertyTreeObjectMemberIterator &rhs) const
     {
-        itr++;
+        return !(itr == rhs.itr);
     }
 
-    void decrement()
+    const PropertyTreeObjectMemberIterator& operator++()
+    {
+        itr++;
+
+        return *this;
+    }
+
+    PropertyTreeObjectMemberIterator operator++(int)
+    {
+        PropertyTreeObjectMemberIterator iterator_pre(itr);
+        ++(*this);
+        return iterator_pre;
+    }
+
+    const PropertyTreeObjectMemberIterator& operator--()
     {
         itr--;
+
+        return *this;
     }
 
 private:

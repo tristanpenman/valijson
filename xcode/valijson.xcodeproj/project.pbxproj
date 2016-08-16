@@ -52,6 +52,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		462CB4C31D50940F003DC976 /* optional.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = optional.hpp; path = compat/optional.hpp; sourceTree = "<group>"; };
 		6A309D2D1C28C1FD00EF761C /* subschema.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = subschema.hpp; sourceTree = "<group>"; };
 		6A34698C1BD109A900C97DA2 /* json_reference.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = json_reference.hpp; path = internal/json_reference.hpp; sourceTree = "<group>"; };
 		6A356B0D1C1CFD020007EB8B /* uri.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = uri.hpp; path = internal/uri.hpp; sourceTree = "<group>"; };
@@ -335,6 +336,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		462CB4C41D50941E003DC976 /* compat */ = {
+			isa = PBXGroup;
+			children = (
+				462CB4C31D50940F003DC976 /* optional.hpp */,
+			);
+			name = compat;
+			sourceTree = "<group>";
+		};
 		6A477F8717D6EEF20013571C /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -846,6 +855,7 @@
 		6AC78BDC17C5FC5F00674114 /* include */ = {
 			isa = PBXGroup;
 			children = (
+				462CB4C41D50941E003DC976 /* compat */,
 				6AC78BDD17C5FC6A00674114 /* valijson */,
 			);
 			name = include;

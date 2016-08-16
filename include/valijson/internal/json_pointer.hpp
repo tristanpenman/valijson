@@ -2,19 +2,43 @@
 #ifndef __VALIJSON_INTERNAL_JSON_POINTER_HPP
 #define __VALIJSON_INTERNAL_JSON_POINTER_HPP
 
+#include <algorithm>
 #include <cerrno>
+#include <cstddef>
 #include <stdexcept>
 #include <string>
 
-#include <boost/algorithm/string/replace.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/optional.hpp>
+#if __has_include(<optional>)
+#  include <optional>
+namespace opt = std;
+#else
+#  include <compat/optional.hpp>
+namespace opt = std::experimental;
+#endif
 
 #include <valijson/adapters/adapter.hpp>
 
 namespace valijson {
 namespace internal {
 namespace json_pointer {
+
+/**
+ * @brief   Replace all occurrences of `search` with `replace`. Modifies `subject` in place
+ *
+ * @param   subject  string to operate on
+ * @param   search   string to search
+ * @param   replace  replacement string
+ */
+inline void replace_all_inplace(std::string& subject, const char* search,
+                                const char* replace)
+{
+    size_t pos = 0;
+
+    while((pos = subject.find(search, pos)) != std::string::npos) {
+        subject.replace(pos, strlen(search), replace);
+        pos += strlen(replace);
+    }
+}
 
 /**
  * @brief   Return the char value corresponding to a 2-digit hexadecimal string
@@ -78,8 +102,8 @@ inline std::string extractReferenceToken(std::string::const_iterator begin,
     std::string token(begin, end);
 
     // Replace JSON Pointer-specific escaped character sequences
-    boost::replace_all(token, "~1", "/");
-    boost::replace_all(token, "~0", "~");
+    replace_all_inplace(token, "~1", "/");
+    replace_all_inplace(token, "~0", "~");
 
     // Replace %-encoded character sequences with their actual characters
     for (size_t n = token.find('%'); n != std::string::npos;
@@ -169,8 +193,7 @@ inline AdapterType resolveJsonPointer(
 
         try {
             // Fragment must be non-negative integer
-            const uint64_t index = boost::lexical_cast<uint64_t>(
-                    referenceToken);
+            const uint64_t index = std::stoul(referenceToken);
             typedef typename AdapterType::Array Array;
             typename Array::const_iterator itr = node.asArray().begin();
 
@@ -180,18 +203,18 @@ inline AdapterType resolveJsonPointer(
                         "out of bounds; actual token: " + referenceToken);
             }
 
-            if (index > static_cast<uint64_t>(std::numeric_limits<ptrdiff_t>::max())) {
+            if (index > static_cast<uint64_t>(std::numeric_limits<std::ptrdiff_t>::max())) {
                 throw std::runtime_error("Array index out of bounds; hard "
-                        "limit is " + boost::lexical_cast<std::string>(
-                                std::numeric_limits<ptrdiff_t>::max()));
+                        "limit is " + std::to_string(
+                                std::numeric_limits<std::ptrdiff_t>::max()));
             }
 
-            itr.advance(static_cast<ptrdiff_t>(index));
+            itr.advance(static_cast<std::ptrdiff_t>(index));
 
             // Recursively process the remaining tokens
             return resolveJsonPointer(*itr, jsonPointer, jsonPointerNext);
 
-        } catch (boost::bad_lexical_cast &) {
+        } catch (std::invalid_argument &) {
             throw std::runtime_error("Expected reference token to contain a "
                     "non-negative integer to identify an element in the "
                     "current array; actual token: " + referenceToken);

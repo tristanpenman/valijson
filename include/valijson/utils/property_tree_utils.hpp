@@ -16,8 +16,6 @@
 # include <boost/property_tree/json_parser.hpp>
 #endif
 
-#include <boost/property_tree/detail/json_parser_error.hpp>
-
 #include <valijson/utils/file_utils.hpp>
 
 namespace valijson {
@@ -27,7 +25,7 @@ inline bool loadDocument(const std::string &path, boost::property_tree::ptree &d
 {
     try {
         boost::property_tree::read_json(path, document);
-    } catch (boost::property_tree::json_parser::json_parser_error &e) {
+    } catch (std::exception &e) {
         std::cerr << "Boost Property Tree JSON parser failed to parse the document:" << std::endl;
         std::cerr << e.what() << std::endl;
         return false;
