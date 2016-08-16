@@ -7,18 +7,13 @@ option (BUILD_TESTS "Build valijson Tests." TRUE)
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall ")
 if (BUILD_TESTS OR BUILD_EXAMPLES)
 SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
-if(VALIJSON_CXX11_ADAPTERS STREQUAL "disabled")
-    message(STATUS "Building with C++11 support disabled")
+
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+if(COMPILER_SUPPORTS_CXX11)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -DVALIJSON_BUILD_CXX11_ADAPTERS=1")
 else()
-    include(CheckCXXCompilerFlag)
-    CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
-    if(COMPILER_SUPPORTS_CXX11)
-        set(VALIJSON_CXX11_ADAPTERS_ARE_ENABLED 1)
-        message(STATUS "Building with C++11 support enabled")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -DVALIJSON_BUILD_CXX11_ADAPTERS=1")
-    else()
-        message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
-    endif()
+    message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
 add_definitions(-DBOOST_ALL_DYN_LINK)
@@ -26,7 +21,7 @@ set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 
-find_package(Boost 1.55.0 COMPONENTS regex REQUIRED)
+find_package(Boost 1.54.0 REQUIRED)
 
 # jsoncpp library
 add_library(jsoncpp
