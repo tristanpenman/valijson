@@ -6,6 +6,7 @@
 #include <iostream>
 #include <vector>
 #include <memory>
+#include <functional>
 
 #include <valijson/adapters/adapter.hpp>
 #include <valijson/constraints/concrete_constraints.hpp>
@@ -72,10 +73,10 @@ public:
                 DocumentType;
 
         /// Templated function pointer type for fetching remote documents
-        typedef const DocumentType * (*FetchDoc)(const std::string &uri);
+        typedef std::function< const DocumentType* (const std::string &uri) >  FetchDoc ;
 
         /// Templated function pointer type for freeing fetched documents
-        typedef void (*FreeDoc)(const DocumentType *);
+        typedef std::function< void (const DocumentType *)> FreeDoc ;
     };
 
     /**
@@ -118,10 +119,10 @@ public:
     void populateSchema(
         const AdapterType &node,
         Schema &schema,
-        typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc = NULL,
-        typename FunctionPtrs<AdapterType>::FreeDoc freeDoc = NULL)
+        typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc = nullptr ,
+        typename FunctionPtrs<AdapterType>::FreeDoc freeDoc = nullptr )
     {
-        if ((fetchDoc == NULL) ^ (freeDoc == NULL)) {
+        if ((fetchDoc == nullptr ) ^ (freeDoc == nullptr)) {
             throw std::runtime_error(
                     "Remote document fetching cannot be enabled without both "
                     "fetch and free functions");
