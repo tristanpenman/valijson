@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cerrno>
 #include <cstddef>
+#include <cstring>
 #include <stdexcept>
 #include <string>
 
@@ -89,7 +90,7 @@ inline char decodePercentEncodedChar(const std::string &digits)
  *    turning '~01' first into '~1' and then into '/', which would be
  *    incorrect (the string '~01' correctly becomes '~1' after
  *    transformation).
- * 
+ *
  * @param   begin  iterator pointing to beginning of a token
  * @param   end    iterator pointing to one character past the end of the token
  *
