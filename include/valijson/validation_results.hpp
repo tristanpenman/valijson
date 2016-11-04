@@ -19,7 +19,6 @@ class ValidationResults
 {
 public:
 
-    virtual ~ValidationResults() {}
     /**
      * @brief  Describes a validation error.
      *
