@@ -254,12 +254,12 @@ class GenericRapidJsonFrozenValue: public FrozenValue
 {
 public:
 
-    GenericRapidJsonFrozenValue(const char *str)
+    explicit GenericRapidJsonFrozenValue(const char *str)
     {
         value.SetString(str, allocator);
     }
 
-    GenericRapidJsonFrozenValue(const std::string &str)
+    explicit GenericRapidJsonFrozenValue(const std::string &str)
     {
         value.SetString(str.c_str(), (unsigned int)str.length(), allocator);
     }

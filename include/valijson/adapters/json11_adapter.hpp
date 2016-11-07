@@ -229,7 +229,7 @@ public:
      *
      * @param  source  the Json11 value to be copied
      */
-    Json11FrozenValue(const json11::Json &source)
+    explicit Json11FrozenValue(const json11::Json &source)
       : value(source) { }
 
     virtual FrozenValue * clone() const

@@ -225,7 +225,7 @@ public:
      *
      * @param  source  the JsonCpp value to be copied
      */
-    JsonCppFrozenValue(const Json::Value &source)
+    explicit JsonCppFrozenValue(const Json::Value &source)
       : value(source) { }
 
     virtual FrozenValue * clone() const

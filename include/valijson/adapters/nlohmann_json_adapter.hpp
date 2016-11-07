@@ -230,7 +230,7 @@ public:
      *
      * @param  source  the NlohmannJson value to be copied
      */
-    NlohmannJsonFrozenValue(const nlohmann::json &source)
+    explicit NlohmannJsonFrozenValue(const nlohmann::json &source)
       : value(source) { }
 
     virtual FrozenValue * clone() const

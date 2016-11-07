@@ -75,7 +75,7 @@ public:
      * Note that this constructor will throw an exception if the value is not
      * an array.
      */
-    PicoJsonArray(const picojson::value &value)
+    explicit PicoJsonArray(const picojson::value &value)
       : value(value)
     {
         if (!value.is<picojson::array>()) {
@@ -232,7 +232,7 @@ public:
      *
      * @param  source  the PicoJson value to be copied
      */
-    PicoJsonFrozenValue(const picojson::value &source)
+    explicit PicoJsonFrozenValue(const picojson::value &source)
       : value(source) { }
 
     virtual FrozenValue * clone() const

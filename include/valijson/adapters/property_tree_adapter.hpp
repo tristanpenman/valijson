@@ -77,7 +77,7 @@ public:
      * It is assumed that this value contains array-like data, but this is not
      * checked due to runtime cost.
      */
-    PropertyTreeArray(const boost::property_tree::ptree &array)
+    explicit PropertyTreeArray(const boost::property_tree::ptree &array)
       : array(array) { }
 
     /// Return an iterator for the first element in the array.
@@ -217,7 +217,8 @@ public:
      *
      * @param  source  string containing the POD vlaue
      */
-    PropertyTreeFrozenValue(const boost::property_tree::ptree::data_type &source)
+    explicit PropertyTreeFrozenValue(
+            const boost::property_tree::ptree::data_type &source)
       : value(source) { }
 
     /**
@@ -225,7 +226,8 @@ public:
      *
      * @param  source  the property tree to be copied
      */
-    PropertyTreeFrozenValue(const boost::property_tree::ptree &source)
+    explicit PropertyTreeFrozenValue(
+            const boost::property_tree::ptree &source)
       : value(source) { }
 
     virtual FrozenValue * clone() const
