@@ -50,6 +50,22 @@ public:
     };
 
     /**
+     * @brief  Return begin iterator for results in the queue.
+     */
+    std::deque<Error>::const_iterator begin() const
+    {
+        return errors.begin();
+    }
+
+    /**
+     * @brief  Return end iterator for results in the queue.
+     */
+    std::deque<Error>::const_iterator end() const
+    {
+        return errors.end();
+    }
+
+    /**
      * @brief  Return the number of errors in the queue.
      */
     size_t numErrors() const
