@@ -20,7 +20,6 @@ inline bool loadDocument(const std::string &path, nlohmann::json &document) {
     }
 
     // Parse schema
-    std::string err;
     try {
         document = nlohmann::json::parse(file);
     } catch (std::invalid_argument const& exception) {
