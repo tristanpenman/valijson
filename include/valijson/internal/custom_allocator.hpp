@@ -50,6 +50,8 @@ public:
     {
         allocFn = other.allocFn;
         freeFn = other.freeFn;
+
+        return *this;
     }
 
     pointer address(reference r)
