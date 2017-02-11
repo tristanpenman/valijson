@@ -1052,8 +1052,9 @@ public:
         bool validated = true;
         const typename AdapterType::Array::const_iterator secondLast = --targetArray.end();
         unsigned int outerIndex = 0;
-        for (typename AdapterType::Array::const_iterator outerItr = targetArray.begin(); outerItr != secondLast; ++outerItr) {
-            unsigned int innerIndex = 1;
+        typename AdapterType::Array::const_iterator outerItr = targetArray.begin();
+        for (; outerItr != secondLast; ++outerItr) {
+            unsigned int innerIndex = outerIndex + 1;
             typename AdapterType::Array::const_iterator innerItr(outerItr);
             for (++innerItr; innerItr != end; ++innerItr) {
                 if (outerItr->equalTo(*innerItr, true)) {
