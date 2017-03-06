@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 3.1)
 project (valijson)
 
 option (INSTALL_HEADERS "Install valijson Headers." FALSE)
@@ -22,6 +22,8 @@ set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 
 find_package(Boost 1.54.0 REQUIRED)
+find_package(Qt5Core)
+
 
 # jsoncpp library
 add_library(jsoncpp
@@ -57,7 +59,7 @@ include_directories(
   include
 )
 
-include_directories(SYSTEM 
+include_directories(SYSTEM
   thirdparty/gtest-1.7.0/include
   thirdparty/json11-2016-01-26
   thirdparty/jsoncpp-0.9.4/include
@@ -65,6 +67,7 @@ include_directories(SYSTEM
   thirdparty/picojson-1.3.0
   thirdparty/nlohmann-json-1.1.0
   ${Boost_INCLUDE_DIRS}
+  ${Qt5Core_INCLUDE_DIRS}
 )
 
 # Custom schema validation example
@@ -92,6 +95,12 @@ set(TEST_SOURCES
     tests/test_poly_constraint.cpp
 )
 
+if (Qt5Core_FOUND)
+  list(APPEND TEST_SOURCES
+       tests/test_qtjson_adapter.cpp
+  )
+endif()
+
 # Unit tests executable
 add_executable(test_suite ${TEST_SOURCES})
 
@@ -101,12 +110,16 @@ set_target_properties(test_suite
 )
 
 set(TEST_LIBS gtest gtest_main jsoncpp json11)
+if (Qt5Core_FOUND)
+  list(APPEND TEST_LIBS Qt5::Core)
+endif()
+
 
 target_link_libraries(test_suite ${TEST_LIBS} ${Boost_LIBRARIES})
 target_link_libraries(custom_schema ${Boost_LIBRARIES})
 target_link_libraries(external_schema ${Boost_LIBRARIES})
+
 endif()
 if (INSTALL_HEADERS )
 install(DIRECTORY include/ DESTINATION include )
 endif()
-
