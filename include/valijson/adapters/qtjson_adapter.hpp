@@ -433,7 +433,8 @@ public:
 
     bool isInteger() const
     {
-        return value.isDouble();
+        //toInt returns the default value (0, 1) if the value is not a whole number
+        return value.isDouble() && (value.toInt(0) == value.toInt(1));
     }
 
     bool isNull() const
