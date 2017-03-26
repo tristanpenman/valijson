@@ -112,6 +112,7 @@ set_target_properties(test_suite
 set(TEST_LIBS gtest gtest_main jsoncpp json11)
 if (Qt5Core_FOUND)
   list(APPEND TEST_LIBS Qt5::Core)
+  target_compile_definitions(test_suite PRIVATE "VALIJSON_BUILD_QT_ADAPTERS")
 endif()
 
 
