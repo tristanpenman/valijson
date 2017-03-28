@@ -160,7 +160,7 @@ Doxygen documentation can be built by running 'doxygen' from the project root di
 
 ## Dependencies ##
 
-Valijson requires a compiler with robust C++11 support.
+Valijson requires a compiler with C++11 support.
 
 ## Supported Parsers ##
 
@@ -172,6 +172,7 @@ Valijson supports JSON documents loaded using JsonCpp, RapidJson, Boost Property
  - [nlohmann/json 1.1.0](https://github.com/nlohmann/json/archive/v1.1.0.tar.gz)
  - [rapidjson 1.0.2](https://github.com/miloyip/rapidjson/releases/tag/v1.0.2)
  - [PicoJSON 1.3.0](https://github.com/kazuho/picojson/archive/v1.3.0.tar.gz)
+ - [Qt 5 JSON parser](http://doc.qt.io/qt-5/json.html)
 
 Other versions of these libraries may work, but have not been tested. In particular, versions of JsonCpp going back to 0.5.0 should also work correctly, but versions from 1.0 onwards have not yet been tested.
 
@@ -179,11 +180,18 @@ Other versions of these libraries may work, but have not been tested. In particu
 
 Supported versions of these libraries have been included in the 'thirdparty' directory so as to support Valijson's examples and test suite. 
 
-The only exception to this is boost, which due to its sheer size must be installed to a location that CMake can find.
+The exceptions to this are boost and Qt5, which due to their sheer size must be installed to a location that CMake can find.
 
 ## Known Issues ##
 
-Note that when using PicoJSON, it may be necessary to include the `picojson.h` before other headers to ensure that the appropriate macros have been enabled.
+When using PicoJSON, it may be necessary to include the `picojson.h` before other headers to ensure that the appropriate macros have been enabled.
+
+When building Valijson using CMake on Mac OS X, with Qt 5 installed via Homebrew, you may need to set `CMAKE_PREFIX_PATH` so that CMake can find your Qt installation, e.g:
+
+    mkdir build
+    cd build 
+    cmake .. -DCMAKE_PREFIX_PATH=$(brew --prefix qt5)
+    make
 
 ## License ##
 
