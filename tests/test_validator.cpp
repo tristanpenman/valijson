@@ -20,6 +20,11 @@
 #include <valijson/utils/json11_utils.hpp>
 #endif // VALIJSON_BUILD_CXX11_ADAPTERS
 
+#ifdef VALIJSON_BUILD_POCO_ADAPTERS
+#include <valijson/adapters/poco_json_adapter.hpp>
+#include <valijson/utils/poco_json_utils.hpp>
+#endif // VALIJSON_BUILD_POCO_ADAPTERS
+
 #define REMOTES_DIR "../thirdparty/JSON-Schema-Test-Suite/remotes/"
 
 #define TEST_SUITE_DIR "../thirdparty/JSON-Schema-Test-Suite/tests/"
@@ -170,6 +175,10 @@ protected:
 #ifdef VALIJSON_BUILD_CXX11_ADAPTERS
         processTestFile<valijson::adapters::Json11Adapter>(testFile, version);
 #endif // VALIJSON_BUILD_CXX11_ADAPTERS
+
+#ifdef VALIJSON_BUILD_POCO_ADAPTERS
+        processTestFile<valijson::adapters::PocoJsonAdapter>(testFile, version);
+#endif // VALIJSON_BUILD_POCO_ADAPTERS
     }
 
     void processDraft3TestFile(const std::string &testFile)
