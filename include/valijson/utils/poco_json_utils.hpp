@@ -4,8 +4,10 @@
 
 #include <iostream>
 
+#include <Poco/JSON/JSONException.h>
 #include <Poco/JSON/Object.h>
 #include <Poco/JSON/Parser.h>
+
 #include <valijson/utils/file_utils.hpp>
 
 namespace valijson {
@@ -23,8 +25,8 @@ inline bool loadDocument(const std::string &path, Poco::Dynamic::Var &document) 
     // Parse schema
     try {
         document = Poco::JSON::Parser().parse(file);
-    } catch (std::invalid_argument const& exception) {
-        std::cerr << "nlohmann::json failed to parse the document\n"
+    } catch (Poco::Exception const& exception) {
+        std::cerr << "Poco::JSON failed to parse the document\n"
             << "Parse error:" << exception.what() << "\n";
         return false;
     }
