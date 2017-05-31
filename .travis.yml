@@ -9,7 +9,7 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-5', 'qtbase5-dev']
+          packages: ['g++-5', 'qtbase5-dev', 'libboost1.55-dev', 'libssl-dev']
       env:
         - CXX_COMPILER=g++-5
         - C_COMPILER=gcc-5
@@ -19,41 +19,49 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.6']
-          packages: ['clang-3.6', 'qtbase5-dev']
+          packages: ['clang-3.6', 'qtbase5-dev', 'libboost1.55-dev', 'libssl-dev']
       env:
         - CXX_COMPILER=clang++-3.6
         - C_COMPILER=clang-3.6
-        - CMAKE_FLAGS="-DCMAKE_CXX_FLAGS=-DBOOST_NO_CXX11_ALLOCATOR"
 
     - os: linux
       compiler: clang
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.7']
-          packages: ['clang-3.7', 'qtbase5-dev']
+          packages: ['clang-3.7', 'qtbase5-dev', 'libboost1.55-dev', 'libssl-dev']
       env:
         - CXX_COMPILER=clang++-3.7
         - C_COMPILER=clang-3.7
-        - CMAKE_FLAGS="-DCMAKE_CXX_FLAGS=-DBOOST_NO_CXX11_ALLOCATOR"
 
     - os: linux
       compiler: clang
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.8']
-          packages: ['clang-3.8', 'libc++-dev', 'libc++abi-dev', 'qtbase5-dev']
+          packages: ['clang-3.8', 'libc++-dev', 'libc++abi-dev', 'qtbase5-dev', 'libboost1.55-dev', 'libssl-dev']
       env:
         - CXX_COMPILER=clang++-3.8
         - C_COMPILER=clang-3.8
-        - CMAKE_FLAGS="-DCMAKE_CXX_FLAGS=-stdlib=libc++ -DCMAKE_EXE_LINKER_FLAGS=-lc++"
+        - CMAKE_CXX_FLAGS="-stdlib=libc++"
+        - CMAKE_EXE_LINKER_FLAGS="-lc++"
 
 before_install:
-  - sudo add-apt-repository -y ppa:frodo-vdr/unstable-main
-  - sudo apt-get update -qq
-  - sudo apt-get install -y --force-yes libboost1.55-dev libpocojson42 libpoco-dev
+  - pushd ~
+  - wget https://github.com/pocoproject/poco/archive/poco-1.7.8p2-release.tar.gz
+  - tar -xf poco-1.7.8p2-release.tar.gz
+  - cd poco-poco-1.7.8p2-release
+  - mkdir cmake_build
+  - cd cmake_build
+  - export POCO_OPTS="-DENABLE_CRYPTO=off -DENABLE_DATA=off -DENABLE_DATA_MYSQL=off -DENABLE_DATA_ODBC=off -DENABLE_DATA_SQLITE=off"
+  - export POCO_OPTS="$POCO_OPTS -DENABLE_MONGODB=off -DENABLE_NET=off -DENABLE_NETSSL=off -DENABLE_PAGECOMPILER=off"
+  - export POCO_OPTS="$POCO_OPTS -DENABLE_PAGECOMPILER_FILE2PAGE=off -DENABLE_PDF=off -DENABLE_UTIL=off -DENABLE_XML=off -DENABLE_ZIP=off"
+  - cmake -D CMAKE_CXX_COMPILER=`which ${CXX_COMPILER}` -DCMAKE_CXX_FLAGS="$CMAKE_CXX_FLAGS" -DCMAKE_EXE_LINKER_FLAGS="$CMAKE_EXE_LINKER_FLAGS" $POCO_OPTS  ..
+  - sudo make install
+  - popd
 
 script:
   - mkdir build && cd build
-  - cmake $CMAKE_FLAGS -DCMAKE_CXX_COMPILER=$CXX_COMPILER -DCMAKE_C_COMPILER=$C_COMPILER ..
+  - cmake -D CMAKE_CXX_FLAGS="$CMAKE_CXX_FLAGS" -D CMAKE_EXE_LINKER_FLAGS="$CMAKE_EXE_LINKER_FLAGS" -D CMAKE_CXX_COMPILER="$CXX_COMPILER" -D CMAKE_C_COMPILER="$C_COMPILER" ..
   - VERBOSE=1 make
   - ./test_suite
