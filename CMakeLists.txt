@@ -22,8 +22,8 @@ set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 
 find_package(Boost 1.54.0 REQUIRED)
+find_package(Poco OPTIONAL_COMPONENTS JSON)
 find_package(Qt5Core)
-
 
 # jsoncpp library
 add_library(jsoncpp
@@ -90,6 +90,7 @@ set(TEST_SOURCES
     tests/test_property_tree_adapter.cpp
     tests/test_rapidjson_adapter.cpp
     tests/test_picojson_adapter.cpp
+    tests/test_poco_json_adapter.cpp
     tests/test_validation_errors.cpp
     tests/test_validator.cpp
     tests/test_poly_constraint.cpp
@@ -110,11 +111,16 @@ set_target_properties(test_suite
 )
 
 set(TEST_LIBS gtest gtest_main jsoncpp json11)
+
 if (Qt5Core_FOUND)
   list(APPEND TEST_LIBS Qt5::Core)
   target_compile_definitions(test_suite PRIVATE "VALIJSON_BUILD_QT_ADAPTERS")
 endif()
 
+if(Poco_FOUND)
+  list(APPEND TEST_LIBS ${Poco_LIBRARIES})
+  target_compile_definitions(test_suite PRIVATE "VALIJSON_BUILD_POCO_ADAPTERS")
+endif()
 
 target_link_libraries(test_suite ${TEST_LIBS} ${Boost_LIBRARIES})
 target_link_libraries(custom_schema ${Boost_LIBRARIES})

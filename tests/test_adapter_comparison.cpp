@@ -26,6 +26,12 @@
 
 #endif // VALIJSON_BUILD_QT_ADAPTERS
 
+#ifdef VALIJSON_BUILD_POCO_ADAPTERS
+#include <valijson/adapters/poco_json_adapter.hpp>
+#include <valijson/utils/poco_json_utils.hpp>
+
+#endif // VALIJSON_BUILD_POCO_ADAPTERS
+
 #define TEST_DATA_DIR "../tests/data/documents/"
 
 using valijson::adapters::AdapterTraits;
@@ -355,20 +361,12 @@ TEST_F(TestAdapterComparison, QtJsonVsQtJson) {
         valijson::adapters::QtJsonAdapter>();
 }
 
-TEST_F(TestAdapterComparison, QtJsonVsJson11)
-{
-    testComparison<
-            valijson::adapters::QtJsonAdapter,
-            valijson::adapters::Json11Adapter>();
-}
-
 TEST_F(TestAdapterComparison, QtJsonVsJsonCpp)
 {
     testComparison<
             valijson::adapters::QtJsonAdapter,
             valijson::adapters::JsonCppAdapter>();
 }
-
 
 TEST_F(TestAdapterComparison, QtJsonVsRapidJson)
 {
@@ -401,3 +399,98 @@ TEST_F(TestAdapterComparison, QtJsonVsPropertyTree)
 }
 
 #endif // VALIJSON_BUILD_QT_ADAPTERS
+
+#if defined(VALIJSON_BUILD_QT_ADAPTERS) && defined(VALIJSON_BUILD_CXX11_ADAPTERS)
+
+TEST_F(TestAdapterComparison, QtJsonVsJson11)
+{
+    testComparison<
+            valijson::adapters::QtJsonAdapter,
+            valijson::adapters::Json11Adapter>();
+}
+
+TEST_F(TestAdapterComparison, QtJsonVsNlohmannJson)
+{
+    testComparison<
+            valijson::adapters::QtJsonAdapter,
+            valijson::adapters::NlohmannJsonAdapter>();
+}
+
+#endif
+
+#ifdef VALIJSON_BUILD_POCO_ADAPTERS
+
+TEST_F(TestAdapterComparison, PocoJsonVsPocoJson)
+{
+    testComparison<
+            valijson::adapters::PocoJsonAdapter,
+            valijson::adapters::PocoJsonAdapter>();
+}
+
+TEST_F(TestAdapterComparison, PocoJsonVsJsonCpp)
+{
+    testComparison<
+            valijson::adapters::PocoJsonAdapter,
+            valijson::adapters::JsonCppAdapter>();
+}
+
+TEST_F(TestAdapterComparison, PocoJsonVsRapidJson)
+{
+    testComparison<
+            valijson::adapters::PocoJsonAdapter,
+            valijson::adapters::RapidJsonAdapter>();
+}
+
+TEST_F(TestAdapterComparison, PocoJsonVsRapidJsonCrtAlloc)
+{
+    testComparison<
+            valijson::adapters::PocoJsonAdapter,
+            valijson::adapters::GenericRapidJsonAdapter<
+                    rapidjson::GenericValue<rapidjson::UTF8<>,
+                            rapidjson::CrtAllocator> > >();
+}
+
+TEST_F(TestAdapterComparison, PocoJsonVsPicoJson)
+{
+    testComparison<
+            valijson::adapters::PocoJsonAdapter,
+            valijson::adapters::PicoJsonAdapter>();
+}
+
+TEST_F(TestAdapterComparison, PocoJsonVsPropertyTree)
+{
+    testComparison<
+            valijson::adapters::PocoJsonAdapter,
+            valijson::adapters::PropertyTreeAdapter>();
+}
+
+#endif
+
+#if defined(VALIJSON_BUILD_POCO_ADAPTERS) && defined(VALIJSON_BUILD_CXX11_ADAPTERS)
+
+TEST_F(TestAdapterComparison, PocoJsonVsJson11)
+{
+    testComparison<
+            valijson::adapters::PocoJsonAdapter,
+            valijson::adapters::Json11Adapter>();
+}
+
+TEST_F(TestAdapterComparison, PocoJsonVsNlohmannJsonAdapter)
+{
+    testComparison<
+            valijson::adapters::PocoJsonAdapter,
+            valijson::adapters::NlohmannJsonAdapter>();
+}
+
+#endif
+
+#if defined(VALIJSON_BUILD_POCO_ADAPTERS) && defined(VALIJSON_BUILD_QT_ADAPTERS)
+
+TEST_F(TestAdapterComparison, PocoJsonVsQtJson)
+{
+    testComparison<
+            valijson::adapters::PocoJsonAdapter,
+            valijson::adapters::QtJsonAdapter>();
+}
+
+#endif
