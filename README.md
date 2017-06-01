@@ -164,7 +164,7 @@ Valijson requires a compiler with C++11 support.
 
 ## Supported Parsers ##
 
-Valijson supports JSON documents loaded using JsonCpp, RapidJson, Boost Property Tree and PicoJSON. It has been tested against the following versions of these libraries:
+Valijson supports JSON documents loaded using various JSON parser libraries. It has been tested against the following versions of these libraries:
 
  - [boost::property_tree 1.54](http://www.boost.org/doc/libs/1_54_0/doc/html/boost_propertytree/synopsis.html)
  - [json11 (commit afcc8d0)](https://github.com/dropbox/json11/tree/afcc8d0d82b1ce2df587a7a0637d05ba493bf5e6)
@@ -172,7 +172,8 @@ Valijson supports JSON documents loaded using JsonCpp, RapidJson, Boost Property
  - [nlohmann/json 1.1.0](https://github.com/nlohmann/json/archive/v1.1.0.tar.gz)
  - [rapidjson 1.0.2](https://github.com/miloyip/rapidjson/releases/tag/v1.0.2)
  - [PicoJSON 1.3.0](https://github.com/kazuho/picojson/archive/v1.3.0.tar.gz)
- - [Qt 5 JSON parser](http://doc.qt.io/qt-5/json.html)
+ - [Poco JSON 1.7.8](https://pocoproject.org/docs/Poco.JSON.html)
+ - [Qt 5.8](http://doc.qt.io/qt-5/json.html)
 
 Other versions of these libraries may work, but have not been tested. In particular, versions of JsonCpp going back to 0.5.0 should also work correctly, but versions from 1.0 onwards have not yet been tested.
 
@@ -180,7 +181,7 @@ Other versions of these libraries may work, but have not been tested. In particu
 
 Supported versions of these libraries have been included in the 'thirdparty' directory so as to support Valijson's examples and test suite. 
 
-The exceptions to this are boost and Qt5, which due to their sheer size must be installed to a location that CMake can find.
+The exceptions to this are boost, Poco and Qt5, which due to their size must be installed to a location that CMake can find.
 
 ## Known Issues ##
 
