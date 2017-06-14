@@ -5,13 +5,7 @@
 #include <stdexcept>
 #include <string>
 
-#if __has_include(<optional>)
-#  include <optional>
-namespace opt = std;
-#else
-#  include <compat/optional.hpp>
-namespace opt = std::experimental;
-#endif
+#include <valijson/internal/optional.hpp>
 
 namespace valijson {
 namespace internal {
