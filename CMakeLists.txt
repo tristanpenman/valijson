@@ -80,6 +80,26 @@ add_executable(external_schema
     examples/external_schema.cpp
 )
 
+add_executable(array_iteration_basics
+    examples/array_iteration_basics.cpp
+)
+
+add_executable(array_iteration_template_fn
+    examples/array_iteration_template_fn.cpp
+)
+
+add_executable(object_iteration
+    examples/object_iteration.cpp
+)
+
+add_executable(json_pointers
+    examples/json_pointers.cpp
+)
+
+add_executable(remote_resolution
+    examples/remote_resolution.cpp
+)
+
 set(TEST_SOURCES
     tests/test_adapter_comparison.cpp
     tests/test_fetch_document_callback.cpp
@@ -121,3 +141,8 @@ endif()
 target_link_libraries(test_suite ${TEST_LIBS} ${Boost_LIBRARIES})
 target_link_libraries(custom_schema ${Boost_LIBRARIES})
 target_link_libraries(external_schema ${Boost_LIBRARIES})
+target_link_libraries(array_iteration_basics jsoncpp)
+target_link_libraries(array_iteration_template_fn jsoncpp)
+target_link_libraries(object_iteration jsoncpp)
+target_link_libraries(json_pointers)
+target_link_libraries(remote_resolution curl curlpp)
