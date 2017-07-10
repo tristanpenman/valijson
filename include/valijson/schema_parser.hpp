@@ -433,7 +433,7 @@ private:
             return cachedPtr;
         }
 
-        if (actualDocumentUri) {
+        if (actualDocumentUri && (!currentScope || *actualDocumentUri != *currentScope)) {
             const typename FunctionPtrs<AdapterType>::DocumentType *newDoc = NULL;
 
             // Have we seen this document before?
