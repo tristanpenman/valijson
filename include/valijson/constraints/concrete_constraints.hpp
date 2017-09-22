@@ -211,13 +211,14 @@ public:
     }
 
 private:
-    typedef std::set<String, std::less<String>, Allocator> PropertySet;
+    typedef std::set<String, std::less<String>, internal::CustomAllocator<String> > PropertySet;
 
-    typedef std::map<String, PropertySet, std::less<String>, Allocator>
-            PropertyDependencies;
+    typedef std::map<String, PropertySet, std::less<String>,
+            internal::CustomAllocator<std::pair<const String, PropertySet> > > PropertyDependencies;
 
-    typedef std::map<String, const Subschema *, std::less<String>, Allocator>
-            SchemaDependencies;
+    typedef std::map<String, const Subschema *, std::less<String>,
+            internal::CustomAllocator<std::pair<const String, const Subschema *> > >
+                SchemaDependencies;
 
     /// Mapping from property names to their property-based dependencies
     PropertyDependencies propertyDependencies;
@@ -894,7 +895,7 @@ public:
     }
 
 private:
-    typedef std::map<String, const Subschema *, std::less<String>, Allocator>
+    typedef std::map<String, const Subschema *, std::less<String>, internal::CustomAllocator<std::pair<const String, const Subschema *> > >
             PropertySchemaMap;
 
     PropertySchemaMap properties;
@@ -1066,7 +1067,7 @@ public:
     }
 
 private:
-    typedef std::set<JsonType, std::less<JsonType>, Allocator> NamedTypes;
+    typedef std::set<JsonType, std::less<JsonType>, internal::CustomAllocator<JsonType> > NamedTypes;
 
     typedef std::vector<const Subschema *,
             Allocator::rebind<const Subschema *>::other> SchemaTypes;
