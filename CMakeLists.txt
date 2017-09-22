@@ -47,11 +47,11 @@ target_include_directories(jsoncpp SYSTEM PRIVATE thirdparty/jsoncpp-0.9.4/inclu
 set_target_properties(jsoncpp PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/thirdparty/jsoncpp-0.9.4)
 
 add_library(json11
-    thirdparty/json11-2016-01-26/json11.cpp
+    thirdparty/json11-ec4e452/json11.cpp
 )
 
-target_include_directories(json11 SYSTEM PRIVATE thirdparty/json11-2016-01-26)
-set_target_properties(json11 PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/thirdparty/json11-2016-01-26)
+target_include_directories(json11 SYSTEM PRIVATE thirdparty/json11-ec4e452)
+set_target_properties(json11 PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/thirdparty/json11-ec4e452)
 
 # Build local gtest
 set(gtest_force_shared_crt ON)
@@ -61,7 +61,7 @@ add_subdirectory(thirdparty/gtest-1.7.0)
 include_directories(include)
 include_directories(SYSTEM
     thirdparty/gtest-1.7.0/include
-    thirdparty/json11-2016-01-26
+    thirdparty/json11-ec4e452
     thirdparty/jsoncpp-0.9.4/include
     thirdparty/rapidjson-1.0.2/include
     thirdparty/picojson-1.3.0
