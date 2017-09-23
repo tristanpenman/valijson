@@ -139,10 +139,20 @@ public:
     {
         unsigned int numValidated = 0;
 
+        ValidationResults newResults;
+        ValidationResults *childResults = (results) ? &newResults : NULL;
+
+        ValidationVisitor<AdapterType> v(target, context, strictTypes, childResults);
         constraint.applyToSubschemas(ValidateSubschemas(target, context, false,
-                true, *this, results, &numValidated, NULL));
+                true, v, childResults, &numValidated, NULL));
 
         if (numValidated == 0 && results) {
+            ValidationResults::Error childError;
+            while (childResults->popError(childError)) {
+                results->pushError(
+                        childError.context,
+                        childError.description);
+            }
             results->pushError(context, "Failed to validate against any child "
                     "schemas allowed by anyOf constraint.");
         }
@@ -736,8 +746,9 @@ public:
         ValidationResults newResults;
         ValidationResults *childResults = (results) ? &newResults : NULL;
 
+        ValidationVisitor<AdapterType> v(target, context, strictTypes, childResults);
         constraint.applyToSubschemas(ValidateSubschemas(target, context,
-                true, true, *this, childResults, &numValidated, NULL));
+                true, true, v, childResults, &numValidated, NULL));
 
         if (numValidated == 0) {
             if (results) {
