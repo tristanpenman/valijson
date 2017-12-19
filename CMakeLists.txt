@@ -13,7 +13,7 @@ if(INSTALL_HEADERS)
     install(DIRECTORY include/ DESTINATION include)
 endif()
 
-if(!BUILD_TESTS AND !BUILD_EXAMPLES)
+if(NOT BUILD_TESTS AND NOT BUILD_EXAMPLES)
     return()
 endif()
 
