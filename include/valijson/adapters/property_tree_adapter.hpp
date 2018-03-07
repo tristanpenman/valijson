@@ -30,6 +30,7 @@
 #include <string>
 
 #include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/stream_translator.hpp>
 
 #include <valijson/adapters/adapter.hpp>
 #include <valijson/adapters/basic_adapter.hpp>
@@ -361,19 +362,19 @@ public:
         return false;
     }
 
-    bool getBool(bool &) const
+    bool getBool(bool &result) const
     {
-        return false;
+        return isBool() ? getPrimitive<bool>(result) : false;
     }
 
-    bool getDouble(double &) const
+    bool getDouble(double &result) const
     {
-        return false;
+        return isDouble() ? getPrimitive<double>(result) : false;
     }
 
-    bool getInteger(int64_t &) const
+    bool getInteger(int64_t &result) const
     {
-        return false;
+        return getPrimitive<int64_t>(result);
     }
 
     /**
@@ -427,7 +428,7 @@ public:
 
     static bool hasStrictTypes()
     {
-        return false;
+        return true;
     }
 
     bool isArray() const
@@ -437,17 +438,22 @@ public:
 
     bool isBool() const
     {
+        if  (value)
+        {
+            return (*value == "true" || *value == "false");
+        }
+
         return false;
     }
 
     bool isDouble() const
     {
-        return false;
+        return isNumber() && !isInteger();
     }
 
     bool isInteger() const
     {
-        return false;
+        return isPrimitive<int>();
     }
 
     bool isNull() const
@@ -457,7 +463,7 @@ public:
 
     bool isNumber() const
     {
-        return false;
+        return isPrimitive<double>();
     }
 
     bool isObject() const
@@ -476,6 +482,33 @@ private:
     {
         static const boost::property_tree::ptree tree;
         return tree;
+    }
+
+    template <typename Primitive>
+    boost::optional<Primitive> getOptPrimitive() const
+    {
+        return value ?
+               typename boost::property_tree::translator_between<std::string, Primitive>::type().get_value(*value) :
+               boost::optional<Primitive>();
+    }
+
+    template <typename Primitive>
+    bool isPrimitive() const
+    {
+        return static_cast<bool>(getOptPrimitive<Primitive>());
+    }
+
+    template <typename Primitive>
+    bool getPrimitive(Primitive& result) const
+    {
+        boost::optional<Primitive> optResult = getOptPrimitive<Primitive>();
+        if (static_cast<bool>(result))
+        {
+            result = optResult.get();
+            return true;
+        }
+
+        return false;
     }
 
     /// Reference used if the value is known to be an array
