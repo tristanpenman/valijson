@@ -438,7 +438,7 @@ public:
     }
 
 private:
-    size_t maxItems;
+    uint64_t maxItems;
 };
 
 /**
@@ -492,7 +492,7 @@ public:
     }
 
 private:
-    size_t maxProperties;
+    uint64_t maxProperties;
 };
 
 /**
