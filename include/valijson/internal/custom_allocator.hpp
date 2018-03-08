@@ -64,8 +64,7 @@ public:
         return &r;
     }
 
-    pointer allocate(size_type cnt,
-            typename std::allocator<void>::const_pointer = 0)
+    pointer allocate(size_type cnt, const void * = 0)
     {
         return reinterpret_cast<pointer>(allocFn(cnt * sizeof(T)));
     }
