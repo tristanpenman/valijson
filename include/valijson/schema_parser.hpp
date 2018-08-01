@@ -10,6 +10,7 @@
 
 #include <valijson/adapters/adapter.hpp>
 #include <valijson/constraints/concrete_constraints.hpp>
+#include <valijson/internal/debug.hpp>
 #include <valijson/internal/json_pointer.hpp>
 #include <valijson/internal/json_reference.hpp>
 #include <valijson/internal/uri.hpp>
@@ -592,6 +593,15 @@ private:
             const valijson::adapters::Adapter &>::value),
             "SchemaParser::populateSchema must be invoked with an "
             "appropriate Adapter implementation");
+
+        if (!node.isObject()) {
+            std::string s;
+            s += "Expected node at ";
+            s += nodePath;
+            s += " to contain schema object; actual node type is: ";
+            s += internal::nodeTypeAsString(node);
+            throw std::runtime_error(s);
+        }
 
         const typename AdapterType::Object object = node.asObject();
         typename AdapterType::Object::const_iterator itr(object.end());
