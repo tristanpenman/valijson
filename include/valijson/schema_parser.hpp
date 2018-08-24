@@ -205,7 +205,7 @@ private:
      * document URI should be used to replace the path, query and fragment
      * portions of URI provided by the resolution scope.
      */
-    static opt::optional<std::string> findAbsoluteDocumentUri(
+    virtual opt::optional<std::string> findAbsoluteDocumentUri(
             const opt::optional<std::string> resolutionScope,
             const opt::optional<std::string> documentUri)
     {
