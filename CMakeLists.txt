@@ -3,17 +3,17 @@ project (valijson)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-option(INSTALL_HEADERS "Install valijson Headers." FALSE)
-option(BUILD_EXAMPLES "Build valijson Examples." FALSE)
-option(BUILD_TESTS "Build valijson Tests." TRUE)
+option(valijson_INSTALL_HEADERS "Install valijson Headers." FALSE)
+option(valijson_BUILD_EXAMPLES "Build valijson Examples." FALSE)
+option(valijson_BUILD_TESTS "Build valijson Tests." TRUE)
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 
-if(INSTALL_HEADERS)
+if(valijson_INSTALL_HEADERS)
     install(DIRECTORY include/ DESTINATION include)
 endif()
 
-if(NOT BUILD_TESTS AND NOT BUILD_EXAMPLES)
+if(NOT valijson_BUILD_TESTS AND NOT valijson_BUILD_EXAMPLES)
     return()
 endif()
 
