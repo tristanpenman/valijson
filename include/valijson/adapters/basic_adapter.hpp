@@ -757,7 +757,7 @@ public:
     {
         if (value.isBool()) {
             return true;
-        } else if (value.isString()) {
+        } else if (maybeString()) {
             std::string stringValue;
             if (value.getString(stringValue)) {
                 if (stringValue.compare("true") == 0 || stringValue.compare("false") == 0) {
@@ -773,7 +773,7 @@ public:
     {
         if (value.isNumber()) {
             return true;
-        } else if (value.isString()) {
+        } else if (maybeString()) {
             std::string s;
             if (value.getString(s)) {
                 const char *b = s.c_str();
@@ -790,7 +790,7 @@ public:
     {
         if (value.isInteger()) {
             return true;
-        } else if (value.isString()) {
+        } else if (maybeString()) {
             std::string s;
             if (value.getString(s)) {
                 std::istringstream i(s);
@@ -810,7 +810,7 @@ public:
     {
         if (value.isNull()) {
             return true;
-        } else if (value.isString()) {
+        } else if (maybeString()) {
             std::string stringValue;
             if (value.getString(stringValue)) {
                 if (stringValue.empty()) {
@@ -826,7 +826,7 @@ public:
     {
         if (value.isObject()) {
             return true;
-        } else if (value.isArray()) {
+        } else if (maybeArray()) {
             size_t arraySize;
             if (value.getArraySize(arraySize) && arraySize == 0) {
                 return true;
