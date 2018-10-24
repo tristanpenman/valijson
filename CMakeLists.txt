@@ -63,7 +63,7 @@ include_directories(SYSTEM
     thirdparty/gtest-1.7.0/include
     thirdparty/json11-ec4e452
     thirdparty/jsoncpp-0.9.4/include
-    thirdparty/rapidjson-1.0.2/include
+    thirdparty/rapidjson-1.1.0/include
     thirdparty/picojson-1.3.0
     thirdparty/nlohmann-json-3.1.2
     ${Boost_INCLUDE_DIRS}
