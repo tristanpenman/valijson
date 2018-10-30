@@ -170,7 +170,7 @@ Valijson supports JSON documents loaded using various JSON parser libraries. It 
  - [json11 (commit afcc8d0)](https://github.com/dropbox/json11/tree/afcc8d0d82b1ce2df587a7a0637d05ba493bf5e6)
  - [jsoncpp 0.9.4](https://github.com/open-source-parsers/jsoncpp/archive/0.9.4.tar.gz)
  - [nlohmann/json 1.1.0](https://github.com/nlohmann/json/archive/v1.1.0.tar.gz)
- - [rapidjson 1.0.2](https://github.com/miloyip/rapidjson/releases/tag/v1.0.2)
+ - [rapidjson 1.1.0](https://github.com/miloyip/rapidjson/releases/tag/v1.1.0)
  - [PicoJSON 1.3.0](https://github.com/kazuho/picojson/archive/v1.3.0.tar.gz)
  - [Poco JSON 1.7.8](https://pocoproject.org/docs/Poco.JSON.html)
  - [Qt 5.8](http://doc.qt.io/qt-5/json.html)
