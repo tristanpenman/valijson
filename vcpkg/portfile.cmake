@@ -1,7 +1,7 @@
 #header-only library
 include(vcpkg_common_functions)
 
-set(SOURCE_PATH ${CURRENT_BUILDTREES_DIR}/src/valijson-2018-11-17)
+set(SOURCE_PATH ${CURRENT_BUILDTREES_DIR}/src/valijson)
 
 vcpkg_from_github(OUT_SOURCE_PATH SOURCE_PATH
     REPO tristanpenman/valijson
