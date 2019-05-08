@@ -177,6 +177,10 @@ Valijson supports JSON documents loaded using various JSON parser libraries. It 
 
 Other versions of these libraries may work, but have not been tested. In particular, versions of JsonCpp going back to 0.5.0 should also work correctly, but versions from 1.0 onwards have not yet been tested.
 
+## Package Managers ##
+
+If you are using [vcpkg](https://github.com/Microsoft/vcpkg) on your project for external dependencies, then you can use the [valijson](https://github.com/microsoft/vcpkg/tree/master/ports/valijson) package. Please see the vcpkg project for any issues regarding the packaging.
+
 ## Test Suite Requirements ##
 
 Supported versions of these libraries have been included in the 'thirdparty' directory so as to support Valijson's examples and test suite. 
