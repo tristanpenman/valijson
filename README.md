@@ -162,6 +162,8 @@ Doxygen documentation can be built by running 'doxygen' from the project root di
 
 Valijson requires a compiler with C++11 support.
 
+When building the test suite, Boost 1.54, Qt 5 and Poco are optional dependencies. 
+
 ## Supported Parsers ##
 
 Valijson supports JSON documents loaded using various JSON parser libraries. It has been tested against the following versions of these libraries:

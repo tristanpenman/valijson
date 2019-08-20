@@ -3,9 +3,10 @@ project(valijson)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-option(valijson_INSTALL_HEADERS "Install valijson Headers." FALSE)
-option(valijson_BUILD_EXAMPLES "Build valijson Examples." FALSE)
-option(valijson_BUILD_TESTS "Build valijson Tests." TRUE)
+option(valijson_INSTALL_HEADERS "Install valijson headers." FALSE)
+option(valijson_BUILD_EXAMPLES "Build valijson examples." FALSE)
+option(valijson_BUILD_TESTS "Build valijson test suite." TRUE)
+option(valijson_EXCLUDE_BOOST "Exclude Boost when building test suite." FALSE)
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 
@@ -61,12 +62,8 @@ include_directories(include SYSTEM
     )
 
 if(valijson_BUILD_TESTS)
-    find_package(Boost 1.54.0 REQUIRED)
-    if(Boost_FOUND)
-        add_definitions(-DBOOST_ALL_DYN_LINK)
-        set(Boost_USE_STATIC_LIBS OFF)
-        set(Boost_USE_MULTITHREADED ON)
-        set(Boost_USE_STATIC_RUNTIME OFF)
+    if(NOT valijson_EXCLUDE_BOOST)
+        find_package(Boost 1.54.0)
     endif()
 
     # Build local gtest
@@ -80,7 +77,6 @@ if(valijson_BUILD_TESTS)
         tests/test_json11_adapter.cpp
         tests/test_jsoncpp_adapter.cpp
         tests/test_nlohmann_json_adapter.cpp
-        tests/test_property_tree_adapter.cpp
         tests/test_rapidjson_adapter.cpp
         tests/test_picojson_adapter.cpp
         tests/test_poco_json_adapter.cpp
@@ -93,6 +89,10 @@ if(valijson_BUILD_TESTS)
         list(APPEND TEST_SOURCES tests/test_qtjson_adapter.cpp)
     endif()
 
+    if(Boost_FOUND)
+        list(APPEND TEST_SOURCES tests/test_property_tree_adapter.cpp)
+    endif()
+
     # Unit tests executable
     add_executable(test_suite ${TEST_SOURCES})
 
@@ -100,6 +100,13 @@ if(valijson_BUILD_TESTS)
     set_target_properties(test_suite PROPERTIES COMPILE_DEFINITIONS "PICOJSON_USE_INT64")
 
     set(TEST_LIBS gtest gtest_main jsoncpp json11)
+
+    if(Boost_FOUND)
+        add_definitions(-DBOOST_ALL_DYN_LINK)
+        set(Boost_USE_STATIC_LIBS OFF)
+        set(Boost_USE_MULTITHREADED ON)
+        set(Boost_USE_STATIC_RUNTIME OFF)
+    endif()
 
     if(Qt5Core_FOUND)
         list(APPEND TEST_LIBS Qt5::Core)
