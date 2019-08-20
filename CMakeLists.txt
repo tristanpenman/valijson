@@ -57,8 +57,6 @@ include_directories(include SYSTEM
     thirdparty/rapidjson-1.1.0/include
     thirdparty/picojson-1.3.0
     thirdparty/nlohmann-json-3.1.2
-    ${Boost_INCLUDE_DIRS}
-    ${Qt5Core_INCLUDE_DIRS}
     )
 
 if(valijson_BUILD_TESTS)
@@ -86,10 +84,12 @@ if(valijson_BUILD_TESTS)
     )
 
     if(Qt5Core_FOUND)
+        include_directories(${Qt5Core_INCLUDE_DIRS})
         list(APPEND TEST_SOURCES tests/test_qtjson_adapter.cpp)
     endif()
 
     if(Boost_FOUND)
+        include_directories(${Boost_INCLUDE_DIRS})
         list(APPEND TEST_SOURCES tests/test_property_tree_adapter.cpp)
     endif()
 
