@@ -4,9 +4,11 @@
 
 #include <gtest/gtest.h>
 
+#include <valijson/adapters/json11_adapter.hpp>
 #include <valijson/adapters/jsoncpp_adapter.hpp>
 #include <valijson/adapters/rapidjson_adapter.hpp>
 #include <valijson/adapters/picojson_adapter.hpp>
+#include <valijson/utils/json11_utils.hpp>
 #include <valijson/utils/jsoncpp_utils.hpp>
 #include <valijson/utils/rapidjson_utils.hpp>
 #include <valijson/utils/picojson_utils.hpp>
@@ -14,11 +16,6 @@
 #include <valijson/schema_parser.hpp>
 #include <valijson/validation_results.hpp>
 #include <valijson/validator.hpp>
-
-#ifdef VALIJSON_BUILD_CXX11_ADAPTERS
-#include <valijson/adapters/json11_adapter.hpp>
-#include <valijson/utils/json11_utils.hpp>
-#endif // VALIJSON_BUILD_CXX11_ADAPTERS
 
 #ifdef VALIJSON_BUILD_POCO_ADAPTERS
 #include <valijson/adapters/poco_json_adapter.hpp>
@@ -87,7 +84,7 @@ protected:
 
     template<typename AdapterType>
     static void processTestFile(const std::string &testFile,
-                         const SchemaParser::Version version)
+                                const SchemaParser::Version version)
     {
         std::string currentTestCase;
         std::string currentTest;
@@ -102,7 +99,6 @@ protected:
 
             // Process each test case in the file
             for (const AdapterType testCase : testCases.getArray()) {
-
                 currentTestCase.clear();
                 currentTest.clear();
 
@@ -130,7 +126,6 @@ protected:
                 ASSERT_NE( object.end(), itr );
                 ASSERT_TRUE( itr->second.isArray() );
                 for (const AdapterType test : itr->second.getArray()) {
-
                     const bool strict = itr->second.hasStrictTypes();
 
                     ASSERT_TRUE( test.isObject() );
@@ -169,12 +164,10 @@ protected:
     void processTestFile(const std::string &testFile,
                          const SchemaParser::Version version)
     {
+        processTestFile<valijson::adapters::Json11Adapter>(testFile, version);
         processTestFile<valijson::adapters::JsonCppAdapter>(testFile, version);
         processTestFile<valijson::adapters::RapidJsonAdapter>(testFile, version);
         processTestFile<valijson::adapters::PicoJsonAdapter>(testFile, version);
-#ifdef VALIJSON_BUILD_CXX11_ADAPTERS
-        processTestFile<valijson::adapters::Json11Adapter>(testFile, version);
-#endif // VALIJSON_BUILD_CXX11_ADAPTERS
 
 #ifdef VALIJSON_BUILD_POCO_ADAPTERS
         processTestFile<valijson::adapters::PocoJsonAdapter>(testFile, version);

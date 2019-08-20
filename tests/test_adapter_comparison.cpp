@@ -2,34 +2,27 @@
 
 #include <gtest/gtest.h>
 
+#include <valijson/adapters/json11_adapter.hpp>
 #include <valijson/adapters/jsoncpp_adapter.hpp>
+#include <valijson/adapters/nlohmann_json_adapter.hpp>
 #include <valijson/adapters/property_tree_adapter.hpp>
 #include <valijson/adapters/rapidjson_adapter.hpp>
 #include <valijson/adapters/picojson_adapter.hpp>
+#include <valijson/utils/json11_utils.hpp>
 #include <valijson/utils/jsoncpp_utils.hpp>
+#include <valijson/utils/nlohmann_json_utils.hpp>
 #include <valijson/utils/property_tree_utils.hpp>
 #include <valijson/utils/rapidjson_utils.hpp>
 #include <valijson/utils/picojson_utils.hpp>
 
-#ifdef VALIJSON_BUILD_CXX11_ADAPTERS
-#include <valijson/adapters/json11_adapter.hpp>
-#include <valijson/utils/json11_utils.hpp>
-
-#include <valijson/adapters/nlohmann_json_adapter.hpp>
-#include <valijson/utils/nlohmann_json_utils.hpp>
-
-#endif // VALIJSON_BUILD_CXX11_ADAPTERS
-
 #ifdef VALIJSON_BUILD_QT_ADAPTERS
 #include <valijson/adapters/qtjson_adapter.hpp>
 #include <valijson/utils/qtjson_utils.hpp>
-
 #endif // VALIJSON_BUILD_QT_ADAPTERS
 
 #ifdef VALIJSON_BUILD_POCO_ADAPTERS
 #include <valijson/adapters/poco_json_adapter.hpp>
 #include <valijson/utils/poco_json_utils.hpp>
-
 #endif // VALIJSON_BUILD_POCO_ADAPTERS
 
 #define TEST_DATA_DIR "../tests/data/documents/"
@@ -253,8 +246,6 @@ TEST_F(TestAdapterComparison, RapidJsonCrtAllocVsRapidJsonCrtAlloc)
             rapidjson::CrtAllocator> > >();
 }
 
-#ifdef VALIJSON_BUILD_CXX11_ADAPTERS
-
 TEST_F(TestAdapterComparison, Json11VsJson11)
 {
     testComparison<
@@ -351,8 +342,6 @@ TEST_F(TestAdapterComparison, NlohmannJsonVsPropertyTree)
             valijson::adapters::PropertyTreeAdapter>();
 }
 
-#endif // VALIJSON_BUILD_CXX11_ADAPTERS
-
 #ifdef VALIJSON_BUILD_QT_ADAPTERS
 
 TEST_F(TestAdapterComparison, QtJsonVsQtJson) {
@@ -400,7 +389,7 @@ TEST_F(TestAdapterComparison, QtJsonVsPropertyTree)
 
 #endif // VALIJSON_BUILD_QT_ADAPTERS
 
-#if defined(VALIJSON_BUILD_QT_ADAPTERS) && defined(VALIJSON_BUILD_CXX11_ADAPTERS)
+#if defined(VALIJSON_BUILD_QT_ADAPTERS)
 
 TEST_F(TestAdapterComparison, QtJsonVsJson11)
 {
@@ -466,7 +455,7 @@ TEST_F(TestAdapterComparison, PocoJsonVsPropertyTree)
 
 #endif
 
-#if defined(VALIJSON_BUILD_POCO_ADAPTERS) && defined(VALIJSON_BUILD_CXX11_ADAPTERS)
+#if defined(VALIJSON_BUILD_POCO_ADAPTERS)
 
 TEST_F(TestAdapterComparison, PocoJsonVsJson11)
 {

@@ -1,5 +1,3 @@
-#ifdef VALIJSON_BUILD_CXX11_ADAPTERS
-
 #include <gtest/gtest.h>
 
 #include <valijson/adapters/nlohmann_json_adapter.hpp>
@@ -79,6 +77,3 @@ TEST_F(TestNlohmannJsonAdapter, BasicObjectIteration)
     // Ensure that the correct number of elements were iterated over
     EXPECT_EQ( numElements, expectedValue );
 }
-
-#endif // VALIJSON_BUILD_CXX11_ADAPTERS
-
