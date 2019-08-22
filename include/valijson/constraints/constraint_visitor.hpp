@@ -1,6 +1,4 @@
 #pragma once
-#ifndef __VALIJSON_CONSTRAINTS_CONSTRAINT_VISITOR_HPP
-#define __VALIJSON_CONSTRAINTS_CONSTRAINT_VISITOR_HPP
 
 namespace valijson {
 namespace constraints {
@@ -95,5 +93,3 @@ public:
 
 }  // namespace constraints
 }  // namespace valijson
-
-#endif

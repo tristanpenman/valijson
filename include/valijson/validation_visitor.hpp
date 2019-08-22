@@ -1,6 +1,4 @@
 #pragma once
-#ifndef __VALIJSON_VALIDATION_VISITOR_HPP
-#define __VALIJSON_VALIDATION_VISITOR_HPP
 
 #include <cmath>
 #include <string>
@@ -1707,5 +1705,3 @@ private:
 };
 
 }  // namespace valijson
-
-#endif

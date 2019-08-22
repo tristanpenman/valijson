@@ -24,8 +24,6 @@
  */
 
 #pragma once
-#ifndef __VALIJSON_ADAPTERS_JSONCPP_ADAPTER_HPP
-#define __VALIJSON_ADAPTERS_JSONCPP_ADAPTER_HPP
 
 #include <stdint.h>
 #include <string>
@@ -720,5 +718,3 @@ inline JsonCppObjectMemberIterator JsonCppObject::find(
 
 }  // namespace adapters
 }  // namespace valijson
-
-#endif

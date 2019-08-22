@@ -1,6 +1,4 @@
 #pragma once
-#ifndef __VALIJSON_INTERNAL_JSON_REFERENCE_HPP
-#define __VALIJSON_INTERNAL_JSON_REFERENCE_HPP
 
 #include <stdexcept>
 #include <string>
@@ -61,5 +59,3 @@ namespace json_reference {
 } // namespace json_reference
 } // namespace internal
 } // namespace valijson
-
-#endif

@@ -13,8 +13,6 @@
  */
 
 #pragma once
-#ifndef __VALIJSON_CONSTRAINTS_CONCRETE_CONSTRAINTS_HPP
-#define __VALIJSON_CONSTRAINTS_CONCRETE_CONSTRAINTS_HPP
 
 #include <limits>
 #include <map>
@@ -1099,5 +1097,3 @@ public:
 
 } // namespace constraints
 } // namespace valijson
-
-#endif

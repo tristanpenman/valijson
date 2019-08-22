@@ -1,6 +1,4 @@
 #pragma once
-#ifndef __VALIJSON_CONSTRAINTS_CONSTRAINT_HPP
-#define __VALIJSON_CONSTRAINTS_CONSTRAINT_HPP
 
 namespace valijson {
 namespace constraints {
@@ -51,4 +49,3 @@ struct Constraint
 } // namespace constraints
 } // namespace valijson
 
-#endif

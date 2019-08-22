@@ -1,6 +1,4 @@
 #pragma once
-#ifndef VALIJSON_NLOHMANN_JSON_UTILS_HPP
-#define VALIJSON_NLOHMANN_JSON_UTILS_HPP
 
 #include <iostream>
 
@@ -33,5 +31,3 @@ inline bool loadDocument(const std::string &path, nlohmann::json &document) {
 
 }  // namespace utils
 }  // namespace valijson
-
-#endif //VALIJSON_NLOHMANN_JSON_UTILS_HPP

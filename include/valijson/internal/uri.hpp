@@ -1,6 +1,4 @@
 #pragma once
-#ifndef __VALIJSON_INTERNAL_URI_HPP
-#define __VALIJSON_INTERNAL_URI_HPP
 
 #include <string>
 
@@ -33,5 +31,3 @@ namespace uri {
 } // namespace uri
 } // namespace internal
 } // namespace valijson
-
-#endif  // __VALIJSON_INTERNAL_URI_HPP

@@ -1,6 +1,4 @@
 #pragma once
-#ifndef __VALIJSON_SCHEMA_PARSER_HPP
-#define __VALIJSON_SCHEMA_PARSER_HPP
 
 #include <stdexcept>
 #include <iostream>
@@ -2133,6 +2131,4 @@ private:
 
 #ifdef __clang__
 #  pragma clang diagnostic pop
-#endif
-
 #endif
