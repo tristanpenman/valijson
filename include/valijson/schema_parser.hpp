@@ -1125,6 +1125,24 @@ private:
         return constraint;
     }
 
+    template<typename AdapterType>
+    constraints::ConditionalConstraint makeConditionalConstraint(
+        Schema &rootSchema,
+        const AdapterType &rootNode,
+        const AdapterType &ifNode,
+        const AdapterType &thenNode,
+        const AdapterType *elseNode,
+        const opt::optional<std::string> currentScope,
+        const std::string &nodePath,
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
+        typename DocumentCache<AdapterType>::Type &docCache,
+        SchemaCache &schemaCache
+    ) {
+        constraints::ConditionalConstraint constraint;
+        
+        return constraint;
+    }
+    
     /**
      * @brief   Make a new DependenciesConstraint object
      *

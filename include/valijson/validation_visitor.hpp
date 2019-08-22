@@ -160,6 +160,11 @@ public:
         return numValidated > 0;
     }
 
+    virtual bool visit(const ConditionalConstraint &constraint)
+    {
+        return false;
+    }
+    
     /**
      * @brief   Validate current node against a 'dependencies' constraint
      *

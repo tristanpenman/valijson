@@ -116,6 +116,12 @@ private:
     /// Collection of sub-schemas, at least one of which must be satisfied
     Subschemas subschemas;
 };
+    
+class ConditionalConstraint: public BasicConstraint<ConditionalConstraint>
+{
+public:
+    ConditionalConstraint() { }
+};
 
 /**
  * @brief  Represents a 'dependencies' constraint.
