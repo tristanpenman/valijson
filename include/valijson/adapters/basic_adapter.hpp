@@ -1,6 +1,4 @@
 #pragma once
-#ifndef __VALIJSON_ADAPTERS_BASIC_ADAPTER_HPP
-#define __VALIJSON_ADAPTERS_BASIC_ADAPTER_HPP
 
 #include <stdint.h>
 #include <sstream>
@@ -864,5 +862,3 @@ private:
 
 }  // namespace adapters
 }  // namespace valijson
-
-#endif
