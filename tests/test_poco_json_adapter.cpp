@@ -1,5 +1,3 @@
-#ifdef VALIJSON_BUILD_POCO_ADAPTERS
-
 #include <gtest/gtest.h>
 
 #include <valijson/adapters/poco_json_adapter.hpp>
@@ -15,7 +13,7 @@ TEST_F(TestPocoJsonAdapter, BasicArrayIteration)
 
     // Create a Json document that consists of an array of numbers
     Poco::JSON::Array::Ptr documentImpl = new Poco::JSON::Array();
-    
+
     for (unsigned int i = 0; i < numElements; i++) {
         documentImpl->set(i, static_cast<double>(i));
     }
@@ -84,6 +82,3 @@ TEST_F(TestPocoJsonAdapter, BasicObjectIteration)
     // Ensure that the correct number of elements were iterated over
     EXPECT_EQ( numElements, expectedValue );
 }
-
-#endif // VALIJSON_BUILD_POCO_ADAPTERS
-
