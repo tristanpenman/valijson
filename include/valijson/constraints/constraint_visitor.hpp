@@ -34,7 +34,7 @@ class ConstraintVisitor
 {
 protected:
     virtual ~ConstraintVisitor() {}
-    
+
     // Shorten type names for derived classes outside of this namespace
     typedef constraints::AllOfConstraint AllOfConstraint;
     typedef constraints::AnyOfConstraint AnyOfConstraint;

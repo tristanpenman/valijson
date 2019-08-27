@@ -48,4 +48,3 @@ struct Constraint
 
 } // namespace constraints
 } // namespace valijson
-

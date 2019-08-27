@@ -61,7 +61,7 @@ include_directories(include SYSTEM
 
 if(valijson_BUILD_TESTS)
     if(NOT valijson_EXCLUDE_BOOST)
-        find_package(Boost 1.54.0)
+        find_package(Boost)
     endif()
 
     # Build local gtest
@@ -77,21 +77,10 @@ if(valijson_BUILD_TESTS)
         tests/test_nlohmann_json_adapter.cpp
         tests/test_rapidjson_adapter.cpp
         tests/test_picojson_adapter.cpp
-        tests/test_poco_json_adapter.cpp
         tests/test_poly_constraint.cpp
         tests/test_validation_errors.cpp
         tests/test_validator.cpp
     )
-
-    if(Qt5Core_FOUND)
-        include_directories(${Qt5Core_INCLUDE_DIRS})
-        list(APPEND TEST_SOURCES tests/test_qtjson_adapter.cpp)
-    endif()
-
-    if(Boost_FOUND)
-        include_directories(${Boost_INCLUDE_DIRS})
-        list(APPEND TEST_SOURCES tests/test_property_tree_adapter.cpp)
-    endif()
 
     # Unit tests executable
     add_executable(test_suite ${TEST_SOURCES})
@@ -102,20 +91,27 @@ if(valijson_BUILD_TESTS)
     set(TEST_LIBS gtest gtest_main jsoncpp json11)
 
     if(Boost_FOUND)
+        include_directories(${Boost_INCLUDE_DIRS})
+        list(APPEND TEST_SOURCES tests/test_property_tree_adapter.cpp)
         add_definitions(-DBOOST_ALL_DYN_LINK)
         set(Boost_USE_STATIC_LIBS OFF)
         set(Boost_USE_MULTITHREADED ON)
         set(Boost_USE_STATIC_RUNTIME OFF)
-    endif()
-
-    if(Qt5Core_FOUND)
-        list(APPEND TEST_LIBS Qt5::Core)
-        target_compile_definitions(test_suite PRIVATE "VALIJSON_BUILD_QT_ADAPTERS")
+        target_compile_definitions(test_suite PRIVATE "VALIJSON_BUILD_PROPERTY_TREE_ADAPTER")
     endif()
 
     if(Poco_FOUND)
+        include_directories(${Poco_INCLUDE_DIRS})
+        list(APPEND TEST_SOURCES tests/test_poco_json_adapter.cpp)
         list(APPEND TEST_LIBS ${Poco_Foundation_LIBRARIES} ${Poco_JSON_LIBRARIES})
-        target_compile_definitions(test_suite PRIVATE "VALIJSON_BUILD_POCO_ADAPTERS")
+        target_compile_definitions(test_suite PRIVATE "VALIJSON_BUILD_POCO_ADAPTER")
+    endif()
+
+    if(Qt5Core_FOUND)
+        include_directories(${Qt5Core_INCLUDE_DIRS})
+        list(APPEND TEST_SOURCES tests/test_qtjson_adapter.cpp)
+        list(APPEND TEST_LIBS Qt5::Core)
+        target_compile_definitions(test_suite PRIVATE "VALIJSON_BUILD_QT_ADAPTER")
     endif()
 
     target_link_libraries(test_suite ${TEST_LIBS} ${Boost_LIBRARIES})

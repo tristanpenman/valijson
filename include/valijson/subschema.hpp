@@ -15,7 +15,7 @@ namespace valijson {
  * While all JSON Schemas have at least one sub-schema, the root, some will
  * have additional sub-schemas that are defined as part of constraints that are
  * included in the schema. For example, a 'oneOf' constraint maintains a set of
- * references to one or more nested sub-schemas. As per the definition of a 
+ * references to one or more nested sub-schemas. As per the definition of a
  * oneOf constraint, a document is valid within that constraint if it validates
  * against one of the nested sub-schemas.
  */
@@ -242,7 +242,7 @@ public:
      *
      * The title will not be used for validation, but may be used as part
      * of the user interface for interacting with schemas and sub-schema. As an
-     * example, it may be used as part of the validation error descriptions 
+     * example, it may be used as part of the validation error descriptions
      * that are produced by the Validator and ValidationVisitor classes.
      *
      * @param  title  new title

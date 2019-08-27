@@ -244,7 +244,7 @@ public:
 
     /**
      * @brief   Validate a value against a LinearItemsConstraint
-     
+     *
      * A LinearItemsConstraint represents an 'items' constraint that specifies,
      * for each item in array, an individual sub-schema that the item must
      * validate against. The LinearItemsConstraint class also captures the
