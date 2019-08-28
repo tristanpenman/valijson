@@ -1701,7 +1701,6 @@ private:
 
     /// Option to use strict type comparison
     const bool strictTypes;
-
 };
 
 }  // namespace valijson

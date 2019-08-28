@@ -114,7 +114,7 @@ private:
     /// Collection of sub-schemas, at least one of which must be satisfied
     Subschemas subschemas;
 };
-    
+
 class ConditionalConstraint: public BasicConstraint<ConditionalConstraint>
 {
 public:
@@ -345,7 +345,7 @@ public:
     void applyToItemSubschemas(const FunctorType &fn) const
     {
         unsigned int index = 0;
-        for( const Subschema *subschema : itemSubschemas ) {
+        for (const Subschema *subschema : itemSubschemas) {
             if (!fn(index, subschema)) {
                 return;
             }
@@ -727,7 +727,7 @@ public:
     void applyToSubschemas(const FunctorType &fn) const
     {
         unsigned int index = 0;
-        for( const Subschema *subschema : subschemas ) {
+        for (const Subschema *subschema : subschemas) {
             if (!fn(index, subschema)) {
                 return;
             }
@@ -870,7 +870,7 @@ public:
     void applyToPatternProperties(const FunctorType &fn) const
     {
         typedef typename PropertySchemaMap::value_type ValueType;
-        for( const ValueType &value : patternProperties ) {
+        for (const ValueType &value : patternProperties) {
             if (!fn(value.first, value.second)) {
                 return;
             }
@@ -881,7 +881,7 @@ public:
     void applyToProperties(const FunctorType &fn) const
     {
         typedef typename PropertySchemaMap::value_type ValueType;
-        for( const ValueType &value : properties ) {
+        for (const ValueType &value : properties) {
             if (!fn(value.first, value.second)) {
                 return;
             }
@@ -937,7 +937,7 @@ public:
     template<typename FunctorType>
     void applyToRequiredProperties(const FunctorType &fn) const
     {
-        for( const String &propertyName : requiredProperties ) {
+        for (const String &propertyName : requiredProperties) {
             if (!fn(propertyName)) {
                 return;
             }
@@ -1024,7 +1024,7 @@ public:
     template<typename FunctorType>
     void applyToNamedTypes(const FunctorType &fn) const
     {
-        for( const JsonType namedType : namedTypes ) {
+        for (const JsonType namedType : namedTypes) {
             if (!fn(namedType)) {
                 return;
             }
@@ -1035,7 +1035,7 @@ public:
     void applyToSchemaTypes(const FunctorType &fn) const
     {
         unsigned int index = 0;
-        for( const Subschema *subschema : schemaTypes ) {
+        for (const Subschema *subschema : schemaTypes) {
             if (!fn(index, subschema)) {
                 return;
             }

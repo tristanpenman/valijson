@@ -1048,7 +1048,7 @@ private:
         constraints::AllOfConstraint constraint;
 
         int index = 0;
-        for ( const AdapterType schemaNode : node.asArray() ) {
+        for (const AdapterType schemaNode : node.asArray()) {
             if (schemaNode.maybeObject()) {
                 const std::string childPath = nodePath + "/" +
                         std::to_string(index);
@@ -1104,7 +1104,7 @@ private:
         constraints::AnyOfConstraint constraint;
 
         int index = 0;
-        for ( const AdapterType schemaNode : node.asArray() ) {
+        for (const AdapterType schemaNode : node.asArray()) {
             if (schemaNode.maybeObject()) {
                 const std::string childPath = nodePath + "/" +
                         std::to_string(index);
@@ -1134,13 +1134,13 @@ private:
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
-        SchemaCache &schemaCache
-    ) {
+        SchemaCache &schemaCache)
+    {
         constraints::ConditionalConstraint constraint;
-        
+
         return constraint;
     }
-    
+
     /**
      * @brief   Make a new DependenciesConstraint object
      *
@@ -1195,7 +1195,7 @@ private:
         constraints::DependenciesConstraint dependenciesConstraint;
 
         // Process each of the dependency mappings defined by the object
-        for ( const typename AdapterType::ObjectMember member : node.asObject() ) {
+        for (const typename AdapterType::ObjectMember member : node.asObject()) {
 
             // First, we attempt to parse the value of the dependency mapping
             // as an array of strings. If the Adapter type does not support
@@ -1799,7 +1799,7 @@ private:
         constraints::OneOfConstraint constraint;
 
         int index = 0;
-        for ( const AdapterType schemaNode : node.getArray() ) {
+        for (const AdapterType schemaNode : node.getArray()) {
             const std::string childPath = nodePath + "/" +
                     std::to_string(index);
             const Subschema *subschema = makeOrReuseSchema<AdapterType>(
