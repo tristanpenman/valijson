@@ -176,9 +176,13 @@ public:
         ValidationVisitor thenElseValidator(target, context, strictTypes, NULL);
 
         if (ifValidator.validateSchema(*constraint.getIfSubschema())) {
-            return thenElseValidator.validateSchema(*constraint.getThenSubschema());
+            const Subschema *thenSubschema = constraint.getThenSubschema();
+            return thenSubschema == nullptr ||
+                thenElseValidator.validateSchema(*thenSubschema);
         } else {
-            return thenElseValidator.validateSchema(*constraint.getElseSubschema());
+            const Subschema *elseSubschema = constraint.getElseSubschema();
+            return elseSubschema == nullptr ||
+                thenElseValidator.validateSchema(*elseSubschema);
         }
     }
 

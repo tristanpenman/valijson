@@ -714,13 +714,14 @@ private:
         {
             const typename AdapterType::Object::const_iterator ifItr = object.find("if");
             const typename AdapterType::Object::const_iterator thenItr = object.find("then");
-            const typename AdapterType::Object::const_iterator elseItr = object.find("end");
+            const typename AdapterType::Object::const_iterator elseItr = object.find("else");
 
-            if (object.end() != ifItr && object.end() != thenItr) {
+            if (object.end() != ifItr) {
                 if (version == kDraft7) {
                     rootSchema.addConstraintToSubschema(
                           makeConditionalConstraint(rootSchema, rootNode,
-                                ifItr->second, thenItr->second,
+                                ifItr->second,
+                                thenItr == object.end() ? NULL : &thenItr->second,
                                 elseItr == object.end() ? NULL : &elseItr->second,
                                 updatedScope, nodePath, fetchDoc, docCache, schemaCache),
                           &subschema);
@@ -731,15 +732,13 @@ private:
         }
 
         if (version == kDraft7) {
-            typename AdapterType::Object::const_iterator exclusiveMaximumItr =
-                      object.find("exclusiveMaximum");
-            if (exclusiveMaximumItr != object.end()) {
+            if ((itr = object.find("exclusiveMaximum")) != object.end()) {
                 rootSchema.addConstraintToSubschema(
                     makeMaximumConstraintExclusive(itr->second),
                     &subschema);
             }
-            typename AdapterType::Object::const_iterator maximumItr = object.find("maximum");
-            if (maximumItr != object.end()) {
+
+            if ((itr = object.find("maximum")) != object.end()) {
                 rootSchema.addConstraintToSubschema(
                     makeMaximumConstraint<AdapterType>(itr->second, NULL),
                     &subschema);
@@ -779,15 +778,13 @@ private:
         }
 
         if (version == kDraft7) {
-            typename AdapterType::Object::const_iterator exclusiveMinimumItr =
-                    object.find("exclusiveMinimum");
-            if (exclusiveMinimumItr != object.end()) {
+            if ((itr = object.find("exclusiveMinimum")) != object.end()) {
                 rootSchema.addConstraintToSubschema(
                         makeMinimumConstraintExclusive(itr->second),
                         &subschema);
             }
-            typename AdapterType::Object::const_iterator minimumItr = object.find("minimum");
-            if (minimumItr != object.end()) {
+
+            if ((itr = object.find("minimum")) != object.end()) {
                 rootSchema.addConstraintToSubschema(
                         makeMinimumConstraint<AdapterType>(itr->second, NULL),
                         &subschema);
@@ -1177,7 +1174,7 @@ private:
         Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &ifNode,
-        const AdapterType &thenNode,
+        const AdapterType *thenNode,
         const AdapterType *elseNode,
         const opt::optional<std::string> currentScope,
         const std::string &nodePath,
@@ -1193,10 +1190,12 @@ private:
                 schemaCache);
         constraint.setIfSubschema(ifSubschema);
 
-        const Subschema *thenSubschema = makeOrReuseSchema<AdapterType>(
-                rootSchema, rootNode, thenNode, currentScope, nodePath, fetchDoc, NULL, NULL,
-                docCache, schemaCache);
-        constraint.setThenSubschema(thenSubschema);
+        if (thenNode) {
+            const Subschema *thenSubschema = makeOrReuseSchema<AdapterType>(
+                    rootSchema, rootNode, *thenNode, currentScope, nodePath, fetchDoc, NULL, NULL,
+                    docCache, schemaCache);
+            constraint.setThenSubschema(thenSubschema);
+        }
 
         if (elseNode) {
             const Subschema *elseSubschema = makeOrReuseSchema<AdapterType>(
