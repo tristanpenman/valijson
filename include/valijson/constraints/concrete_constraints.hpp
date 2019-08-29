@@ -118,7 +118,51 @@ private:
 class ConditionalConstraint: public BasicConstraint<ConditionalConstraint>
 {
 public:
-    ConditionalConstraint() { }
+    ConditionalConstraint()
+      : ifSubschema(NULL),
+        thenSubschema(NULL),
+        elseSubschema(NULL) { }
+
+    ConditionalConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        ifSubschema(NULL),
+        thenSubschema(NULL),
+        elseSubschema(NULL) { }
+
+    const Subschema * getIfSubschema() const
+    {
+        return ifSubschema;
+    }
+
+    const Subschema * getThenSubschema() const
+    {
+        return thenSubschema;
+    }
+
+    const Subschema * getElseSubschema() const
+    {
+        return elseSubschema;
+    }
+
+    void setIfSubschema(const Subschema *subschema)
+    {
+        ifSubschema = subschema;
+    }
+
+    void setThenSubschema(const Subschema *subschema)
+    {
+        thenSubschema = subschema;
+    }
+
+    void setElseSubschema(const Subschema *subschema)
+    {
+        elseSubschema = subschema;
+    }
+
+private:
+    const Subschema *ifSubschema;
+    const Subschema *thenSubschema;
+    const Subschema *elseSubschema;
 };
 
 /**

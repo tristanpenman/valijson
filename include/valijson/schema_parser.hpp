@@ -37,7 +37,8 @@ public:
     /// Supported versions of JSON Schema
     enum Version {
         kDraft3,      ///< @deprecated JSON Schema v3 has been superseded by v4
-        kDraft4
+        kDraft4,
+        kDraft7
     };
 
     /// Version of JSON Schema that should be expected when parsing
@@ -710,6 +711,25 @@ private:
             }
         }
 
+        {
+            const typename AdapterType::Object::const_iterator ifItr = object.find("if");
+            const typename AdapterType::Object::const_iterator thenItr = object.find("then");
+            const typename AdapterType::Object::const_iterator elseItr = object.find("end");
+
+            if (object.end() != ifItr && object.end() != thenItr) {
+                if (version == kDraft7) {
+                    rootSchema.addConstraintToSubschema(
+                          makeConditionalConstraint(rootSchema, rootNode,
+                                ifItr->second, thenItr->second,
+                                elseItr == object.end() ? NULL : &elseItr->second,
+                                updatedScope, nodePath, fetchDoc, docCache, schemaCache),
+                          &subschema);
+                } else {
+                    throw std::runtime_error("Not supported");
+                }
+            }
+        }
+
         if ((itr = object.find("maximum")) != object.end()) {
             typename AdapterType::Object::const_iterator exclusiveMaximumItr =
                     object.find("exclusiveMaximum");
@@ -1137,6 +1157,24 @@ private:
         SchemaCache &schemaCache)
     {
         constraints::ConditionalConstraint constraint;
+
+        const Subschema *ifSubschema = makeOrReuseSchema<AdapterType>(
+                rootSchema, rootNode, ifNode, currentScope,
+                nodePath, fetchDoc, NULL, NULL, docCache,
+                schemaCache);
+        constraint.setIfSubschema(ifSubschema);
+
+        const Subschema *thenSubschema = makeOrReuseSchema<AdapterType>(
+                rootSchema, rootNode, thenNode, currentScope, nodePath, fetchDoc, NULL, NULL,
+                docCache, schemaCache);
+        constraint.setThenSubschema(thenSubschema);
+
+        if (elseNode) {
+            const Subschema *elseSubschema = makeOrReuseSchema<AdapterType>(
+                    rootSchema, rootNode, *elseNode, currentScope, nodePath, fetchDoc, NULL, NULL,
+                    docCache, schemaCache);
+            constraint.setElseSubschema(elseSubschema);
+        }
 
         return constraint;
     }

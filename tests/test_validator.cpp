@@ -183,6 +183,11 @@ protected:
     {
         return processTestFile(testFile, SchemaParser::kDraft4);
     }
+
+    void processDraft7TestFile(const std::string &testFile)
+    {
+        return processTestFile(testFile, SchemaParser::kDraft7);
+    }
 };
 
 TEST_F(TestValidator, Draft3_AdditionalItems)
@@ -413,4 +418,9 @@ TEST_F(TestValidator, Draft4_Type)
 TEST_F(TestValidator, Draft4_UniqueItems)
 {
     processDraft4TestFile(TEST_SUITE_DIR "draft4/uniqueItems.json");
+}
+
+TEST_F(TestValidator, Draft7_IfThenElse)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/if-then-else.json");
 }

@@ -158,11 +158,30 @@ public:
         return numValidated > 0;
     }
 
+    /**
+     * @brief   Validate current node using a set of 'if', 'then' and 'else' subschemas
+     *
+     * A conditional constraint allows a document to validated against one of two additional
+     * subschemas (specified via 'then' or 'else' properties) depending on whether the document
+     * satifies an optional subschema (specified via the 'if' property).
+     *
+     * @param   constraint  ConditionalConstraint that the current node must validate against
+     *
+     * @return  \c true if validation passes; \c false otherwise
+     */
     virtual bool visit(const ConditionalConstraint &constraint)
     {
-        return false;
+        // Create a validator to evaluate the conditional
+        ValidationVisitor ifValidator(target, context, strictTypes, NULL);
+        ValidationVisitor thenElseValidator(target, context, strictTypes, NULL);
+
+        if (ifValidator.validateSchema(*constraint.getIfSubschema())) {
+            return thenElseValidator.validateSchema(*constraint.getThenSubschema());
+        } else {
+            return thenElseValidator.validateSchema(*constraint.getElseSubschema());
+        }
     }
-    
+
     /**
      * @brief   Validate current node against a 'dependencies' constraint
      *
