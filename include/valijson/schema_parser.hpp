@@ -730,7 +730,21 @@ private:
             }
         }
 
-        if ((itr = object.find("maximum")) != object.end()) {
+        if (version == kDraft7) {
+            typename AdapterType::Object::const_iterator exclusiveMaximumItr =
+                      object.find("exclusiveMaximum");
+            if (exclusiveMaximumItr != object.end()) {
+                rootSchema.addConstraintToSubschema(
+                    makeMaximumConstraintExclusive(itr->second),
+                    &subschema);
+            }
+            typename AdapterType::Object::const_iterator maximumItr = object.find("maximum");
+            if (maximumItr != object.end()) {
+                rootSchema.addConstraintToSubschema(
+                    makeMaximumConstraint<AdapterType>(itr->second, NULL),
+                    &subschema);
+            }
+        } else if ((itr = object.find("maximum")) != object.end()) {
             typename AdapterType::Object::const_iterator exclusiveMaximumItr =
                     object.find("exclusiveMaximum");
             if (exclusiveMaximumItr == object.end()) {
@@ -764,7 +778,21 @@ private:
                     makeMaxPropertiesConstraint(itr->second), &subschema);
         }
 
-        if ((itr = object.find("minimum")) != object.end()) {
+        if (version == kDraft7) {
+            typename AdapterType::Object::const_iterator exclusiveMinimumItr =
+                    object.find("exclusiveMinimum");
+            if (exclusiveMinimumItr != object.end()) {
+                rootSchema.addConstraintToSubschema(
+                        makeMinimumConstraintExclusive(itr->second),
+                        &subschema);
+            }
+            typename AdapterType::Object::const_iterator minimumItr = object.find("minimum");
+            if (minimumItr != object.end()) {
+                rootSchema.addConstraintToSubschema(
+                        makeMinimumConstraint<AdapterType>(itr->second, NULL),
+                        &subschema);
+            }
+        } else if ((itr = object.find("minimum")) != object.end()) {
             typename AdapterType::Object::const_iterator exclusiveMinimumItr =
                     object.find("exclusiveMinimum");
             if (exclusiveMinimumItr == object.end()) {
@@ -773,7 +801,8 @@ private:
                         &subschema);
             } else {
                 rootSchema.addConstraintToSubschema(
-                        makeMinimumConstraint(itr->second,
+                        makeMinimumConstraint<AdapterType>(
+                                itr->second,
                                 &exclusiveMinimumItr->second),
                         &subschema);
             }
@@ -1491,7 +1520,7 @@ private:
     }
 
     /**
-     * @brief   Make a new MaximumConstraint object.
+     * @brief   Make a new MaximumConstraint object (draft 3 and 4).
      *
      * @param   rootSchema        The Schema instance, and root subschema,
      *                            through which other subschemas can be
@@ -1530,6 +1559,29 @@ private:
             constraint.setExclusiveMaximum(exclusiveMaximum->asBool());
         }
 
+        return constraint;
+    }
+
+    /**
+     * @brief   Make a new MaximumConstraint object that is always exclusive (draft 7).
+     *
+     * @param   node       JSON node containing an integer, representing the maximum value.
+     *
+     * @param   exclusive  Optional pointer to a JSON boolean value that indicates whether the
+     *                     maximum value is excluded from the range of permitted values.
+     *
+     * @return  pointer to a new Maximum that belongs to the caller
+     */
+    template<typename AdapterType>
+    constraints::MaximumConstraint makeMaximumConstraintExclusive(const AdapterType &node)
+    {
+        if (!node.maybeDouble()) {
+            throw std::runtime_error("Expected numeric value for maximum constraint.");
+        }
+
+        constraints::MaximumConstraint constraint;
+        constraint.setMaximum(node.asDouble());
+        constraint.setExclusiveMaximum(true);
         return constraint;
     }
 
@@ -1614,7 +1666,7 @@ private:
     }
 
     /**
-     * @brief  Make a new MinimumConstraint object.
+     * @brief  Make a new MinimumConstraint object (draft 3 and 4).
      *
      * @param  node              JSON node containing an integer, representing
      *                           the minimum value.
@@ -1648,6 +1700,29 @@ private:
             constraint.setExclusiveMinimum(exclusiveMinimum->asBool());
         }
 
+        return constraint;
+    }
+
+    /**
+     * @brief   Make a new MinimumConstraint object that is always exclusive (draft 7).
+     *
+     * @param   node       JSON node containing an integer, representing the minimum value.
+     *
+     * @param   exclusive  Optional pointer to a JSON boolean value that indicates whether the
+     *                     minimum value is excluded from the range of permitted values.
+     *
+     * @return  pointer to a new MinimumConstraint that belongs to the caller
+     */
+    template<typename AdapterType>
+    constraints::MinimumConstraint makeMinimumConstraintExclusive(const AdapterType &node)
+    {
+        if (!node.maybeDouble()) {
+            throw std::runtime_error("Expected numeric value for minimum constraint.");
+        }
+
+        constraints::MinimumConstraint constraint;
+        constraint.setMinimum(node.asDouble());
+        constraint.setExclusiveMinimum(true);
         return constraint;
     }
 
