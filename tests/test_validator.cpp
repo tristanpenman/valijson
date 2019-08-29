@@ -420,7 +420,27 @@ TEST_F(TestValidator, Draft4_UniqueItems)
     processDraft4TestFile(TEST_SUITE_DIR "draft4/uniqueItems.json");
 }
 
+TEST_F(TestValidator, Draft7_ExclusiveMaximum)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/exclusiveMaximum.json");
+}
+
+TEST_F(TestValidator, Draft7_ExclusiveMinimum)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/exclusiveMinimum.json");
+}
+
 TEST_F(TestValidator, Draft7_IfThenElse)
 {
     processDraft7TestFile(TEST_SUITE_DIR "draft7/if-then-else.json");
+}
+
+TEST_F(TestValidator, Draft7_Maximum)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/maximum.json");
+}
+
+TEST_F(TestValidator, Draft7_Minimum)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/minimum.json");
 }
