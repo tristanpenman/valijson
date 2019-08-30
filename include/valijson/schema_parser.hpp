@@ -1096,17 +1096,25 @@ private:
         int index = 0;
         for (const AdapterType schemaNode : node.asArray()) {
             if (schemaNode.maybeObject()) {
-                const std::string childPath = nodePath + "/" +
-                        std::to_string(index);
+                const std::string childPath = nodePath + "/" + std::to_string(index);
                 const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                         rootSchema, rootNode, schemaNode, currentScope,
                         childPath, fetchDoc, NULL, NULL, docCache, schemaCache);
                 constraint.addSubschema(subschema);
                 index++;
+            } else if (version == kDraft7) {
+                if (schemaNode.maybeBool()) {
+                    if (!schemaNode.asBool()) {
+                        // Schema that always fails
+                        constraint.setAlwaysInvalid();
+                    }
+                } else {
+                    throw std::runtime_error(
+                        "Expected element to be an object or boolean value in 'allOf' constraint");
+                }
             } else {
                 throw std::runtime_error(
-                        "Expected array element to be an object value in "
-                        "'allOf' constraint.");
+                        "Expected element to be an object value in 'allOf' constraint.");
             }
         }
 
@@ -1152,17 +1160,24 @@ private:
         int index = 0;
         for (const AdapterType schemaNode : node.asArray()) {
             if (schemaNode.maybeObject()) {
-                const std::string childPath = nodePath + "/" +
-                        std::to_string(index);
+                const std::string childPath = nodePath + "/" + std::to_string(index);
                 const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                         rootSchema, rootNode, schemaNode, currentScope,
                         childPath, fetchDoc, NULL, NULL, docCache, schemaCache);
                 constraint.addSubschema(subschema);
                 index++;
+            } else if (version == kDraft7) {
+                if (schemaNode.maybeBool()) {
+                    if (schemaNode.asBool()) {
+                        constraint.setAlwaysValid();
+                    }
+                } else {
+                    throw std::runtime_error(
+                        "Expected element to be an object or boolean value in 'allOf' constraint");
+                }
             } else {
                 throw std::runtime_error(
-                        "Expected array element to be an object value in "
-                        "'anyOf' constraint.");
+                        "Expected array element to be an object value in 'anyOf' constraint.");
             }
         }
 

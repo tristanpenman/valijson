@@ -190,6 +190,11 @@ protected:
     }
 };
 
+//
+// draft 3
+// ------------------------------------------------------------------------------------------------
+//
+
 TEST_F(TestValidator, Draft3_AdditionalItems)
 {
     processDraft3TestFile(TEST_SUITE_DIR "draft3/additionalItems.json");
@@ -289,6 +294,11 @@ TEST_F(TestValidator, Draft3_UniqueItems)
 {
     processDraft3TestFile(TEST_SUITE_DIR "draft3/uniqueItems.json");
 }
+
+//
+// draft 4
+// ------------------------------------------------------------------------------------------------
+//
 
 TEST_F(TestValidator, Draft4_AdditionalItems)
 {

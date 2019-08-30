@@ -108,8 +108,11 @@ public:
      */
     virtual bool visit(const AllOfConstraint &constraint)
     {
-        bool validated = true;
+        if (constraint.getAlwaysInvalid()) {
+            return false;
+        }
 
+        bool validated = true;
         constraint.applyToSubschemas(ValidateSubschemas(target, context,
                 true, false, *this, results, NULL, &validated));
 
@@ -135,6 +138,10 @@ public:
      */
     virtual bool visit(const AnyOfConstraint &constraint)
     {
+        if (constraint.getAlwaysValid()) {
+            return true;
+        }
+
         unsigned int numValidated = 0;
 
         ValidationResults newResults;
