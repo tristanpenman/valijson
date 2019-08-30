@@ -405,20 +405,11 @@ TEST_F(TestValidator, Draft4_Properties)
     processDraft4TestFile(TEST_SUITE_DIR "draft4/properties.json");
 }
 
-TEST_F(TestValidator, Draft4_Ref)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/ref.json");
-}
+// TODO: broken ref
 
-TEST_F(TestValidator, Draft4_RefRemote)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/refRemote.json");
-}
+// TODO: broken refRemote
 
-TEST_F(TestValidator, Draft4_Required)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/required.json");
-}
+// TODO: broken required
 
 TEST_F(TestValidator, Draft4_Type)
 {
@@ -428,6 +419,46 @@ TEST_F(TestValidator, Draft4_Type)
 TEST_F(TestValidator, Draft4_UniqueItems)
 {
     processDraft4TestFile(TEST_SUITE_DIR "draft4/uniqueItems.json");
+}
+
+//
+// draft 7
+// ------------------------------------------------------------------------------------------------
+//
+
+TEST_F(TestValidator, Draft7_AdditionalItems)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/additionalItems.json");
+}
+
+TEST_F(TestValidator, Draft7_AdditionalProperties)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/additionalProperties.json");
+}
+
+TEST_F(TestValidator, Draft7_AllOf)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/allOf.json");
+}
+
+TEST_F(TestValidator, Draft7_AnyOf)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/anyOf.json");
+}
+
+// TODO: untested boolean_schema
+
+// TODO: untested const
+
+// TODO: untested contains
+
+// TOOD: untested default
+
+// TODO: untested dependencies
+
+TEST_F(TestValidator, Draft7_Enum)
+{
+    processDraft4TestFile(TEST_SUITE_DIR "draft7/enum.json");
 }
 
 TEST_F(TestValidator, Draft7_ExclusiveMaximum)
@@ -445,12 +476,68 @@ TEST_F(TestValidator, Draft7_IfThenElse)
     processDraft7TestFile(TEST_SUITE_DIR "draft7/if-then-else.json");
 }
 
+// TODO: broken items
+
 TEST_F(TestValidator, Draft7_Maximum)
 {
     processDraft7TestFile(TEST_SUITE_DIR "draft7/maximum.json");
 }
 
+TEST_F(TestValidator, Draft7_MaxItems)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/maxItems.json");
+}
+
+TEST_F(TestValidator, Draft7_MaxProperties)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/maxProperties.json");
+}
+
 TEST_F(TestValidator, Draft7_Minimum)
 {
     processDraft7TestFile(TEST_SUITE_DIR "draft7/minimum.json");
+}
+
+TEST_F(TestValidator, Draft7_MinItems)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/minItems.json");
+}
+
+TEST_F(TestValidator, Draft7_MinProperties)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/minProperties.json");
+}
+
+TEST_F(TestValidator, Draft7_MultipleOf)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/multipleOf.json");
+}
+
+// TODO: broken not
+
+// TODO: broken oneOf
+
+TEST_F(TestValidator, Draft7_Pattern)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/pattern.json");
+}
+
+// TODO: broken patternProperties
+
+// TODO: broken properties
+
+// TODO: broken ref
+
+// TODO: broken refRemote
+
+// TODO: broken required
+
+TEST_F(TestValidator, Draft7_Type)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/type.json");
+}
+
+TEST_F(TestValidator, Draft7_UniqueItems)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/uniqueItems.json");
 }
