@@ -63,6 +63,10 @@ public:
      */
     bool validateSchema(const Subschema &subschema)
     {
+        if (subschema.getAlwaysInvalid()) {
+            return false;
+        }
+
         // Wrap the validationCallback() function below so that it will be
         // passed a reference to a constraint (_1), and a reference to the
         // visitor (*this).
@@ -108,10 +112,6 @@ public:
      */
     virtual bool visit(const AllOfConstraint &constraint)
     {
-        if (constraint.getAlwaysInvalid()) {
-            return false;
-        }
-
         bool validated = true;
         constraint.applyToSubschemas(ValidateSubschemas(target, context,
                 true, false, *this, results, NULL, &validated));
@@ -138,10 +138,6 @@ public:
      */
     virtual bool visit(const AnyOfConstraint &constraint)
     {
-        if (constraint.getAlwaysValid()) {
-            return true;
-        }
-
         unsigned int numValidated = 0;
 
         ValidationResults newResults;

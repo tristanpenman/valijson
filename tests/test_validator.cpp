@@ -446,7 +446,10 @@ TEST_F(TestValidator, Draft7_AnyOf)
     processDraft7TestFile(TEST_SUITE_DIR "draft7/anyOf.json");
 }
 
-// TODO: untested boolean_schema
+TEST_F(TestValidator, Draft7_BooleanSchema)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/boolean_schema.json");
+}
 
 // TODO: untested const
 
@@ -476,7 +479,10 @@ TEST_F(TestValidator, Draft7_IfThenElse)
     processDraft7TestFile(TEST_SUITE_DIR "draft7/if-then-else.json");
 }
 
-// TODO: broken items
+TEST_F(TestValidator, Draft7_Items)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/items.json");
+}
 
 TEST_F(TestValidator, Draft7_Maximum)
 {
@@ -513,18 +519,30 @@ TEST_F(TestValidator, Draft7_MultipleOf)
     processDraft7TestFile(TEST_SUITE_DIR "draft7/multipleOf.json");
 }
 
-// TODO: broken not
+TEST_F(TestValidator, Draft7_Not)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/not.json");
+}
 
-// TODO: broken oneOf
+TEST_F(TestValidator, Draft7_OneOf)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/oneOf.json");
+}
 
 TEST_F(TestValidator, Draft7_Pattern)
 {
     processDraft7TestFile(TEST_SUITE_DIR "draft7/pattern.json");
 }
 
-// TODO: broken patternProperties
+TEST_F(TestValidator, Draft7_PatternProperties)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/patternProperties.json");
+}
 
-// TODO: broken properties
+TEST_F(TestValidator, Draft7_Properties)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/properties.json");
+}
 
 // TODO: broken ref
 

@@ -40,13 +40,11 @@ class AllOfConstraint: public BasicConstraint<AllOfConstraint>
 {
 public:
     AllOfConstraint()
-      : subschemas(Allocator::rebind<const Subschema *>::other(allocator)),
-        alwaysInvalid(false) { }
+      : subschemas(Allocator::rebind<const Subschema *>::other(allocator)) { }
 
     AllOfConstraint(CustomAlloc allocFn, CustomFree freeFn)
       : BasicConstraint(allocFn, freeFn),
-        subschemas(Allocator::rebind<const Subschema *>::other(allocator)),
-        alwaysInvalid(false) { }
+        subschemas(Allocator::rebind<const Subschema *>::other(allocator)) { }
 
     void addSubschema(const Subschema *subschema)
     {
@@ -66,24 +64,12 @@ public:
         }
     }
 
-    bool getAlwaysInvalid() const
-    {
-        return alwaysInvalid;
-    }
-
-    void setAlwaysInvalid()
-    {
-        alwaysInvalid = true;
-    }
-
 private:
     typedef std::vector<const Subschema *,
             internal::CustomAllocator<const Subschema *> > Subschemas;
 
     /// Collection of sub-schemas, all of which must be satisfied
     Subschemas subschemas;
-
-    bool alwaysInvalid;
 };
 
 /**
@@ -97,8 +83,7 @@ class AnyOfConstraint: public BasicConstraint<AnyOfConstraint>
 {
 public:
     AnyOfConstraint()
-      : subschemas(Allocator::rebind<const Subschema *>::other(allocator)),
-        alwaysValid(false) { }
+      : subschemas(Allocator::rebind<const Subschema *>::other(allocator)) { }
 
     AnyOfConstraint(CustomAlloc allocFn, CustomFree freeFn)
       : BasicConstraint(allocFn, freeFn),
@@ -122,24 +107,12 @@ public:
         }
     }
 
-    bool getAlwaysValid() const
-    {
-        return alwaysValid;
-    }
-
-    void setAlwaysValid()
-    {
-        alwaysValid = true;
-    }
-
 private:
     typedef std::vector<const Subschema *,
           internal::CustomAllocator<const Subschema *> > Subschemas;
 
     /// Collection of sub-schemas, at least one of which must be satisfied
     Subschemas subschemas;
-
-    bool alwaysValid;
 };
 
 class ConditionalConstraint: public BasicConstraint<ConditionalConstraint>

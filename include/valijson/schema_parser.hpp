@@ -594,12 +594,24 @@ private:
             "appropriate Adapter implementation");
 
         if (!node.isObject()) {
-            std::string s;
-            s += "Expected node at ";
-            s += nodePath;
-            s += " to contain schema object; actual node type is: ";
-            s += internal::nodeTypeAsString(node);
-            throw std::runtime_error(s);
+            if (version == kDraft7 && node.maybeBool()) {
+                // Boolean schema
+                if (!node.asBool()) {
+                    rootSchema.setAlwaysInvalid(&subschema, true);
+                }
+                return;
+            } else {
+                std::string s;
+                s += "Expected node at ";
+                s += nodePath;
+                if (version == kDraft7) {
+                    s += " to contain schema object or boolean value; actual node type is: ";
+                } else {
+                    s += " to contain schema object; actual node type is: ";
+                }
+                s += internal::nodeTypeAsString(node);
+                throw std::runtime_error(s);
+            }
         }
 
         const typename AdapterType::Object object = node.asObject();
@@ -1095,26 +1107,16 @@ private:
 
         int index = 0;
         for (const AdapterType schemaNode : node.asArray()) {
-            if (schemaNode.maybeObject()) {
+            if (schemaNode.maybeObject() || (version == kDraft7 && schemaNode.isBool())) {
                 const std::string childPath = nodePath + "/" + std::to_string(index);
                 const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                         rootSchema, rootNode, schemaNode, currentScope,
                         childPath, fetchDoc, NULL, NULL, docCache, schemaCache);
                 constraint.addSubschema(subschema);
                 index++;
-            } else if (version == kDraft7) {
-                if (schemaNode.maybeBool()) {
-                    if (!schemaNode.asBool()) {
-                        // Schema that always fails
-                        constraint.setAlwaysInvalid();
-                    }
-                } else {
-                    throw std::runtime_error(
-                        "Expected element to be an object or boolean value in 'allOf' constraint");
-                }
             } else {
                 throw std::runtime_error(
-                        "Expected element to be an object value in 'allOf' constraint.");
+                        "Expected element to be a valid schema in 'allOf' constraint.");
             }
         }
 
@@ -1159,25 +1161,16 @@ private:
 
         int index = 0;
         for (const AdapterType schemaNode : node.asArray()) {
-            if (schemaNode.maybeObject()) {
+            if (schemaNode.maybeObject() || (version == kDraft7 && schemaNode.isBool())) {
                 const std::string childPath = nodePath + "/" + std::to_string(index);
                 const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                         rootSchema, rootNode, schemaNode, currentScope,
                         childPath, fetchDoc, NULL, NULL, docCache, schemaCache);
                 constraint.addSubschema(subschema);
                 index++;
-            } else if (version == kDraft7) {
-                if (schemaNode.maybeBool()) {
-                    if (schemaNode.asBool()) {
-                        constraint.setAlwaysValid();
-                    }
-                } else {
-                    throw std::runtime_error(
-                        "Expected element to be an object or boolean value in 'allOf' constraint");
-                }
             } else {
                 throw std::runtime_error(
-                        "Expected array element to be an object value in 'anyOf' constraint.");
+                        "Expected array element to be a valid schema in 'anyOf' constraint.");
             }
         }
 
@@ -1270,7 +1263,7 @@ private:
         SchemaCache &schemaCache)
     {
         if (!node.maybeObject()) {
-            throw std::runtime_error("Expected object value for 'dependencies' constraint.");
+            throw std::runtime_error("Expected valid subschema for 'dependencies' constraint.");
         }
 
         constraints::DependenciesConstraint dependenciesConstraint;
@@ -1508,7 +1501,7 @@ private:
         // array is provided, or a single Schema object, in an object value is
         // provided. If the items constraint is not provided, then array items
         // will be validated against the additionalItems schema.
-        if (items.isObject()) {
+        if (items.isObject() || (version == kDraft7 && items.maybeBool())) {
             // If the items constraint contains an object value, then it
             // should contain a Schema that will be used to validate all
             // items in a target array. Any schema defined by the
@@ -1526,8 +1519,7 @@ private:
         } else {
             // All other formats will result in an exception being thrown.
             throw std::runtime_error(
-                    "Expected object value for singular 'items' "
-                    "constraint.");
+                    "Expected valid schema for singular 'items' constraint.");
         }
 
         return constraint;
@@ -1883,7 +1875,7 @@ private:
         typename DocumentCache<AdapterType>::Type &docCache,
         SchemaCache &schemaCache)
     {
-        if (node.maybeObject()) {
+        if (node.maybeObject() || (version == kDraft7 && node.maybeBool())) {
             const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                     rootSchema, rootNode, node, currentScope, nodePath,
                     fetchDoc, NULL, NULL, docCache, schemaCache);

@@ -118,6 +118,11 @@ public:
         return this;
     }
 
+    void setAlwaysInvalid(const Subschema *subschema, bool value)
+    {
+        mutableSubschema(subschema)->setAlwaysInvalid(value);
+    }
+
     /**
      * @brief  Update the description for one of the sub-schemas owned by this
      *         Schema instance
