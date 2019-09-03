@@ -34,7 +34,7 @@ public:
      * @param  strictTypes  Use strict type comparison
      * @param  results      Optional pointer to ValidationResults object, for
      *                      recording error descriptions. If this pointer is set
-     *                      to NULL, validation errors will caused validation to
+     *                      to nullptr, validation errors will caused validation to
      *                      stop immediately.
      */
     ValidationVisitor(const AdapterType &target,
@@ -73,7 +73,7 @@ public:
         Subschema::ApplyFunction fn(std::bind(validationCallback, std::placeholders::_1, *this));
 
         // Perform validation against each constraint defined in the schema
-        if (results == NULL) {
+        if (results == nullptr) {
             // The applyStrict() function will return immediately if the
             // callback function returns false
             if (!subschema.applyStrict(fn)) {
@@ -114,7 +114,7 @@ public:
     {
         bool validated = true;
         constraint.applyToSubschemas(ValidateSubschemas(target, context,
-                true, false, *this, results, NULL, &validated));
+                true, false, *this, results, nullptr, &validated));
 
         return validated;
     }
@@ -141,11 +141,11 @@ public:
         unsigned int numValidated = 0;
 
         ValidationResults newResults;
-        ValidationResults *childResults = (results) ? &newResults : NULL;
+        ValidationResults *childResults = (results) ? &newResults : nullptr;
 
         ValidationVisitor<AdapterType> v(target, context, strictTypes, childResults);
         constraint.applyToSubschemas(ValidateSubschemas(target, context, false,
-                true, v, childResults, &numValidated, NULL));
+                true, v, childResults, &numValidated, nullptr));
 
         if (numValidated == 0 && results) {
             ValidationResults::Error childError;
@@ -175,8 +175,8 @@ public:
     virtual bool visit(const ConditionalConstraint &constraint)
     {
         // Create a validator to evaluate the conditional
-        ValidationVisitor ifValidator(target, context, strictTypes, NULL);
-        ValidationVisitor thenElseValidator(target, context, strictTypes, NULL);
+        ValidationVisitor ifValidator(target, context, strictTypes, nullptr);
+        ValidationVisitor thenElseValidator(target, context, strictTypes, nullptr);
 
         if (ifValidator.validateSchema(*constraint.getIfSubschema())) {
             const Subschema *thenSubschema = constraint.getThenSubschema();
@@ -254,7 +254,7 @@ public:
     {
         unsigned int numValidated = 0;
         constraint.applyToValues(ValidateEquality(target, context, false, true,
-                strictTypes, NULL, &numValidated));
+                strictTypes, nullptr, &numValidated));
 
         if (numValidated == 0) {
             if (results) {
@@ -323,7 +323,7 @@ public:
             }
 
             constraint.applyToItemSubschemas(ValidateItems(arr, context, true,
-                    results != NULL, strictTypes, results, &numValidated,
+                    results != nullptr, strictTypes, results, &numValidated,
                     &validated));
 
             if (!results && !validated) {
@@ -731,7 +731,7 @@ public:
     /**
      * @brief   Validate a value against a NotConstraint
      *
-     * If the subschema NotConstraint currently holds a NULL pointer, the
+     * If the subschema NotConstraint currently holds a nullptr, the
      * schema will be treated like the empty schema. Therefore validation
      * will always fail.
      *
@@ -743,11 +743,11 @@ public:
     {
         const Subschema *subschema = constraint.getSubschema();
         if (!subschema) {
-            // Treat NULL pointer like empty schema
+            // Treat nullptr like empty schema
             return false;
         }
 
-        ValidationVisitor<AdapterType> v(target, context, strictTypes, NULL);
+        ValidationVisitor<AdapterType> v(target, context, strictTypes, nullptr);
         if (v.validateSchema(*subschema)) {
             if (results) {
                 results->pushError(context,
@@ -773,11 +773,11 @@ public:
         unsigned int numValidated = 0;
 
         ValidationResults newResults;
-        ValidationResults *childResults = (results) ? &newResults : NULL;
+        ValidationResults *childResults = (results) ? &newResults : nullptr;
 
         ValidationVisitor<AdapterType> v(target, context, strictTypes, childResults);
         constraint.applyToSubschemas(ValidateSubschemas(target, context,
-                true, true, v, childResults, &numValidated, NULL));
+                true, true, v, childResults, &numValidated, nullptr));
 
         if (numValidated == 0) {
             if (results) {
@@ -882,7 +882,7 @@ public:
         // constraints
         const typename AdapterType::Object object = target.asObject();
         constraint.applyToProperties(ValidatePropertySubschemas(object, context,
-                true, results != NULL, true, strictTypes, results,
+                true, results != nullptr, true, strictTypes, results,
                 &propertiesMatched, &validated));
 
         // Exit early if validation failed, and we're not collecting exhaustive
@@ -961,7 +961,7 @@ public:
         bool validated = true;
         const typename AdapterType::Object object = target.asObject();
         constraint.applyToRequiredProperties(ValidateProperties(object, context,
-                true, results != NULL, results, &validated));
+                true, results != nullptr, results, &validated));
 
         return validated;
     }
@@ -1052,7 +1052,7 @@ public:
         {
             unsigned int numValidated = 0;
             constraint.applyToSchemaTypes(ValidateSubschemas(target, context,
-                    false, true, *this, NULL, &numValidated, NULL));
+                    false, true, *this, nullptr, &numValidated, nullptr));
             if (numValidated > 0) {
                 return true;
             } else if (results) {
