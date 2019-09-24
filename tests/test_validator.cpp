@@ -554,7 +554,10 @@ TEST_F(TestValidator, Draft7_Properties)
 
 // TODO: broken refRemote
 
-// TODO: broken required
+TEST_F(TestValidator, Draft7_Required)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/required.json");
+}
 
 TEST_F(TestValidator, Draft7_Type)
 {

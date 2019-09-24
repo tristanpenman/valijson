@@ -1013,11 +1013,7 @@ public:
     virtual bool visit(const RequiredConstraint &constraint)
     {
         if ((strictTypes && !target.isObject()) || !target.maybeObject()) {
-            if (results) {
-                results->pushError(context,
-                        "Object required to validate 'required' properties.");
-            }
-            return false;
+            return true;
         }
 
         bool validated = true;
