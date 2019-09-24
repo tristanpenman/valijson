@@ -164,7 +164,7 @@ public:
     /**
      * @brief   Validate current node using a set of 'if', 'then' and 'else' subschemas
      *
-     * A conditional constraint allows a document to validated against one of two additional
+     * A conditional constraint allows a document to be validated against one of two additional
      * subschemas (specified via 'then' or 'else' properties) depending on whether the document
      * satifies an optional subschema (specified via the 'if' property).
      *
@@ -182,11 +182,33 @@ public:
             const Subschema *thenSubschema = constraint.getThenSubschema();
             return thenSubschema == nullptr ||
                 thenElseValidator.validateSchema(*thenSubschema);
-        } else {
-            const Subschema *elseSubschema = constraint.getElseSubschema();
-            return elseSubschema == nullptr ||
-                thenElseValidator.validateSchema(*elseSubschema);
         }
+
+        const Subschema *elseSubschema = constraint.getElseSubschema();
+        return elseSubschema == nullptr ||
+            thenElseValidator.validateSchema(*elseSubschema);
+    }
+
+    /**
+     * @brief   Validate current node using a 'const' constraint
+     *
+     * A const constraint allows a document to be validated against a specific value.
+     *
+     * @param   constraint  ConstConstraint that the current node must validate against
+     *
+     * @return  \c true if validation passes; \f false otherwise
+     */
+    virtual bool visit(const ConstConstraint &constraint)
+    {
+        if (!constraint.getValue()->equalTo(target, strictTypes)) {
+            if (results) {
+                results->pushError(context,
+                        "Failed to match expected value set by 'const' constraint.");
+            }
+            return false;
+        }
+
+        return true;
     }
 
     /**

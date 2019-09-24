@@ -649,6 +649,10 @@ private:
                     &subschema);
         }
 
+        if ((itr = object.find("const")) != object.end()) {
+            rootSchema.addConstraintToSubschema(makeConstConstraint(itr->second), &subschema);
+        }
+
         if ((itr = object.find("contains")) != object.end()) {
             rootSchema.addConstraintToSubschema(
                     makeContainsConstraint(rootSchema, rootNode, itr->second,
@@ -1247,6 +1251,21 @@ private:
             constraint.setElseSubschema(elseSubschema);
         }
 
+        return constraint;
+    }
+
+    /**
+     * @brief   Make a new ConstConstraint object.
+     *
+     * @param   node  JSON node containing an arbitrary value
+     *
+     * @return  pointer to a new MinimumConstraint that belongs to the caller
+     */
+    template<typename AdapterType>
+    constraints::ConstConstraint makeConstConstraint(const AdapterType &node)
+    {
+        constraints::ConstConstraint constraint;
+        constraint.setValue(node);
         return constraint;
     }
 

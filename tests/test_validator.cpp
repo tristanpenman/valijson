@@ -451,12 +451,13 @@ TEST_F(TestValidator, Draft7_BooleanSchema)
     processDraft7TestFile(TEST_SUITE_DIR "draft7/boolean_schema.json");
 }
 
-// TODO: untested const
+TEST_F(TestValidator, Draft7_Const)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/const.json");
+}
 
 TEST_F(TestValidator, Draft7_Contains)
 {
-    // TODO: currently failing due to missing support for const
-
     processDraft7TestFile(TEST_SUITE_DIR "draft7/contains.json");
 }
 

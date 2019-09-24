@@ -172,6 +172,34 @@ private:
     const Subschema *elseSubschema;
 };
 
+class ConstConstraint: public BasicConstraint<ConstConstraint>
+{
+public:
+    ConstConstraint()
+      : value(nullptr) { }
+
+    ConstConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        value(nullptr) { }
+
+    ConstConstraint(const ConstConstraint &other)
+      : BasicConstraint(other),
+        value(other.value->clone()) { }
+
+    adapters::FrozenValue * getValue() const
+    {
+        return value;
+    }
+
+    void setValue(const adapters::Adapter &value)
+    {
+        this->value = value.freeze();
+    }
+
+private:
+    adapters::FrozenValue *value;
+};
+
 /**
  * @brief  Represents a 'contains' constraint
  *
