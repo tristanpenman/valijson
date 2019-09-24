@@ -649,6 +649,13 @@ private:
                     &subschema);
         }
 
+        if ((itr = object.find("contains")) != object.end()) {
+            rootSchema.addConstraintToSubschema(
+                    makeContainsConstraint(rootSchema, rootNode, itr->second,
+                            updatedScope, nodePath + "/contains", fetchDoc,
+                            docCache, schemaCache), &subschema);
+        }
+
         if ((itr = object.find("dependencies")) != object.end()) {
             rootSchema.addConstraintToSubschema(
                     makeDependenciesConstraint(rootSchema, rootNode,
@@ -689,8 +696,7 @@ private:
         }
 
         if ((itr = object.find("enum")) != object.end()) {
-            rootSchema.addConstraintToSubschema(makeEnumConstraint(itr->second),
-                    &subschema);
+            rootSchema.addConstraintToSubschema(makeEnumConstraint(itr->second), &subschema);
         }
 
         {
@@ -1177,6 +1183,35 @@ private:
         return constraint;
     }
 
+    /**
+     * @brief   Make a new ConditionalConstraint object.
+     *
+     * @param   rootSchema           The Schema instance, and root subschema,
+     *                               through which other subschemas can be
+     *                               created and modified
+     * @param   rootNode             Reference to the node from which JSON
+     *                               References will be resolved when they refer
+     *                               to the current document; used for recursive
+     *                               parsing of schemas
+     * @param   ifNode               Schema that will be used to evaluate the
+     *                               conditional.
+     * @param   thenNode             Optional pointer to a JSON node containing
+     *                               a schema that will be used when the conditional
+     *                               evaluates to true.
+     * @param   elseNode             Optional pointer to a JSON node containing
+     *                               a schema that will be used when the conditional
+     *                               evaluates to false.
+     * @param   currentScope         URI for current resolution scope
+     * @param   containsPath         JSON Pointer representing the path to
+     *                               the 'contains' node
+     * @param   fetchDoc             Function to fetch remote JSON documents
+     *                               (optional)
+     * @param   docCache             Cache of resolved and fetched remote
+     *                               documents
+     * @param   schemaCache          Cache of populated schemas
+     *
+     * @return  pointer to a new ContainsConstraint that belongs to the caller
+     */
     template<typename AdapterType>
     constraints::ConditionalConstraint makeConditionalConstraint(
         Schema &rootSchema,
@@ -1210,6 +1245,63 @@ private:
                     rootSchema, rootNode, *elseNode, currentScope, nodePath, fetchDoc, NULL, NULL,
                     docCache, schemaCache);
             constraint.setElseSubschema(elseSubschema);
+        }
+
+        return constraint;
+    }
+
+    /**
+     * @brief   Make a new ContainsConstraint object.
+     *
+     * @param   rootSchema           The Schema instance, and root subschema,
+     *                               through which other subschemas can be
+     *                               created and modified
+     * @param   rootNode             Reference to the node from which JSON
+     *                               References will be resolved when they refer
+     *                               to the current document; used for recursive
+     *                               parsing of schemas
+     * @param   contains             Optional pointer to a JSON node containing
+     *                               an object mapping property names to
+     *                               schemas.
+     * @param   currentScope         URI for current resolution scope
+     * @param   containsPath         JSON Pointer representing the path to
+     *                               the 'contains' node
+     * @param   fetchDoc             Function to fetch remote JSON documents
+     *                               (optional)
+     * @param   docCache             Cache of resolved and fetched remote
+     *                               documents
+     * @param   schemaCache          Cache of populated schemas
+     *
+     * @return  pointer to a new ContainsConstraint that belongs to the caller
+     */
+    template<typename AdapterType>
+    constraints::ContainsConstraint makeContainsConstraint(
+        Schema &rootSchema,
+        const AdapterType &rootNode,
+        const AdapterType &contains,
+        const opt::optional<std::string> currentScope,
+        const std::string &containsPath,
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
+        typename DocumentCache<AdapterType>::Type &docCache,
+        SchemaCache &schemaCache)
+    {
+        constraints::ContainsConstraint constraint;
+
+        if (contains.isObject() || (version == kDraft7 && contains.maybeBool())) {
+            const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                    rootSchema, rootNode, contains, currentScope, containsPath,
+                    fetchDoc, NULL, NULL, docCache, schemaCache);
+            constraint.setSubschema(subschema);
+
+        } else if (contains.maybeObject()) {
+            // If a loosely-typed Adapter type is being used, then we'll
+            // assume that an empty schema has been provided.
+            constraint.setSubschema(rootSchema.emptySubschema());
+
+        } else {
+            // All other formats will result in an exception being thrown.
+            throw std::runtime_error(
+                    "Expected valid schema for 'contains' constraint.");
         }
 
         return constraint;

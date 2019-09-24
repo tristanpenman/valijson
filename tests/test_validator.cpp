@@ -453,7 +453,12 @@ TEST_F(TestValidator, Draft7_BooleanSchema)
 
 // TODO: untested const
 
-// TODO: untested contains
+TEST_F(TestValidator, Draft7_Contains)
+{
+    // TODO: currently failing due to missing support for const
+
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/contains.json");
+}
 
 // TOOD: untested default
 

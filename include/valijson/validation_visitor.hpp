@@ -190,6 +190,46 @@ public:
     }
 
     /**
+     * @brief  Validate current node using a 'contains' constraint
+     *
+     * A contains constraint is satisfied if the target is not an array, or if it is an array,
+     * only if it contains at least one value that matches the specified schema.
+     *
+     * @param   constraint  ContainsConstraint that the current node must validate against
+     *
+     * @return  \c true if validation passes; \c false otherwise
+     */
+    virtual bool visit(const ContainsConstraint &constraint)
+    {
+        if ((strictTypes && !target.isArray()) || !target.maybeArray()) {
+            return true;
+        }
+
+        const Subschema *subschema = constraint.getSubschema();
+        const typename AdapterType::Array arr = target.asArray();
+
+        bool validated = false;
+        for (auto itr = arr.begin(); itr != arr.end(); ++itr) {
+            ValidationVisitor containsValidator(*itr, context, strictTypes, nullptr);
+            if (containsValidator.validateSchema(*subschema)) {
+                validated = true;
+                break;
+            }
+        }
+
+        if (!validated) {
+            if (results) {
+                results->pushError(context,
+                        "Failed to any values against subschema in 'contains' constraint.");
+            }
+
+            return false;
+        }
+
+        return validated;
+    }
+
+    /**
      * @brief   Validate current node against a 'dependencies' constraint
      *
      * A 'dependencies' constraint can be used to specify property-based or

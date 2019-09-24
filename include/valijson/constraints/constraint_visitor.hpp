@@ -6,6 +6,7 @@ namespace constraints {
 class AllOfConstraint;
 class AnyOfConstraint;
 class ConditionalConstraint;
+class ContainsConstraint;
 class DependenciesConstraint;
 class EnumConstraint;
 class LinearItemsConstraint;
@@ -39,6 +40,7 @@ protected:
     typedef constraints::AllOfConstraint AllOfConstraint;
     typedef constraints::AnyOfConstraint AnyOfConstraint;
     typedef constraints::ConditionalConstraint ConditionalConstraint;
+    typedef constraints::ContainsConstraint ContainsConstraint;
     typedef constraints::DependenciesConstraint DependenciesConstraint;
     typedef constraints::EnumConstraint EnumConstraint;
     typedef constraints::LinearItemsConstraint LinearItemsConstraint;
@@ -67,6 +69,7 @@ public:
     virtual bool visit(const AllOfConstraint &) = 0;
     virtual bool visit(const AnyOfConstraint &) = 0;
     virtual bool visit(const ConditionalConstraint &) = 0;
+    virtual bool visit(const ContainsConstraint &) = 0;
     virtual bool visit(const DependenciesConstraint &) = 0;
     virtual bool visit(const EnumConstraint &) = 0;
     virtual bool visit(const LinearItemsConstraint &) = 0;

@@ -166,6 +166,36 @@ private:
 };
 
 /**
+ * @brief  Represents a 'contains' constraint
+ *
+ * An contains constraint provides a collection of values that must be present
+ * in an array.
+ */
+class ContainsConstraint: public BasicConstraint<ContainsConstraint>
+{
+public:
+    ContainsConstraint()
+      : subschema(nullptr) { }
+
+    ContainsConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        subschema(nullptr) { }
+
+    const Subschema * getSubschema() const
+    {
+        return subschema;
+    }
+
+    void setSubschema(const Subschema *subschema)
+    {
+        this->subschema = subschema;
+    }
+
+private:
+    const Subschema *subschema;
+};
+
+/**
  * @brief  Represents a 'dependencies' constraint.
  *
  * A dependency constraint ensures that a given property is valid only if the
@@ -307,7 +337,6 @@ public:
                     throw;
                 }
             }
-
         } catch (...) {
             // Delete values already added to constraint
             for (const EnumValue *value : enumValues) {
