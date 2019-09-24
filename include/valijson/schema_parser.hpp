@@ -1410,7 +1410,7 @@ private:
             // exercised the flexibility by loosely-typed Adapter types. If the
             // value of the dependency mapping is an object, then we'll try to
             // process it as a dependent schema.
-            } else if (member.second.isObject()) {
+            } else if (member.second.isObject() || (version == kDraft7 && member.second.maybeBool())) {
                 // Parse dependent subschema
                 const Subschema *childSubschema =
                         makeOrReuseSchema<AdapterType>(rootSchema, rootNode,

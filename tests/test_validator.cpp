@@ -463,7 +463,10 @@ TEST_F(TestValidator, Draft7_Contains)
 
 // TOOD: untested default
 
-// TODO: untested dependencies
+TEST_F(TestValidator, Draft7_Dependencies)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/dependencies.json");
+}
 
 TEST_F(TestValidator, Draft7_Enum)
 {
