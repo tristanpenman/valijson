@@ -115,6 +115,13 @@ private:
     Subschemas subschemas;
 };
 
+/**
+ * @brief  Represents a combination 'if', 'then' and 'else' constraints
+ *
+ * The schema provided by an 'if' constraint is used as the expression for a conditional. When the
+ * target validates against that schema, the 'then' subschema will be also be tested. Otherwise,
+ * the 'else' subschema will be tested.
+ */
 class ConditionalConstraint: public BasicConstraint<ConditionalConstraint>
 {
 public:
@@ -168,8 +175,8 @@ private:
 /**
  * @brief  Represents a 'contains' constraint
  *
- * An contains constraint provides a collection of values that must be present
- * in an array.
+ * A 'contains' constraint specifies a schema that must be satisfied by at least one
+ * of the values in an array.
  */
 class ContainsConstraint: public BasicConstraint<ContainsConstraint>
 {
