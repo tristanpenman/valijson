@@ -133,7 +133,7 @@ public:
         try {
             resolveThenPopulateSchema(schema, node, node, schema,
                     opt::optional<std::string>(), "",
-                    fetchDoc, NULL, NULL, docCache, schemaCache);
+                    fetchDoc, nullptr, nullptr, docCache, schemaCache);
         } catch (...) {
             freeDocumentCache<AdapterType>(docCache, freeDoc);
             throw;
@@ -278,22 +278,22 @@ private:
     /**
      * @brief  Search the schema cache for a schema matching a given key
      *
-     * If the key is not present in the query cache, a NULL pointer will be
+     * If the key is not present in the query cache, a nullptr will be
      * returned, and the contents of the cache will remain unchanged. This is
      * in contrast to the behaviour of the std::map [] operator, which would
-     * add the NULL pointer to the cache.
+     * add the nullptr to the cache.
      *
      * @param  schemaCache  schema cache to query
      * @param  queryKey     key to search for
      *
-     * @return shared pointer to Schema if found, NULL pointer otherwise
+     * @return shared pointer to Schema if found, nullptr otherwise
      */
     static const Subschema * querySchemaCache(SchemaCache &schemaCache,
             const std::string &queryKey)
     {
         const SchemaCache::iterator itr = schemaCache.find(queryKey);
         if (itr == schemaCache.end()) {
-            return NULL;
+            return nullptr;
         }
 
         return itr->second;
@@ -434,7 +434,7 @@ private:
         }
 
         if (actualDocumentUri && (!currentScope || *actualDocumentUri != *currentScope)) {
-            const typename FunctionPtrs<AdapterType>::DocumentType *newDoc = NULL;
+            const typename FunctionPtrs<AdapterType>::DocumentType *newDoc = nullptr;
 
             // Have we seen this document before?
             typename DocumentCache<AdapterType>::Type::iterator docCacheItr =
@@ -718,9 +718,9 @@ private:
                     rootSchema.addConstraintToSubschema(
                             makeLinearItemsConstraint(rootSchema, rootNode,
                                     itemsItr != object.end() ?
-                                            &itemsItr->second : NULL,
+                                            &itemsItr->second : nullptr,
                                     additionalItemsItr != object.end() ?
-                                            &additionalItemsItr->second : NULL,
+                                            &additionalItemsItr->second : nullptr,
                                     updatedScope, nodePath + "/items",
                                     nodePath + "/additionalItems", fetchDoc,
                                     docCache, schemaCache),
@@ -739,8 +739,8 @@ private:
                     rootSchema.addConstraintToSubschema(
                           makeConditionalConstraint(rootSchema, rootNode,
                                 ifItr->second,
-                                thenItr == object.end() ? NULL : &thenItr->second,
-                                elseItr == object.end() ? NULL : &elseItr->second,
+                                thenItr == object.end() ? nullptr : &thenItr->second,
+                                elseItr == object.end() ? nullptr : &elseItr->second,
                                 updatedScope, nodePath, fetchDoc, docCache, schemaCache),
                           &subschema);
                 } else {
@@ -758,7 +758,7 @@ private:
 
             if ((itr = object.find("maximum")) != object.end()) {
                 rootSchema.addConstraintToSubschema(
-                    makeMaximumConstraint<AdapterType>(itr->second, NULL),
+                    makeMaximumConstraint<AdapterType>(itr->second, nullptr),
                     &subschema);
             }
         } else if ((itr = object.find("maximum")) != object.end()) {
@@ -766,7 +766,7 @@ private:
                     object.find("exclusiveMaximum");
             if (exclusiveMaximumItr == object.end()) {
                 rootSchema.addConstraintToSubschema(
-                        makeMaximumConstraint<AdapterType>(itr->second, NULL),
+                        makeMaximumConstraint<AdapterType>(itr->second, nullptr),
                         &subschema);
             } else {
                 rootSchema.addConstraintToSubschema(
@@ -804,7 +804,7 @@ private:
 
             if ((itr = object.find("minimum")) != object.end()) {
                 rootSchema.addConstraintToSubschema(
-                        makeMinimumConstraint<AdapterType>(itr->second, NULL),
+                        makeMinimumConstraint<AdapterType>(itr->second, nullptr),
                         &subschema);
             }
         } else if ((itr = object.find("minimum")) != object.end()) {
@@ -812,7 +812,7 @@ private:
                     object.find("exclusiveMinimum");
             if (exclusiveMinimumItr == object.end()) {
                 rootSchema.addConstraintToSubschema(
-                        makeMinimumConstraint<AdapterType>(itr->second, NULL),
+                        makeMinimumConstraint<AdapterType>(itr->second, nullptr),
                         &subschema);
             } else {
                 rootSchema.addConstraintToSubschema(
@@ -894,11 +894,11 @@ private:
                 rootSchema.addConstraintToSubschema(
                         makePropertiesConstraint(rootSchema, rootNode,
                                 propertiesItr != object.end() ?
-                                        &propertiesItr->second : NULL,
+                                        &propertiesItr->second : nullptr,
                                 patternPropertiesItr != object.end() ?
-                                        &patternPropertiesItr->second : NULL,
+                                        &patternPropertiesItr->second : nullptr,
                                 additionalPropertiesItr != object.end() ?
-                                        &additionalPropertiesItr->second : NULL,
+                                        &additionalPropertiesItr->second : nullptr,
                                 updatedScope, nodePath + "/properties",
                                 nodePath + "/patternProperties",
                                 nodePath + "/additionalProperties",
@@ -957,7 +957,7 @@ private:
                 builderItr  = constraintBuilders.begin();
                 builderItr != constraintBuilders.end(); ++builderItr) {
             if ((itr = object.find(builderItr->first)) != object.end()) {
-                constraints::Constraint *constraint = NULL;
+                constraints::Constraint *constraint = nullptr;
                 try {
                     constraint = builderItr->second->make(itr->second);
                     rootSchema.addConstraintToSubschema(*constraint,
@@ -1117,7 +1117,7 @@ private:
                 const std::string childPath = nodePath + "/" + std::to_string(index);
                 const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                         rootSchema, rootNode, schemaNode, currentScope,
-                        childPath, fetchDoc, NULL, NULL, docCache, schemaCache);
+                        childPath, fetchDoc, nullptr, nullptr, docCache, schemaCache);
                 constraint.addSubschema(subschema);
                 index++;
             } else {
@@ -1171,7 +1171,7 @@ private:
                 const std::string childPath = nodePath + "/" + std::to_string(index);
                 const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                         rootSchema, rootNode, schemaNode, currentScope,
-                        childPath, fetchDoc, NULL, NULL, docCache, schemaCache);
+                        childPath, fetchDoc, nullptr, nullptr, docCache, schemaCache);
                 constraint.addSubschema(subschema);
                 index++;
             } else {
@@ -1229,21 +1229,21 @@ private:
 
         const Subschema *ifSubschema = makeOrReuseSchema<AdapterType>(
                 rootSchema, rootNode, ifNode, currentScope,
-                nodePath, fetchDoc, NULL, NULL, docCache,
+                nodePath, fetchDoc, nullptr, nullptr, docCache,
                 schemaCache);
         constraint.setIfSubschema(ifSubschema);
 
         if (thenNode) {
             const Subschema *thenSubschema = makeOrReuseSchema<AdapterType>(
-                    rootSchema, rootNode, *thenNode, currentScope, nodePath, fetchDoc, NULL, NULL,
-                    docCache, schemaCache);
+                    rootSchema, rootNode, *thenNode, currentScope, nodePath, fetchDoc, nullptr,
+                    nullptr, docCache, schemaCache);
             constraint.setThenSubschema(thenSubschema);
         }
 
         if (elseNode) {
             const Subschema *elseSubschema = makeOrReuseSchema<AdapterType>(
-                    rootSchema, rootNode, *elseNode, currentScope, nodePath, fetchDoc, NULL, NULL,
-                    docCache, schemaCache);
+                    rootSchema, rootNode, *elseNode, currentScope, nodePath, fetchDoc, nullptr,
+                    nullptr, docCache, schemaCache);
             constraint.setElseSubschema(elseSubschema);
         }
 
@@ -1290,7 +1290,7 @@ private:
         if (contains.isObject() || (version == kDraft7 && contains.maybeBool())) {
             const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                     rootSchema, rootNode, contains, currentScope, containsPath,
-                    fetchDoc, NULL, NULL, docCache, schemaCache);
+                    fetchDoc, nullptr, nullptr, docCache, schemaCache);
             constraint.setSubschema(subschema);
 
         } else if (contains.maybeObject()) {
@@ -1396,7 +1396,7 @@ private:
                 const Subschema *childSubschema =
                         makeOrReuseSchema<AdapterType>(rootSchema, rootNode,
                                 member.second, currentScope, nodePath, fetchDoc,
-                                NULL, NULL, docCache, schemaCache);
+                                nullptr, nullptr, docCache, schemaCache);
                 dependenciesConstraint.addSchemaDependency(member.first,
                         childSubschema);
 
@@ -1502,7 +1502,7 @@ private:
                 // used to validate additional array items.
                 const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                         rootSchema, rootNode, *additionalItems, currentScope,
-                        additionalItemsPath, fetchDoc, NULL, NULL, docCache,
+                        additionalItemsPath, fetchDoc, nullptr, nullptr, docCache,
                         schemaCache);
                 constraint.setAdditionalItemsSubschema(subschema);
             } else {
@@ -1533,7 +1533,7 @@ private:
                             std::to_string(index);
                     const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                             rootSchema, rootNode, v, currentScope, childPath,
-                            fetchDoc, NULL, NULL, docCache, schemaCache);
+                            fetchDoc, nullptr, nullptr, docCache, schemaCache);
                     constraint.addItemSubschema(subschema);
                     index++;
                 }
@@ -1600,7 +1600,7 @@ private:
             // additionalItems constraint will be ignored.
             const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                     rootSchema, rootNode, items, currentScope, itemsPath,
-                    fetchDoc, NULL, NULL, docCache, schemaCache);
+                    fetchDoc, nullptr, nullptr, docCache, schemaCache);
             constraint.setItemsSubschema(subschema);
 
         } else if (items.maybeObject()) {
@@ -1970,7 +1970,7 @@ private:
         if (node.maybeObject() || (version == kDraft7 && node.maybeBool())) {
             const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                     rootSchema, rootNode, node, currentScope, nodePath,
-                    fetchDoc, NULL, NULL, docCache, schemaCache);
+                    fetchDoc, nullptr, nullptr, docCache, schemaCache);
             constraints::NotConstraint constraint;
             constraint.setSubschema(subschema);
             return constraint;
@@ -2015,7 +2015,7 @@ private:
                     std::to_string(index);
             const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                 rootSchema, rootNode, schemaNode, currentScope, childPath,
-                fetchDoc, NULL, NULL, docCache, schemaCache);
+                fetchDoc, nullptr, nullptr, docCache, schemaCache);
             constraint.addSubschema(subschema);
             index++;
         }
@@ -2146,8 +2146,8 @@ private:
                 // a child schema.
                 const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                         rootSchema, rootNode, *additionalProperties,
-                        currentScope, additionalPropertiesPath, fetchDoc, NULL,
-                        NULL, docCache, schemaCache);
+                        currentScope, additionalPropertiesPath, fetchDoc, nullptr,
+                        nullptr, docCache, schemaCache);
                 constraint.setAdditionalPropertiesSubschema(subschema);
             } else {
                 // All other types are invalid
@@ -2286,7 +2286,7 @@ private:
                             std::to_string(index);
                     const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                             rootSchema, rootNode, v, currentScope, childPath,
-                            fetchDoc, NULL, NULL, docCache, schemaCache);
+                            fetchDoc, nullptr, nullptr, docCache, schemaCache);
                     constraint.addSchemaType(subschema);
 
                 } else {
@@ -2299,7 +2299,7 @@ private:
         } else if (node.maybeObject() && version == kDraft3) {
             const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                     rootSchema, rootNode, node, currentScope, nodePath,
-                    fetchDoc, NULL, NULL, docCache, schemaCache);
+                    fetchDoc, nullptr, nullptr, docCache, schemaCache);
             constraint.addSchemaType(subschema);
 
         } else {
@@ -2315,7 +2315,7 @@ private:
      * @param   node  Node containing a boolean value.
      *
      * @return  pointer to a new UniqueItemsConstraint object that belongs to
-     *          the caller, or NULL if the boolean value is false.
+     *          the caller, or nullptr if the boolean value is false.
      */
     template<typename AdapterType>
     opt::optional<constraints::UniqueItemsConstraint>
@@ -2324,7 +2324,7 @@ private:
         if (node.isBool() || node.maybeBool()) {
             // If the boolean value is true, this function will return a pointer
             // to a new UniqueItemsConstraint object. If it is value, then the
-            // constraint is redundant, so NULL is returned instead.
+            // constraint is redundant, so nullptr is returned instead.
             if (node.asBool()) {
                 return constraints::UniqueItemsConstraint();
             } else {
