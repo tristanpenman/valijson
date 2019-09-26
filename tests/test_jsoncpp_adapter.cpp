@@ -12,7 +12,7 @@ TEST_F(TestJsonCppAdapter, BasicArrayIteration)
 {
     const unsigned int numElements = 10;
 
-    // Create a rapidjson document that consists of an array of numbers
+    // Create a jsoncpp document that consists of an array of numbers
     Json::Value document(Json::arrayValue);
     for (unsigned int i = 0; i < numElements; i++) {
         document.append(Json::Value(i));
@@ -46,7 +46,7 @@ TEST_F(TestJsonCppAdapter, BasicObjectIteration)
 {
     const unsigned int numElements = 10;
 
-    // Create a rapidjson document that consists of an object that maps numeric
+    // Create a jsoncpp document that consists of an object that maps numeric
     // strings their corresponding numeric values
     Json::Value document(Json::objectValue);
     for (unsigned int i = 0; i < numElements; i++) {
