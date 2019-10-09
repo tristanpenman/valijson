@@ -57,9 +57,8 @@ public:
      */
     ~SchemaParser()
     {
-        for (ConstraintBuilders::iterator itr = constraintBuilders.begin();
-                itr != constraintBuilders.end(); ++itr) {
-            delete itr->second;
+        for (auto entry : constraintBuilders) {
+            delete entry.second;
         }
     }
 

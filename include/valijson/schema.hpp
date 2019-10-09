@@ -48,9 +48,7 @@ public:
         sharedEmptySubschema = NULL;
 
         try {
-            for (std::set<Subschema *>::iterator itr = subschemaSet.begin();
-                    itr != subschemaSet.end(); ++itr) {
-                Subschema *subschema = *itr;
+            for (auto subschema : subschemaSet) {
                 subschema->~Subschema();
                 freeFn(subschema);
             }

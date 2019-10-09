@@ -63,9 +63,8 @@ public:
     virtual ~Subschema()
     {
         try {
-            for (std::vector<const Constraint *>::iterator itr =
-                    constraints.begin(); itr != constraints.end(); ++itr) {
-                Constraint *constraint = const_cast<Constraint *>(*itr);
+            for (auto constConstraint : constraints) {
+                Constraint *constraint = const_cast<Constraint *>(constConstraint);
                 constraint->~Constraint();
                 freeFn(constraint);
             }
