@@ -49,7 +49,7 @@ public:
      *
      * @param  version  Version of JSON Schema that will be expected
      */
-    SchemaParser(const Version version = kDraft4)
+    SchemaParser(const Version version = kDraft7)
       : version(version) { }
 
     /**
