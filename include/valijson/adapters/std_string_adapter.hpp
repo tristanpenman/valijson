@@ -1,3 +1,17 @@
+/**
+ * @file
+ *
+ * @brief   Adapter implementation that wraps a single std::string value
+ *
+ * This allows property names to be validated against a schema as though they are a generic JSON
+ * value, while allowing the rest of Valijson's API to expose property names as plain std::string
+ * values.
+ *
+ * This was added while implementing draft 7 support. This included support for a constraint
+ * called propertyNames, which can be used to ensure that the property names in an object
+ * validate against a subschema.
+ */
+
 #pragma once
 
 #include <string>
