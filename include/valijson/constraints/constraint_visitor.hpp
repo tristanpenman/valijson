@@ -26,6 +26,7 @@ class OneOfConstraint;
 class PatternConstraint;
 class PolyConstraint;
 class PropertiesConstraint;
+class PropertyNamesConstraint;
 class RequiredConstraint;
 class SingularItemsConstraint;
 class TypeConstraint;
@@ -61,6 +62,7 @@ protected:
     typedef constraints::PatternConstraint PatternConstraint;
     typedef constraints::PolyConstraint PolyConstraint;
     typedef constraints::PropertiesConstraint PropertiesConstraint;
+    typedef constraints::PropertyNamesConstraint PropertyNamesConstraint;
     typedef constraints::RequiredConstraint RequiredConstraint;
     typedef constraints::SingularItemsConstraint SingularItemsConstraint;
     typedef constraints::TypeConstraint TypeConstraint;
@@ -91,6 +93,7 @@ public:
     virtual bool visit(const PatternConstraint &) = 0;
     virtual bool visit(const PolyConstraint &) = 0;
     virtual bool visit(const PropertiesConstraint &) = 0;
+    virtual bool visit(const PropertyNamesConstraint &) = 0;
     virtual bool visit(const RequiredConstraint &) = 0;
     virtual bool visit(const SingularItemsConstraint &) = 0;
     virtual bool visit(const TypeConstraint &) = 0;

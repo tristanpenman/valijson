@@ -553,6 +553,11 @@ TEST_F(TestValidator, Draft7_Properties)
     processDraft7TestFile(TEST_SUITE_DIR "draft7/properties.json");
 }
 
+TEST_F(TestValidator, Draft7_PropertyNames)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/propertyNames.json");
+}
+
 // TODO: broken ref
 
 // TODO: broken refRemote

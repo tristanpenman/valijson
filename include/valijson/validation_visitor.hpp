@@ -4,6 +4,7 @@
 #include <string>
 #include <regex>
 
+#include <valijson/adapters/std_string_adapter.hpp>
 #include <valijson/constraints/concrete_constraints.hpp>
 #include <valijson/constraints/constraint_visitor.hpp>
 #include <valijson/validation_results.hpp>
@@ -998,6 +999,30 @@ public:
         }
 
         return validated;
+    }
+
+    /**
+     * @brief   Validate a value against a PropertyNamesConstraint
+     *
+     * @param   constraint  Constraint that the target must validate against
+     *
+     * @return  \c true if validation succeeds; \c false otherwise
+     */
+    virtual bool visit(const PropertyNamesConstraint &constraint)
+    {
+        if ((strictTypes && !target.isObject()) || !target.maybeObject()) {
+            return true;
+        }
+
+        for (const typename AdapterType::ObjectMember m : target.asObject()) {
+            adapters::StdStringAdapter stringAdapter(m.first);
+            ValidationVisitor<adapters::StdStringAdapter> validator(stringAdapter, context, strictTypes, nullptr);
+            if (!validator.validateSchema(*constraint.getSubschema())) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

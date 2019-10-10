@@ -910,6 +910,17 @@ private:
             }
         }
 
+        if ((itr = object.find("propertyNames")) != object.end()) {
+            if (version == kDraft7) {
+                rootSchema.addConstraintToSubschema(
+                      makePropertyNamesConstraint(rootSchema, rootNode, itr->second, updatedScope,
+                              nodePath, fetchDoc, docCache, schemaCache),
+                      &subschema);
+            } else {
+                throw std::runtime_error("Not supported");
+            }
+        }
+
         if ((itr = object.find("required")) != object.end()) {
             if (version == kDraft3) {
                 if (parentSubschema && ownName) {
@@ -2179,6 +2190,26 @@ private:
                     rootSchema.emptySubschema());
         }
 
+        return constraint;
+    }
+
+    template<typename AdapterType>
+    constraints::PropertyNamesConstraint makePropertyNamesConstraint(
+        Schema &rootSchema,
+        const AdapterType &rootNode,
+        const AdapterType &currentNode,
+        const opt::optional<std::string> currentScope,
+        const std::string &nodePath,
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
+        typename DocumentCache<AdapterType>::Type &docCache,
+        SchemaCache &schemaCache)
+    {
+        const Subschema *subschema = makeOrReuseSchema<AdapterType>(rootSchema, rootNode,
+                currentNode, currentScope, nodePath, fetchDoc, nullptr, nullptr, docCache,
+                schemaCache);
+
+        constraints::PropertyNamesConstraint constraint;
+        constraint.setSubschema(subschema);
         return constraint;
     }
 

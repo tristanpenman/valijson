@@ -1016,6 +1016,30 @@ private:
     const Subschema *additionalProperties;
 };
 
+class PropertyNamesConstraint: public BasicConstraint<PropertyNamesConstraint>
+{
+public:
+    PropertyNamesConstraint()
+      : subschema(NULL) { }
+
+    PropertyNamesConstraint(CustomAlloc allocFn, CustomFree freeFn)
+      : BasicConstraint(allocFn, freeFn),
+        subschema(NULL) { }
+
+    const Subschema * getSubschema() const
+    {
+        return subschema;
+    }
+
+    void setSubschema(const Subschema *subschema)
+    {
+        this->subschema = subschema;
+    }
+
+private:
+    const Subschema *subschema;
+};
+
 /**
  * @brief   Represents a 'required' constraint
  */
