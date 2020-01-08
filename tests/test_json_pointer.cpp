@@ -107,7 +107,6 @@ std::vector<std::shared_ptr<JsonPointerTestCase> >
         rapidjson::Value nonemptyString;
         nonemptyString.SetString("hello, world");
 
-
         testCase = std::make_shared<JsonPointerTestCase>(
                 "Resolve '/value/foo' fails because 'value' is not an object (but a non empty string)");
         testCase->value.SetObject();
