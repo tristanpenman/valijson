@@ -104,6 +104,33 @@ std::vector<std::shared_ptr<JsonPointerTestCase> >
     testCases.push_back(testCase);
 
     {
+        rapidjson::Value nonemptyString;
+        nonemptyString.SetString("hello, world");
+
+        testCase = std::make_shared<JsonPointerTestCase>(
+                "Resolve '/value/foo' fails because 'value' is not an object (but a non empty string)");
+        testCase->value.SetObject();
+        testCase->value.AddMember("value", nonemptyString, allocator);
+        testCase->jsonPointer = "/value/bar";
+        testCase->expectedValue = &testCase->value;
+        testCase->expectedValue = NULL;
+        testCases.push_back(testCase);
+    }
+
+    {
+        rapidjson::Value emptyString;
+        emptyString.SetString("");
+
+        testCase = std::make_shared<JsonPointerTestCase>(
+                "Resolve '/empty/after_empty' fails because 'empty' is an empty string");
+        testCase->value.SetObject();
+        testCase->value.AddMember("empty", emptyString, allocator);
+        testCase->jsonPointer = "/empty/after_empty";
+        testCase->expectedValue = NULL;
+        testCases.push_back(testCase);
+    }
+
+    {
         rapidjson::Value testArray;
         testArray.SetArray();
         testArray.PushBack("test0", allocator);

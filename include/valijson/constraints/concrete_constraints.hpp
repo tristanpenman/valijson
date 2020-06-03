@@ -671,7 +671,7 @@ public:
     }
 
 private:
-    size_t minItems;
+    uint64_t minItems;
 };
 
 /**
@@ -725,7 +725,7 @@ public:
     }
 
 private:
-    size_t minProperties;
+    uint64_t minProperties;
 };
 
 /**
