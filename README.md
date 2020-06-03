@@ -8,7 +8,7 @@ Valijson provides a simple validation API that allows you to load JSON Schemas, 
 
 ## Project Goals ##
 
-The goal of this project is to support validation of all constraints available in JSON Schema v4, while being competitive with the performance of a hand-written schema validator.
+The goal of this project is to support validation of all constraints available in JSON Schema v7, while being competitive with the performance of a hand-written schema validator.
 
 ## Usage ##
 
@@ -139,20 +139,13 @@ Building the Valijson Test Suite, using the instructions above, will also compil
 
 ## JSON Schema Support ##
 
-Valijson supports most of the constraints defined in [Draft 3](http://tools.ietf.org/search/draft-zyp-json-schema-03) and [Draft 4](http://tools.ietf.org/search/draft-zyp-json-schema-04) of the JSON Schema specification.
+Valijson supports most of the constraints defined in [Draft 7](https://json-schema.org/draft-07/json-schema-release-notes.html)
 
-The exceptions for Draft 3 are:
+The main exceptions are
+ - default
+ - format
 
- - disallow
- - extends
- - format (optional)
- - readonly
-
-The exceptions for Draft 4 are:
-
- - format (optional)
-
-Support for JSON References is in development.
+Support for JSON References is in development. It is mostly working, however some of the test cases added to [JSON Schema Test Suite](https://github.com/json-schema/JSON-Schema-Test-Suite) for v6/v7 are still failing.
 
 ## Documentation ##
 
@@ -162,7 +155,7 @@ Doxygen documentation can be built by running 'doxygen' from the project root di
 
 Valijson requires a compiler with C++11 support.
 
-When building the test suite, Boost 1.54, Qt 5 and Poco are optional dependencies. 
+When building the test suite, Boost 1.54, Qt 5 and Poco are optional dependencies.
 
 ## Supported Parsers ##
 
@@ -185,7 +178,7 @@ If you are using [vcpkg](https://github.com/Microsoft/vcpkg) on your project for
 
 ## Test Suite Requirements ##
 
-Supported versions of these libraries have been included in the 'thirdparty' directory so as to support Valijson's examples and test suite. 
+Supported versions of these libraries have been included in the 'thirdparty' directory so as to support Valijson's examples and test suite.
 
 The exceptions to this are boost, Poco and Qt5, which due to their size must be installed to a location that CMake can find.
 
@@ -196,7 +189,7 @@ When using PicoJSON, it may be necessary to include the `picojson.h` before othe
 When building Valijson using CMake on Mac OS X, with Qt 5 installed via Homebrew, you may need to set `CMAKE_PREFIX_PATH` so that CMake can find your Qt installation, e.g:
 
     mkdir build
-    cd build 
+    cd build
     cmake .. -DCMAKE_PREFIX_PATH=$(brew --prefix qt5)
     make
 
