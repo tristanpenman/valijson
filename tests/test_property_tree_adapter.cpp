@@ -12,7 +12,7 @@ TEST_F(TestPropertyTreeAdapter, BasicArrayIteration)
 {
     const unsigned int numElements = 10;
 
-    // Create a boost property that is equivalent to a JSON array containing a
+    // Create a boost property tree that is equivalent to a JSON array containing a
     // list of numbers.
     boost::property_tree::ptree document;
     for (unsigned int i = 0; i < numElements; i++) {
@@ -50,7 +50,7 @@ TEST_F(TestPropertyTreeAdapter, BasicObjectIteration)
 {
     const unsigned int numElements = 10;
 
-    // Create a rapidjson document that consists of an object that maps numeric
+    // Create a boost property tree that consists of an object that maps numeric
     // strings their corresponding numeric values
     boost::property_tree::ptree document;
     for (unsigned int i = 0; i < numElements; i++) {
