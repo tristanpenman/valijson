@@ -18,6 +18,7 @@
 
 #include <valijson/adapters/adapter.hpp>
 #include <valijson/adapters/frozen_value.hpp>
+#include <valijson/adapters/basic_adapter.hpp>
 
 namespace valijson {
 namespace adapters {
