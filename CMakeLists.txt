@@ -144,14 +144,18 @@ if(valijson_BUILD_EXAMPLES)
         examples/json_pointers.cpp
     )
 
+    add_executable(remote_resolution_local_file
+        examples/remote_resolution_local_file.cpp
+    )
+
     if(curlpp_FOUND)
         include_directories(${curlpp_INCLUDE_DIR})
 
-        add_executable(remote_resolution
-            examples/remote_resolution.cpp
+        add_executable(remote_resolution_url
+            examples/remote_resolution_url.cpp
         )
 
-        target_link_libraries(remote_resolution curl ${curlpp_LIBRARIES})
+        target_link_libraries(remote_resolution_url curl ${curlpp_LIBRARIES})
     endif()
 
     target_link_libraries(custom_schema ${Boost_LIBRARIES})
