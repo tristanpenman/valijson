@@ -232,8 +232,8 @@ public:
         const typename AdapterType::Array arr = target.asArray();
 
         bool validated = false;
-        for (auto itr = arr.begin(); itr != arr.end(); ++itr) {
-            ValidationVisitor containsValidator(*itr, context, strictTypes, nullptr);
+        for (const auto &el : arr) {
+            ValidationVisitor containsValidator(el, context, strictTypes, nullptr);
             if (containsValidator.validateSchema(*subschema)) {
                 validated = true;
                 break;

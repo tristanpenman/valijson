@@ -283,7 +283,7 @@ public:
                 array.emplace(tree);         // Treat as empty array
             } else {
                 bool isArray = true;
-                for (const auto node : tree) {
+                for (const auto &node : tree) {
                     if (!node.first.empty()) {
                         isArray = false;
                         break;
