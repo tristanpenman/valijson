@@ -1114,7 +1114,7 @@
 		6AC78AC517C5FBBC00674114 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1030;
+				LastUpgradeCheck = 1140;
 				ORGANIZATIONNAME = "Tristan Penman";
 				TargetAttributes = {
 					6A5C5D461C5B151F004F40ED = {
@@ -1251,6 +1251,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_IDENTITY = "-";
 				HEADER_SEARCH_PATHS = (
 					"../thirdparty/rapidjson-1.0.2/include",
 					../include,
@@ -1270,6 +1271,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_IDENTITY = "-";
 				HEADER_SEARCH_PATHS = (
 					"../thirdparty/rapidjson-1.0.2/include",
 					../include,
@@ -1290,6 +1292,7 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_COMMA = NO;
+				CODE_SIGN_IDENTITY = "-";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					GTEST_USE_OWN_TR1_TUPLE,
@@ -1324,6 +1327,7 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_COMMA = NO;
+				CODE_SIGN_IDENTITY = "-";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					GTEST_USE_OWN_TR1_TUPLE,
 					GTEST_HAS_PARAM_TEST,
@@ -1443,6 +1447,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_IDENTITY = "-";
 				HEADER_SEARCH_PATHS = (
 					"../thirdparty/rapidjson-1.0.2/include",
 					../include,
@@ -1462,6 +1467,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_IDENTITY = "-";
 				HEADER_SEARCH_PATHS = (
 					"../thirdparty/rapidjson-1.0.2/include",
 					../include,
