@@ -7,6 +7,7 @@
 #include <valijson/adapters/std_string_adapter.hpp>
 #include <valijson/constraints/concrete_constraints.hpp>
 #include <valijson/constraints/constraint_visitor.hpp>
+#include <utility>
 #include <valijson/validation_results.hpp>
 
 #include <valijson/utils/utf8_utils.hpp>
@@ -39,13 +40,13 @@ public:
      *                      stop immediately.
      */
     ValidationVisitor(const AdapterType &target,
-                      const std::vector<std::string> &context,
+                      std::vector<std::string> context,
                       const bool strictTypes,
                       ValidationResults *results)
-      : target(target),
-        context(context),
-        results(results),
-        strictTypes(strictTypes) { }
+      : m_target(target),
+        m_context(std::move(context)),
+        m_results(results),
+        m_strictTypes(strictTypes) { }
 
     /**
      * @brief  Validate the target against a schema.
@@ -74,7 +75,7 @@ public:
         Subschema::ApplyFunction fn(std::bind(validationCallback, std::placeholders::_1, *this));
 
         // Perform validation against each constraint defined in the schema
-        if (results == nullptr) {
+        if (m_results == nullptr) {
             // The applyStrict() function will return immediately if the
             // callback function returns false
             if (!subschema.applyStrict(fn)) {
@@ -111,11 +112,11 @@ public:
      *
      * @return  \c true if validation passes; \c false otherwise
      */
-    virtual bool visit(const AllOfConstraint &constraint)
+    bool visit(const AllOfConstraint &constraint) override
     {
         bool validated = true;
-        constraint.applyToSubschemas(ValidateSubschemas(target, context,
-                true, false, *this, results, nullptr, &validated));
+        constraint.applyToSubschemas(
+                ValidateSubschemas(m_target, m_context, true, false, *this, m_results, nullptr, &validated));
 
         return validated;
     }
@@ -137,26 +138,23 @@ public:
      *
      * @return  \c true if validation passes; \c false otherwise
      */
-    virtual bool visit(const AnyOfConstraint &constraint)
+    bool visit(const AnyOfConstraint &constraint) override
     {
         unsigned int numValidated = 0;
 
         ValidationResults newResults;
-        ValidationResults *childResults = (results) ? &newResults : nullptr;
+        ValidationResults *childResults = (m_results) ? &newResults : nullptr;
 
-        ValidationVisitor<AdapterType> v(target, context, strictTypes, childResults);
-        constraint.applyToSubschemas(ValidateSubschemas(target, context, false,
-                true, v, childResults, &numValidated, nullptr));
+        ValidationVisitor<AdapterType> v(m_target, m_context, m_strictTypes, childResults);
+        constraint.applyToSubschemas(
+                ValidateSubschemas(m_target, m_context, false, true, v, childResults, &numValidated, nullptr));
 
-        if (numValidated == 0 && results) {
+        if (numValidated == 0 && m_results) {
             ValidationResults::Error childError;
             while (childResults->popError(childError)) {
-                results->pushError(
-                        childError.context,
-                        childError.description);
+                m_results->pushError( childError.context, childError.description);
             }
-            results->pushError(context, "Failed to validate against any child "
-                    "schemas allowed by anyOf constraint.");
+            m_results->pushError(m_context, "Failed to validate against any schemas allowed by anyOf constraint.");
         }
 
         return numValidated > 0;
@@ -173,21 +171,19 @@ public:
      *
      * @return  \c true if validation passes; \c false otherwise
      */
-    virtual bool visit(const ConditionalConstraint &constraint)
+    bool visit(const ConditionalConstraint &constraint) override
     {
         // Create a validator to evaluate the conditional
-        ValidationVisitor ifValidator(target, context, strictTypes, nullptr);
-        ValidationVisitor thenElseValidator(target, context, strictTypes, nullptr);
+        ValidationVisitor ifValidator(m_target, m_context, m_strictTypes, nullptr);
+        ValidationVisitor thenElseValidator(m_target, m_context, m_strictTypes, nullptr);
 
         if (ifValidator.validateSchema(*constraint.getIfSubschema())) {
             const Subschema *thenSubschema = constraint.getThenSubschema();
-            return thenSubschema == nullptr ||
-                thenElseValidator.validateSchema(*thenSubschema);
+            return thenSubschema == nullptr || thenElseValidator.validateSchema(*thenSubschema);
         }
 
         const Subschema *elseSubschema = constraint.getElseSubschema();
-        return elseSubschema == nullptr ||
-            thenElseValidator.validateSchema(*elseSubschema);
+        return elseSubschema == nullptr || thenElseValidator.validateSchema(*elseSubschema);
     }
 
     /**
@@ -199,12 +195,11 @@ public:
      *
      * @return  \c true if validation passes; \f false otherwise
      */
-    virtual bool visit(const ConstConstraint &constraint)
+    bool visit(const ConstConstraint &constraint) override
     {
-        if (!constraint.getValue()->equalTo(target, strictTypes)) {
-            if (results) {
-                results->pushError(context,
-                        "Failed to match expected value set by 'const' constraint.");
+        if (!constraint.getValue()->equalTo(m_target, m_strictTypes)) {
+            if (m_results) {
+                m_results->pushError(m_context, "Failed to match expected value set by 'const' constraint.");
             }
             return false;
         }
@@ -222,18 +217,18 @@ public:
      *
      * @return  \c true if validation passes; \c false otherwise
      */
-    virtual bool visit(const ContainsConstraint &constraint)
+    bool visit(const ContainsConstraint &constraint) override
     {
-        if ((strictTypes && !target.isArray()) || !target.maybeArray()) {
+        if ((m_strictTypes && !m_target.isArray()) || !m_target.maybeArray()) {
             return true;
         }
 
         const Subschema *subschema = constraint.getSubschema();
-        const typename AdapterType::Array arr = target.asArray();
+        const typename AdapterType::Array arr = m_target.asArray();
 
         bool validated = false;
         for (const auto &el : arr) {
-            ValidationVisitor containsValidator(el, context, strictTypes, nullptr);
+            ValidationVisitor containsValidator(el, m_context, m_strictTypes, nullptr);
             if (containsValidator.validateSchema(*subschema)) {
                 validated = true;
                 break;
@@ -241,9 +236,8 @@ public:
         }
 
         if (!validated) {
-            if (results) {
-                results->pushError(context,
-                        "Failed to any values against subschema in 'contains' constraint.");
+            if (m_results) {
+                m_results->pushError(m_context, "Failed to any values against subschema in 'contains' constraint.");
             }
 
             return false;
@@ -269,15 +263,15 @@ public:
      *
      * @return  \c true if validation passes; \c false otherwise
      */
-    virtual bool visit(const DependenciesConstraint &constraint)
+    bool visit(const DependenciesConstraint &constraint) override
     {
         // Ignore non-objects
-        if ((strictTypes && !target.isObject()) || (!target.maybeObject())) {
+        if ((m_strictTypes && !m_target.isObject()) || (!m_target.maybeObject())) {
             return true;
         }
 
         // Object to be validated
-        const typename AdapterType::Object object = target.asObject();
+        const typename AdapterType::Object object = m_target.asObject();
 
         // Cleared if validation fails
         bool validated = true;
@@ -285,9 +279,8 @@ public:
         // Iterate over all dependent properties defined by this constraint,
         // invoking the DependentPropertyValidator functor once for each
         // set of dependent properties
-        constraint.applyToPropertyDependencies(ValidatePropertyDependencies(
-                object, context, results, &validated));
-        if (!results && !validated) {
+        constraint.applyToPropertyDependencies(ValidatePropertyDependencies(object, m_context, m_results, &validated));
+        if (!m_results && !validated) {
             return false;
         }
 
@@ -295,8 +288,8 @@ public:
         // invoking the DependentSchemaValidator function once for each schema
         // that must be validated if a given property is present
         constraint.applyToSchemaDependencies(ValidateSchemaDependencies(
-                object, context, *this, results, &validated));
-        if (!results && !validated) {
+                object, m_context, *this, m_results, &validated));
+        if (!m_results && !validated) {
             return false;
         }
 
@@ -313,16 +306,15 @@ public:
      *
      * @return  \c true if validation succeeds; \c false otherwise
      */
-    virtual bool visit(const EnumConstraint &constraint)
+    bool visit(const EnumConstraint &constraint) override
     {
         unsigned int numValidated = 0;
-        constraint.applyToValues(ValidateEquality(target, context, false, true,
-                strictTypes, nullptr, &numValidated));
+        constraint.applyToValues(
+                ValidateEquality(m_target, m_context, false, true, m_strictTypes, nullptr, &numValidated));
 
         if (numValidated == 0) {
-            if (results) {
-                results->pushError(context,
-                        "Failed to match against any enum values.");
+            if (m_results) {
+                m_results->pushError(m_context, "Failed to match against any enum values.");
             }
 
             return false;
@@ -347,23 +339,22 @@ public:
      *
      * @returns  \c true if validation is successful; \c false otherwise
      */
-    virtual bool visit(const LinearItemsConstraint &constraint)
+    bool visit(const LinearItemsConstraint &constraint) override
     {
         // Ignore values that are not arrays
-        if ((strictTypes && !target.isArray()) || (!target.maybeArray())) {
+        if ((m_strictTypes && !m_target.isArray()) || (!m_target.maybeArray())) {
             return true;
         }
 
         // Sub-schema to validate against when number of items in array exceeds
         // the number of sub-schemas provided by the 'items' constraint
-        const Subschema * const additionalItemsSubschema =
-                constraint.getAdditionalItemsSubschema();
+        const Subschema * const additionalItemsSubschema = constraint.getAdditionalItemsSubschema();
 
         // Track how many items are validated using 'items' constraint
         unsigned int numValidated = 0;
 
         // Array to validate
-        const typename AdapterType::Array arr = target.asArray();
+        const typename AdapterType::Array arr = m_target.asArray();
         const size_t arrSize = arr.size();
 
         // Track validation status
@@ -374,22 +365,19 @@ public:
         if (itemSubschemaCount > 0) {
             if (!additionalItemsSubschema) {
                 if (arrSize > itemSubschemaCount) {
-                    if (results) {
-                        results->pushError(context,
-                                "Array contains more items than allowed by "
-                                "items constraint.");
-                        validated = false;
-                    } else {
+                    if (!m_results) {
                         return false;
                     }
+                    m_results->pushError(m_context, "Array contains more items than allowed by items constraint.");
+                    validated = false;
                 }
             }
 
-            constraint.applyToItemSubschemas(ValidateItems(arr, context, true,
-                    results != nullptr, strictTypes, results, &numValidated,
-                    &validated));
+            constraint.applyToItemSubschemas(
+                    ValidateItems(arr, m_context, true, m_results != nullptr, m_strictTypes, m_results, &numValidated,
+                            &validated));
 
-            if (!results && !validated) {
+            if (!m_results && !validated) {
                 return false;
             }
         }
@@ -406,18 +394,14 @@ public:
                         itr != arr.end(); ++itr) {
 
                     // Update context for current array item
-                    std::vector<std::string> newContext = context;
-                    newContext.push_back("[" +
-                            std::to_string(index) + "]");
+                    std::vector<std::string> newContext = m_context;
+                    newContext.push_back("[" + std::to_string(index) + "]");
 
-                    ValidationVisitor<AdapterType> validator(*itr, newContext,
-                            strictTypes, results);
+                    ValidationVisitor<AdapterType> validator(*itr, newContext, m_strictTypes, m_results);
 
                     if (!validator.validateSchema(*additionalItemsSubschema)) {
-                        if (results) {
-                            results->pushError(context,
-                                    "Failed to validate item #" +
-                                    std::to_string(index) +
+                        if (m_results) {
+                            m_results->pushError(m_context, "Failed to validate item #" + std::to_string(index) +
                                     " against additional items schema.");
                             validated = false;
                         } else {
@@ -428,11 +412,9 @@ public:
                     index++;
                 }
 
-            } else if (results) {
-                results->pushError(context, "Cannot validate item #" +
-                    std::to_string(numValidated) + " or "
-                    "greater using 'items' constraint or 'additionalItems' "
-                    "constraint.");
+            } else if (m_results) {
+                m_results->pushError(m_context, "Cannot validate item #" + std::to_string(numValidated) +
+                        " or greater using 'items' constraint or 'additionalItems' constraint.");
                 validated = false;
 
             } else {
@@ -450,9 +432,9 @@ public:
      *
      * @return  \c true if constraints are satisfied; \c false otherwise
      */
-    virtual bool visit(const MaximumConstraint &constraint)
+    bool visit(const MaximumConstraint &constraint) override
     {
-        if ((strictTypes && !target.isNumber()) || !target.maybeDouble()) {
+        if ((m_strictTypes && !m_target.isNumber()) || !m_target.maybeDouble()) {
             // Ignore values that are not numbers
             return true;
         }
@@ -460,20 +442,17 @@ public:
         const double maximum = constraint.getMaximum();
 
         if (constraint.getExclusiveMaximum()) {
-            if (target.asDouble() >= maximum) {
-                if (results) {
-                    results->pushError(context, "Expected number less than " +
-                            std::to_string(maximum));
+            if (m_target.asDouble() >= maximum) {
+                if (m_results) {
+                    m_results->pushError(m_context, "Expected number less than " + std::to_string(maximum));
                 }
 
                 return false;
             }
 
-        } else if (target.asDouble() > maximum) {
-            if (results) {
-                results->pushError(context,
-                        "Expected number less than or equal to " +
-                        std::to_string(maximum));
+        } else if (m_target.asDouble() > maximum) {
+            if (m_results) {
+                m_results->pushError(m_context, "Expected number less than or equal to " + std::to_string(maximum));
             }
 
             return false;
@@ -489,20 +468,20 @@ public:
      *
      * @return  \c true if constraint is satisfied; \c false otherwise
      */
-    virtual bool visit(const MaxItemsConstraint &constraint)
+    bool visit(const MaxItemsConstraint &constraint) override
     {
-        if ((strictTypes && !target.isArray()) || !target.maybeArray()) {
+        if ((m_strictTypes && !m_target.isArray()) || !m_target.maybeArray()) {
             return true;
         }
 
         const uint64_t maxItems = constraint.getMaxItems();
-        if (target.asArray().size() <= maxItems) {
+        if (m_target.asArray().size() <= maxItems) {
             return true;
         }
 
-        if (results) {
-            results->pushError(context, "Array should contain no more than " +
-                    std::to_string(maxItems) + " elements.");
+        if (m_results) {
+            m_results->pushError(m_context, "Array should contain no more than " + std::to_string(maxItems) +
+                    " elements.");
         }
 
         return false;
@@ -515,23 +494,21 @@ public:
      *
      * @return  \c true if constraint is satisfied; \c false otherwise
      */
-    virtual bool visit(const MaxLengthConstraint &constraint)
+    bool visit(const MaxLengthConstraint &constraint) override
     {
-        if ((strictTypes && !target.isString()) || !target.maybeString()) {
+        if ((m_strictTypes && !m_target.isString()) || !m_target.maybeString()) {
             return true;
         }
 
-        const std::string s = target.asString();
+        const std::string s = m_target.asString();
         const uint64_t len = utils::u8_strlen(s.c_str());
         const uint64_t maxLength = constraint.getMaxLength();
         if (len <= maxLength) {
             return true;
         }
 
-        if (results) {
-            results->pushError(context,
-                    "String should be no more than " +
-                    std::to_string(maxLength) +
+        if (m_results) {
+            m_results->pushError(m_context, "String should be no more than " + std::to_string(maxLength) +
                     " characters in length.");
         }
 
@@ -545,21 +522,20 @@ public:
      *
      * @return  \c true if the constraint is satisfied; \c false otherwise
      */
-    virtual bool visit(const MaxPropertiesConstraint &constraint)
+    bool visit(const MaxPropertiesConstraint &constraint) override
     {
-        if ((strictTypes && !target.isObject()) || !target.maybeObject()) {
+        if ((m_strictTypes && !m_target.isObject()) || !m_target.maybeObject()) {
             return true;
         }
 
         const uint64_t maxProperties = constraint.getMaxProperties();
 
-        if (target.asObject().size() <= maxProperties) {
+        if (m_target.asObject().size() <= maxProperties) {
             return true;
         }
 
-        if (results) {
-            results->pushError(context, "Object should have no more than " +
-                    std::to_string(maxProperties) +
+        if (m_results) {
+            m_results->pushError(m_context, "Object should have no more than " + std::to_string(maxProperties) +
                     " properties.");
         }
 
@@ -573,9 +549,9 @@ public:
      *
      * @return  \c true if the constraint is satisfied; \c false otherwise
      */
-    virtual bool visit(const MinimumConstraint &constraint)
+    bool visit(const MinimumConstraint &constraint) override
     {
-        if ((strictTypes && !target.isNumber()) || !target.maybeDouble()) {
+        if ((m_strictTypes && !m_target.isNumber()) || !m_target.maybeDouble()) {
             // Ignore values that are not numbers
             return true;
         }
@@ -583,20 +559,16 @@ public:
         const double minimum = constraint.getMinimum();
 
         if (constraint.getExclusiveMinimum()) {
-            if (target.asDouble() <= minimum) {
-                if (results) {
-                    results->pushError(context,
-                        "Expected number greater than " +
-                        std::to_string(minimum));
+            if (m_target.asDouble() <= minimum) {
+                if (m_results) {
+                    m_results->pushError(m_context, "Expected number greater than " + std::to_string(minimum));
                 }
 
                 return false;
             }
-        } else if (target.asDouble() < minimum) {
-            if (results) {
-                results->pushError(context,
-                        "Expected number greater than or equal to " +
-                        std::to_string(minimum));
+        } else if (m_target.asDouble() < minimum) {
+            if (m_results) {
+                m_results->pushError(m_context, "Expected number greater than or equal to " + std::to_string(minimum));
             }
 
             return false;
@@ -612,20 +584,20 @@ public:
      *
      * @return  \c true if the constraint is satisfied; \c false otherwise
      */
-    virtual bool visit(const MinItemsConstraint &constraint)
+    bool visit(const MinItemsConstraint &constraint) override
     {
-        if ((strictTypes && !target.isArray()) || !target.maybeArray()) {
+        if ((m_strictTypes && !m_target.isArray()) || !m_target.maybeArray()) {
             return true;
         }
 
         const uint64_t minItems = constraint.getMinItems();
-        if (target.asArray().size() >= minItems) {
+        if (m_target.asArray().size() >= minItems) {
             return true;
         }
 
-        if (results) {
-            results->pushError(context, "Array should contain no fewer than " +
-                std::to_string(minItems) + " elements.");
+        if (m_results) {
+            m_results->pushError(m_context, "Array should contain no fewer than " + std::to_string(minItems) +
+                    " elements.");
         }
 
         return false;
@@ -638,23 +610,21 @@ public:
      *
      * @return  \c true if the constraint is satisfied; \c false otherwise
      */
-    virtual bool visit(const MinLengthConstraint &constraint)
+    bool visit(const MinLengthConstraint &constraint) override
     {
-        if ((strictTypes && !target.isString()) || !target.maybeString()) {
+        if ((m_strictTypes && !m_target.isString()) || !m_target.maybeString()) {
             return true;
         }
 
-        const std::string s = target.asString();
+        const std::string s = m_target.asString();
         const uint64_t len = utils::u8_strlen(s.c_str());
         const uint64_t minLength = constraint.getMinLength();
         if (len >= minLength) {
             return true;
         }
 
-        if (results) {
-            results->pushError(context,
-                    "String should be no fewer than " +
-                    std::to_string(minLength) +
+        if (m_results) {
+            m_results->pushError(m_context, "String should be no fewer than " + std::to_string(minLength) +
                     " characters in length.");
         }
 
@@ -668,21 +638,20 @@ public:
      *
      * @return  \c true if the constraint is satisfied; \c false otherwise
      */
-    virtual bool visit(const MinPropertiesConstraint &constraint)
+    bool visit(const MinPropertiesConstraint &constraint) override
     {
-        if ((strictTypes && !target.isObject()) || !target.maybeObject()) {
+        if ((m_strictTypes && !m_target.isObject()) || !m_target.maybeObject()) {
             return true;
         }
 
         const uint64_t minProperties = constraint.getMinProperties();
 
-        if (target.asObject().size() >= minProperties) {
+        if (m_target.asObject().size() >= minProperties) {
             return true;
         }
 
-        if (results) {
-            results->pushError(context, "Object should have no fewer than " +
-                    std::to_string(minProperties) +
+        if (m_results) {
+            m_results->pushError(m_context, "Object should have no fewer than " + std::to_string(minProperties) +
                     " properties.");
         }
 
@@ -696,27 +665,25 @@ public:
      *
      * @return  \c true if the constraint is satisfied; \c false otherwise
      */
-    virtual bool visit(const MultipleOfDoubleConstraint &constraint)
+    bool visit(const MultipleOfDoubleConstraint &constraint) override
     {
         const double divisor = constraint.getDivisor();
 
         double d = 0.;
-        if (target.maybeDouble()) {
-            if (!target.asDouble(d)) {
-                if (results) {
-                    results->pushError(context, "Value could not be converted "
-                        "to a number to check if it is a multiple of " +
-                        std::to_string(divisor));
+        if (m_target.maybeDouble()) {
+            if (!m_target.asDouble(d)) {
+                if (m_results) {
+                    m_results->pushError(m_context, "Value could not be converted "
+                            "to a number to check if it is a multiple of " + std::to_string(divisor));
                 }
                 return false;
             }
-        } else if (target.maybeInteger()) {
+        } else if (m_target.maybeInteger()) {
             int64_t i = 0;
-            if (!target.asInteger(i)) {
-                if (results) {
-                    results->pushError(context, "Value could not be converted "
-                        "to a number to check if it is a multiple of " +
-                        std::to_string(divisor));
+            if (!m_target.asInteger(i)) {
+                if (m_results) {
+                    m_results->pushError(m_context, "Value could not be converted "
+                            "to a number to check if it is a multiple of " + std::to_string(divisor));
                 }
                 return false;
             }
@@ -732,9 +699,8 @@ public:
         const double r = remainder(d, divisor);
 
         if (fabs(r) > std::numeric_limits<double>::epsilon()) {
-            if (results) {
-                results->pushError(context, "Value should be a multiple of " +
-                    std::to_string(divisor));
+            if (m_results) {
+                m_results->pushError(m_context, "Value should be a multiple of " + std::to_string(divisor));
             }
             return false;
         }
@@ -749,25 +715,23 @@ public:
      *
      * @return  \c true if the constraint is satisfied; \c false otherwise
      */
-    virtual bool visit(const MultipleOfIntConstraint &constraint)
+    bool visit(const MultipleOfIntConstraint &constraint) override
     {
         const int64_t divisor = constraint.getDivisor();
 
         int64_t i = 0;
-        if (target.maybeInteger()) {
-            if (!target.asInteger(i)) {
-                if (results) {
-                    results->pushError(context, "Value could not be converted "
-                        "to an integer for multipleOf check");
+        if (m_target.maybeInteger()) {
+            if (!m_target.asInteger(i)) {
+                if (m_results) {
+                    m_results->pushError(m_context, "Value could not be converted to an integer for multipleOf check");
                 }
                 return false;
             }
-        } else if (target.maybeDouble()) {
+        } else if (m_target.maybeDouble()) {
             double d;
-            if (!target.asDouble(d)) {
-                if (results) {
-                    results->pushError(context, "Value could not be converted "
-                        "to a double for multipleOf check");
+            if (!m_target.asDouble(d)) {
+                if (m_results) {
+                    m_results->pushError(m_context, "Value could not be converted to a double for multipleOf check");
                 }
                 return false;
             }
@@ -781,9 +745,8 @@ public:
         }
 
         if (i % divisor != 0) {
-            if (results) {
-                results->pushError(context, "Value should be a multiple of " +
-                    std::to_string(divisor));
+            if (m_results) {
+                m_results->pushError(m_context, "Value should be a multiple of " + std::to_string(divisor));
             }
             return false;
         }
@@ -802,7 +765,7 @@ public:
      *
      * @return  \c true if the constraint is satisfied; \c false otherwise
      */
-    virtual bool visit(const NotConstraint &constraint)
+    bool visit(const NotConstraint &constraint) override
     {
         const Subschema *subschema = constraint.getSubschema();
         if (!subschema) {
@@ -810,12 +773,11 @@ public:
             return false;
         }
 
-        ValidationVisitor<AdapterType> v(target, context, strictTypes, nullptr);
+        ValidationVisitor<AdapterType> v(m_target, m_context, m_strictTypes, nullptr);
         if (v.validateSchema(*subschema)) {
-            if (results) {
-                results->pushError(context,
-                        "Target should not validate against schema "
-                        "specified in 'not' constraint.");
+            if (m_results) {
+                m_results->pushError(m_context,
+                        "Target should not validate against schema specified in 'not' constraint.");
             }
 
             return false;
@@ -831,33 +793,32 @@ public:
      *
      * @return  \c true if the constraint is satisfied; \c false otherwise
      */
-    virtual bool visit(const OneOfConstraint &constraint)
+    bool visit(const OneOfConstraint &constraint) override
     {
         unsigned int numValidated = 0;
 
         ValidationResults newResults;
-        ValidationResults *childResults = (results) ? &newResults : nullptr;
+        ValidationResults *childResults = (m_results) ? &newResults : nullptr;
 
-        ValidationVisitor<AdapterType> v(target, context, strictTypes, childResults);
-        constraint.applyToSubschemas(ValidateSubschemas(target, context,
-                true, true, v, childResults, &numValidated, nullptr));
+        ValidationVisitor<AdapterType> v(m_target, m_context, m_strictTypes, childResults);
+        constraint.applyToSubschemas(
+                ValidateSubschemas(m_target, m_context, true, true, v, childResults, &numValidated, nullptr));
 
         if (numValidated == 0) {
-            if (results) {
+            if (m_results) {
                 ValidationResults::Error childError;
                 while (childResults->popError(childError)) {
-                    results->pushError(
+                    m_results->pushError(
                             childError.context,
                             childError.description);
                 }
-                results->pushError(context, "Failed to validate against any "
+                m_results->pushError(m_context, "Failed to validate against any "
                         "child schemas allowed by oneOf constraint.");
             }
             return false;
         } else if (numValidated != 1) {
-            if (results) {
-                results->pushError(context,
-                        "Failed to validate against exactly one child schema.");
+            if (m_results) {
+                m_results->pushError(m_context, "Failed to validate against exactly one child schema.");
             }
             return false;
         }
@@ -872,20 +833,17 @@ public:
      *
      * @return  \c true if the constraint is satisfied; \c false otherwise
      */
-    virtual bool visit(const PatternConstraint &constraint)
+    bool visit(const PatternConstraint &constraint) override
     {
-        if ((strictTypes && !target.isString()) || !target.maybeString()) {
+        if ((m_strictTypes && !m_target.isString()) || !m_target.maybeString()) {
             return true;
         }
 
-        const std::regex patternRegex(
-                constraint.getPattern<std::string::allocator_type>());
+        const std::regex patternRegex(constraint.getPattern<std::string::allocator_type>());
 
-        if (!std::regex_search(target.asString(), patternRegex)) {
-            if (results) {
-                results->pushError(context,
-                        "Failed to match regex specified by 'pattern' "
-                        "constraint.");
+        if (!std::regex_search(m_target.asString(), patternRegex)) {
+            if (m_results) {
+                m_results->pushError(m_context, "Failed to match regex specified by 'pattern' constraint.");
             }
 
             return false;
@@ -901,9 +859,9 @@ public:
      *
      * @return  \c true if the constraint is satisfied; \c false otherwise
      */
-    virtual bool visit(const constraints::PolyConstraint &constraint)
+    bool visit(const constraints::PolyConstraint &constraint) override
     {
-        return constraint.validate(target, context, results);
+        return constraint.validate(m_target, m_context, m_results);
     }
 
     /**
@@ -930,9 +888,9 @@ public:
      *
      * @return  \c true if the constraint is satisfied; \c false otherwise
      */
-    virtual bool visit(const PropertiesConstraint &constraint)
+    bool visit(const PropertiesConstraint &constraint) override
     {
-        if ((strictTypes && !target.isObject()) || !target.maybeObject()) {
+        if ((m_strictTypes && !m_target.isObject()) || !m_target.maybeObject()) {
             return true;
         }
 
@@ -943,30 +901,32 @@ public:
 
         // Validate properties against subschemas for matching 'properties'
         // constraints
-        const typename AdapterType::Object object = target.asObject();
-        constraint.applyToProperties(ValidatePropertySubschemas(object, context,
-                true, results != nullptr, true, strictTypes, results,
-                &propertiesMatched, &validated));
+        const typename AdapterType::Object object = m_target.asObject();
+        constraint.applyToProperties(
+                ValidatePropertySubschemas(
+                        object, m_context, true, m_results != nullptr, true, m_strictTypes, m_results,
+                        &propertiesMatched, &validated));
 
         // Exit early if validation failed, and we're not collecting exhaustive
         // validation results
-        if (!validated && !results) {
+        if (!validated && !m_results) {
             return false;
         }
 
         // Validate properties against subschemas for matching patternProperties
         // constraints
-        constraint.applyToPatternProperties(ValidatePatternPropertySubschemas(
-                object, context, true, false, true, strictTypes, results,
-                &propertiesMatched, &validated));
+        constraint.applyToPatternProperties(
+                ValidatePatternPropertySubschemas(
+                        object, m_context, true, false, true, m_strictTypes, m_results, &propertiesMatched,
+                        &validated));
 
         // Validate against additionalProperties subschema for any properties
         // that have not yet been matched
         const Subschema *additionalPropertiesSubschema =
                 constraint.getAdditionalPropertiesSubschema();
         if (!additionalPropertiesSubschema) {
-            if (propertiesMatched.size() != target.getObjectSize()) {
-                if (results) {
+            if (propertiesMatched.size() != m_target.getObjectSize()) {
+                if (m_results) {
                     std::string unwanted;
                     for (const typename AdapterType::ObjectMember m : object) {
                         if (propertiesMatched.find(m.first) == propertiesMatched.end()) {
@@ -974,7 +934,7 @@ public:
                             break;
                         }
                     }
-                    results->pushError(context, "Object contains a property "
+                    m_results->pushError(m_context, "Object contains a property "
                             "that could not be validated using 'properties' "
                             "or 'additionalProperties' constraints: '" + unwanted + "'.");
                 }
@@ -988,16 +948,14 @@ public:
         for (const typename AdapterType::ObjectMember m : object) {
             if (propertiesMatched.find(m.first) == propertiesMatched.end()) {
                 // Update context
-                std::vector<std::string> newContext = context;
+                std::vector<std::string> newContext = m_context;
                 newContext.push_back("[" + m.first + "]");
 
                 // Create a validator to validate the property's value
-                ValidationVisitor validator(m.second, newContext, strictTypes,
-                        results);
+                ValidationVisitor validator(m.second, newContext, m_strictTypes, m_results);
                 if (!validator.validateSchema(*additionalPropertiesSubschema)) {
-                    if (results) {
-                        results->pushError(context, "Failed to validate "
-                                "against additional properties schema");
+                    if (m_results) {
+                        m_results->pushError(m_context, "Failed to validate against additional properties schema");
                     }
 
                     validated = false;
@@ -1015,15 +973,15 @@ public:
      *
      * @return  \c true if validation succeeds; \c false otherwise
      */
-    virtual bool visit(const PropertyNamesConstraint &constraint)
+    bool visit(const PropertyNamesConstraint &constraint) override
     {
-        if ((strictTypes && !target.isObject()) || !target.maybeObject()) {
+        if ((m_strictTypes && !m_target.isObject()) || !m_target.maybeObject()) {
             return true;
         }
 
-        for (const typename AdapterType::ObjectMember m : target.asObject()) {
+        for (const typename AdapterType::ObjectMember m : m_target.asObject()) {
             adapters::StdStringAdapter stringAdapter(m.first);
-            ValidationVisitor<adapters::StdStringAdapter> validator(stringAdapter, context, strictTypes, nullptr);
+            ValidationVisitor<adapters::StdStringAdapter> validator(stringAdapter, m_context, m_strictTypes, nullptr);
             if (!validator.validateSchema(*constraint.getSubschema())) {
                 return false;
             }
@@ -1042,16 +1000,16 @@ public:
      *
      * @return  \c true if validation succeeds; \c false otherwise
      */
-    virtual bool visit(const RequiredConstraint &constraint)
+    bool visit(const RequiredConstraint &constraint) override
     {
-        if ((strictTypes && !target.isObject()) || !target.maybeObject()) {
+        if ((m_strictTypes && !m_target.isObject()) || !m_target.maybeObject()) {
             return true;
         }
 
         bool validated = true;
-        const typename AdapterType::Object object = target.asObject();
-        constraint.applyToRequiredProperties(ValidateProperties(object, context,
-                true, results != nullptr, results, &validated));
+        const typename AdapterType::Object object = m_target.asObject();
+        constraint.applyToRequiredProperties(
+                ValidateProperties(object, m_context, true, m_results != nullptr, m_results, &validated));
 
         return validated;
     }
@@ -1067,10 +1025,10 @@ public:
      *
      * @returns  \c true if validation is successful; \c false otherwise
      */
-    virtual bool visit(const SingularItemsConstraint &constraint)
+    bool visit(const SingularItemsConstraint &constraint) override
     {
         // Ignore values that are not arrays
-        if (!target.isArray()) {
+        if (!m_target.isArray()) {
             return true;
         }
 
@@ -1086,23 +1044,18 @@ public:
         bool validated = true;
 
         unsigned int index = 0;
-        for (const AdapterType &item : target.getArray()) {
+        for (const AdapterType &item : m_target.getArray()) {
             // Update context for current array item
-            std::vector<std::string> newContext = context;
-            newContext.push_back("[" +
-                    std::to_string(index) + "]");
+            std::vector<std::string> newContext = m_context;
+            newContext.push_back("[" + std::to_string(index) + "]");
 
             // Create a validator for the current array item
-            ValidationVisitor<AdapterType> validationVisitor(item,
-                    newContext, strictTypes, results);
+            ValidationVisitor<AdapterType> validationVisitor(item, newContext, m_strictTypes, m_results);
 
             // Perform validation
             if (!validationVisitor.validateSchema(*itemsSubschema)) {
-                if (results) {
-                    results->pushError(context,
-                            "Failed to validate item #" +
-                            std::to_string(index) +
-                            " in array.");
+                if (m_results) {
+                    m_results->pushError(m_context, "Failed to validate item #" + std::to_string(index) + " in array.");
                     validated = false;
                 } else {
                     return false;
@@ -1125,14 +1078,13 @@ public:
      *
      * @return  \c true if validation is successful; \c false otherwise
      */
-    virtual bool visit(const TypeConstraint &constraint)
+    bool visit(const TypeConstraint &constraint) override
     {
         // Check named types
         {
             // ValidateNamedTypes functor assumes target is invalid
             bool validated = false;
-            constraint.applyToNamedTypes(ValidateNamedTypes(target, false,
-                    true, strictTypes, &validated));
+            constraint.applyToNamedTypes(ValidateNamedTypes(m_target, false, true, m_strictTypes, &validated));
             if (validated) {
                 return true;
             }
@@ -1141,13 +1093,12 @@ public:
         // Check schema-based types
         {
             unsigned int numValidated = 0;
-            constraint.applyToSchemaTypes(ValidateSubschemas(target, context,
-                    false, true, *this, nullptr, &numValidated, nullptr));
+            constraint.applyToSchemaTypes(
+                    ValidateSubschemas(m_target, m_context, false, true, *this, nullptr, &numValidated, nullptr));
             if (numValidated > 0) {
                 return true;
-            } else if (results) {
-                results->pushError(context,
-                        "Value type not permitted by 'type' constraint.");
+            } else if (m_results) {
+                m_results->pushError(m_context, "Value type not permitted by 'type' constraint.");
             }
         }
 
@@ -1165,18 +1116,18 @@ public:
      *
      * @return  true if validation succeeds, false otherwise
      */
-    virtual bool visit(const UniqueItemsConstraint &)
+    bool visit(const UniqueItemsConstraint &) override
     {
-        if ((strictTypes && !target.isArray()) || !target.maybeArray()) {
+        if ((m_strictTypes && !m_target.isArray()) || !m_target.maybeArray()) {
             return true;
         }
 
         // Empty arrays are always valid
-        if (target.getArraySize() == 0) {
+        if (m_target.getArraySize() == 0) {
             return true;
         }
 
-        const typename AdapterType::Array targetArray = target.asArray();
+        const typename AdapterType::Array targetArray = m_target.asArray();
         const typename AdapterType::Array::const_iterator end = targetArray.end();
 
         bool validated = true;
@@ -1188,10 +1139,9 @@ public:
             typename AdapterType::Array::const_iterator innerItr(outerItr);
             for (++innerItr; innerItr != end; ++innerItr) {
                 if (outerItr->equalTo(*innerItr, true)) {
-                    if (results) {
-                        results->pushError(context, "Elements at indexes #" +
-                            std::to_string(outerIndex) + " and #" +
-                            std::to_string(innerIndex) + " violate uniqueness constraint.");
+                    if (m_results) {
+                        m_results->pushError(m_context, "Elements at indexes #" + std::to_string(outerIndex)
+                                + " and #" + std::to_string(innerIndex) + " violate uniqueness constraint.");
                         validated = false;
                     } else {
                         return false;
@@ -1220,41 +1170,40 @@ private:
                 bool strictTypes,
                 ValidationResults *results,
                 unsigned int *numValidated)
-          : target(target),
-            context(context),
-            continueOnSuccess(continueOnSuccess),
-            continueOnFailure(continueOnFailure),
-            strictTypes(strictTypes),
-            results(results),
-            numValidated(numValidated) { }
+          : m_target(target),
+            m_context(context),
+            m_continueOnSuccess(continueOnSuccess),
+            m_continueOnFailure(continueOnFailure),
+            m_strictTypes(strictTypes),
+            m_results(results),
+            m_numValidated(numValidated) { }
 
         template<typename OtherValue>
         bool operator()(const OtherValue &value) const
         {
-            if (value.equalTo(target, strictTypes)) {
-                if (numValidated) {
-                    (*numValidated)++;
+            if (value.equalTo(m_target, m_strictTypes)) {
+                if (m_numValidated) {
+                    (*m_numValidated)++;
                 }
 
-                return continueOnSuccess;
+                return m_continueOnSuccess;
             }
 
-            if (results) {
-                results->pushError(context,
-                        "Target value and comparison value are not equal");
+            if (m_results) {
+                m_results->pushError(m_context, "Target value and comparison value are not equal");
             }
 
-            return continueOnFailure;
+            return m_continueOnFailure;
         }
 
     private:
-        const AdapterType &target;
-        const std::vector<std::string> &context;
-        bool continueOnSuccess;
-        bool continueOnFailure;
-        bool strictTypes;
-        ValidationResults * const results;
-        unsigned int * const numValidated;
+        const AdapterType &m_target;
+        const std::vector<std::string> &m_context;
+        bool m_continueOnSuccess;
+        bool m_continueOnFailure;
+        bool m_strictTypes;
+        ValidationResults * const m_results;
+        unsigned int * const m_numValidated;
     };
 
     /**
@@ -1269,39 +1218,39 @@ private:
                 bool continueOnFailure,
                 ValidationResults *results,
                 bool *validated)
-          : object(object),
-            context(context),
-            continueOnSuccess(continueOnSuccess),
-            continueOnFailure(continueOnFailure),
-            results(results),
-            validated(validated) { }
+          : m_object(object),
+            m_context(context),
+            m_continueOnSuccess(continueOnSuccess),
+            m_continueOnFailure(continueOnFailure),
+            m_results(results),
+            m_validated(validated) { }
 
         template<typename StringType>
         bool operator()(const StringType &property) const
         {
-            if (object.find(property.c_str()) == object.end()) {
-                if (validated) {
-                    *validated = false;
+            if (m_object.find(property.c_str()) == m_object.end()) {
+                if (m_validated) {
+                    *m_validated = false;
                 }
 
-                if (results) {
-                    results->pushError(context, "Missing required property '" +
+                if (m_results) {
+                    m_results->pushError(m_context, "Missing required property '" +
                             std::string(property.c_str()) + "'.");
                 }
 
-                return continueOnFailure;
+                return m_continueOnFailure;
             }
 
-            return continueOnSuccess;
+            return m_continueOnSuccess;
         }
 
     private:
-        const typename AdapterType::Object &object;
-        const std::vector<std::string> &context;
-        bool continueOnSuccess;
-        bool continueOnFailure;
-        ValidationResults * const results;
-        bool * const validated;
+        const typename AdapterType::Object &m_object;
+        const std::vector<std::string> &m_context;
+        bool m_continueOnSuccess;
+        bool m_continueOnFailure;
+        ValidationResults * const m_results;
+        bool * const m_validated;
     };
 
     /**
@@ -1314,31 +1263,28 @@ private:
                 const std::vector<std::string> &context,
                 ValidationResults *results,
                 bool *validated)
-          : object(object),
-            context(context),
-            results(results),
-            validated(validated) { }
+          : m_object(object),
+            m_context(context),
+            m_results(results),
+            m_validated(validated) { }
 
         template<typename StringType, typename ContainerType>
-        bool operator()(
-                const StringType &propertyName,
-                const ContainerType &dependencyNames) const
+        bool operator()(const StringType &propertyName, const ContainerType &dependencyNames) const
         {
             const std::string propertyNameKey(propertyName.c_str());
-            if (object.find(propertyNameKey) == object.end()) {
+            if (m_object.find(propertyNameKey) == m_object.end()) {
                 return true;
             }
 
             typedef typename ContainerType::value_type ValueType;
             for (const ValueType &dependencyName : dependencyNames) {
                 const std::string dependencyNameKey(dependencyName.c_str());
-                if (object.find(dependencyNameKey) == object.end()) {
-                    if (validated) {
-                        *validated = false;
+                if (m_object.find(dependencyNameKey) == m_object.end()) {
+                    if (m_validated) {
+                        *m_validated = false;
                     }
-                    if (results) {
-                        results->pushError(context, "Missing dependency '" +
-                                dependencyNameKey + "'.");
+                    if (m_results) {
+                        m_results->pushError(m_context, "Missing dependency '" + dependencyNameKey + "'.");
                     } else {
                         return false;
                     }
@@ -1349,10 +1295,10 @@ private:
         }
 
     private:
-        const typename AdapterType::Object &object;
-        const std::vector<std::string> &context;
-        ValidationResults * const results;
-        bool * const validated;
+        const typename AdapterType::Object &m_object;
+        const std::vector<std::string> &m_context;
+        ValidationResults * const m_results;
+        bool * const m_validated;
     };
 
     /**
@@ -1369,64 +1315,61 @@ private:
                 ValidationResults *results,
                 unsigned int *numValidated,
                 bool *validated)
-          : arr(arr),
-            context(context),
-            continueOnSuccess(continueOnSuccess),
-            continueOnFailure(continueOnFailure),
-            strictTypes(strictTypes),
-            results(results),
-            numValidated(numValidated),
-            validated(validated) { }
+          : m_arr(arr),
+            m_context(context),
+            m_continueOnSuccess(continueOnSuccess),
+            m_continueOnFailure(continueOnFailure),
+            m_strictTypes(strictTypes),
+            m_results(results),
+            m_numValidated(numValidated),
+            m_validated(validated) { }
 
         bool operator()(unsigned int index, const Subschema *subschema) const
         {
             // Check that there are more elements to validate
-            if (index >= arr.size()) {
+            if (index >= m_arr.size()) {
                 return false;
             }
 
             // Update context
-            std::vector<std::string> newContext = context;
-            newContext.push_back(
-                    "[" + std::to_string(index) + "]");
+            std::vector<std::string> newContext = m_context;
+            newContext.push_back("[" + std::to_string(index) + "]");
 
             // Find array item
-            typename AdapterType::Array::const_iterator itr = arr.begin();
+            typename AdapterType::Array::const_iterator itr = m_arr.begin();
             itr.advance(index);
 
             // Validate current array item
-            ValidationVisitor validator(*itr, newContext, strictTypes, results);
+            ValidationVisitor validator(*itr, newContext, m_strictTypes, m_results);
             if (validator.validateSchema(*subschema)) {
-                if (numValidated) {
-                    (*numValidated)++;
+                if (m_numValidated) {
+                    (*m_numValidated)++;
                 }
 
-                return continueOnSuccess;
+                return m_continueOnSuccess;
             }
 
-            if (validated) {
-                *validated = false;
+            if (m_validated) {
+                *m_validated = false;
             }
 
-            if (results) {
-                results->pushError(newContext,
-                    "Failed to validate item #" +
-                    std::to_string(index) +
+            if (m_results) {
+                m_results->pushError(newContext, "Failed to validate item #" + std::to_string(index) +
                     " against corresponding item schema.");
             }
 
-            return continueOnFailure;
+            return m_continueOnFailure;
         }
 
     private:
-        const typename AdapterType::Array &arr;
-        const std::vector<std::string> &context;
-        bool continueOnSuccess;
-        bool continueOnFailure;
-        bool strictTypes;
-        ValidationResults * const results;
-        unsigned int * const numValidated;
-        bool * const validated;
+        const typename AdapterType::Array &m_arr;
+        const std::vector<std::string> &m_context;
+        bool m_continueOnSuccess;
+        bool m_continueOnFailure;
+        bool m_strictTypes;
+        ValidationResults * const m_results;
+        unsigned int * const m_numValidated;
+        bool * const m_validated;
 
     };
 
@@ -1441,11 +1384,11 @@ private:
                 bool continueOnFailure,
                 bool strictTypes,
                 bool *validated)
-          : target(target),
-            continueOnSuccess(continueOnSuccess),
-            continueOnFailure(continueOnFailure),
-            strictTypes(strictTypes),
-            validated(validated) { }
+          : m_target(target),
+            m_continueOnSuccess(continueOnSuccess),
+            m_continueOnFailure(continueOnFailure),
+            m_strictTypes(strictTypes),
+            m_validated(validated) { }
 
         bool operator()(constraints::TypeConstraint::JsonType jsonType) const
         {
@@ -1458,46 +1401,43 @@ private:
                 valid = true;
                 break;
             case TypeConstraint::kArray:
-                valid = target.isArray();
+                valid = m_target.isArray();
                 break;
             case TypeConstraint::kBoolean:
-                valid = target.isBool() || (!strictTypes && target.maybeBool());
+                valid = m_target.isBool() || (!m_strictTypes && m_target.maybeBool());
                 break;
             case TypeConstraint::kInteger:
-                valid = target.isInteger() ||
-                        (!strictTypes && target.maybeInteger());
+                valid = m_target.isInteger() || (!m_strictTypes && m_target.maybeInteger());
                 break;
             case TypeConstraint::kNull:
-                valid = target.isNull() ||
-                        (!strictTypes && target.maybeNull());
+                valid = m_target.isNull() || (!m_strictTypes && m_target.maybeNull());
                 break;
             case TypeConstraint::kNumber:
-                valid = target.isNumber() ||
-                        (!strictTypes && target.maybeDouble());
+                valid = m_target.isNumber() || (!m_strictTypes && m_target.maybeDouble());
                 break;
             case TypeConstraint::kObject:
-                valid = target.isObject();
+                valid = m_target.isObject();
                 break;
             case TypeConstraint::kString:
-                valid = target.isString();
+                valid = m_target.isString();
                 break;
             default:
                 break;
             }
 
-            if (valid && validated) {
-                *validated = true;
+            if (valid && m_validated) {
+                *m_validated = true;
             }
 
-            return (valid && continueOnSuccess) || continueOnFailure;
+            return (valid && m_continueOnSuccess) || m_continueOnFailure;
         }
 
     private:
-        const AdapterType target;
-        const bool continueOnSuccess;
-        const bool continueOnFailure;
-        const bool strictTypes;
-        bool * const validated;
+        const AdapterType m_target;
+        const bool m_continueOnSuccess;
+        const bool m_continueOnFailure;
+        const bool m_strictTypes;
+        bool * const m_validated;
     };
 
     /**
@@ -1516,19 +1456,18 @@ private:
                 ValidationResults *results,
                 std::set<std::string> *propertiesMatched,
                 bool *validated)
-          : object(object),
-            context(context),
-            continueOnSuccess(continueOnSuccess),
-            continueOnFailure(continueOnFailure),
-            continueIfUnmatched(continueIfUnmatched),
-            strictTypes(strictTypes),
-            results(results),
-            propertiesMatched(propertiesMatched),
-            validated(validated) { }
+          : m_object(object),
+            m_context(context),
+            m_continueOnSuccess(continueOnSuccess),
+            m_continueOnFailure(continueOnFailure),
+            m_continueIfUnmatched(continueIfUnmatched),
+            m_strictTypes(strictTypes),
+            m_results(results),
+            m_propertiesMatched(propertiesMatched),
+            m_validated(validated) { }
 
         template<typename StringType>
-        bool operator()(const StringType &patternProperty,
-                const Subschema *subschema) const
+        bool operator()(const StringType &patternProperty, const Subschema *subschema) const
         {
             const std::string patternPropertyStr(patternProperty.c_str());
 
@@ -1542,58 +1481,56 @@ private:
 
             // Recursively validate all matching properties
             typedef const typename AdapterType::ObjectMember ObjectMember;
-            for (const ObjectMember m : object) {
+            for (const ObjectMember m : m_object) {
                 if (std::regex_search(m.first, r)) {
                     matchFound = true;
-                    if (propertiesMatched) {
-                        propertiesMatched->insert(m.first);
+                    if (m_propertiesMatched) {
+                        m_propertiesMatched->insert(m.first);
                     }
 
                     // Update context
-                    std::vector<std::string> newContext = context;
+                    std::vector<std::string> newContext = m_context;
                     newContext.push_back("[" + m.first + "]");
 
                     // Recursively validate property's value
-                    ValidationVisitor validator(m.second, newContext,
-                            strictTypes, results);
+                    ValidationVisitor validator(m.second, newContext, m_strictTypes, m_results);
                     if (validator.validateSchema(*subschema)) {
                         continue;
                     }
 
-                    if (results) {
-                        results->pushError(context, "Failed to validate "
-                                "against schema associated with pattern '" +
+                    if (m_results) {
+                        m_results->pushError(m_context, "Failed to validate against schema associated with pattern '" +
                                 patternPropertyStr + "'.");
                     }
 
-                    if (validated) {
-                        *validated = false;
+                    if (m_validated) {
+                        *m_validated = false;
                     }
 
-                    if (!continueOnFailure) {
+                    if (!m_continueOnFailure) {
                         return false;
                     }
                 }
             }
 
             // Allow iteration to terminate if there was not at least one match
-            if (!matchFound && !continueIfUnmatched) {
+            if (!matchFound && !m_continueIfUnmatched) {
                 return false;
             }
 
-            return continueOnSuccess;
+            return m_continueOnSuccess;
         }
 
     private:
-        const typename AdapterType::Object &object;
-        const std::vector<std::string> &context;
-        const bool continueOnSuccess;
-        const bool continueOnFailure;
-        const bool continueIfUnmatched;
-        const bool strictTypes;
-        ValidationResults * const results;
-        std::set<std::string> * const propertiesMatched;
-        bool * const validated;
+        const typename AdapterType::Object &m_object;
+        const std::vector<std::string> &m_context;
+        const bool m_continueOnSuccess;
+        const bool m_continueOnFailure;
+        const bool m_continueIfUnmatched;
+        const bool m_strictTypes;
+        ValidationResults * const m_results;
+        std::set<std::string> * const m_propertiesMatched;
+        bool * const m_validated;
     };
 
     /**
@@ -1612,65 +1549,61 @@ private:
                 ValidationResults *results,
                 std::set<std::string> *propertiesMatched,
                 bool *validated)
-          : object(object),
-            context(context),
-            continueOnSuccess(continueOnSuccess),
-            continueOnFailure(continueOnFailure),
-            continueIfUnmatched(continueIfUnmatched),
-            strictTypes(strictTypes),
-            results(results),
-            propertiesMatched(propertiesMatched),
-            validated(validated) { }
+          : m_object(object),
+            m_context(context),
+            m_continueOnSuccess(continueOnSuccess),
+            m_continueOnFailure(continueOnFailure),
+            m_continueIfUnmatched(continueIfUnmatched),
+            m_strictTypes(strictTypes),
+            m_results(results),
+            m_propertiesMatched(propertiesMatched),
+            m_validated(validated) { }
 
         template<typename StringType>
-        bool operator()(const StringType &propertyName,
-                const Subschema *subschema) const
+        bool operator()(const StringType &propertyName, const Subschema *subschema) const
         {
             const std::string propertyNameKey(propertyName.c_str());
-            const typename AdapterType::Object::const_iterator itr =
-                    object.find(propertyNameKey);
-            if (itr == object.end()) {
-                return continueIfUnmatched;
+            const typename AdapterType::Object::const_iterator itr = m_object.find(propertyNameKey);
+            if (itr == m_object.end()) {
+                return m_continueIfUnmatched;
             }
 
-            if (propertiesMatched) {
-                propertiesMatched->insert(propertyNameKey);
+            if (m_propertiesMatched) {
+                m_propertiesMatched->insert(propertyNameKey);
             }
 
             // Update context
-            std::vector<std::string> newContext = context;
+            std::vector<std::string> newContext = m_context;
             newContext.push_back("[" + propertyNameKey + "]");
 
             // Recursively validate property's value
-            ValidationVisitor validator(itr->second, newContext, strictTypes,
-                    results);
+            ValidationVisitor validator(itr->second, newContext, m_strictTypes, m_results);
             if (validator.validateSchema(*subschema)) {
-                return continueOnSuccess;
+                return m_continueOnSuccess;
             }
 
-            if (results) {
-                results->pushError(context, "Failed to validate against "
-                        "schema associated with property name '" +
+            if (m_results) {
+                m_results->pushError(m_context, "Failed to validate against schema associated with property name '" +
                         propertyNameKey + "'.");
             }
 
-            if (validated) {
-                *validated = false;
+            if (m_validated) {
+                *m_validated = false;
             }
 
-            return continueOnFailure;
+            return m_continueOnFailure;
         }
 
     private:
-        const typename AdapterType::Object &object;
-        const std::vector<std::string> &context;
-        const bool continueOnSuccess;
-        const bool continueOnFailure;
-        const bool continueIfUnmatched;
-        const bool strictTypes;
-        ValidationResults * const results;
-        std::set<std::string> * const propertiesMatched;
-        bool * const validated;
+        const typename AdapterType::Object &m_object;
+        const std::vector<std::string> &m_context;
+        const bool m_continueOnSuccess;
+        const bool m_continueOnFailure;
+        const bool m_continueIfUnmatched;
+        const bool m_strictTypes;
+        ValidationResults * const m_results;
+        std::set<std::string> * const m_propertiesMatched;
+        bool * const m_validated;
     };
 
     /**
@@ -1684,29 +1617,26 @@ private:
                 ValidationVisitor &validationVisitor,
                 ValidationResults *results,
                 bool *validated)
-          : object(object),
-            context(context),
-            validationVisitor(validationVisitor),
-            results(results),
-            validated(validated) { }
+          : m_object(object),
+            m_context(context),
+            m_validationVisitor(validationVisitor),
+            m_results(results),
+            m_validated(validated) { }
 
         template<typename StringType>
-        bool operator()(
-                const StringType &propertyName,
-                const Subschema *schemaDependency) const
+        bool operator()(const StringType &propertyName, const Subschema *schemaDependency) const
         {
             const std::string propertyNameKey(propertyName.c_str());
-            if (object.find(propertyNameKey) == object.end()) {
+            if (m_object.find(propertyNameKey) == m_object.end()) {
                 return true;
             }
 
-            if (!validationVisitor.validateSchema(*schemaDependency)) {
-                if (validated) {
-                    *validated = false;
+            if (!m_validationVisitor.validateSchema(*schemaDependency)) {
+                if (m_validated) {
+                    *m_validated = false;
                 }
-                if (results) {
-                    results->pushError(context,
-                            "Failed to validate against dependent schema.");
+                if (m_results) {
+                    m_results->pushError(m_context, "Failed to validate against dependent schema.");
                 } else {
                     return false;
                 }
@@ -1716,11 +1646,11 @@ private:
         }
 
     private:
-        const typename AdapterType::Object &object;
-        const std::vector<std::string> &context;
-        ValidationVisitor &validationVisitor;
-        ValidationResults * const results;
-        bool * const validated;
+        const typename AdapterType::Object &m_object;
+        const std::vector<std::string> &m_context;
+        ValidationVisitor &m_validationVisitor;
+        ValidationResults * const m_results;
+        bool * const m_validated;
     };
 
     /**
@@ -1749,47 +1679,46 @@ private:
                 ValidationResults *results,
                 unsigned int *numValidated,
                 bool *validated)
-          : adapter(adapter),
-            context(context),
-            continueOnSuccess(continueOnSuccess),
-            continueOnFailure(continueOnFailure),
-            validationVisitor(validationVisitor),
-            results(results),
-            numValidated(numValidated),
-            validated(validated) { }
+          : m_adapter(adapter),
+            m_context(context),
+            m_continueOnSuccess(continueOnSuccess),
+            m_continueOnFailure(continueOnFailure),
+            m_validationVisitor(validationVisitor),
+            m_results(results),
+            m_numValidated(numValidated),
+            m_validated(validated) { }
 
         bool operator()(unsigned int index, const Subschema *subschema) const
         {
-            if (validationVisitor.validateSchema(*subschema)) {
-                if (numValidated) {
-                    (*numValidated)++;
+            if (m_validationVisitor.validateSchema(*subschema)) {
+                if (m_numValidated) {
+                    (*m_numValidated)++;
                 }
 
-                return continueOnSuccess;
+                return m_continueOnSuccess;
             }
 
-            if (validated) {
-                *validated = false;
+            if (m_validated) {
+                *m_validated = false;
             }
 
-            if (results) {
-                results->pushError(context,
-                        "Failed to validate against child schema #" +
-                                   std::to_string(index) + ".");
+            if (m_results) {
+                m_results->pushError(m_context,
+                        "Failed to validate against child schema #" + std::to_string(index) + ".");
             }
 
-            return continueOnFailure;
+            return m_continueOnFailure;
         }
 
     private:
-        const AdapterType &adapter;
-        const std::vector<std::string> &context;
-        bool continueOnSuccess;
-        bool continueOnFailure;
-        ValidationVisitor &validationVisitor;
-        ValidationResults * const results;
-        unsigned int * const numValidated;
-        bool * const validated;
+        const AdapterType &m_adapter;
+        const std::vector<std::string> &m_context;
+        bool m_continueOnSuccess;
+        bool m_continueOnFailure;
+        ValidationVisitor &m_validationVisitor;
+        ValidationResults * const m_results;
+        unsigned int * const m_numValidated;
+        bool * const m_validated;
     };
 
     /**
@@ -1800,23 +1729,22 @@ private:
      *
      * @return  true if the visitor returns successfully, false otherwise.
      */
-    static bool validationCallback(const constraints::Constraint &constraint,
-                                   ValidationVisitor<AdapterType> &visitor)
+    static bool validationCallback(const constraints::Constraint &constraint, ValidationVisitor<AdapterType> &visitor)
     {
         return constraint.accept(visitor);
     }
 
     /// The JSON value being validated
-    const AdapterType target;
+    const AdapterType m_target;
 
     /// Vector of strings describing the current object context
-    const std::vector<std::string> context;
+    const std::vector<std::string> m_context;
 
     /// Optional pointer to a ValidationResults object to be populated
-    ValidationResults *results;
+    ValidationResults *m_results;
 
     /// Option to use strict type comparison
-    const bool strictTypes;
+    const bool m_strictTypes;
 };
 
 }  // namespace valijson
