@@ -35,22 +35,28 @@ public:
       : Subschema(allocFn, freeFn),
         sharedEmptySubschema(newSubschema()) { }
 
+    // Disable copy construction
+    Schema(const Schema &) = delete;
+
+    // Disable copy assignment
+    Schema & operator=(const Schema &) = delete;
+
     /**
      * @brief  Clean up and free all memory managed by the Schema
      *
      * Note that any Subschema pointers created and returned by this Schema
      * should be considered invalid.
      */
-    virtual ~Schema()
+    ~Schema() override
     {
         sharedEmptySubschema->~Subschema();
-        freeFn(const_cast<Subschema *>(sharedEmptySubschema));
-        sharedEmptySubschema = NULL;
+        m_freeFn(const_cast<Subschema *>(sharedEmptySubschema));
+        sharedEmptySubschema = nullptr;
 
         try {
             for (auto subschema : subschemaSet) {
                 subschema->~Subschema();
-                freeFn(subschema);
+                m_freeFn(subschema);
             }
         } catch (const std::exception &e) {
             fprintf(stderr, "Caught an exception while destroying Schema: %s",
@@ -93,7 +99,7 @@ public:
             }
         } catch (...) {
             subschema->~Subschema();
-            freeFn(subschema);
+            m_freeFn(subschema);
             throw;
         }
 
@@ -160,15 +166,9 @@ public:
 
 private:
 
-    // Disable copy construction
-    Schema(const Schema &);
-
-    // Disable copy assignment
-    Schema & operator=(const Schema &);
-
     Subschema *newSubschema()
     {
-        void *ptr = allocFn(sizeof(Subschema));
+        void *ptr = m_allocFn(sizeof(Subschema));
         if (!ptr) {
             throw std::runtime_error(
                     "Failed to allocate memory for shared empty sub-schema");
@@ -177,7 +177,7 @@ private:
         try {
             return new (ptr) Subschema();
         } catch (...) {
-            freeFn(ptr);
+            m_freeFn(ptr);
             throw;
         }
     }
@@ -193,7 +193,7 @@ private:
                     "Cannot modify the shared empty sub-schema");
         }
 
-        Subschema *noConst = const_cast<Subschema*>(subschema);
+        auto *noConst = const_cast<Subschema*>(subschema);
         if (subschemaSet.find(noConst) == subschemaSet.end()) {
             throw std::runtime_error(
                     "Subschema pointer is not owned by this Schema instance");

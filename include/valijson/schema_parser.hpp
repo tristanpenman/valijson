@@ -49,7 +49,7 @@ public:
      *
      * @param  version  Version of JSON Schema that will be expected
      */
-    SchemaParser(const Version version = kDraft7)
+    explicit SchemaParser(const Version version = kDraft7)
       : version(version) { }
 
     /**
@@ -57,7 +57,7 @@ public:
      */
     ~SchemaParser()
     {
-        for (auto entry : constraintBuilders) {
+        for (const auto& entry : constraintBuilders) {
             delete entry.second;
         }
     }
@@ -143,7 +143,7 @@ public:
 
 private:
 
-    typedef std::vector<std::pair<std::string, const ConstraintBuilder *> >
+    typedef std::vector<std::pair<std::string, const ConstraintBuilder *>>
         ConstraintBuilders;
 
     ConstraintBuilders constraintBuilders;
@@ -2143,8 +2143,7 @@ private:
         if (patternProperties) {
             for (const Member m : patternProperties->getObject()) {
                 const std::string &pattern = m.first;
-                const std::string childPath = patternPropertiesPath + "/" +
-                        pattern;
+                const std::string childPath = patternPropertiesPath + "/" + pattern;
                 const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                         rootSchema, rootNode, m.second, currentScope, childPath,
                         fetchDoc, parentSubschema, &pattern, docCache,
@@ -2305,9 +2304,7 @@ private:
         TypeConstraint constraint;
 
         if (node.maybeString()) {
-            const TypeConstraint::JsonType type =
-                    TypeConstraint::jsonTypeFromString(node.getString());
-
+            const TypeConstraint::JsonType type = TypeConstraint::jsonTypeFromString(node.getString());
             if (type == TypeConstraint::kAny && version == kDraft4) {
                 throw std::runtime_error(
                         "'any' type is not supported in version 4 schemas.");
@@ -2331,8 +2328,7 @@ private:
                     constraint.addNamedType(type);
 
                 } else if (v.maybeObject() && version == kDraft3) {
-                    const std::string childPath = nodePath + "/" +
-                            std::to_string(index);
+                    const std::string childPath = nodePath + "/" + std::to_string(index);
                     const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                             rootSchema, rootNode, v, currentScope, childPath,
                             fetchDoc, nullptr, nullptr, docCache, schemaCache);
@@ -2367,8 +2363,7 @@ private:
      *          the caller, or nullptr if the boolean value is false.
      */
     template<typename AdapterType>
-    opt::optional<constraints::UniqueItemsConstraint>
-            makeUniqueItemsConstraint(const AdapterType &node)
+    opt::optional<constraints::UniqueItemsConstraint> makeUniqueItemsConstraint(const AdapterType &node)
     {
         if (node.isBool() || node.maybeBool()) {
             // If the boolean value is true, this function will return a pointer
