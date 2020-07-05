@@ -22,6 +22,7 @@
 #ifdef VALIJSON_BUILD_QT_ADAPTER
 #include <valijson/adapters/qtjson_adapter.hpp>
 #include <valijson/utils/qtjson_utils.hpp>
+#include <utility>
 #endif
 
 #ifdef VALIJSON_BUILD_POCO_ADAPTER
@@ -39,19 +40,18 @@ protected:
 
     struct JsonFile
     {
-        JsonFile(const std::string &path, int strictGroup, int looseGroup)
-          : path(path),
-            strictGroup(strictGroup),
-            looseGroup(looseGroup) { }
+        JsonFile(std::string path, int strictGroup, int looseGroup)
+          : m_path(std::move(path)),
+            m_strictGroup(strictGroup),
+            m_looseGroup(looseGroup) { }
 
-        std::string path;
-
-        int strictGroup;
-        int looseGroup;
+        std::string m_path;
+        int m_strictGroup;
+        int m_looseGroup;
     };
 
-    static void SetUpTestCase() {
-
+    static void SetUpTestCase()
+    {
         const std::string testDataDir(TEST_DATA_DIR);
 
         //
@@ -66,17 +66,17 @@ protected:
         // strict types. However, only the first two files in the same strict
         // group, which means that only they should be equal.
         //
-        jsonFiles.push_back(JsonFile(testDataDir + "array_doubles_1_2_3.json",        1,  1));
-        jsonFiles.push_back(JsonFile(testDataDir + "array_integers_1_2_3.json",       1,  1));
-        jsonFiles.push_back(JsonFile(testDataDir + "array_strings_1_2_3.json",        2,  1));
+        jsonFiles.emplace_back(testDataDir + "array_doubles_1_2_3.json",        1,  1);
+        jsonFiles.emplace_back(testDataDir + "array_integers_1_2_3.json",       1,  1);
+        jsonFiles.emplace_back(testDataDir + "array_strings_1_2_3.json",        2,  1);
 
-        jsonFiles.push_back(JsonFile(testDataDir + "array_doubles_1_2_3_4.json",      3,  2));
-        jsonFiles.push_back(JsonFile(testDataDir + "array_integers_1_2_3_4.json",     3,  2));
-        jsonFiles.push_back(JsonFile(testDataDir + "array_strings_1_2_3_4.json",      4,  2));
+        jsonFiles.emplace_back(testDataDir + "array_doubles_1_2_3_4.json",      3,  2);
+        jsonFiles.emplace_back(testDataDir + "array_integers_1_2_3_4.json",     3,  2);
+        jsonFiles.emplace_back(testDataDir + "array_strings_1_2_3_4.json",      4,  2);
 
-        jsonFiles.push_back(JsonFile(testDataDir + "array_doubles_10_20_30_40.json",  5,  3));
-        jsonFiles.push_back(JsonFile(testDataDir + "array_integers_10_20_30_40.json", 5,  3));
-        jsonFiles.push_back(JsonFile(testDataDir + "array_strings_10_20_30_40.json",  6,  3));
+        jsonFiles.emplace_back(testDataDir + "array_doubles_10_20_30_40.json",  5,  3);
+        jsonFiles.emplace_back(testDataDir + "array_integers_10_20_30_40.json", 5,  3);
+        jsonFiles.emplace_back(testDataDir + "array_strings_10_20_30_40.json",  6,  3);
     }
 
     template<typename Adapter1, typename Adapter2>
@@ -87,16 +87,16 @@ protected:
         for(outerItr = jsonFiles.begin(); outerItr != jsonFiles.end() - 1; ++outerItr) {
             for(innerItr = outerItr; innerItr != jsonFiles.end(); ++innerItr) {
 
-                const bool expectedStrict = (outerItr->strictGroup == innerItr->strictGroup);
-                const bool expectedLoose = (outerItr->looseGroup == innerItr->looseGroup);
+                const bool expectedStrict = (outerItr->m_strictGroup == innerItr->m_strictGroup);
+                const bool expectedLoose = (outerItr->m_looseGroup == innerItr->m_looseGroup);
 
                 typename AdapterTraits<Adapter1>::DocumentType document1;
-                ASSERT_TRUE( valijson::utils::loadDocument(outerItr->path, document1) );
+                ASSERT_TRUE( valijson::utils::loadDocument(outerItr->m_path, document1) );
                 const Adapter1 adapter1(document1);
                 const std::string adapter1Name = AdapterTraits<Adapter1>::adapterName();
 
                 typename AdapterTraits<Adapter2>::DocumentType document2;
-                ASSERT_TRUE( valijson::utils::loadDocument(innerItr->path, document2) );
+                ASSERT_TRUE( valijson::utils::loadDocument(innerItr->m_path, document2) );
                 const Adapter2 adapter2(document2);
                 const std::string adapter2Name = AdapterTraits<Adapter2>::adapterName();
 
@@ -107,22 +107,22 @@ protected:
                 // of equality makes sense.
                 if (adapter1.hasStrictTypes() && adapter2.hasStrictTypes() && adapter1Name == adapter2Name) {
                     EXPECT_EQ(expectedStrict, adapter1.equalTo(adapter2, true))
-                        << "Comparing '" << outerItr->path << "' to '"
-                        << innerItr->path << "' "
+                        << "Comparing '" << outerItr->m_path << "' to '"
+                        << innerItr->m_path << "' "
                         << "with strict comparison enabled";
                     EXPECT_EQ(expectedStrict, adapter2.equalTo(adapter1, true))
-                        << "Comparing '" << innerItr->path << "' to '"
-                        << outerItr->path << "' "
+                        << "Comparing '" << innerItr->m_path << "' to '"
+                        << outerItr->m_path << "' "
                         << "with strict comparison enabled";
                 }
 
                 EXPECT_EQ(expectedLoose, adapter1.equalTo(adapter2, false))
-                    << "Comparing '" << outerItr->path << "' to '"
-                    << innerItr->path << "' "
+                    << "Comparing '" << outerItr->m_path << "' to '"
+                    << innerItr->m_path << "' "
                     << "with strict comparison disabled";
                 EXPECT_EQ(expectedLoose, adapter2.equalTo(adapter1, false))
-                    << "Comparing '" << innerItr->path << "' to '"
-                    << outerItr->path << "' "
+                    << "Comparing '" << innerItr->m_path << "' to '"
+                    << outerItr->m_path << "' "
                     << "with strict comparison disabled";
             }
         }
