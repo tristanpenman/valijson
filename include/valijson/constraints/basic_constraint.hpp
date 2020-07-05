@@ -9,56 +9,46 @@ namespace valijson {
 namespace constraints {
 
 /**
- * @brief   Template class that implements the accept() and clone() functions of
- *          the Constraint interface.
+ * @brief   Template class that implements the accept() and clone() functions of the Constraint interface.
  *
- * @tparam  ConstraintType   name of the concrete constraint type, which must
- *                           provide a copy constructor.
+ * @tparam  ConstraintType   name of the concrete constraint type, which must provide a copy constructor.
  */
 template<typename ConstraintType>
 struct BasicConstraint: Constraint
 {
     typedef internal::CustomAllocator<void *> Allocator;
 
-    typedef std::basic_string<char, std::char_traits<char>,
-            internal::CustomAllocator<char> > String;
+    typedef std::basic_string<char, std::char_traits<char>, internal::CustomAllocator<char>> String;
 
     BasicConstraint()
-      : allocator() { }
+      : m_allocator() { }
 
     BasicConstraint(Allocator::CustomAlloc allocFn, Allocator::CustomFree freeFn)
-      : allocator(allocFn, freeFn) { }
+      : m_allocator(allocFn, freeFn) { }
 
     BasicConstraint(const BasicConstraint &other)
-      : allocator(other.allocator) { }
+      : m_allocator(other.m_allocator) { }
 
-    virtual ~BasicConstraint<ConstraintType>() { }
+    ~BasicConstraint<ConstraintType>() override = default;
 
-    virtual bool accept(ConstraintVisitor &visitor) const
+    bool accept(ConstraintVisitor &visitor) const override
     {
         return visitor.visit(*static_cast<const ConstraintType*>(this));
     }
 
-    virtual Constraint * clone(CustomAlloc allocFn, CustomFree freeFn) const
+    Constraint * clone(CustomAlloc allocFn, CustomFree freeFn) const override
     {
         void *ptr = allocFn(sizeof(ConstraintType));
         if (!ptr) {
-            throw std::runtime_error(
-                    "Failed to allocate memory for cloned constraint");
+            throw std::runtime_error("Failed to allocate memory for cloned constraint");
         }
 
-        try {
-            return new (ptr) ConstraintType(
-                    *static_cast<const ConstraintType*>(this));
-        } catch (...) {
-            freeFn(ptr);
-            throw;
-        }
+        return new (ptr) ConstraintType(*static_cast<const ConstraintType*>(this));
     }
 
 protected:
 
-    Allocator allocator;
+    Allocator m_allocator;
 };
 
 } // namespace constraints
