@@ -476,7 +476,7 @@ public:
       : BasicAdapter() { }
 
     /// Construct a JsonCppAdapter containing a specific JsonCpp value
-    explicit JsonCppAdapter(const Json::Value &value)
+    JsonCppAdapter(const Json::Value &value)
       : BasicAdapter(value) { }
 };
 
