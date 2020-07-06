@@ -227,7 +227,7 @@ public:
      *
      * @param  source  the Json11 value to be copied
      */
-    Json11FrozenValue(json11::Json source)
+    explicit Json11FrozenValue(json11::Json source)
       : m_value(std::move(source)) { }
 
     FrozenValue * clone() const override
@@ -479,7 +479,7 @@ public:
       : BasicAdapter() { }
 
     /// Construct a Json11Adapter containing a specific Json11 value
-    explicit Json11Adapter(const json11::Json &value)
+    Json11Adapter(const json11::Json &value)
       : BasicAdapter(value) { }
 };
 
