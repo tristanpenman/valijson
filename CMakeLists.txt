@@ -82,17 +82,33 @@ if(valijson_BUILD_TESTS)
         tests/test_validator.cpp
     )
 
+    set(TEST_LIBS gtest gtest_main jsoncpp json11)
+
+    if(Boost_FOUND)
+        include_directories(${Boost_INCLUDE_DIRS})
+        list(APPEND TEST_SOURCES tests/test_property_tree_adapter.cpp)
+    endif()
+
+    if(Poco_FOUND)
+        include_directories(${Poco_INCLUDE_DIRS})
+        list(APPEND TEST_SOURCES tests/test_poco_json_adapter.cpp)
+        list(APPEND TEST_LIBS ${Poco_Foundation_LIBRARIES} ${Poco_JSON_LIBRARIES})
+    endif()
+
+    if(Qt5Core_FOUND)
+        include_directories(${Qt5Core_INCLUDE_DIRS})
+        list(APPEND TEST_LIBS Qt5::Core)
+        list(APPEND TEST_SOURCES tests/test_qtjson_adapter.cpp)
+    endif()
+
     # Unit tests executable
     add_executable(test_suite ${TEST_SOURCES})
 
     # Definition for using picojson
     set_target_properties(test_suite PROPERTIES COMPILE_DEFINITIONS "PICOJSON_USE_INT64")
 
-    set(TEST_LIBS gtest gtest_main jsoncpp json11)
 
     if(Boost_FOUND)
-        include_directories(${Boost_INCLUDE_DIRS})
-        list(APPEND TEST_SOURCES tests/test_property_tree_adapter.cpp)
         add_definitions(-DBOOST_ALL_DYN_LINK)
         set(Boost_USE_STATIC_LIBS OFF)
         set(Boost_USE_MULTITHREADED ON)
@@ -101,16 +117,10 @@ if(valijson_BUILD_TESTS)
     endif()
 
     if(Poco_FOUND)
-        include_directories(${Poco_INCLUDE_DIRS})
-        list(APPEND TEST_SOURCES tests/test_poco_json_adapter.cpp)
-        list(APPEND TEST_LIBS ${Poco_Foundation_LIBRARIES} ${Poco_JSON_LIBRARIES})
         target_compile_definitions(test_suite PRIVATE "VALIJSON_BUILD_POCO_ADAPTER")
     endif()
 
     if(Qt5Core_FOUND)
-        include_directories(${Qt5Core_INCLUDE_DIRS})
-        list(APPEND TEST_SOURCES tests/test_qtjson_adapter.cpp)
-        list(APPEND TEST_LIBS Qt5::Core)
         target_compile_definitions(test_suite PRIVATE "VALIJSON_BUILD_QT_ADAPTER")
     endif()
 
