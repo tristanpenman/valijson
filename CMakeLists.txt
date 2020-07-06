@@ -104,9 +104,10 @@ if(valijson_BUILD_TESTS)
     # Unit tests executable
     add_executable(test_suite ${TEST_SOURCES})
 
+    set_target_properties(test_suite PROPERTIES COMPILE_FLAGS " -pedantic -Werror -Wshadow -Wunused")
+
     # Definition for using picojson
     set_target_properties(test_suite PROPERTIES COMPILE_DEFINITIONS "PICOJSON_USE_INT64")
-
 
     if(Boost_FOUND)
         add_definitions(-DBOOST_ALL_DYN_LINK)
