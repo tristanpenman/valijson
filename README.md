@@ -125,6 +125,32 @@ The examples and test suite can be built using cmake:
     # Run test suite (from build directory)
     ./test_suite
 
+#### How to add this library to your cmake target ####
+
+Download this repository into your project
+
+```bash
+git clone https://github.com/tristanpenman/valijson <project-path>/third-party/valijson
+```
+
+If your project is a git repository
+
+```bash
+cd <project-path>
+git submodule add https://github.com/tristanpenman/valijson third-party/valijson
+```
+
+Before the target add the module subdirectory in your CMakeLists.txt
+
+```cmake
+set(valijson_BUILD_TESTS OFF)
+add_subdirectory(third-party/valijson)
+
+add_executable(your-executable ...)
+
+target_link_libraries(your-executable ValiJSON::valijson)
+```
+
 ### Xcode ###
 
 An Xcode project has also been provided, in the 'xcode' directory. Note that in order to run the test suite, you may need to configure the working directory for the 'test\_suite' scheme. It is recommended that you use the 'xcode' directory as the working directory.

@@ -10,6 +10,16 @@ option(valijson_EXCLUDE_BOOST "Exclude Boost when building test suite." FALSE)
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 
+add_library(valijson INTERFACE)
+# create alias, so that user could always write target_link_libraries(... ValiJSON::valijson)
+# despite of valijson target is imported or not
+add_library(ValiJSON::valijson ALIAS valijson)
+
+include(GNUInstallDirs)
+target_include_directories(valijson INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+
 if(valijson_INSTALL_HEADERS)
     install(DIRECTORY include/ DESTINATION include)
 endif()
