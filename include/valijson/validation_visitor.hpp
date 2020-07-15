@@ -72,7 +72,7 @@ public:
         // Wrap the validationCallback() function below so that it will be
         // passed a reference to a constraint (_1), and a reference to the
         // visitor (*this).
-        Subschema::ApplyFunction fn(std::bind(validationCallback, std::placeholders::_1, *this));
+        Subschema::ApplyFunction fn(std::bind(validationCallback, std::placeholders::_1, std::ref(*this)));
 
         // Perform validation against each constraint defined in the schema
         if (m_results == nullptr) {
