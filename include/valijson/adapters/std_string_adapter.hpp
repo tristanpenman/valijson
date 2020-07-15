@@ -94,12 +94,12 @@ public:
     explicit StdStringAdapter(const std::string &value)
       : m_value(value) { }
 
-    bool applyToArray(ArrayValueCallback fn) const override
+    bool applyToArray(ArrayValueCallback /*fn*/) const override
     {
         return maybeArray();
     }
 
-    bool applyToObject(ObjectMemberCallback fn) const override
+    bool applyToObject(ObjectMemberCallback /*fn*/) const override
     {
         return maybeObject();
     }
@@ -190,7 +190,7 @@ public:
         throw std::runtime_error("Not supported");
     }
 
-    bool getArraySize(size_t &result) const override
+    bool getArraySize(size_t &/*result*/) const override
     {
         throw std::runtime_error("Not supported");
     }
@@ -200,7 +200,7 @@ public:
         throw std::runtime_error("Not supported");
     }
 
-    bool getBool(bool &result) const override
+    bool getBool(bool &/*result*/) const override
     {
         throw std::runtime_error("Not supported");
     }
@@ -210,7 +210,7 @@ public:
         throw std::runtime_error("Not supported");
     }
 
-    bool getDouble(double &result) const override
+    bool getDouble(double &/*result*/) const override
     {
         throw std::runtime_error("Not supported");
     }
@@ -220,7 +220,7 @@ public:
         throw std::runtime_error("Not supported");
     }
 
-    bool getInteger(int64_t &result) const override
+    bool getInteger(int64_t &/*result*/) const override
     {
         throw std::runtime_error("Not supported");
     }
@@ -230,7 +230,7 @@ public:
         throw std::runtime_error("Not supported");
     }
 
-    bool getNumber(double &result) const override
+    bool getNumber(double &/*result*/) const override
     {
         throw std::runtime_error("Not supported");
     }
@@ -240,7 +240,7 @@ public:
         throw std::runtime_error("Not supported");
     }
 
-    bool getObjectSize(size_t &result) const override
+    bool getObjectSize(size_t &/*result*/) const override
     {
         throw std::runtime_error("Not supported");
     }
@@ -363,12 +363,12 @@ public:
         throw std::runtime_error("Not supported");
     }
 
-    bool operator==(const StdStringArrayValueIterator &other) const
+    bool operator==(const StdStringArrayValueIterator &/*other*/) const
     {
         return true;
     }
 
-    bool operator!=(const StdStringArrayValueIterator &other) const
+    bool operator!=(const StdStringArrayValueIterator &/*other*/) const
     {
         return false;
     }
@@ -388,7 +388,7 @@ public:
         throw std::runtime_error("Not supported");
     }
 
-    void advance(std::ptrdiff_t n)
+    void advance(std::ptrdiff_t /*n*/)
     {
         throw std::runtime_error("Not supported");
     }
@@ -453,7 +453,7 @@ inline StdStringObjectMemberIterator StdStringObject::end() const
     return {};
 }
 
-inline StdStringObjectMemberIterator StdStringObject::find(const std::string &propertyName) const
+inline StdStringObjectMemberIterator StdStringObject::find(const std::string &/*propertyName*/) const
 {
     return {};
 }
