@@ -36,7 +36,7 @@ struct BasicConstraint: Constraint
         return visitor.visit(*static_cast<const ConstraintType*>(this));
     }
 
-    Constraint * clone(CustomAlloc allocFn, CustomFree /*freeFn*/) const override
+    Constraint * clone(CustomAlloc allocFn, CustomFree) const override
     {
         void *ptr = allocFn(sizeof(ConstraintType));
         if (!ptr) {
