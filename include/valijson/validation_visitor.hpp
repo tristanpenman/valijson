@@ -3,6 +3,7 @@
 #include <cmath>
 #include <string>
 #include <regex>
+#include <unordered_map>
 
 #include <valijson/adapters/std_string_adapter.hpp>
 #include <valijson/constraints/concrete_constraints.hpp>
@@ -38,15 +39,19 @@ public:
      *                      recording error descriptions. If this pointer is set
      *                      to nullptr, validation errors will caused validation to
      *                      stop immediately.
+     * @param  regexesCache Cache of already created std::regex objects for pattern 
+     *                      constraints.
      */
     ValidationVisitor(const AdapterType &target,
                       std::vector<std::string> context,
                       const bool strictTypes,
-                      ValidationResults *results)
+                      ValidationResults *results,
+                      std::unordered_map<std::string, std::regex>& regexesCache)
       : m_target(target),
         m_context(std::move(context)),
         m_results(results),
-        m_strictTypes(strictTypes) { }
+        m_strictTypes(strictTypes),
+        m_regexesCache(regexesCache) { }
 
     /**
      * @brief  Validate the target against a schema.
@@ -145,7 +150,7 @@ public:
         ValidationResults newResults;
         ValidationResults *childResults = (m_results) ? &newResults : nullptr;
 
-        ValidationVisitor<AdapterType> v(m_target, m_context, m_strictTypes, childResults);
+        ValidationVisitor<AdapterType> v(m_target, m_context, m_strictTypes, childResults, m_regexesCache);
         constraint.applyToSubschemas(
                 ValidateSubschemas(m_target, m_context, false, true, v, childResults, &numValidated, nullptr));
 
@@ -174,8 +179,8 @@ public:
     bool visit(const ConditionalConstraint &constraint) override
     {
         // Create a validator to evaluate the conditional
-        ValidationVisitor ifValidator(m_target, m_context, m_strictTypes, nullptr);
-        ValidationVisitor thenElseValidator(m_target, m_context, m_strictTypes, nullptr);
+        ValidationVisitor ifValidator(m_target, m_context, m_strictTypes, nullptr, m_regexesCache);
+        ValidationVisitor thenElseValidator(m_target, m_context, m_strictTypes, nullptr, m_regexesCache);
 
         if (ifValidator.validateSchema(*constraint.getIfSubschema())) {
             const Subschema *thenSubschema = constraint.getThenSubschema();
@@ -228,7 +233,7 @@ public:
 
         bool validated = false;
         for (const auto &el : arr) {
-            ValidationVisitor containsValidator(el, m_context, m_strictTypes, nullptr);
+            ValidationVisitor containsValidator(el, m_context, m_strictTypes, nullptr, m_regexesCache);
             if (containsValidator.validateSchema(*subschema)) {
                 validated = true;
                 break;
@@ -375,7 +380,7 @@ public:
 
             constraint.applyToItemSubschemas(
                     ValidateItems(arr, m_context, true, m_results != nullptr, m_strictTypes, m_results, &numValidated,
-                            &validated));
+                            &validated, m_regexesCache));
 
             if (!m_results && !validated) {
                 return false;
@@ -397,7 +402,7 @@ public:
                     std::vector<std::string> newContext = m_context;
                     newContext.push_back("[" + std::to_string(index) + "]");
 
-                    ValidationVisitor<AdapterType> validator(*itr, newContext, m_strictTypes, m_results);
+                    ValidationVisitor<AdapterType> validator(*itr, newContext, m_strictTypes, m_results, m_regexesCache);
 
                     if (!validator.validateSchema(*additionalItemsSubschema)) {
                         if (m_results) {
@@ -773,7 +778,7 @@ public:
             return false;
         }
 
-        ValidationVisitor<AdapterType> v(m_target, m_context, m_strictTypes, nullptr);
+        ValidationVisitor<AdapterType> v(m_target, m_context, m_strictTypes, nullptr, m_regexesCache);
         if (v.validateSchema(*subschema)) {
             if (m_results) {
                 m_results->pushError(m_context,
@@ -800,7 +805,7 @@ public:
         ValidationResults newResults;
         ValidationResults *childResults = (m_results) ? &newResults : nullptr;
 
-        ValidationVisitor<AdapterType> v(m_target, m_context, m_strictTypes, childResults);
+        ValidationVisitor<AdapterType> v(m_target, m_context, m_strictTypes, childResults, m_regexesCache);
         constraint.applyToSubschemas(
                 ValidateSubschemas(m_target, m_context, true, true, v, childResults, &numValidated, nullptr));
 
@@ -839,9 +844,13 @@ public:
             return true;
         }
 
-        const std::regex patternRegex(constraint.getPattern<std::string::allocator_type>());
+        std::string pattern(constraint.getPattern<std::string::allocator_type>());
+        auto it = m_regexesCache.find(pattern);
+        if (it == m_regexesCache.end()) {
+            it = m_regexesCache.emplace(pattern, pattern).first;
+        }
 
-        if (!std::regex_search(m_target.asString(), patternRegex)) {
+        if (!std::regex_search(m_target.asString(), it->second)) {
             if (m_results) {
                 m_results->pushError(m_context, "Failed to match regex specified by 'pattern' constraint.");
             }
@@ -905,7 +914,7 @@ public:
         constraint.applyToProperties(
                 ValidatePropertySubschemas(
                         object, m_context, true, m_results != nullptr, true, m_strictTypes, m_results,
-                        &propertiesMatched, &validated));
+                        &propertiesMatched, &validated, m_regexesCache));
 
         // Exit early if validation failed, and we're not collecting exhaustive
         // validation results
@@ -918,7 +927,7 @@ public:
         constraint.applyToPatternProperties(
                 ValidatePatternPropertySubschemas(
                         object, m_context, true, false, true, m_strictTypes, m_results, &propertiesMatched,
-                        &validated));
+                        &validated, m_regexesCache));
 
         // Validate against additionalProperties subschema for any properties
         // that have not yet been matched
@@ -952,7 +961,7 @@ public:
                 newContext.push_back("[" + m.first + "]");
 
                 // Create a validator to validate the property's value
-                ValidationVisitor validator(m.second, newContext, m_strictTypes, m_results);
+                ValidationVisitor validator(m.second, newContext, m_strictTypes, m_results, m_regexesCache);
                 if (!validator.validateSchema(*additionalPropertiesSubschema)) {
                     if (m_results) {
                         m_results->pushError(m_context, "Failed to validate against additional properties schema");
@@ -981,7 +990,7 @@ public:
 
         for (const typename AdapterType::ObjectMember m : m_target.asObject()) {
             adapters::StdStringAdapter stringAdapter(m.first);
-            ValidationVisitor<adapters::StdStringAdapter> validator(stringAdapter, m_context, m_strictTypes, nullptr);
+            ValidationVisitor<adapters::StdStringAdapter> validator(stringAdapter, m_context, m_strictTypes, nullptr, m_regexesCache);
             if (!validator.validateSchema(*constraint.getSubschema())) {
                 return false;
             }
@@ -1050,7 +1059,7 @@ public:
             newContext.push_back("[" + std::to_string(index) + "]");
 
             // Create a validator for the current array item
-            ValidationVisitor<AdapterType> validationVisitor(item, newContext, m_strictTypes, m_results);
+            ValidationVisitor<AdapterType> validationVisitor(item, newContext, m_strictTypes, m_results, m_regexesCache);
 
             // Perform validation
             if (!validationVisitor.validateSchema(*itemsSubschema)) {
@@ -1314,7 +1323,8 @@ private:
                 bool strictTypes,
                 ValidationResults *results,
                 unsigned int *numValidated,
-                bool *validated)
+                bool *validated,
+                std::unordered_map<std::string, std::regex>& regexesCache)
           : m_arr(arr),
             m_context(context),
             m_continueOnSuccess(continueOnSuccess),
@@ -1322,7 +1332,8 @@ private:
             m_strictTypes(strictTypes),
             m_results(results),
             m_numValidated(numValidated),
-            m_validated(validated) { }
+            m_validated(validated),
+            m_regexesCache(regexesCache) { }
 
         bool operator()(unsigned int index, const Subschema *subschema) const
         {
@@ -1340,7 +1351,7 @@ private:
             itr.advance(index);
 
             // Validate current array item
-            ValidationVisitor validator(*itr, newContext, m_strictTypes, m_results);
+            ValidationVisitor validator(*itr, newContext, m_strictTypes, m_results, m_regexesCache);
             if (validator.validateSchema(*subschema)) {
                 if (m_numValidated) {
                     (*m_numValidated)++;
@@ -1370,7 +1381,7 @@ private:
         ValidationResults * const m_results;
         unsigned int * const m_numValidated;
         bool * const m_validated;
-
+        std::unordered_map<std::string, std::regex>& m_regexesCache;
     };
 
     /**
@@ -1455,7 +1466,8 @@ private:
                 bool strictTypes,
                 ValidationResults *results,
                 std::set<std::string> *propertiesMatched,
-                bool *validated)
+                bool *validated,
+                std::unordered_map<std::string, std::regex>& regexesCache)
           : m_object(object),
             m_context(context),
             m_continueOnSuccess(continueOnSuccess),
@@ -1464,7 +1476,8 @@ private:
             m_strictTypes(strictTypes),
             m_results(results),
             m_propertiesMatched(propertiesMatched),
-            m_validated(validated) { }
+            m_validated(validated),
+            m_regexesCache(regexesCache) { }
 
         template<typename StringType>
         bool operator()(const StringType &patternProperty, const Subschema *subschema) const
@@ -1493,7 +1506,7 @@ private:
                     newContext.push_back("[" + m.first + "]");
 
                     // Recursively validate property's value
-                    ValidationVisitor validator(m.second, newContext, m_strictTypes, m_results);
+                    ValidationVisitor validator(m.second, newContext, m_strictTypes, m_results, m_regexesCache);
                     if (validator.validateSchema(*subschema)) {
                         continue;
                     }
@@ -1531,6 +1544,7 @@ private:
         ValidationResults * const m_results;
         std::set<std::string> * const m_propertiesMatched;
         bool * const m_validated;
+        std::unordered_map<std::string, std::regex>& m_regexesCache;
     };
 
     /**
@@ -1548,7 +1562,8 @@ private:
                 bool strictTypes,
                 ValidationResults *results,
                 std::set<std::string> *propertiesMatched,
-                bool *validated)
+                bool *validated,
+                std::unordered_map<std::string, std::regex>& regexesCache)
           : m_object(object),
             m_context(context),
             m_continueOnSuccess(continueOnSuccess),
@@ -1557,7 +1572,8 @@ private:
             m_strictTypes(strictTypes),
             m_results(results),
             m_propertiesMatched(propertiesMatched),
-            m_validated(validated) { }
+            m_validated(validated),
+            m_regexesCache(regexesCache) { }
 
         template<typename StringType>
         bool operator()(const StringType &propertyName, const Subschema *subschema) const
@@ -1577,7 +1593,7 @@ private:
             newContext.push_back("[" + propertyNameKey + "]");
 
             // Recursively validate property's value
-            ValidationVisitor validator(itr->second, newContext, m_strictTypes, m_results);
+            ValidationVisitor validator(itr->second, newContext, m_strictTypes, m_results, m_regexesCache);
             if (validator.validateSchema(*subschema)) {
                 return m_continueOnSuccess;
             }
@@ -1604,6 +1620,7 @@ private:
         ValidationResults * const m_results;
         std::set<std::string> * const m_propertiesMatched;
         bool * const m_validated;
+        std::unordered_map<std::string, std::regex>& m_regexesCache;
     };
 
     /**
@@ -1745,6 +1762,9 @@ private:
 
     /// Option to use strict type comparison
     const bool m_strictTypes;
+
+    /// Cached regex objects for pattern constraint
+    std::unordered_map<std::string, std::regex>& m_regexesCache;
 };
 
 }  // namespace valijson
