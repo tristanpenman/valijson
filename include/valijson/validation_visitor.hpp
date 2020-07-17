@@ -847,7 +847,7 @@ public:
         std::string pattern(constraint.getPattern<std::string::allocator_type>());
         auto it = m_regexesCache.find(pattern);
         if (it == m_regexesCache.end()) {
-            it = m_regexesCache.emplace(pattern, pattern).first;
+            it = m_regexesCache.emplace(pattern, std::regex(pattern)).first;
         }
 
         if (!std::regex_search(m_target.asString(), it->second)) {
