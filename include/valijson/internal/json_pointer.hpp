@@ -50,7 +50,7 @@ inline char decodePercentEncodedChar(const std::string &digits)
 
     errno = 0;
     const char *begin = digits.c_str();
-    char *end = NULL;
+    char *end = nullptr;
     const unsigned long value = strtoul(begin, &end, 16);
     if (end != begin && *end != '\0') {
         throw std::runtime_error("Failed to decode %-encoded character '" +
@@ -178,7 +178,7 @@ inline AdapterType resolveJsonPointer(
         return resolveJsonPointer(node, jsonPointer, jsonPointerNext);
 
     } else if (node.isArray()) {
-        if (referenceToken.compare("-") == 0) {
+        if (referenceToken == "-") {
             throw std::runtime_error("Hyphens cannot be used as array indices "
                     "since the requested array element does not yet exist");
         }

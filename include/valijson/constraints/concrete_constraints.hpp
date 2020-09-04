@@ -365,6 +365,7 @@ public:
                     m_enumValues.push_back(value);
                 } catch (...) {
                     delete value;
+                    value = nullptr;
                     throw;
                 }
             }
