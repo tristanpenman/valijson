@@ -57,7 +57,7 @@ Validate a document:
     Validator validator;
     RapidJsonAdapter myTargetAdapter(myTargetDoc);
     if (!validator.validate(mySchema, myTargetAdapter, NULL)) {
-        std::runtime_error("Validation failed.");
+        throw std::runtime_error("Validation failed.");
     }
 
 Note that Valijson's `SchemaParser` and `Validator` classes expect you to pass in a `RapidJsonAdapter` rather than a `rapidjson::Document`. This is due to the fact that `SchemaParser` and `Validator` are template classes that can be used with any of the JSON parsers supported by Valijson.
