@@ -8,7 +8,7 @@ Valijson provides a simple validation API that allows you to load JSON Schemas, 
 
 ## Project Goals ##
 
-The goal of this project is to support validation of all constraints available in JSON Schema v7, while being competitive with the performance of a hand-written schema validator.
+The goal of this project is to support validation of all constraints available in JSON Schema v7, while being competitive with the performance of a hand-written scheme validator.
 
 ## Usage ##
 
@@ -217,7 +217,7 @@ When building Valijson using CMake on Mac OS X, with Qt 5 installed via Homebrew
     mkdir build
     cd build
     cmake .. -DCMAKE_PREFIX_PATH=$(brew --prefix qt5)
-    make
+    
 
 ## License ##
 
