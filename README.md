@@ -202,6 +202,8 @@ Other versions of these libraries may work, but have not been tested. In particu
 
 If you are using [vcpkg](https://github.com/Microsoft/vcpkg) on your project for external dependencies, then you can use the [valijson](https://github.com/microsoft/vcpkg/tree/master/ports/valijson) package. Please see the vcpkg project for any issues regarding the packaging.
 
+You can also use [conan](https://conan.io/) as a package manager to handle [valijson](https://conan.io/center/valijson/0.3/) package. Please see the [conan recipe](https://github.com/conan-io/conan-center-index/tree/master/recipes/valijson) for any issues regarding the packaging via conan.
+
 ## Test Suite Requirements ##
 
 Supported versions of these libraries have been included in the 'thirdparty' directory so as to support Valijson's examples and test suite.
