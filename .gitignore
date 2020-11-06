@@ -6,3 +6,4 @@ xcode/valijson.xcodeproj/xcuserdata
 doc/html
 .idea
 cmake-build-*
+CMakeFiles/

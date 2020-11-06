@@ -736,13 +736,13 @@
 			path = "nlohmann-json-3.1.2";
 			sourceTree = "<group>";
 		};
-		6AA334801AB5100700F1928B /* jsoncpp-0.9.4 */ = {
+		6AA334801AB5100700F1928B /* jsoncpp-1.9.4 */ = {
 			isa = PBXGroup;
 			children = (
 				6AA334811AB5101900F1928B /* include */,
 				6AA334821AB5101E00F1928B /* src */,
 			);
-			name = "jsoncpp-0.9.4";
+			name = "jsoncpp-1.9.4";
 			sourceTree = "<group>";
 		};
 		6AA334811AB5101900F1928B /* include */ = {
@@ -776,7 +776,7 @@
 				6AA3348D1AB5102C00F1928B /* writer.h */,
 			);
 			name = json;
-			path = "jsoncpp-0.9.4/include/json";
+			path = "jsoncpp-1.9.4/include/json";
 			sourceTree = "<group>";
 		};
 		6AA3348E1AB5103C00F1928B /* lib_json */ = {
@@ -789,7 +789,7 @@
 				6AA334941AB5103C00F1928B /* json_writer.cpp */,
 			);
 			name = lib_json;
-			path = "jsoncpp-0.9.4/src/lib_json";
+			path = "jsoncpp-1.9.4/src/lib_json";
 			sourceTree = "<group>";
 		};
 		6AB8FEB417E6E53D0028E147 /* data */ = {
@@ -806,7 +806,7 @@
 			children = (
 				6A8769A0230C1B9C008E1739 /* json11-ec4e452 */,
 				6AF70AC218FE71F600342325 /* gtest-1.7.0 */,
-				6AA334801AB5100700F1928B /* jsoncpp-0.9.4 */,
+				6AA334801AB5100700F1928B /* jsoncpp-1.9.4 */,
 				6A8699E517CD8641006864FA /* JSON-Schema-Test-Suite */,
 				6A8769DA230C1C21008E1739 /* nlohmann-json-3.1.2 */,
 				6A8769AF230C1BF1008E1739 /* rapidjson-1.1.0 */,
@@ -1305,7 +1305,7 @@
 					"../thirdparty/gtest-1.7.0/include",
 					"../thirdparty/gtest-1.7.0",
 					"../thirdparty/json11-ec4e452",
-					"../thirdparty/jsoncpp-0.9.4/include",
+					"../thirdparty/jsoncpp-1.9.4/include",
 					"../thirdparty/nlohmann-json-3.1.2",
 					"../thirdparty/picojson-1.3.0",
 					"../thirdparty/rapidjson-1.1.0/include",
@@ -1338,7 +1338,7 @@
 					"../thirdparty/gtest-1.7.0/include",
 					"../thirdparty/gtest-1.7.0",
 					"../thirdparty/json11-ec4e452",
-					"../thirdparty/jsoncpp-0.9.4/include",
+					"../thirdparty/jsoncpp-1.9.4/include",
 					"../thirdparty/nlohmann-json-3.1.2",
 					"../thirdparty/picojson-1.3.0",
 					"../thirdparty/rapidjson-1.1.0/include",
@@ -1497,7 +1497,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
-					"../thirdparty/jsoncpp-0.9.4/include",
+					"../thirdparty/jsoncpp-1.9.4/include",
 				);
 				MTL_ENABLE_DEBUG_INFO = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1519,7 +1519,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
-					"../thirdparty/jsoncpp-0.9.4/include",
+					"../thirdparty/jsoncpp-1.9.4/include",
 				);
 				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
