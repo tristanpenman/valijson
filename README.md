@@ -1,5 +1,4 @@
 # Valijson [![Build Status](https://travis-ci.org/tristanpenman/valijson.svg?branch=master)](https://travis-ci.org/tristanpenman/valijson) #
-ide
 
 ## Overview ##
 
