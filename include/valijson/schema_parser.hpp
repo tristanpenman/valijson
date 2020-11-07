@@ -14,6 +14,7 @@
 #include <valijson/internal/uri.hpp>
 #include <valijson/constraint_builder.hpp>
 #include <valijson/schema.hpp>
+#include <valijson/exceptions.hpp>
 
 #ifdef __clang__
 #  pragma clang diagnostic push
@@ -117,18 +118,22 @@ public:
         typename FunctionPtrs<AdapterType>::FreeDoc freeDoc = nullptr )
     {
         if ((fetchDoc == nullptr ) ^ (freeDoc == nullptr)) {
-            throw std::runtime_error("Remote document fetching can't be enabled without both fetch and free functions");
+            throwRuntimeError("Remote document fetching can't be enabled without both fetch and free functions");
         }
 
         typename DocumentCache<AdapterType>::Type docCache;
         SchemaCache schemaCache;
+#if VALIJSON_USE_EXCEPTIONS
         try {
+#endif
             resolveThenPopulateSchema(schema, node, node, schema, opt::optional<std::string>(), "", fetchDoc, nullptr,
                     nullptr, docCache, schemaCache);
+#if VALIJSON_USE_EXCEPTIONS
         } catch (...) {
             freeDocumentCache<AdapterType>(docCache, freeDoc);
             throw;
         }
+#endif
 
         freeDocumentCache<AdapterType>(docCache, freeDoc);
     }
@@ -238,7 +243,7 @@ private:
         if (itr == o.end()) {
             return false;
         } else if (!itr->second.asString(result)) {
-            throw std::invalid_argument("$ref property expected to contain string value.");
+            throwRuntimeError("$ref property expected to contain string value.");
         }
 
         return true;
@@ -306,7 +311,7 @@ private:
         for (const std::string &keyToCreate : keysToCreate) {
             const SchemaCache::value_type value(keyToCreate, schema);
             if (!schemaCache.insert(value).second) {
-                throw std::logic_error("Key '" + keyToCreate + "' already in schema cache.");
+                throwLogicError("Key '" + keyToCreate + "' already in schema cache.");
             }
         }
     }
@@ -423,7 +428,7 @@ private:
             if (docCacheItr == docCache.end()) {
                 // Resolve reference against remote document
                 if (!fetchDoc) {
-                    throw std::runtime_error("Fetching of remote JSON References not enabled.");
+                    throwRuntimeError("Fetching of remote JSON References not enabled.");
                 }
 
                 // Returns a pointer to the remote document that was
@@ -434,7 +439,7 @@ private:
 
                 // Can't proceed without the remote document
                 if (!newDoc) {
-                    throw std::runtime_error("Failed to fetch referenced schema document: " + *actualDocumentUri);
+                    throwRuntimeError("Failed to fetch referenced schema document: " + *actualDocumentUri);
                 }
 
                 typedef typename DocumentCache<AdapterType>::Type::value_type
@@ -588,7 +593,7 @@ private:
                     s += " to contain schema object; actual node type is: ";
                 }
                 s += internal::nodeTypeAsString(node);
-                throw std::runtime_error(s);
+                throwRuntimeError(s);
             }
         }
 
@@ -650,7 +655,7 @@ private:
                 rootSchema.setSubschemaDescription(&subschema,
                         itr->second.asString());
             } else {
-                throw std::runtime_error(
+                throwRuntimeError(
                         "'description' attribute should have a string value");
             }
         }
@@ -666,11 +671,11 @@ private:
                             makeMultipleOfDoubleConstraint(itr->second),
                             &subschema);
                 } else {
-                    throw std::runtime_error("Expected an numeric value for "
+                    throwRuntimeError("Expected an numeric value for "
                             " 'divisibleBy' constraint.");
                 }
             } else {
-                throw std::runtime_error(
+                throwRuntimeError(
                         "'divisibleBy' constraint not valid after draft 3");
             }
         }
@@ -722,7 +727,7 @@ private:
                                 updatedScope, nodePath, fetchDoc, docCache, schemaCache),
                           &subschema);
                 } else {
-                    throw std::runtime_error("Not supported");
+                    throwRuntimeError("Not supported");
                 }
             }
         }
@@ -752,7 +757,7 @@ private:
                         &subschema);
             }
         } else if (object.find("exclusiveMaximum") != object.end()) {
-            throw std::runtime_error("'exclusiveMaximum' constraint only valid if a 'maximum' "
+            throwRuntimeError("'exclusiveMaximum' constraint only valid if a 'maximum' "
                     "constraint is also present");
         }
 
@@ -794,7 +799,7 @@ private:
                         &subschema);
             }
         } else if (object.find("exclusiveMinimum") != object.end()) {
-            throw std::runtime_error("'exclusiveMinimum' constraint only valid if a 'minimum' "
+            throwRuntimeError("'exclusiveMinimum' constraint only valid if a 'minimum' "
                     "constraint is also present");
         }
 
@@ -815,7 +820,7 @@ private:
 
         if ((itr = object.find("multipleOf")) != object.end()) {
             if (m_version == kDraft3) {
-                throw std::runtime_error("'multipleOf' constraint not available in draft 3");
+                throwRuntimeError("'multipleOf' constraint not available in draft 3");
             } else if (itr->second.maybeInteger()) {
                 rootSchema.addConstraintToSubschema(
                         makeMultipleOfIntConstraint(itr->second),
@@ -825,7 +830,7 @@ private:
                         makeMultipleOfDoubleConstraint(itr->second),
                         &subschema);
             } else {
-                throw std::runtime_error("Expected an numeric value for 'divisibleBy' constraint.");
+                throwRuntimeError("Expected an numeric value for 'divisibleBy' constraint.");
             }
         }
 
@@ -878,7 +883,7 @@ private:
                               nodePath, fetchDoc, docCache, schemaCache),
                       &subschema);
             } else {
-                throw std::runtime_error("Not supported");
+                throwRuntimeError("Not supported");
             }
         }
 
@@ -891,7 +896,7 @@ private:
                         rootSchema.addConstraintToSubschema(*constraint, parentSubschema);
                     }
                 } else {
-                    throw std::runtime_error("'required' constraint not valid here");
+                    throwRuntimeError("'required' constraint not valid here");
                 }
             } else {
                 rootSchema.addConstraintToSubschema(makeRequiredConstraint(itr->second), &subschema);
@@ -902,7 +907,7 @@ private:
             if (itr->second.maybeString()) {
                 rootSchema.setSubschemaTitle(&subschema, itr->second.asString());
             } else {
-                throw std::runtime_error("'title' attribute should have a string value");
+                throwRuntimeError("'title' attribute should have a string value");
             }
         }
 
@@ -923,14 +928,18 @@ private:
         for (const auto & constraintBuilder : constraintBuilders) {
             if ((itr = object.find(constraintBuilder.first)) != object.end()) {
                 constraints::Constraint *constraint = nullptr;
+#if VALIJSON_USE_EXCEPTIONS
                 try {
+#endif
                     constraint = constraintBuilder.second->make(itr->second);
                     rootSchema.addConstraintToSubschema(*constraint, &subschema);
                     delete constraint;
+#if VALIJSON_USE_EXCEPTIONS
                 } catch (...) {
                     delete constraint;
                     throw;
                 }
+#endif
             }
         }
     }
@@ -992,14 +1001,14 @@ private:
         if (documentUri && internal::uri::isUriAbsolute(*documentUri)) {
             // Resolve reference against remote document
             if (!fetchDoc) {
-                throw std::runtime_error("Fetching of remote JSON References not enabled.");
+                throwRuntimeError("Fetching of remote JSON References not enabled.");
             }
 
             const typename DocumentCache<AdapterType>::DocumentType *newDoc = fetchDoc(*documentUri);
 
             // Can't proceed without the remote document
             if (!newDoc) {
-                throw std::runtime_error("Failed to fetch referenced schema document: " + *documentUri);
+                throwRuntimeError("Failed to fetch referenced schema document: " + *documentUri);
             }
 
             // Add to document cache
@@ -1056,7 +1065,7 @@ private:
         SchemaCache &schemaCache)
     {
         if (!node.maybeArray()) {
-            throw std::runtime_error("Expected array value for 'allOf' constraint.");
+            throwRuntimeError("Expected array value for 'allOf' constraint.");
         }
 
         constraints::AllOfConstraint constraint;
@@ -1071,7 +1080,7 @@ private:
                 constraint.addSubschema(subschema);
                 index++;
             } else {
-                throw std::runtime_error("Expected element to be a valid schema in 'allOf' constraint.");
+                throwRuntimeError("Expected element to be a valid schema in 'allOf' constraint.");
             }
         }
 
@@ -1108,7 +1117,7 @@ private:
         SchemaCache &schemaCache)
     {
         if (!node.maybeArray()) {
-            throw std::runtime_error("Expected array value for 'anyOf' constraint.");
+            throwRuntimeError("Expected array value for 'anyOf' constraint.");
         }
 
         constraints::AnyOfConstraint constraint;
@@ -1123,7 +1132,7 @@ private:
                 constraint.addSubschema(subschema);
                 index++;
             } else {
-                throw std::runtime_error("Expected array element to be a valid schema in 'anyOf' constraint.");
+                throwRuntimeError("Expected array element to be a valid schema in 'anyOf' constraint.");
             }
         }
 
@@ -1262,7 +1271,7 @@ private:
 
         } else {
             // All other formats will result in an exception being thrown.
-            throw std::runtime_error("Expected valid schema for 'contains' constraint.");
+            throwRuntimeError("Expected valid schema for 'contains' constraint.");
         }
 
         return constraint;
@@ -1316,7 +1325,7 @@ private:
         SchemaCache &schemaCache)
     {
         if (!node.maybeObject()) {
-            throw std::runtime_error("Expected valid subschema for 'dependencies' constraint.");
+            throwRuntimeError("Expected valid subschema for 'dependencies' constraint.");
         }
 
         constraints::DependenciesConstraint dependenciesConstraint;
@@ -1338,7 +1347,7 @@ private:
                     if (dependencyName.maybeString()) {
                         dependentPropertyNames.push_back(dependencyName.getString());
                     } else {
-                        throw std::runtime_error("Expected string value in dependency list of property '" +
+                        throwRuntimeError("Expected string value in dependency list of property '" +
                             member.first + "' in 'dependencies' constraint.");
                     }
                 }
@@ -1370,7 +1379,7 @@ private:
 
             // All other types result in an exception being thrown.
             } else {
-                throw std::runtime_error("Invalid dependencies definition.");
+                throwRuntimeError("Invalid dependencies definition.");
             }
         }
 
@@ -1468,7 +1477,7 @@ private:
             } else {
                 // Any other format for the additionalItems property will result
                 // in an exception being thrown.
-                throw std::runtime_error("Expected bool or object value for 'additionalItems'");
+                throwRuntimeError("Expected bool or object value for 'additionalItems'");
             }
         } else {
             // The default value for the additionalItems property is an empty
@@ -1497,7 +1506,7 @@ private:
                     index++;
                 }
             } else {
-                throw std::runtime_error("Expected array value for non-singular 'items' constraint.");
+                throwRuntimeError("Expected array value for non-singular 'items' constraint.");
             }
         }
 
@@ -1567,7 +1576,7 @@ private:
 
         } else {
             // All other formats will result in an exception being thrown.
-            throw std::runtime_error("Expected valid schema for singular 'items' constraint.");
+            throwRuntimeError("Expected valid schema for singular 'items' constraint.");
         }
 
         return constraint;
@@ -1596,7 +1605,7 @@ private:
         const AdapterType *exclusiveMaximum)
     {
         if (!node.maybeDouble()) {
-            throw std::runtime_error("Expected numeric value for maximum constraint.");
+            throwRuntimeError("Expected numeric value for maximum constraint.");
         }
 
         constraints::MaximumConstraint constraint;
@@ -1604,7 +1613,7 @@ private:
 
         if (exclusiveMaximum) {
             if (!exclusiveMaximum->maybeBool()) {
-                throw std::runtime_error("Expected boolean value for exclusiveMaximum constraint.");
+                throwRuntimeError("Expected boolean value for exclusiveMaximum constraint.");
             }
 
             constraint.setExclusiveMaximum(exclusiveMaximum->asBool());
@@ -1627,7 +1636,7 @@ private:
     constraints::MaximumConstraint makeMaximumConstraintExclusive(const AdapterType &node)
     {
         if (!node.maybeDouble()) {
-            throw std::runtime_error("Expected numeric value for maximum constraint.");
+            throwRuntimeError("Expected numeric value for maximum constraint.");
         }
 
         constraints::MaximumConstraint constraint;
@@ -1657,7 +1666,7 @@ private:
             }
         }
 
-        throw std::runtime_error("Expected non-negative integer value for 'maxItems' constraint.");
+        throwRuntimeError("Expected non-negative integer value for 'maxItems' constraint.");
     }
 
     /**
@@ -1681,7 +1690,7 @@ private:
             }
         }
 
-        throw std::runtime_error("Expected a non-negative integer value for 'maxLength' constraint.");
+        throwRuntimeError("Expected a non-negative integer value for 'maxLength' constraint.");
     }
 
     /**
@@ -1707,7 +1716,7 @@ private:
             }
         }
 
-        throw std::runtime_error("Expected a non-negative integer for 'maxProperties' constraint.");
+        throwRuntimeError("Expected a non-negative integer for 'maxProperties' constraint.");
     }
 
     /**
@@ -1728,7 +1737,7 @@ private:
         const AdapterType *exclusiveMinimum)
     {
         if (!node.maybeDouble()) {
-            throw std::runtime_error("Expected numeric value for minimum constraint.");
+            throwRuntimeError("Expected numeric value for minimum constraint.");
         }
 
         constraints::MinimumConstraint constraint;
@@ -1736,7 +1745,7 @@ private:
 
         if (exclusiveMinimum) {
             if (!exclusiveMinimum->maybeBool()) {
-                throw std::runtime_error("Expected boolean value for 'exclusiveMinimum' constraint.");
+                throwRuntimeError("Expected boolean value for 'exclusiveMinimum' constraint.");
             }
 
             constraint.setExclusiveMinimum(exclusiveMinimum->asBool());
@@ -1759,7 +1768,7 @@ private:
     constraints::MinimumConstraint makeMinimumConstraintExclusive(const AdapterType &node)
     {
         if (!node.maybeDouble()) {
-            throw std::runtime_error("Expected numeric value for minimum constraint.");
+            throwRuntimeError("Expected numeric value for minimum constraint.");
         }
 
         constraints::MinimumConstraint constraint;
@@ -1788,7 +1797,7 @@ private:
             }
         }
 
-        throw std::runtime_error("Expected a non-negative integer value for 'minItems' constraint.");
+        throwRuntimeError("Expected a non-negative integer value for 'minItems' constraint.");
     }
 
     /**
@@ -1811,7 +1820,7 @@ private:
             }
         }
 
-        throw std::runtime_error("Expected a non-negative integer value for 'minLength' constraint.");
+        throwRuntimeError("Expected a non-negative integer value for 'minLength' constraint.");
     }
 
 
@@ -1837,7 +1846,7 @@ private:
             }
         }
 
-        throw std::runtime_error("Expected a non-negative integer for 'minProperties' constraint.");
+        throwRuntimeError("Expected a non-negative integer for 'minProperties' constraint.");
     }
 
     /**
@@ -1909,7 +1918,7 @@ private:
             return constraint;
         }
 
-        throw std::runtime_error("Expected object value for 'not' constraint.");
+        throwRuntimeError("Expected object value for 'not' constraint.");
     }
 
     /**
@@ -2081,7 +2090,7 @@ private:
                 constraint.setAdditionalPropertiesSubschema(subschema);
             } else {
                 // All other types are invalid
-                throw std::runtime_error("Invalid type for 'additionalProperties' constraint.");
+                throwRuntimeError("Invalid type for 'additionalProperties' constraint.");
             }
         } else {
             // If an additionalProperties constraint is not provided, then the
@@ -2128,7 +2137,7 @@ private:
                     const std::string &name)
     {
         if (!node.maybeBool()) {
-            throw std::runtime_error("Expected boolean value for 'required' attribute.");
+            throwRuntimeError("Expected boolean value for 'required' attribute.");
         }
 
         if (node.asBool()) {
@@ -2159,7 +2168,7 @@ private:
 
         for (const AdapterType v : node.getArray()) {
             if (!v.maybeString()) {
-                throw std::runtime_error("Expected required property name to be a string value");
+                throwRuntimeError("Expected required property name to be a string value");
             }
 
             constraint.addRequiredProperty(v.getString());
@@ -2203,7 +2212,7 @@ private:
         if (node.maybeString()) {
             const TypeConstraint::JsonType type = TypeConstraint::jsonTypeFromString(node.getString());
             if (type == TypeConstraint::kAny && m_version == kDraft4) {
-                throw std::runtime_error("'any' type is not supported in version 4 schemas.");
+                throwRuntimeError("'any' type is not supported in version 4 schemas.");
             }
 
             constraint.addNamedType(type);
@@ -2214,7 +2223,7 @@ private:
                 if (v.maybeString()) {
                     const TypeConstraint::JsonType type = TypeConstraint::jsonTypeFromString(v.getString());
                     if (type == TypeConstraint::kAny && m_version == kDraft4) {
-                        throw std::runtime_error("'any' type is not supported in version 4 schemas.");
+                        throwRuntimeError("'any' type is not supported in version 4 schemas.");
                     }
 
                     constraint.addNamedType(type);
@@ -2226,7 +2235,7 @@ private:
                     constraint.addSchemaType(subschema);
 
                 } else {
-                    throw std::runtime_error("Type name should be a string.");
+                    throwRuntimeError("Type name should be a string.");
                 }
 
                 index++;
@@ -2238,7 +2247,7 @@ private:
             constraint.addSchemaType(subschema);
 
         } else {
-            throw std::runtime_error("Type name should be a string.");
+            throwRuntimeError("Type name should be a string.");
         }
 
         return constraint;
@@ -2266,7 +2275,7 @@ private:
             }
         }
 
-        throw std::runtime_error("Expected boolean value for 'uniqueItems' constraint.");
+        throwRuntimeError("Expected boolean value for 'uniqueItems' constraint.");
     }
 
 private:

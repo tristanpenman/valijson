@@ -2,8 +2,8 @@
 
 #include <valijson/constraints/constraint.hpp>
 #include <valijson/constraints/constraint_visitor.hpp>
-
 #include <valijson/internal/custom_allocator.hpp>
+#include <valijson/exceptions.hpp>
 
 namespace valijson {
 namespace constraints {
@@ -40,7 +40,7 @@ struct BasicConstraint: Constraint
     {
         void *ptr = allocFn(sizeof(ConstraintType));
         if (!ptr) {
-            throw std::runtime_error("Failed to allocate memory for cloned constraint");
+            throwRuntimeError("Failed to allocate memory for cloned constraint");
         }
 
         return new (ptr) ConstraintType(*static_cast<const ConstraintType*>(this));

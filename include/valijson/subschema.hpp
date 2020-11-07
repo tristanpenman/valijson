@@ -6,6 +6,7 @@
 
 #include <valijson/constraints/constraint.hpp>
 #include <valijson/internal/optional.hpp>
+#include <valijson/exceptions.hpp>
 
 namespace valijson {
 
@@ -69,17 +70,21 @@ public:
      */
     virtual ~Subschema()
     {
+#if VALIJSON_USE_EXCEPTIONS
         try {
+#endif
             for (auto constConstraint : m_constraints) {
                 auto *constraint = const_cast<Constraint *>(constConstraint);
                 constraint->~Constraint();
                 m_freeFn(constraint);
             }
             m_constraints.clear();
+#if VALIJSON_USE_EXCEPTIONS
         } catch (const std::exception &e) {
             fprintf(stderr, "Caught an exception in Subschema destructor: %s",
                     e.what());
         }
+#endif
     }
 
     /**
@@ -96,13 +101,17 @@ public:
     void addConstraint(const Constraint &constraint)
     {
         Constraint *newConstraint = constraint.clone(m_allocFn, m_freeFn);
+#if VALIJSON_USE_EXCEPTIONS
         try {
+#endif
             m_constraints.push_back(newConstraint);
+#if VALIJSON_USE_EXCEPTIONS
         } catch (...) {
             newConstraint->~Constraint();
             m_freeFn(newConstraint);
             throw;
         }
+#endif
     }
 
     /**
@@ -165,7 +174,8 @@ public:
             return *m_description;
         }
 
-        throw std::runtime_error("Schema does not have a description");
+        throwRuntimeError("Schema does not have a description");
+        return {};
     }
 
     /**
@@ -181,7 +191,8 @@ public:
             return *m_id;
         }
 
-        throw std::runtime_error("Schema does not have an ID");
+        throwRuntimeError("Schema does not have an ID");
+        return {};
     }
 
     /**
@@ -197,7 +208,8 @@ public:
             return *m_title;
         }
 
-        throw std::runtime_error("Schema does not have a title");
+        throwRuntimeError("Schema does not have a title");
+        return {};
     }
 
     /**

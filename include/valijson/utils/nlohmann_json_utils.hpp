@@ -4,6 +4,7 @@
 
 #include <json.hpp>
 #include <valijson/utils/file_utils.hpp>
+#include <valijson/exceptions.hpp>
 
 namespace valijson {
 namespace utils {
@@ -19,6 +20,7 @@ inline bool loadDocument(const std::string &path, nlohmann::json &document)
     }
 
     // Parse schema
+#if VALIJSON_USE_EXCEPTION
     try {
         document = nlohmann::json::parse(file);
     } catch (std::invalid_argument const& exception) {
@@ -26,6 +28,9 @@ inline bool loadDocument(const std::string &path, nlohmann::json &document)
             << "Parse error:" << exception.what() << "\n";
         return false;
     }
+#else
+    document = nlohmann::json::parse(file, nullptr, false);
+#endif
 
     return true;
 }

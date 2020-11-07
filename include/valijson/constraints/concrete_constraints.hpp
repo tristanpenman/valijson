@@ -24,6 +24,7 @@
 #include <valijson/constraints/basic_constraint.hpp>
 #include <valijson/internal/custom_allocator.hpp>
 #include <valijson/schema.hpp>
+#include <valijson/exceptions.hpp>
 
 namespace valijson {
 
@@ -296,7 +297,7 @@ public:
             return *this;
         }
 
-        throw std::runtime_error("Dependencies constraint already contains a dependent "
+        throwRuntimeError("Dependencies constraint already contains a dependent "
                 "schema for the property '" + propertyName + "'");
     }
 
@@ -357,12 +358,17 @@ public:
       : BasicConstraint(other),
         m_enumValues(Allocator::rebind<const EnumValue *>::other(m_allocator))
     {
+#if VALIJSON_USE_EXCEPTIONS
         try {
+#endif
             // Clone individual enum values
             for (const EnumValue *otherValue : other.m_enumValues) {
                 const EnumValue *value = otherValue->clone();
+#if VALIJSON_USE_EXCEPTIONS
                 try {
+#endif
                     m_enumValues.push_back(value);
+#if VALIJSON_USE_EXCEPTIONS
                 } catch (...) {
                     delete value;
                     value = nullptr;
@@ -375,6 +381,7 @@ public:
                 delete value;
             }
             throw;
+#endif
         }
     }
 
@@ -895,15 +902,19 @@ public:
     {
         void *ptr = allocFn(sizeOf());
         if (!ptr) {
-            throw std::runtime_error("Failed to allocate memory for cloned constraint");
+            throwRuntimeError("Failed to allocate memory for cloned constraint");
         }
 
+#if VALIJSON_USE_EXCEPTIONS
         try {
+#endif
             return cloneInto(ptr);
+#if VALIJSON_USE_EXCEPTIONS
         } catch (...) {
             freeFn(ptr);
             throw;
         }
+#endif
     }
 
     virtual bool validate(const adapters::Adapter &target,
@@ -1190,8 +1201,9 @@ public:
             return kString;
         }
 
-        throw std::runtime_error("Unrecognised JSON type name '" +
+        throwRuntimeError("Unrecognised JSON type name '" +
                 std::string(typeName.c_str()) + "'");
+        abort();
     }
 
 private:

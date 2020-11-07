@@ -5,6 +5,7 @@
 
 #include <valijson/adapters/adapter.hpp>
 #include <valijson/internal/optional.hpp>
+#include <valijson/exceptions.hpp>
 
 namespace valijson {
 namespace adapters {
@@ -297,7 +298,8 @@ public:
             }
         }
 
-        throw std::runtime_error("JSON value cannot be cast to an array.");
+        throwRuntimeError("JSON value cannot be cast to an array.");
+        return {};
     }
 
     bool asBool() const override
@@ -307,7 +309,8 @@ public:
             return result;
         }
 
-        throw std::runtime_error("JSON value cannot be cast to a boolean.");
+        throwRuntimeError("JSON value cannot be cast to a boolean.");
+        return {};
     }
 
     bool asBool(bool &result) const override
@@ -337,7 +340,8 @@ public:
             return result;
         }
 
-        throw std::runtime_error("JSON value cannot be cast to a double.");
+        throwRuntimeError("JSON value cannot be cast to a double.");
+        return {};
     }
 
     bool asDouble(double &result) const override
@@ -374,7 +378,8 @@ public:
             return result;
         }
 
-        throw std::runtime_error("JSON value cannot be cast as an integer.");
+        throwRuntimeError("JSON value cannot be cast as an integer.");
+        return {};
     }
 
     bool asInteger(int64_t &result) const override
@@ -425,7 +430,8 @@ public:
             }
         }
 
-        throw std::runtime_error("JSON value cannot be cast to an object.");
+        throwRuntimeError("JSON value cannot be cast to an object.");
+        return {};
     }
 
     std::string asString() const override
@@ -435,7 +441,8 @@ public:
             return result;
         }
 
-        throw std::runtime_error("JSON value cannot be cast to a string.");
+        throwRuntimeError("JSON value cannot be cast to a string.");
+        return {};
     }
 
     bool asString(std::string &result) const override
@@ -541,7 +548,7 @@ public:
             return *arrayValue;
         }
 
-        throw std::runtime_error("JSON value is not an array.");
+        throwRuntimeError("JSON value is not an array.");
     }
 
     size_t getArraySize() const override
@@ -551,7 +558,8 @@ public:
             return result;
         }
 
-        throw std::runtime_error("JSON value is not an array.");
+        throwRuntimeError("JSON value is not an array.");
+        return {};
     }
 
     bool getArraySize(size_t &result) const override
@@ -566,7 +574,8 @@ public:
             return result;
         }
 
-        throw std::runtime_error("JSON value is not a boolean.");
+        throwRuntimeError("JSON value is not a boolean.");
+        return {};
     }
 
     bool getBool(bool &result) const override
@@ -581,7 +590,8 @@ public:
             return result;
         }
 
-        throw std::runtime_error("JSON value is not a double.");
+        throwRuntimeError("JSON value is not a double.");
+        return {};
     }
 
     bool getDouble(double &result) const override
@@ -596,7 +606,8 @@ public:
             return result;
         }
 
-        throw std::runtime_error("JSON value is not an integer.");
+        throwRuntimeError("JSON value is not an integer.");
+        return {};
     }
 
     bool getInteger(int64_t &result) const override
@@ -611,7 +622,8 @@ public:
             return result;
         }
 
-        throw std::runtime_error("JSON value is not a number.");
+        throwRuntimeError("JSON value is not a number.");
+        return {};
     }
 
     bool getNumber(double &result) const override
@@ -650,7 +662,8 @@ public:
             return *objectValue;
         }
 
-        throw std::runtime_error("JSON value is not an object.");
+        throwRuntimeError("JSON value is not an object.");
+        return {};
     }
 
     size_t getObjectSize() const override
@@ -660,7 +673,8 @@ public:
             return result;
         }
 
-        throw std::runtime_error("JSON value is not an object.");
+        throwRuntimeError("JSON value is not an object.");
+        return {};
     }
 
     bool getObjectSize(size_t &result) const override
@@ -675,7 +689,8 @@ public:
             return result;
         }
 
-        throw std::runtime_error("JSON value is not a string.");
+        throwRuntimeError("JSON value is not a string.");
+        return {};
     }
 
     bool getString(std::string &result) const override
