@@ -175,6 +175,24 @@ The main exceptions are
 
 Support for JSON References is in development. It is mostly working, however some of the test cases added to [JSON Schema Test Suite](https://github.com/json-schema/JSON-Schema-Test-Suite) for v6/v7 are still failing.
 
+## JSON Inspector
+
+An example application based on Qt is also included under [inspector](./inspector). It can be used to experiment with JSON Schemas and target documents. JSON Inspector is a self-contained CMake project, so it must be built separately:
+
+```bash
+    cd inspector
+    mkdir build
+    cd build
+    cmake ..
+    make
+```
+
+Schemas and target documents can be loaded from file or entered manually. Content is parsed dynamically, so you get rapid feedback.
+
+Here is a screenshot of JSON Inspector in action:
+
+![JSON Inspector in action](./doc/inspector/screenshot.png)
+
 ## Documentation ##
 
 Doxygen documentation can be built by running 'doxygen' from the project root directory. Generated documentation will be placed in 'doc/html'. Other relevant documentation such as schemas and specifications have been included in the 'doc' directory.
