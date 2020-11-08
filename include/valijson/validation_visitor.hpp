@@ -189,18 +189,14 @@ public:
         if (ifValidator.validateSchema(*constraint.getIfSubschema())) {
             const Subschema *thenSubschema = constraint.getThenSubschema();
             validated = thenSubschema == nullptr || thenElseValidator.validateSchema(*thenSubschema);
-        }
-        else
-        {
+        } else {
             const Subschema *elseSubschema = constraint.getElseSubschema();
             validated = elseSubschema == nullptr || thenElseValidator.validateSchema(*elseSubschema);
         }
 
-        if (!validated && m_results)
-        {
+        if (!validated && m_results) {
             ValidationResults::Error conditionalError;
-            while (conditionalResults->popError(conditionalError))
-            {
+            while (conditionalResults->popError(conditionalError)) {
                 m_results->pushError(conditionalError.context, conditionalError.description);
             }
             m_results->pushError(m_context, "Failed to validate against a conditional schema set by if-then-else constraints.");
