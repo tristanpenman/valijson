@@ -178,17 +178,35 @@ public:
      */
     bool visit(const ConditionalConstraint &constraint) override
     {
+        ValidationResults newResults;
+        ValidationResults* conditionalResults = (m_results) ? &newResults : nullptr;
+
         // Create a validator to evaluate the conditional
         ValidationVisitor ifValidator(m_target, m_context, m_strictTypes, nullptr, m_regexesCache);
-        ValidationVisitor thenElseValidator(m_target, m_context, m_strictTypes, nullptr, m_regexesCache);
+        ValidationVisitor thenElseValidator(m_target, m_context, m_strictTypes, conditionalResults, m_regexesCache);
 
+        bool validated = false;
         if (ifValidator.validateSchema(*constraint.getIfSubschema())) {
             const Subschema *thenSubschema = constraint.getThenSubschema();
-            return thenSubschema == nullptr || thenElseValidator.validateSchema(*thenSubschema);
+            validated = thenSubschema == nullptr || thenElseValidator.validateSchema(*thenSubschema);
+        }
+        else
+        {
+            const Subschema *elseSubschema = constraint.getElseSubschema();
+            validated = elseSubschema == nullptr || thenElseValidator.validateSchema(*elseSubschema);
         }
 
-        const Subschema *elseSubschema = constraint.getElseSubschema();
-        return elseSubschema == nullptr || thenElseValidator.validateSchema(*elseSubschema);
+        if (!validated && m_results)
+        {
+            ValidationResults::Error conditionalError;
+            while (conditionalResults->popError(conditionalError))
+            {
+                m_results->pushError(conditionalError.context, conditionalError.description);
+            }
+            m_results->pushError(m_context, "Failed to validate against a conditional schema set by if-then-else constraints.");
+        }
+
+        return validated;
     }
 
     /**
