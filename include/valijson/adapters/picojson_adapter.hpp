@@ -32,6 +32,7 @@
 #include <valijson/adapters/adapter.hpp>
 #include <valijson/adapters/basic_adapter.hpp>
 #include <valijson/adapters/frozen_value.hpp>
+#include <valijson/exceptions.hpp>
 
 namespace valijson {
 namespace adapters {
@@ -77,7 +78,7 @@ public:
       : m_value(value)
     {
         if (!value.is<picojson::array>()) {
-            throw std::runtime_error("Value is not an array.");
+            throwRuntimeError("Value is not an array.");
         }
     }
 
@@ -156,7 +157,7 @@ public:
       : m_value(value)
     {
         if (!value.is<picojson::object>()) {
-            throw std::runtime_error("Value is not an object.");
+            throwRuntimeError("Value is not an object.");
         }
     }
 

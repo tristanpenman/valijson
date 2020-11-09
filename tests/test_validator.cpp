@@ -16,6 +16,7 @@
 #include <valijson/schema_parser.hpp>
 #include <valijson/validation_results.hpp>
 #include <valijson/validator.hpp>
+#include <valijson/exceptions.hpp>
 
 #ifdef VALIJSON_BUILD_POCO_ADAPTER
 #include <valijson/adapters/poco_json_adapter.hpp>
@@ -52,7 +53,7 @@ std::string getRelativePath(const std::string &uri)
        return "../doc/schema/draft-04.json";
    }
 
-   throw std::runtime_error("Attempt fetchDoc of " + uri);
+   valijson::throwRuntimeError("Attempt fetchDoc of " + uri);
 }
 
 template<typename AdapterType>
@@ -66,7 +67,7 @@ const typename AdapterTraits<AdapterType>::DocumentType * fetchDocument(
 
    if (!valijson::utils::loadDocument(relativePath, *document)) {
        delete document;
-       throw std::runtime_error("Failed fetchDoc of " + uri);
+       valijson::throwRuntimeError("Failed fetchDoc of " + uri);
    }
 
    return document;
@@ -89,8 +90,9 @@ protected:
         std::string currentTestCase;
         std::string currentTest;
 
+#if VALIJSON_USE_EXCEPTIONS
         try {
-
+#endif
             // Load test document
             typename AdapterTraits<AdapterType>::DocumentType document;
             ASSERT_TRUE( valijson::utils::loadDocument(testFile, document) );
@@ -152,13 +154,14 @@ protected:
                         << AdapterTraits<AdapterType>::adapterName() << "'";
                 }
             }
-
+#if VALIJSON_USE_EXCEPTIONS
         } catch (const std::exception &e) {
             FAIL() << "Exception thrown with message '" << e.what()
                    << "' in '" << currentTest << "' of test case '"
                    << currentTestCase << "' with adapter '"
                    << AdapterTraits<AdapterType>::adapterName() << "'";
         }
+#endif
     }
 
     void processTestFile(const std::string &testFile,

@@ -5,6 +5,7 @@
 
 #include <valijson/adapters/adapter.hpp>
 #include <valijson/internal/optional.hpp>
+#include <valijson/exceptions.hpp>
 
 namespace valijson {
 namespace adapters {
@@ -297,7 +298,7 @@ public:
             }
         }
 
-        throw std::runtime_error("JSON value cannot be cast to an array.");
+        throwRuntimeError("JSON value cannot be cast to an array.");
     }
 
     bool asBool() const override
@@ -307,7 +308,7 @@ public:
             return result;
         }
 
-        throw std::runtime_error("JSON value cannot be cast to a boolean.");
+        throwRuntimeError("JSON value cannot be cast to a boolean.");
     }
 
     bool asBool(bool &result) const override
@@ -337,7 +338,7 @@ public:
             return result;
         }
 
-        throw std::runtime_error("JSON value cannot be cast to a double.");
+        throwRuntimeError("JSON value cannot be cast to a double.");
     }
 
     bool asDouble(double &result) const override
@@ -374,7 +375,7 @@ public:
             return result;
         }
 
-        throw std::runtime_error("JSON value cannot be cast as an integer.");
+        throwRuntimeError("JSON value cannot be cast as an integer.");
     }
 
     bool asInteger(int64_t &result) const override
@@ -425,7 +426,7 @@ public:
             }
         }
 
-        throw std::runtime_error("JSON value cannot be cast to an object.");
+        throwRuntimeError("JSON value cannot be cast to an object.");
     }
 
     std::string asString() const override
@@ -435,7 +436,7 @@ public:
             return result;
         }
 
-        throw std::runtime_error("JSON value cannot be cast to a string.");
+        throwRuntimeError("JSON value cannot be cast to a string.");
     }
 
     bool asString(std::string &result) const override
@@ -541,7 +542,7 @@ public:
             return *arrayValue;
         }
 
-        throw std::runtime_error("JSON value is not an array.");
+        throwRuntimeError("JSON value is not an array.");
     }
 
     size_t getArraySize() const override
@@ -551,7 +552,7 @@ public:
             return result;
         }
 
-        throw std::runtime_error("JSON value is not an array.");
+        throwRuntimeError("JSON value is not an array.");
     }
 
     bool getArraySize(size_t &result) const override
@@ -566,7 +567,7 @@ public:
             return result;
         }
 
-        throw std::runtime_error("JSON value is not a boolean.");
+        throwRuntimeError("JSON value is not a boolean.");
     }
 
     bool getBool(bool &result) const override
@@ -581,7 +582,7 @@ public:
             return result;
         }
 
-        throw std::runtime_error("JSON value is not a double.");
+        throwRuntimeError("JSON value is not a double.");
     }
 
     bool getDouble(double &result) const override
@@ -596,7 +597,7 @@ public:
             return result;
         }
 
-        throw std::runtime_error("JSON value is not an integer.");
+        throwRuntimeError("JSON value is not an integer.");
     }
 
     bool getInteger(int64_t &result) const override
@@ -611,7 +612,7 @@ public:
             return result;
         }
 
-        throw std::runtime_error("JSON value is not a number.");
+        throwRuntimeError("JSON value is not a number.");
     }
 
     bool getNumber(double &result) const override
@@ -650,7 +651,7 @@ public:
             return *objectValue;
         }
 
-        throw std::runtime_error("JSON value is not an object.");
+        throwRuntimeError("JSON value is not an object.");
     }
 
     size_t getObjectSize() const override
@@ -660,7 +661,7 @@ public:
             return result;
         }
 
-        throw std::runtime_error("JSON value is not an object.");
+        throwRuntimeError("JSON value is not an object.");
     }
 
     bool getObjectSize(size_t &result) const override
@@ -675,7 +676,7 @@ public:
             return result;
         }
 
-        throw std::runtime_error("JSON value is not a string.");
+        throwRuntimeError("JSON value is not a string.");
     }
 
     bool getString(std::string &result) const override

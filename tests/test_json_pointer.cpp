@@ -298,7 +298,12 @@ TEST_F(TestJsonPointer, JsonPointerTestCases)
             const RapidJsonAdapter actualAdapter = resolveJsonPointer(valueAdapter, jsonPointer);
             EXPECT_TRUE(actualAdapter.equalTo(expectedAdapter, true)) << testCase->description;
         } else {
+            // Since the tests with throwing disabled will abort, we can't
+            // do anything here.
+
+#if VALIJSON_USE_EXCEPTIONS
             EXPECT_THROW(resolveJsonPointer(valueAdapter, jsonPointer), std::runtime_error) << testCase->description;
+#endif
         }
     }
 }

@@ -19,6 +19,7 @@
 #include <valijson/adapters/adapter.hpp>
 #include <valijson/adapters/frozen_value.hpp>
 #include <valijson/adapters/basic_adapter.hpp>
+#include <valijson/exceptions.hpp>
 
 namespace valijson {
 namespace adapters {
@@ -110,7 +111,7 @@ public:
             return {};
         }
 
-        throw std::runtime_error("String value cannot be cast to array");
+        throwRuntimeError("String value cannot be cast to array");
     }
 
     bool asBool() const override
@@ -152,7 +153,7 @@ public:
             return {};
         }
 
-        throw std::runtime_error("String value cannot be cast to object");
+        throwRuntimeError("String value cannot be cast to object");
     }
 
     std::string asString() const override
@@ -182,67 +183,67 @@ public:
 
     static StdStringArray getArray()
     {
-        throw std::runtime_error("Not supported");
+        throwNotSupported();
     }
 
     size_t getArraySize() const override
     {
-        throw std::runtime_error("Not supported");
+        throwNotSupported();
     }
 
     bool getArraySize(size_t &) const override
     {
-        throw std::runtime_error("Not supported");
+        throwNotSupported();
     }
 
     bool getBool() const override
     {
-        throw std::runtime_error("Not supported");
+        throwNotSupported();
     }
 
     bool getBool(bool &) const override
     {
-        throw std::runtime_error("Not supported");
+        throwNotSupported();
     }
 
     double getDouble() const override
     {
-        throw std::runtime_error("Not supported");
+        throwNotSupported();
     }
 
     bool getDouble(double &) const override
     {
-        throw std::runtime_error("Not supported");
+        throwNotSupported();
     }
 
     int64_t getInteger() const override
     {
-        throw std::runtime_error("Not supported");
+        throwNotSupported();
     }
 
     bool getInteger(int64_t &) const override
     {
-        throw std::runtime_error("Not supported");
+        throwNotSupported();
     }
 
     double getNumber() const override
     {
-        throw std::runtime_error("Not supported");
+        throwNotSupported();
     }
 
     bool getNumber(double &) const override
     {
-        throw std::runtime_error("Not supported");
+        throwNotSupported();
     }
 
     size_t getObjectSize() const override
     {
-        throw std::runtime_error("Not supported");
+        throwNotSupported();
     }
 
     bool getObjectSize(size_t &) const override
     {
-        throw std::runtime_error("Not supported");
+        throwNotSupported();
     }
 
     std::string getString() const override
@@ -355,12 +356,12 @@ class StdStringArrayValueIterator: public std::iterator<std::bidirectional_itera
 public:
     StdStringAdapter operator*() const
     {
-        throw std::runtime_error("Not supported");
+        throwNotSupported();
     }
 
     DerefProxy<StdStringAdapter> operator->() const
     {
-        throw std::runtime_error("Not supported");
+        throwNotSupported();
     }
 
     bool operator==(const StdStringArrayValueIterator &) const
@@ -375,22 +376,22 @@ public:
 
     const StdStringArrayValueIterator& operator++()
     {
-        throw std::runtime_error("Not supported");
+        throwNotSupported();
     }
 
     StdStringArrayValueIterator operator++(int)
     {
-        throw std::runtime_error("Not supported");
+        throwNotSupported();
     }
 
     const StdStringArrayValueIterator& operator--()
     {
-        throw std::runtime_error("Not supported");
+        throwNotSupported();
     }
 
     void advance(std::ptrdiff_t)
     {
-        throw std::runtime_error("Not supported");
+        throwNotSupported();
     }
 };
 
@@ -409,12 +410,12 @@ class StdStringObjectMemberIterator: public std::iterator<std::bidirectional_ite
 public:
     StdStringObjectMember operator*() const
     {
-        throw std::runtime_error("Not supported");
+        throwNotSupported();
     }
 
     DerefProxy<StdStringObjectMember> operator->() const
     {
-        throw std::runtime_error("Not supported");
+        throwNotSupported();
     }
 
     bool operator==(const StdStringObjectMemberIterator &) const
@@ -429,17 +430,17 @@ public:
 
     const StdStringObjectMemberIterator& operator++()
     {
-        throw std::runtime_error("Not supported");
+        throwNotSupported();
     }
 
     StdStringObjectMemberIterator operator++(int)
     {
-        throw std::runtime_error("Not supported");
+        throwNotSupported();
     }
 
     const StdStringObjectMemberIterator& operator--()
     {
-        throw std::runtime_error("Not supported");
+        throwNotSupported();
     }
 };
 

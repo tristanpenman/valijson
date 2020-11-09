@@ -48,6 +48,7 @@
 #include <valijson/adapters/adapter.hpp>
 #include <valijson/adapters/basic_adapter.hpp>
 #include <valijson/adapters/frozen_value.hpp>
+#include <valijson/exceptions.hpp>
 
 namespace valijson {
 namespace adapters {
@@ -112,7 +113,7 @@ public:
       : m_value(value)
     {
         if (!value.IsArray()) {
-            throw std::runtime_error("Value is not an array.");
+            throwRuntimeError("Value is not an array.");
         }
     }
 
@@ -181,7 +182,7 @@ public:
       : m_value(value)
     {
         if (!value.IsObject()) {
-            throw std::runtime_error("Value is not an object.");
+            throwRuntimeError("Value is not an object.");
         }
     }
 
@@ -270,7 +271,7 @@ public:
     explicit GenericRapidJsonFrozenValue(const ValueType &source)
     {
         if (!copy(source, m_value, m_allocator)) {
-            throw std::runtime_error("Failed to copy ValueType");
+            throwRuntimeError("Failed to copy ValueType");
         }
     }
 
