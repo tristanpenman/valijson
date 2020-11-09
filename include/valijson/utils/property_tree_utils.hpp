@@ -30,12 +30,18 @@ namespace boost {
 
 // Boost requires used-defined exception throwers when exceptions are
 // disabled.
-BOOST_NORETURN void throw_exception(std::exception const & e ) {
+// NOTE: BOOST_NORETURN attribute was added in 1.71.
+#if (BOOST_VERSION >= 107100)
+BOOST_NORETURN
+#endif
+void throw_exception(std::exception const & e ) {
  valijson::throwRuntimeError(e.what());
 }
 
-#if (BOOST_VERSION > 107300)
-BOOST_NORETURN void throw_exception(std::exception const & e, boost::source_location const & loc ) {
+// Source location override was added in 1.73.
+#if (BOOST_VERSION >= 107300)
+BOOST_NORETURN
+void throw_exception(std::exception const & e, boost::source_location const & loc ) {
   valijson::throwRuntimeError(e.what());
 }
 #endif
