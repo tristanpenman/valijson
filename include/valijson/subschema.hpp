@@ -175,7 +175,6 @@ public:
         }
 
         throwRuntimeError("Schema does not have a description");
-        return {};
     }
 
     /**
@@ -192,7 +191,6 @@ public:
         }
 
         throwRuntimeError("Schema does not have an ID");
-        return {};
     }
 
     /**
@@ -209,7 +207,6 @@ public:
         }
 
         throwRuntimeError("Schema does not have a title");
-        return {};
     }
 
     /**

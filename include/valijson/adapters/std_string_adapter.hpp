@@ -112,7 +112,6 @@ public:
         }
 
         throwRuntimeError("String value cannot be cast to array");
-        return {};
     }
 
     bool asBool() const override
@@ -155,7 +154,6 @@ public:
         }
 
         throwRuntimeError("String value cannot be cast to object");
-        return {};
     }
 
     std::string asString() const override
