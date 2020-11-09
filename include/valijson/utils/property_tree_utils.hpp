@@ -14,7 +14,12 @@
 # include <boost/property_tree/json_parser.hpp>
 #endif
 
+// Source locations were added in boost 1.73.
+#include <boost/version.hpp>
+#if (BOOST_VERSION > 107300)
 #include <boost/assert/source_location.hpp>
+#endif
+
 #include <boost/config/detail/suffix.hpp>
 #include <valijson/utils/file_utils.hpp>
 #include <valijson/exceptions.hpp>
@@ -29,9 +34,11 @@ BOOST_NORETURN void throw_exception(std::exception const & e ) {
  valijson::throwRuntimeError(e.what());
 }
 
+#if (BOOST_VERSION > 107300)
 BOOST_NORETURN void throw_exception(std::exception const & e, boost::source_location const & loc ) {
   valijson::throwRuntimeError(e.what());
 }
+#endif
 
 }  // namespace boost
 

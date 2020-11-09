@@ -30,6 +30,10 @@ inline bool loadDocument(const std::string &path, nlohmann::json &document)
     }
 #else
     document = nlohmann::json::parse(file, nullptr, false);
+    if (document.is_discarded()) {
+        std::cerr << "nlohmann::json failed to parse the document.";
+        return false;
+    }
 #endif
 
     return true;
