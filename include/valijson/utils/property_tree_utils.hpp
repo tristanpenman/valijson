@@ -4,6 +4,7 @@
 #include <sstream>
 
 #include <boost/property_tree/ptree.hpp>
+#include <boost/throw_exception.hpp>
 
 #if defined(__clang__)
 # pragma clang diagnostic push
@@ -20,7 +21,6 @@
 #include <boost/assert/source_location.hpp>
 #endif
 
-#include <boost/config/detail/suffix.hpp>
 #include <valijson/utils/file_utils.hpp>
 #include <valijson/exceptions.hpp>
 
