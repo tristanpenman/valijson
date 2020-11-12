@@ -1,5 +1,8 @@
 # Valijson [![Build Status](https://travis-ci.org/tristanpenman/valijson.svg?branch=master)](https://travis-ci.org/tristanpenman/valijson) #
 
+| :warning: this is the 1.0-dev branch and should be considered unstable |
+| --- |
+
 ## Overview ##
 
 Valijson is a header-only [JSON Schema](http://json-schema.org/) Validation library for C++11.
