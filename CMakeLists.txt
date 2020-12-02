@@ -49,7 +49,6 @@ else()
     add_definitions(-DVALIJSON_USE_EXCEPTIONS=0)
 endif()
 
-find_package(curlpp)
 find_package(Poco OPTIONAL_COMPONENTS JSON)
 find_package(Qt5Core)
 
@@ -150,6 +149,7 @@ if(valijson_BUILD_TESTS)
 endif()
 
 if(valijson_BUILD_EXAMPLES)
+    find_package(curlpp)
     include_directories(SYSTEM)
 
     add_executable(custom_schema
