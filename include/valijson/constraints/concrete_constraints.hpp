@@ -189,16 +189,16 @@ public:
 
     adapters::FrozenValue * getValue() const
     {
-        return m_value;
+        return m_value.get();
     }
 
     void setValue(const adapters::Adapter &value)
     {
-        m_value = value.freeze();
+        m_value = std::unique_ptr<adapters::FrozenValue>(value.freeze());
     }
 
 private:
-    adapters::FrozenValue *m_value;
+    std::unique_ptr<adapters::FrozenValue> m_value;
 };
 
 /**
