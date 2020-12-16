@@ -5,7 +5,7 @@ sed -i '27d' include/valijson/utils/rapidjson_utils.hpp
 
 mkdir build
 cd build
-cmake 	-Dvalijson_BUILD_EXAMPLES=FALSE \
+cmake -Dvalijson_BUILD_EXAMPLES=FALSE \
 	-Dvalijson_EXCLUDE_BOOST=TRUE \
 	..
 
