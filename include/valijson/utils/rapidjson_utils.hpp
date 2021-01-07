@@ -20,7 +20,7 @@ inline bool loadDocument(const std::string &path, rapidjson::GenericDocument<Enc
     }
 
     // Parse schema
-    document.template Parse<0>(file.c_str());
+    document.template Parse<rapidjson::kParseIterativeFlag>(file.c_str());
     if (document.HasParseError()) {
         std::cerr << "RapidJson failed to parse the document:" << std::endl;
         std::cerr << "Parse error: " << document.GetParseError() << std::endl;
