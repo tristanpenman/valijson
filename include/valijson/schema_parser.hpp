@@ -242,7 +242,7 @@ private:
         const typename AdapterType::Object::const_iterator itr = o.find("$ref");
         if (itr == o.end()) {
             return false;
-        } else if (!itr->second.asString(result)) {
+        } else if (!itr->second.getString(result)) {
             throwRuntimeError("$ref property expected to contain string value.");
         }
 
