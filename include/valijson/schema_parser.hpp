@@ -1185,20 +1185,20 @@ private:
 
         const Subschema *ifSubschema = makeOrReuseSchema<AdapterType>(
                 rootSchema, rootNode, ifNode, currentScope,
-                nodePath, fetchDoc, nullptr, nullptr, docCache,
+                nodePath + "/if", fetchDoc, nullptr, nullptr, docCache,
                 schemaCache);
         constraint.setIfSubschema(ifSubschema);
 
         if (thenNode) {
             const Subschema *thenSubschema = makeOrReuseSchema<AdapterType>(
-                    rootSchema, rootNode, *thenNode, currentScope, nodePath, fetchDoc, nullptr,
+                    rootSchema, rootNode, *thenNode, currentScope, nodePath + "/then", fetchDoc, nullptr,
                     nullptr, docCache, schemaCache);
             constraint.setThenSubschema(thenSubschema);
         }
 
         if (elseNode) {
             const Subschema *elseSubschema = makeOrReuseSchema<AdapterType>(
-                    rootSchema, rootNode, *elseNode, currentScope, nodePath, fetchDoc, nullptr,
+                    rootSchema, rootNode, *elseNode, currentScope, nodePath + "/else", fetchDoc, nullptr,
                     nullptr, docCache, schemaCache);
             constraint.setElseSubschema(elseSubschema);
         }
