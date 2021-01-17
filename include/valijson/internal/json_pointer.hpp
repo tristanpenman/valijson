@@ -193,9 +193,11 @@ inline AdapterType resolveJsonPointer(
             // Fragment must be non-negative integer
             const uint64_t index = std::stoul(referenceToken);
             typedef typename AdapterType::Array Array;
-            typename Array::const_iterator itr = node.asArray().begin();
+            const Array arr = node.asArray();
+            typename Array::const_iterator itr = arr.begin();
+            const uint64_t arrSize = arr.size();
 
-            if (index > node.asArray().size() - 1) {
+            if (arrSize == 0 || index > arrSize - 1) {
                 throwRuntimeError("Expected reference token to identify "
                         "an element in the current array, but array index is "
                         "out of bounds; actual token: " + referenceToken);
