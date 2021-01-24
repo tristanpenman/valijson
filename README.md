@@ -16,8 +16,6 @@ The following code snippets show how you might implement a simple validator usin
 
 Include the necessary headers:
 ```cpp
-    #include <rapidjson/document.h>
-
     #include <valijson/adapters/rapidjson_adapter.hpp>
     #include <valijson/utils/rapidjson_utils.hpp>
     #include <valijson/schema.hpp>
