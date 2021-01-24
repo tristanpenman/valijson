@@ -16,11 +16,6 @@
 #include <valijson/schema.hpp>
 #include <valijson/exceptions.hpp>
 
-#ifdef __clang__
-#  pragma clang diagnostic push
-#  pragma clang diagnostic ignored "-Wunused-local-typedef"
-#endif
-
 namespace valijson {
 
 /**
@@ -2285,7 +2280,3 @@ private:
 };
 
 }  // namespace valijson
-
-#ifdef __clang__
-#  pragma clang diagnostic pop
-#endif
