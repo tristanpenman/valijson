@@ -9,8 +9,6 @@
 #include <iostream>
 #include <stdexcept>
 
-#include <rapidjson/document.h>
-
 #include <valijson/adapters/rapidjson_adapter.hpp>
 #include <valijson/utils/rapidjson_utils.hpp>
 #include <valijson/schema.hpp>

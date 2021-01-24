@@ -43,6 +43,24 @@
 #include <string>
 #include <iterator>
 
+#ifdef VALIJSON_USE_EXCEPTIONS
+    #ifdef RAPIDJSON_ASSERT
+        #warning "RAPIDJSON_ASSERT already defined."
+        #warning "Please include valijson/adapters/rapidjson_adapter.hpp before any RapidJSON headers."
+    #else
+        template<typename T>
+        T rapidjson_assert(T t, const std::string& file, const int line) {
+          if (t) {
+            return t;
+          }
+
+          throw std::runtime_error("assertion failed; file: " + file + "; line: " + std::to_string(line));
+        }
+
+        #define RAPIDJSON_ASSERT(x) rapidjson_assert(x, __FILE__, __LINE__)
+    #endif
+#endif
+
 #include <rapidjson/document.h>
 
 #include <valijson/adapters/adapter.hpp>

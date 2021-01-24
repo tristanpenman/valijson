@@ -9,12 +9,10 @@
 #include <iostream>
 
 // jsoncpp
-#include <json/json.h>
 #include <valijson/adapters/jsoncpp_adapter.hpp>
 #include <valijson/utils/jsoncpp_utils.hpp>
 
 // RapidJSON
-#include <rapidjson/document.h>
 #include <valijson/adapters/rapidjson_adapter.hpp>
 #include <valijson/utils/rapidjson_utils.hpp>
 
@@ -74,7 +72,7 @@ void usingRapidJson(const char *filename)
 
     // We support the old way of doing things...
     const RapidJsonAdapter::Array array = adapter.asArray();
-    for (RapidJsonAdapter::Array::const_iterator itr = array.begin(); 
+    for (RapidJsonAdapter::Array::const_iterator itr = array.begin();
                                                  itr != array.end(); ++itr) {
         cout << "  " << index++ << ": ";
 
@@ -83,11 +81,11 @@ void usingRapidJson(const char *filename)
 
         // maybeString is a loose type check
         if (value.maybeString()) {
-            // If a value may be a string, we are allowed to get a string 
+            // If a value may be a string, we are allowed to get a string
             // representation of the value using asString
             cout << value.asString();
         }
-        
+
         cout << endl;
     }
 }
