@@ -54,7 +54,7 @@ public:
     /**
      * @brief  Release memory associated with custom ConstraintBuilders
      */
-    ~SchemaParser()
+   virtual ~SchemaParser()
     {
         for (ConstraintBuilders::iterator itr = constraintBuilders.begin();
                 itr != constraintBuilders.end(); ++itr) {
