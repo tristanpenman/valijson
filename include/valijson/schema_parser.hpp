@@ -48,7 +48,7 @@ public:
     /**
      * @brief  Release memory associated with custom ConstraintBuilders
      */
-    ~SchemaParser()
+   virtual ~SchemaParser()
     {
         for (const auto& entry : constraintBuilders) {
             delete entry.second;
