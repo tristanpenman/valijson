@@ -914,6 +914,9 @@ public:
             freeFn(ptr);
             throw;
         }
+#else
+        // pretend to use freeFn to avoid warning in GCC 8.3
+        (void)freeFn;
 #endif
     }
 
