@@ -915,6 +915,8 @@ public:
             throw;
         }
 #endif
+
+	(void)freeFn;
     }
 
     virtual bool validate(const adapters::Adapter &target,
