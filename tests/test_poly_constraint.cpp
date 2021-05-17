@@ -34,7 +34,7 @@ public:
     }
 
     bool validate(
-            const Adapter &target,
+            const Adapter &,
             const std::vector<std::string> &context,
             ValidationResults *results) const override
     {

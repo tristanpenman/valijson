@@ -27,7 +27,13 @@
 
 #include <string>
 
+#ifdef _MSC_VER
+#pragma warning(disable: 4706)
 #include <picojson.h>
+#pragma warning(default: 4706)
+#else
+#include <picojson.h>
+#endif
 
 #include <valijson/adapters/adapter.hpp>
 #include <valijson/adapters/basic_adapter.hpp>

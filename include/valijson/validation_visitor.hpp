@@ -1150,31 +1150,39 @@ public:
             return true;
         }
 
-        const typename AdapterType::Array targetArray = m_target.asArray();
-        const typename AdapterType::Array::const_iterator end = targetArray.end();
-
         bool validated = true;
-        const typename AdapterType::Array::const_iterator secondLast = --targetArray.end();
-        unsigned int outerIndex = 0;
-        typename AdapterType::Array::const_iterator outerItr = targetArray.begin();
-        for (; outerItr != secondLast; ++outerItr) {
-            unsigned int innerIndex = outerIndex + 1;
-            typename AdapterType::Array::const_iterator innerItr(outerItr);
-            for (++innerItr; innerItr != end; ++innerItr) {
-                if (outerItr->equalTo(*innerItr, true)) {
-                    if (m_results) {
-                        m_results->pushError(m_context, "Elements at indexes #" + std::to_string(outerIndex)
-                                + " and #" + std::to_string(innerIndex) + " violate uniqueness constraint.");
-                        validated = false;
-                    } else {
-                        return false;
-                    }
-                }
-                ++innerIndex;
-            }
-            ++outerIndex;
-        }
 
+#ifdef VALIJSON_USE_EXCEPTIONS
+        try
+#endif
+        {
+            const typename AdapterType::Array targetArray = m_target.asArray();
+            const typename AdapterType::Array::const_iterator end = targetArray.end();
+            const typename AdapterType::Array::const_iterator secondLast = --targetArray.end();
+            unsigned int outerIndex = 0;
+            typename AdapterType::Array::const_iterator outerItr = targetArray.begin();
+            for (; outerItr != secondLast; ++outerItr) {
+                unsigned int innerIndex = outerIndex + 1;
+                typename AdapterType::Array::const_iterator innerItr(outerItr);
+                for (++innerItr; innerItr != end; ++innerItr) {
+                    if (outerItr->equalTo(*innerItr, true)) {
+                        if (!m_results) {
+                            return false;
+                        }
+                        m_results->pushError(m_context, "Elements at indexes #" + std::to_string(outerIndex)
+                            + " and #" + std::to_string(innerIndex) + " violate uniqueness constraint.");
+                        validated = false;
+                    }
+                    ++innerIndex;
+                }
+                ++outerIndex;
+            }
+        }
+#ifdef VALIJSON_USE_EXCEPTIONS
+        catch (...) {
+            throw;
+        }
+#endif
         return validated;
     }
 
