@@ -689,7 +689,7 @@ public:
       : BasicConstraint(allocFn, freeFn),
         m_minLength(0) { }
 
-    int64_t getMinLength() const
+    uint64_t getMinLength() const
     {
         return m_minLength;
     }
