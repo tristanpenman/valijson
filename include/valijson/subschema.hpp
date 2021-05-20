@@ -63,7 +63,13 @@ public:
     Subschema(CustomAlloc allocFn, CustomFree freeFn)
       : m_allocFn(allocFn)
       , m_freeFn(freeFn)
-      , m_alwaysInvalid(false) { }
+      , m_alwaysInvalid(false)
+    {
+        // explicitly initialise optionals. See: https://github.com/tristanpenman/valijson/issues/124
+        m_description = opt::nullopt;
+        m_id = opt::nullopt;
+        m_title = opt::nullopt;
+    }
 
     /**
      * @brief  Clean up and free all memory managed by the Subschema
