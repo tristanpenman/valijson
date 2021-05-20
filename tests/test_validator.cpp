@@ -512,6 +512,11 @@ TEST_F(TestValidator, Draft7_MaxItems)
     processDraft7TestFile(TEST_SUITE_DIR "draft7/maxItems.json");
 }
 
+TEST_F(TestValidator, Draft7_MaxLength)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/maxLength.json");
+}
+
 TEST_F(TestValidator, Draft7_MaxProperties)
 {
     processDraft7TestFile(TEST_SUITE_DIR "draft7/maxProperties.json");
@@ -525,6 +530,11 @@ TEST_F(TestValidator, Draft7_Minimum)
 TEST_F(TestValidator, Draft7_MinItems)
 {
     processDraft7TestFile(TEST_SUITE_DIR "draft7/minItems.json");
+}
+
+TEST_F(TestValidator, Draft7_MinLength)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/minLength.json");
 }
 
 TEST_F(TestValidator, Draft7_MinProperties)
