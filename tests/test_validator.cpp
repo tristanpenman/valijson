@@ -418,7 +418,10 @@ TEST_F(TestValidator, Draft4_Properties)
 
 // TODO: broken refRemote
 
-// TODO: broken required
+TEST_F(TestValidator, Draft4_Required)
+{
+    processDraft4TestFile(TEST_SUITE_DIR "draft4/required.json");
+}
 
 TEST_F(TestValidator, Draft4_Type)
 {
