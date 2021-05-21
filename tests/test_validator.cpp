@@ -472,7 +472,10 @@ TEST_F(TestValidator, Draft7_Contains)
     processDraft7TestFile(TEST_SUITE_DIR "draft7/contains.json");
 }
 
-// TOOD: untested default
+TEST_F(TestValidator, Draft7_Default)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/default.json");
+}
 
 TEST_F(TestValidator, Draft7_Definitions)
 {
