@@ -694,6 +694,10 @@ private:
             rootSchema.addConstraintToSubschema(makeEnumConstraint(itr->second), &subschema);
         }
 
+        if ((itr = object.find("format")) != object.end()) {
+            rootSchema.addConstraintToSubschema(makeFormatConstraint(itr->second), &subschema);
+        }
+
         {
             const typename AdapterType::Object::const_iterator itemsItr =
                     object.find("items");
@@ -1418,6 +1422,24 @@ private:
         /// the EnumConstraint. Move semantics in C++11 should make it possible
         /// to avoid these copies without complicating the implementation of the
         /// EnumConstraint class.
+        return constraint;
+    }
+
+    /**
+     * @brief   Make a new FormatConstraint object
+     *
+     * @param   node  JSON node containing the configuration for this constraint
+     *
+     * @return  pointer to a new FormatConstraint that belongs to the caller
+     */
+    template<typename AdapterType>
+    constraints::FormatConstraint makeFormatConstraint(
+        const AdapterType &node)
+    {
+        constraints::FormatConstraint constraint;
+
+        // TODO
+
         return constraint;
     }
 

@@ -348,6 +348,20 @@ public:
     }
 
     /**
+     * @brief   Validate current node against a FormatConstraint
+     *
+     * @param   constraint  Constraint that the target must validate against
+     *
+     * @return  \c true if validation succeeds; \c false otherwise
+     */
+    bool visit(const FormatConstraint &constraint) override
+    {
+        // TODO
+
+        return true;
+    }
+
+    /**
      * @brief   Validate a value against a LinearItemsConstraint
      *
      * A LinearItemsConstraint represents an 'items' constraint that specifies,
