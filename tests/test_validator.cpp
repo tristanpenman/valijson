@@ -7,6 +7,7 @@
 #endif
 
 #include <iostream>
+#include <map>
 
 #include <gtest/gtest.h>
 
@@ -42,21 +43,19 @@ using valijson::Validator;
 std::string getRelativePath(const std::string &uri)
 {
    const std::string dummyUri = "http://localhost:1234/";
-   size_t n = uri.find(dummyUri);
-   if (n != std::string::npos) {
+   if (uri.find(dummyUri) != std::string::npos) {
        return REMOTES_DIR + uri.substr(dummyUri.size());
    }
 
-   const std::string v3SchemaUri = "http://json-schema.org/draft-03/schema";
-   n = uri.find(v3SchemaUri);
-   if (n != std::string::npos) {
-       return "../doc/schema/draft-03.json";
-   }
+   static const std::map<std::string, std::string> schemaMap = {
+       { "http://json-schema.org/draft-03/schema", "../doc/schema/draft-03.json" },
+       { "http://json-schema.org/draft-04/schema", "../doc/schema/draft-04.json" },
+       { "http://json-schema.org/draft-07/schema", "../doc/schema/draft-07.json" }
+   };
 
-   const std::string v4SchemaUri = "http://json-schema.org/draft-04/schema";
-   n = uri.find(v4SchemaUri);
-   if (n != std::string::npos) {
-       return "../doc/schema/draft-04.json";
+   const auto itr = schemaMap.find(uri);
+   if (itr != schemaMap.end()) {
+       return itr->second;
    }
 
    valijson::throwRuntimeError("Attempt fetchDoc of " + uri);
@@ -474,6 +473,11 @@ TEST_F(TestValidator, Draft7_Contains)
 }
 
 // TOOD: untested default
+
+TEST_F(TestValidator, Draft7_Definitions)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/definitions.json");
+}
 
 TEST_F(TestValidator, Draft7_Dependencies)
 {
