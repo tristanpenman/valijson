@@ -20,6 +20,9 @@ else()
         message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
     endif()
 
+    # Suppress boost warnings that aren't relevant to the test suite
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_BIND_GLOBAL_PLACEHOLDERS")
+
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
     SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 endif()
@@ -42,7 +45,6 @@ if(NOT valijson_BUILD_TESTS AND NOT valijson_BUILD_EXAMPLES)
     return()
 endif()
 
-#TODO()
 if(valijson_USE_EXCEPTIONS)
     add_definitions(-DVALIJSON_USE_EXCEPTIONS=1)
 else()
