@@ -1631,7 +1631,7 @@ private:
     constraints::MaximumConstraint makeMaximumConstraintExclusive(const AdapterType &node)
     {
         if (!node.maybeDouble()) {
-            throwRuntimeError("Expected numeric value for maximum constraint.");
+            throwRuntimeError("Expected numeric value for exclusiveMaximum constraint.");
         }
 
         constraints::MaximumConstraint constraint;
@@ -1763,7 +1763,7 @@ private:
     constraints::MinimumConstraint makeMinimumConstraintExclusive(const AdapterType &node)
     {
         if (!node.maybeDouble()) {
-            throwRuntimeError("Expected numeric value for minimum constraint.");
+            throwRuntimeError("Expected numeric value for exclusiveMinimum constraint.");
         }
 
         constraints::MinimumConstraint constraint;
