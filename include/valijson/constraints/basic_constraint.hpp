@@ -29,7 +29,7 @@ struct BasicConstraint: Constraint
     BasicConstraint(const BasicConstraint &other)
       : m_allocator(other.m_allocator) { }
 
-    ~BasicConstraint<ConstraintType>() override = default;
+    ~BasicConstraint() override = default;
 
     bool accept(ConstraintVisitor &visitor) const override
     {
