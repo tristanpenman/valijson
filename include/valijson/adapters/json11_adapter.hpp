@@ -493,12 +493,14 @@ public:
  *
  * @see Json11Array
  */
-class Json11ArrayValueIterator:
-    public std::iterator<
-        std::bidirectional_iterator_tag,  // bi-directional iterator
-        Json11Adapter>                    // value type
+class Json11ArrayValueIterator
 {
 public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using value_type = Json11Adapter;
+    using difference_type = Json11Adapter;
+    using pointer = Json11Adapter*;
+    using reference = Json11Adapter&;
 
     /**
      * @brief   Construct a new Json11ArrayValueIterator using an existing
@@ -583,12 +585,14 @@ private:
  * @see Json11Object
  * @see Json11ObjectMember
  */
-class Json11ObjectMemberIterator:
-    public std::iterator<
-        std::bidirectional_iterator_tag,   // bi-directional iterator
-        Json11ObjectMember>                // value type
+class Json11ObjectMemberIterator
 {
 public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using value_type = Json11ObjectMember;
+    using difference_type = Json11ObjectMember;
+    using pointer = Json11ObjectMember*;
+    using reference = Json11ObjectMember&;
 
     /**
      * @brief   Construct an iterator from a Json11 iterator.

@@ -496,9 +496,14 @@ public:
 *
 * @see PocoJsonArray
 */
-class PocoJsonArrayValueIterator : public std::iterator<std::bidirectional_iterator_tag, PocoJsonAdapter>
+class PocoJsonArrayValueIterator
 {
 public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using value_type = PocoJsonAdapter;
+    using difference_type = PocoJsonAdapter;
+    using pointer = PocoJsonAdapter*;
+    using reference = PocoJsonAdapter&;
 
     /**
     * @brief   Construct a new PocoJsonArrayValueIterator using an existing
@@ -584,9 +589,14 @@ private:
 * @see PocoJsonObject
 * @see PocoJsonObjectMember
 */
-class PocoJsonObjectMemberIterator : public std::iterator<std::bidirectional_iterator_tag, PocoJsonObjectMember>
+class PocoJsonObjectMemberIterator
 {
 public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using value_type = PocoJsonObjectMember;
+    using difference_type = PocoJsonObjectMember;
+    using pointer = PocoJsonObjectMember*;
+    using reference = PocoJsonObjectMember&;
 
     /**
     * @brief   Construct an iterator from a PocoJson iterator.

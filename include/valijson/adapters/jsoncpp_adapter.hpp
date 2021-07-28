@@ -490,13 +490,14 @@ public:
  *
  * @see JsonCppArray
  */
-class JsonCppArrayValueIterator:
-    public std::iterator<
-        std::bidirectional_iterator_tag,     // bi-directional iterator
-        JsonCppAdapter>                      // value type
+class JsonCppArrayValueIterator
 {
-
 public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using value_type = JsonCppAdapter;
+    using difference_type = JsonCppAdapter;
+    using pointer = JsonCppAdapter*;
+    using reference = JsonCppAdapter&;
 
     /**
      * @brief   Construct a new JsonCppArrayValueIterator using an existing
@@ -588,12 +589,14 @@ private:
  * @see JsonCppObject
  * @see JsonCppObjectMember
  */
-class JsonCppObjectMemberIterator:
-    public std::iterator<
-        std::bidirectional_iterator_tag,     // bi-directional iterator
-        JsonCppObjectMember>                 // value type
+class JsonCppObjectMemberIterator
 {
 public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using value_type = JsonCppObjectMember;
+    using difference_type = JsonCppObjectMember;
+    using pointer = JsonCppObjectMember*;
+    using reference = JsonCppObjectMember&;
 
     /**
      * @brief   Construct an iterator from a JsonCpp iterator.

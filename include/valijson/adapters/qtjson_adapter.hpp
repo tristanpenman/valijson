@@ -500,17 +500,18 @@ public:
  * @brief   Class for iterating over values held in a JSON array.
  *
  * This class provides a JSON array iterator that dereferences as an instance of
- * QtJsonAdapter representing a value stored in the array. It has been
- * implemented using the std::iterator template.
+ * QtJsonAdapter representing a value stored in the array.
  *
  * @see QtJsonArray
  */
-class QtJsonArrayValueIterator:
-    public std::iterator<
-        std::bidirectional_iterator_tag,     // bi-directional iterator
-        QtJsonAdapter>                     // value type
+class QtJsonArrayValueIterator
 {
 public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using value_type = QtJsonAdapter;
+    using difference_type = QtJsonAdapter;
+    using pointer = QtJsonAdapter*;
+    using reference = QtJsonAdapter&;
 
     /**
      * @brief   Construct a new QtJsonArrayValueIterator using an existing
@@ -595,12 +596,14 @@ private:
  * @see QtJsonObject
  * @see QtJsonObjectMember
  */
-class QtJsonObjectMemberIterator:
-    public std::iterator<
-        std::bidirectional_iterator_tag,  // bi-directional iterator
-        QtJsonObjectMember>             // value type
+class QtJsonObjectMemberIterator
 {
 public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using value_type = QtJsonObjectMember;
+    using difference_type = QtJsonObjectMember;
+    using pointer = QtJsonObjectMember*;
+    using reference = QtJsonObjectMember&;
 
     /**
      * @brief   Construct an iterator from a QtJson iterator.

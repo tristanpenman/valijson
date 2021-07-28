@@ -638,18 +638,19 @@ public:
  * @brief   Class for iterating over values held in a JSON array.
  *
  * This class provides a JSON array iterator that dereferences as an instance of
- * RapidJsonAdapter representing a value stored in the array. It has been
- * implemented using the std::iterator template.
+ * RapidJsonAdapter representing a value stored in the array.
  *
  * @see RapidJsonArray
  */
 template<class ValueType>
-class GenericRapidJsonArrayValueIterator:
-    public std::iterator<
-        std::bidirectional_iterator_tag,                 // bi-directional iterator
-        GenericRapidJsonAdapter<ValueType>>              // value type
+class GenericRapidJsonArrayValueIterator
 {
 public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using value_type = GenericRapidJsonAdapter<ValueType>;
+    using difference_type = GenericRapidJsonAdapter<ValueType>;
+    using pointer = GenericRapidJsonAdapter<ValueType>*;
+    using reference = GenericRapidJsonAdapter<ValueType>&;
 
     /**
      * @brief   Construct a new GenericRapidJsonArrayValueIterator using an
@@ -735,18 +736,20 @@ private:
  *
  * This class provides a JSON object iterator that dereferences as an instance
  * of GenericRapidJsonObjectMember representing one of the members of the
- * object. It has been implemented using the std::iterator template.
+ * object.
  *
  * @see GenericRapidJsonObject
  * @see GenericRapidJsonObjectMember
  */
 template<class ValueType>
-class GenericRapidJsonObjectMemberIterator:
-    public std::iterator<
-        std::bidirectional_iterator_tag,                 // bi-directional iterator
-        GenericRapidJsonObjectMember<ValueType>>         // value type
+class GenericRapidJsonObjectMemberIterator
 {
 public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using value_type = GenericRapidJsonObjectMember<ValueType>;
+    using difference_type = GenericRapidJsonObjectMember<ValueType>;
+    using pointer = GenericRapidJsonObjectMember<ValueType>*;
+    using reference = GenericRapidJsonObjectMember<ValueType>&;
 
     /**
      * @brief   Construct an iterator from a RapidJson iterator.

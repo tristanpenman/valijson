@@ -495,12 +495,14 @@ public:
  *
  * @see NlohmannJsonArray
  */
-class NlohmannJsonArrayValueIterator:
-    public std::iterator<
-        std::bidirectional_iterator_tag,  // bi-directional iterator
-        NlohmannJsonAdapter>                 // value type
+class NlohmannJsonArrayValueIterator
 {
 public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using value_type = NlohmannJsonAdapter;
+    using difference_type = NlohmannJsonAdapter;
+    using pointer = NlohmannJsonAdapter*;
+    using reference = NlohmannJsonAdapter&;
 
     /**
      * @brief   Construct a new NlohmannJsonArrayValueIterator using an existing
@@ -585,12 +587,14 @@ private:
  * @see NlohmannJsonObject
  * @see NlohmannJsonObjectMember
  */
-class NlohmannJsonObjectMemberIterator:
-    public std::iterator<
-        std::bidirectional_iterator_tag,     // bi-directional iterator
-        NlohmannJsonObjectMember>            // value type
+class NlohmannJsonObjectMemberIterator
 {
 public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using value_type = NlohmannJsonObjectMember;
+    using difference_type = NlohmannJsonObjectMember;
+    using pointer = NlohmannJsonObjectMember*;
+    using reference = NlohmannJsonObjectMember&;
 
     /**
      * @brief   Construct an iterator from a NlohmannJson iterator.

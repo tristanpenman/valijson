@@ -520,9 +520,14 @@ public:
  *
  * @see PropertyTreeArray
  */
-class PropertyTreeArrayValueIterator : public std::iterator<std::bidirectional_iterator_tag, PropertyTreeAdapter>
+class PropertyTreeArrayValueIterator
 {
 public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using value_type = PropertyTreeAdapter;
+    using difference_type = PropertyTreeAdapter;
+    using pointer = PropertyTreeAdapter*;
+    using reference = PropertyTreeAdapter&;
 
     /**
      * @brief   Construct a new PropertyTreeArrayValueIterator using an existing
@@ -616,9 +621,14 @@ private:
  * @see PropertyTreeObject
  * @see PropertyTreeObjectMember
  */
-class PropertyTreeObjectMemberIterator: public std::iterator<std::bidirectional_iterator_tag, PropertyTreeObjectMember>
+class PropertyTreeObjectMemberIterator
 {
 public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using value_type = PropertyTreeObjectMember;
+    using difference_type = PropertyTreeObjectMember;
+    using pointer = PropertyTreeObjectMember*;
+    using reference = PropertyTreeObjectMember&;
 
     /**
      * @brief   Construct an iterator from a PropertyTree iterator.

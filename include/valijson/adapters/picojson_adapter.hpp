@@ -509,12 +509,14 @@ public:
  *
  * @see PicoJsonArray
  */
-class PicoJsonArrayValueIterator:
-    public std::iterator<
-        std::bidirectional_iterator_tag,     // bi-directional iterator
-        PicoJsonAdapter>                     // value type
+class PicoJsonArrayValueIterator
 {
 public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using value_type = PicoJsonAdapter;
+    using difference_type = PicoJsonAdapter;
+    using pointer = PicoJsonAdapter*;
+    using reference = PicoJsonAdapter&;
 
     /**
      * @brief   Construct a new PicoJsonArrayValueIterator using an existing
@@ -599,12 +601,14 @@ private:
  * @see PicoJsonObject
  * @see PicoJsonObjectMember
  */
-class PicoJsonObjectMemberIterator:
-    public std::iterator<
-        std::bidirectional_iterator_tag,  // bi-directional iterator
-        PicoJsonObjectMember>             // value type
+class PicoJsonObjectMemberIterator
 {
 public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using value_type = PicoJsonObjectMember;
+    using difference_type = PicoJsonObjectMember;
+    using pointer = PicoJsonObjectMember*;
+    using reference = PicoJsonObjectMember&;
 
     /**
      * @brief   Construct an iterator from a PicoJson iterator.

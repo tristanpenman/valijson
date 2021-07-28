@@ -351,9 +351,15 @@ private:
     const std::string &m_value;
 };
 
-class StdStringArrayValueIterator: public std::iterator<std::bidirectional_iterator_tag, StdStringAdapter>
+class StdStringArrayValueIterator
 {
 public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using value_type = StdStringAdapter;
+    using difference_type = StdStringAdapter;
+    using pointer = StdStringAdapter*;
+    using reference = StdStringAdapter&;
+
     StdStringAdapter operator*() const
     {
         throwNotSupported();
@@ -405,9 +411,15 @@ inline StdStringArrayValueIterator StdStringArray::end() const
     return {};
 }
 
-class StdStringObjectMemberIterator: public std::iterator<std::bidirectional_iterator_tag, StdStringObjectMember>
+class StdStringObjectMemberIterator
 {
 public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using value_type = StdStringObjectMember;
+    using difference_type = StdStringObjectMember;
+    using pointer = StdStringObjectMember*;
+    using reference = StdStringObjectMember&;
+
     StdStringObjectMember operator*() const
     {
         throwNotSupported();
