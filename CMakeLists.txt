@@ -10,8 +10,6 @@ option(valijson_EXCLUDE_BOOST "Exclude Boost when building test suite." FALSE)
 option(valijson_USE_EXCEPTIONS "Use exceptions in valijson and included libs." TRUE)
 
 if(MSVC)
-    add_definitions(-D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
-
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
 else()
     include(CheckCXXCompilerFlag)
@@ -48,7 +46,7 @@ endif()
 if(valijson_USE_EXCEPTIONS)
     add_definitions(-DVALIJSON_USE_EXCEPTIONS=1)
 else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
+    add_definitions(-D_HAS_EXCEPTIONS=0)
     add_definitions(-DBOOST_NO_EXCEPTIONS)
     add_definitions(-DJSON_USE_EXCEPTION=0)
     add_definitions(-DVALIJSON_USE_EXCEPTIONS=0)
@@ -91,6 +89,8 @@ if(valijson_BUILD_TESTS)
 
     # Build local gtest
     set(gtest_force_shared_crt ON)
+    option(BUILD_GMOCK FALSE)
+    option(INSTALL_GTEST FALSE)
     add_subdirectory(thirdparty/gtest-1.11.0)
 
     set(TEST_SOURCES
@@ -128,10 +128,19 @@ if(valijson_BUILD_TESTS)
 
     # Unit tests executable
     add_executable(test_suite ${TEST_SOURCES})
+    if(NOT valijson_USE_EXCEPTIONS)
+        if(MSVC)
+            if(CMAKE_CXX_FLAGS MATCHES "/EHsc ")
+                string(REPLACE "/EHsc" "/EHs-c-" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+            else()
+                target_compile_options(test_suite PUBLIC /EHs-c-)
+            endif()
+        else()
+            target_compile_options(test_suite PUBLIC -fno-exceptions)
+        endif()
+    endif()
 
-    if(MSVC)
-
-    else()
+    if(NOT MSVC)
         set_target_properties(test_suite PROPERTIES COMPILE_FLAGS " -pedantic -Werror -Wshadow -Wunused")
     endif()
 
