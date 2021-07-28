@@ -76,7 +76,7 @@ set_target_properties(json11 PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINAR
 
 # Not all of these are required for examples build it doesn't hurt to include them
 include_directories(include SYSTEM
-    thirdparty/gtest-1.7.0/include
+    thirdparty/gtest-1.11.0/include
     thirdparty/json11-ec4e452
     thirdparty/jsoncpp-1.9.4/include
     thirdparty/rapidjson-1.1.0/include
@@ -91,7 +91,7 @@ if(valijson_BUILD_TESTS)
 
     # Build local gtest
     set(gtest_force_shared_crt ON)
-    add_subdirectory(thirdparty/gtest-1.7.0)
+    add_subdirectory(thirdparty/gtest-1.11.0)
 
     set(TEST_SOURCES
         tests/test_adapter_comparison.cpp
