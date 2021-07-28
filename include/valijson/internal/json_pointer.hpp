@@ -11,6 +11,11 @@
 #include <valijson/internal/optional.hpp>
 #include <valijson/exceptions.hpp>
 
+#ifdef _MSC_VER
+#pragma warning( push )
+#pragma warning( disable : 4702 )
+#endif
+
 namespace valijson {
 namespace internal {
 namespace json_pointer {
@@ -264,3 +269,7 @@ inline AdapterType resolveJsonPointer(
 } // namespace json_pointer
 } // namespace internal
 } // namespace valijson
+
+#ifdef _MSC_VER
+#pragma warning( pop )
+#endif
