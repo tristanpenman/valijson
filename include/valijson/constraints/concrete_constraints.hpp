@@ -26,6 +26,11 @@
 #include <valijson/schema.hpp>
 #include <valijson/exceptions.hpp>
 
+#ifdef _MSC_VER
+#pragma warning( push )
+#pragma warning( disable : 4702 )
+#endif
+
 namespace valijson {
 
 class ValidationResults;
@@ -1236,3 +1241,7 @@ public:
 
 } // namespace constraints
 } // namespace valijson
+
+#ifdef _MSC_VER
+#pragma warning( pop )
+#endif
