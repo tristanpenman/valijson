@@ -16,8 +16,8 @@ cd ../tests/fuzzing
 find ../.. -name "*.o" -exec ar rcs fuzz_lib.a {} \;
 
 $CXX $CXXFLAGS -DVALIJSON_USE_EXCEPTIONS=1 \
-	-I/src/valijson/thirdparty/rapidjson-1.1.0/include \
-	-I/src/valijson/thirdparty/rapidjson-1.1.0/include/rapidjson \
+	-I/src/valijson/thirdparty/rapidjson-48fbd8c/include \
+	-I/src/valijson/thirdparty/rapidjson-48fbd8c/include/rapidjson \
 	-I/src/valijson/include \
 	-I/src/valijson/include/valijson \
 	-I/src/valijson/include/valijson/adapters \
