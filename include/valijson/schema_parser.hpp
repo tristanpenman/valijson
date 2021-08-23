@@ -200,7 +200,7 @@ private:
     {
         if (resolutionScope) {
             if (documentUri) {
-                if (internal::uri::isUriAbsolute(*documentUri)) {
+                if (internal::uri::isUriAbsolute(*documentUri) || internal::uri::isUrn(*documentUri)) {
                     return *documentUri;
                 } else {
                     return internal::uri::resolveRelativeUri(*resolutionScope, *documentUri);
@@ -209,6 +209,8 @@ private:
                 return *resolutionScope;
             }
         } else if (documentUri && internal::uri::isUriAbsolute(*documentUri)) {
+            return *documentUri;
+        } else if (documentUri && internal::uri::isUrn(*documentUri)) {
             return *documentUri;
         } else {
             return opt::optional<std::string>();
@@ -600,7 +602,7 @@ private:
         if ((itr = object.find("id")) != object.end() && itr->second.maybeString()) {
             const std::string id = itr->second.asString();
             rootSchema.setSubschemaId(&subschema, itr->second.asString());
-            if (!currentScope || internal::uri::isUriAbsolute(id)) {
+            if (!currentScope || internal::uri::isUriAbsolute(id) || internal::uri::isUrn(id)) {
                 updatedScope = id;
             } else {
                 updatedScope = internal::uri::resolveRelativeUri(*currentScope, id);
@@ -993,7 +995,7 @@ private:
         const std::string actualJsonPointer = sanitiseJsonPointer(
                 internal::json_reference::getJsonReferencePointer(jsonRef));
 
-        if (documentUri && internal::uri::isUriAbsolute(*documentUri)) {
+        if (documentUri && (internal::uri::isUriAbsolute(*documentUri) || internal::uri::isUrn(*documentUri))) {
             // Resolve reference against remote document
             if (!fetchDoc) {
                 throwRuntimeError("Fetching of remote JSON References not enabled.");
