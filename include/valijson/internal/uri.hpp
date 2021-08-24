@@ -28,7 +28,7 @@ inline bool isUrn(const std::string &documentUri) {
   static const std::regex pattern(
       "^((urn)|(URN)):[a-zA-Z0-9]+[-]{0,1}[a-zA-Z0-9]+(:[-a-zA-Z0-9\\\\._~%!"
       "$&'()\\/*+,;=]+)+(\\?[-a-zA-Z0-9\\\\._~%!$&'()\\/"
-      "*+,;:=]+){0,1}(#[-a-zA-Z0-9\\\\._~%!$&'()\\/*+,;:=]+){0,1}");
+      "*+,;:=]+){0,1}(#[-a-zA-Z0-9\\\\._~%!$&'()\\/*+,;:=]+){0,1}$");
 
   return std::regex_match(documentUri, pattern);
 }
