@@ -26,9 +26,7 @@ inline bool isUriAbsolute(const std::string &documentUri)
  */
 inline bool isUrn(const std::string &documentUri) {
   static const std::regex pattern(
-      "^((urn)|(URN)):[a-zA-Z0-9]+[-]{0,1}[a-zA-Z0-9]+(:[-a-zA-Z0-9\\\\._~%!"
-      "$&'()\\/*+,;=]+)+(\\?[-a-zA-Z0-9\\\\._~%!$&'()\\/"
-      "*+,;:=]+){0,1}(#[-a-zA-Z0-9\\\\._~%!$&'()\\/*+,;:=]+){0,1}$");
+      "^(?i:urn:(?!urn:)([a-z0-9][a-z0-9-]{1,31}):((?:[-a-z0-9()+,.:=@;$_!*'&~\\/]|%[0-9a-f]{2})+)(?:\\?\\+(.*?))?(?:\\?=(.*?))?(?:#(.*?))?)$");
 
   return std::regex_match(documentUri, pattern);
 }
