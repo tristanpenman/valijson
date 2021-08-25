@@ -22,11 +22,11 @@ inline bool isUriAbsolute(const std::string &documentUri)
 /**
  * @brief  Placeholder function to check whether a URI is a URN
  *
- * This function validates that the URI matches the RFC 8141
+ * This function validates that the URI matches the RFC 8141 spec
  */
 inline bool isUrn(const std::string &documentUri) {
   static const std::regex pattern(
-      "^(?i:urn:(?!urn:)([a-z0-9][a-z0-9-]{1,31}):((?:[-a-z0-9()+,.:=@;$_!*'&~\\/]|%[0-9a-f]{2})+)(?:\\?\\+(.*?))?(?:\\?=(.*?))?(?:#(.*?))?)$");
+      "^((urn)|(URN)):(?!urn:)([a-zA-Z0-9][a-zA-Z0-9-]{1,31})(:[-a-zA-Z0-9\\\\._~%!$&'()\\/*+,;=]+)+(\\?[-a-zA-Z0-9\\\\._~%!$&'()\\/*+,;:=]+){0,1}(#[-a-zA-Z0-9\\\\._~%!$&'()\\/*+,;:=]+){0,1}$");
 
   return std::regex_match(documentUri, pattern);
 }
