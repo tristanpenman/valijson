@@ -12,14 +12,14 @@ using valijson::SchemaParser;
 using valijson::adapters::RapidJsonAdapter;
 using valijson::Validator;
 
-class TestFetchDocumentCallback : public ::testing::Test
+class TestFetchUrnDocumentCallback : public ::testing::Test
 {
 
 };
 
-const rapidjson::Document * fetchDocument(const std::string &uri)
+const rapidjson::Document * fetchUrnDocument(const std::string &uri)
 {
-    EXPECT_STREQ("http://localhost:1234/", uri.c_str());
+    EXPECT_STREQ("urn:mvn:example.schema.common:status:1.1.0", uri.c_str());
 
     rapidjson::Document *fetchedRoot = new rapidjson::Document();
     fetchedRoot->SetObject();
@@ -43,25 +43,25 @@ const rapidjson::Document * fetchDocument(const std::string &uri)
     return fetchedRoot;
 }
 
-void freeDocument(const rapidjson::Document *adapter)
+void freeUrnDocument(const rapidjson::Document *adapter)
 {
     delete adapter;
 }
 
-TEST_F(TestFetchDocumentCallback, Basics)
+TEST_F(TestFetchUrnDocumentCallback, Basics)
 {
     // Define schema
     rapidjson::Document schemaDocument;
     RapidJsonAdapter schemaDocumentAdapter(schemaDocument);
     schemaDocument.SetObject();
-    schemaDocument.AddMember("$ref", "http://localhost:1234/#/",
+    schemaDocument.AddMember("$ref", "urn:mvn:example.schema.common:status:1.1.0",
             schemaDocument.GetAllocator());
 
     // Parse schema document
     Schema schema;
     SchemaParser schemaParser;
-    schemaParser.populateSchema(schemaDocumentAdapter, schema, fetchDocument,
-            freeDocument);
+    schemaParser.populateSchema(schemaDocumentAdapter, schema, fetchUrnDocument,
+            freeUrnDocument);
 
     // Test resulting schema with a valid document
     rapidjson::Document validDocument;
