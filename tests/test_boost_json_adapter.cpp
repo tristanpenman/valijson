@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include <boost/json/src.hpp> // Needs to be included exactly once in the code to use header-only version of Boost.JSON
+
 #include <valijson/adapters/boost_json_adapter.hpp>
 
 class TestBoostJsonAdapter : public testing::Test

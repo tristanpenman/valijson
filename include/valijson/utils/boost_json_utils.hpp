@@ -2,14 +2,14 @@
 
 #include <iostream>
 
-#include <nlohmann/json.hpp>
+#include <boost/json.hpp>
 #include <valijson/utils/file_utils.hpp>
 #include <valijson/exceptions.hpp>
 
 namespace valijson {
 namespace utils {
 
-inline bool loadDocument(const std::string &path, nlohmann::json &document)
+inline bool loadDocument(const std::string &path, boost::json::value &document)
 {
     // Load schema JSON from file
     std::string file;
@@ -22,16 +22,17 @@ inline bool loadDocument(const std::string &path, nlohmann::json &document)
     // Parse schema
 #if VALIJSON_USE_EXCEPTION
     try {
-        document = nlohmann::json::parse(file);
-    } catch (std::invalid_argument const& exception) {
-        std::cerr << "nlohmann::json failed to parse the document\n"
-            << "Parse error:" << exception.what() << "\n";
-        return false;
-    }
-#else
-    document = nlohmann::json::parse(file, nullptr, false);
-    if (document.is_discarded()) {
-        std::cerr << "nlohmann::json failed to parse the document.";
+#endif
+      boost::json::error_code errorCode;
+      boost::json::string_view stringView{file};
+      document = boost::json::parse(stringView, errorCode);
+        if (errorCode) {
+            std::cerr << "Boost.JSON parsing error: " << errorCode.message();
+            return false;
+        }
+#if VALIJSON_USE_EXCEPTION
+    } catch (std::exception const & exception) {
+        std::cerr << "Boost.JSON parsing exception: " << exception.what();
         return false;
     }
 #endif

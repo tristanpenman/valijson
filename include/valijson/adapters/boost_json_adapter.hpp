@@ -400,7 +400,7 @@ public:
     bool getString(std::string &result) const
     {
         if (m_value.is_string()) {
-            result = m_value.get_string();
+            result = m_value.get_string().c_str();
             return true;
         }
 
@@ -497,8 +497,7 @@ public:
  * @brief   Class for iterating over values held in a JSON array.
  *
  * This class provides a JSON array iterator that dereferences as an instance of
- * BoostJsonAdapter representing a value stored in the array. It has been
- * implemented using the boost iterator_facade template.
+ * BoostJsonAdapter representing a value stored in the array.
  *
  * @see BoostJsonArray
  */
@@ -590,7 +589,6 @@ private:
  *
  * This class provides a JSON object iterator that dereferences as an instance
  * of BoostJsonObjectMember representing one of the members of the object.
- * It has been implemented using the boost iterator_facade template.
  *
  * @see BoostJsonObject
  * @see BoostJsonObjectMember

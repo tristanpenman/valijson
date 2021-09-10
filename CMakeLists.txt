@@ -112,6 +112,7 @@ if(valijson_BUILD_TESTS)
 
     if(Boost_FOUND)
         include_directories(${Boost_INCLUDE_DIRS})
+        list(APPEND TEST_SOURCES tests/test_boost_json_adapter.cpp)
         list(APPEND TEST_SOURCES tests/test_property_tree_adapter.cpp)
     endif()
 
@@ -153,7 +154,7 @@ if(valijson_BUILD_TESTS)
         set(Boost_USE_STATIC_LIBS OFF)
         set(Boost_USE_MULTITHREADED ON)
         set(Boost_USE_STATIC_RUNTIME OFF)
-        target_compile_definitions(test_suite PRIVATE "VALIJSON_BUILD_PROPERTY_TREE_ADAPTER")
+        target_compile_definitions(test_suite PRIVATE "VALIJSON_BUILD_BOOST_ADAPTERS")
     endif()
 
     if(Poco_FOUND)
