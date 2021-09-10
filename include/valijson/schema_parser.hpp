@@ -171,21 +171,21 @@ private:
     }
 
     /**
-     * @brief  Find the absolute URI for a document, within a resolution scope
+     * @brief  Find the complete URI for a document, within a resolution scope
      *
      * This function captures five different cases that can occur when
      * attempting to resolve a document URI within a particular resolution
      * scope:
      *
-     *  - resolution scope not present, but absolute document URI is
+     *  (1) resolution scope not present, but URN or absolute document URI is
      *       => document URI as-is
-     *  - resolution scope not present, and document URI is relative or absent
-     *       => no result
-     *  - resolution scope is present, and document URI is a relative path
+     *  (2) resolution scope not present, and document URI is relative or absent
+     *       => document URI, if present, otherwise no result
+     *  (3) resolution scope is present, and document URI is a relative path
      *       => resolve document URI relative to resolution scope
-     *  - resolution scope is present, and document URI is absolute
+     *  (4) resolution scope is present, and document URI is absolute
      *       => document URI as-is
-     *  - resolution scope is present, but document URI is not
+     *  (5) resolution scope is present, but document URI is not
      *       => resolution scope as-is
      *
      * This function assumes that the resolution scope is absolute.
@@ -194,26 +194,39 @@ private:
      * document URI should be used to replace the path, query and fragment
      * portions of URI provided by the resolution scope.
      */
-    virtual opt::optional<std::string> findAbsoluteDocumentUri(
+    virtual opt::optional<std::string> resolveDocumentUri(
             const opt::optional<std::string>& resolutionScope,
             const opt::optional<std::string>& documentUri)
     {
         if (resolutionScope) {
             if (documentUri) {
                 if (internal::uri::isUriAbsolute(*documentUri) || internal::uri::isUrn(*documentUri)) {
+                    // (4) resolution scope is present, and document URI is absolute
+                    //      => document URI as-is
                     return *documentUri;
                 } else {
+                    // (3) resolution scope is present, and document URI is a relative path
+                    //      => resolve document URI relative to resolution scope
                     return internal::uri::resolveRelativeUri(*resolutionScope, *documentUri);
                 }
             } else {
+                // (5) resolution scope is present, but document URI is not
+                //      => resolution scope as-is
                 return *resolutionScope;
             }
         } else if (documentUri && internal::uri::isUriAbsolute(*documentUri)) {
+            // (1a) resolution scope not present, but absolute document URI is
+            //      => document URI as-is
             return *documentUri;
         } else if (documentUri && internal::uri::isUrn(*documentUri)) {
+            // (1b) resolution scope not present, but URN is
+            //       => document URI as-is
             return *documentUri;
         } else {
-            return opt::optional<std::string>();
+            // (2) resolution scope not present, and document URI is relative or absent
+            //      => document URI, if present, otherwise no result
+            // documentUri is already std::optional
+            return documentUri;
         }
     }
 
@@ -403,7 +416,7 @@ private:
         // scope. An absolute document URI will take precedence when
         // present, otherwise we need to resolve the URI relative to
         // the current resolution scope
-        const opt::optional<std::string> actualDocumentUri = findAbsoluteDocumentUri(currentScope, documentUri);
+        const opt::optional<std::string> actualDocumentUri = resolveDocumentUri(currentScope, documentUri);
 
         // Construct a key to search the schema cache for an existing schema
         const std::string queryKey = actualDocumentUri ? (*actualDocumentUri + actualJsonPointer) : actualJsonPointer;
