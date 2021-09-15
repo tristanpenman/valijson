@@ -206,6 +206,7 @@ When building the test suite, Boost 1.54, Qt 5 and Poco are optional dependencie
 Valijson supports JSON documents loaded using various JSON parser libraries. It has been tested against the following versions of these libraries:
 
  - [boost::property_tree 1.54](http://www.boost.org/doc/libs/1_54_0/doc/html/boost_propertytree/synopsis.html)
+ - [Boost.JSON 1.75](https://www.boost.org/doc/libs/1_75_0/libs/json/doc/html/index.html)
  - [json11 (commit afcc8d0)](https://github.com/dropbox/json11/tree/afcc8d0d82b1ce2df587a7a0637d05ba493bf5e6)
  - [jsoncpp 1.9.4](https://github.com/open-source-parsers/jsoncpp/archive/1.9.4.tar.gz)
  - [nlohmann/json 1.1.0](https://github.com/nlohmann/json/archive/v1.1.0.tar.gz)

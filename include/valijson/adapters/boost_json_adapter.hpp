@@ -75,10 +75,11 @@ public:
      * an array.
      */
     explicit BoostJsonArray(const boost::json::value &value)
-      : m_value(value.as_array()) {
+      : m_value(value.as_array())
+    {
         // boost::json::value::as_array() will already have thrown an exception
         // if the underlying value is not an array
-      }
+    }
 
     /**
      * @brief   Return an iterator for the first element of the array.
