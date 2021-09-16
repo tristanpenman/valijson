@@ -143,7 +143,7 @@ git submodule add https://github.com/tristanpenman/valijson third-party/valijson
 Before the target add the module subdirectory in your CMakeLists.txt
 
 ```cmake
-set(valijson_BUILD_TESTS OFF)
+set(valijson_BUILD_TESTS OFF CACHE BOOL "don't build valijson tests")
 add_subdirectory(third-party/valijson)
 
 add_executable(your-executable ...)
