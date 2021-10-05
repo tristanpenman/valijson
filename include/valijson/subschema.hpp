@@ -124,18 +124,18 @@ public:
      * @brief  Invoke a function on each child Constraint
      *
      * This function will apply the callback function to each constraint in
-     * the Subschema, even if one of the invokations returns \c false. However,
-     * if one or more invokations of the callback function return \c false,
+     * the Subschema, even if one of the invocations returns \c false. However,
+     * if one or more invocations of the callback function return \c false,
      * this function will also return \c false.
      *
-     * @returns  \c true if all invokations of the callback function are
+     * @returns  \c true if all invocations of the callback function are
      *           successful, \c false otherwise
      */
     bool apply(ApplyFunction &applyFunction) const
     {
         bool allTrue = true;
         for (const Constraint *constraint : m_constraints) {
-            allTrue = allTrue && applyFunction(*constraint);
+            allTrue = applyFunction(*constraint) && allTrue;
         }
 
         return allTrue;
@@ -145,10 +145,10 @@ public:
      * @brief  Invoke a function on each child Constraint
      *
      * This is a stricter version of the apply() function that will return
-     * immediately if any of the invokations of the callback function return
+     * immediately if any of the invocations of the callback function return
      * \c false.
      *
-     * @returns  \c true if all invokations of the callback function are
+     * @returns  \c true if all invocations of the callback function are
      *           successful, \c false otherwise
      */
     bool applyStrict(ApplyFunction &applyFunction) const
