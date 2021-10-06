@@ -112,8 +112,23 @@ if(valijson_BUILD_TESTS)
 
     if(Boost_FOUND)
         include_directories(${Boost_INCLUDE_DIRS})
-        list(APPEND TEST_SOURCES tests/test_boost_json_adapter.cpp)
+
+        # Property Trees have been in Boost since 1.41.0, so we just assume they're present
         list(APPEND TEST_SOURCES tests/test_property_tree_adapter.cpp)
+
+        # Boost.JSON was introduced in Boost 1.75.0, so we should check for its presence before
+        # including the unit tests for boost_json_adapter
+        include(CheckIncludeFileCXX)
+        set (CMAKE_REQUIRED_INCLUDES ${Boost_INCLUDE_DIRS})
+        check_include_file_cxx("boost/json.hpp" BOOST_JSON_HPP_FOUND)
+        if(${BOOST_JSON_HPP_FOUND})
+            list(APPEND TEST_SOURCES tests/test_boost_json_adapter.cpp)
+        else()
+            message(WARNING
+                "boost/json.hpp not found; tests for boost_json_adapter will not be built. "
+                "If you have recently upgraded Boost to 1.75.0 or later, you may need to clear "
+                "your CMake cache for the header to be found.")
+        endif()
     endif()
 
     if(Poco_FOUND)
@@ -154,7 +169,10 @@ if(valijson_BUILD_TESTS)
         set(Boost_USE_STATIC_LIBS OFF)
         set(Boost_USE_MULTITHREADED ON)
         set(Boost_USE_STATIC_RUNTIME OFF)
-        target_compile_definitions(test_suite PRIVATE "VALIJSON_BUILD_BOOST_ADAPTERS")
+        target_compile_definitions(test_suite PRIVATE "VALIJSON_BUILD_BOOST_PROPERTY_TREE_ADAPTER")
+        if(${BOOST_JSON_HPP_FOUND})
+            target_compile_definitions(test_suite PRIVATE "VALIJSON_BUILD_BOOST_JSON_ADAPTER")
+        endif()
     endif()
 
     if(Poco_FOUND)
