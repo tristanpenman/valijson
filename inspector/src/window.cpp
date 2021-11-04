@@ -116,10 +116,16 @@ QToolBar * Window::createToolBar()
 
 void Window::refreshDocumentJson()
 {
+    const auto doc = m_documentEditor->toPlainText().toUtf8();
+    if (doc.isEmpty()) {
+        m_errors->setText("");
+        return;
+    }
+
     QJsonParseError error;
-    m_document = QJsonDocument::fromJson(m_documentEditor->toPlainText().toUtf8(), &error);
+    m_document = QJsonDocument::fromJson(doc, &error);
     if (m_document.isNull()) {
-        m_errors->setText(error.errorString());
+        m_errors->setText(QString("Document error: ") + error.errorString());
         return;
     }
 
@@ -132,10 +138,16 @@ void Window::refreshDocumentJson()
 
 void Window::refreshSchemaJson()
 {
+    const auto schema = m_schemaEditor->toPlainText().toUtf8();
+    if (schema.isEmpty()) {
+        m_errors->setText("");
+        return;
+    }
+
     QJsonParseError error;
     auto schemaDoc = QJsonDocument::fromJson(m_schemaEditor->toPlainText().toUtf8(), &error);
     if (schemaDoc.isNull()) {
-        m_errors->setText(error.errorString());
+        m_errors->setText(QString("Schema error: ") + error.errorString());
         return;
     }
 
@@ -146,14 +158,12 @@ void Window::refreshSchemaJson()
         m_schema = new valijson::Schema();
         parser.populateSchema(adapter, *m_schema);
         m_errors->setText("");
-
-    } catch (std::runtime_error error) {
+        validate();
+    } catch (std::runtime_error & error) {
         delete m_schema;
         m_schema = nullptr;
-        m_errors->setText(error.what());
+        m_errors->setText(QString("Schema error: ") + error.what());
     }
-
-    validate();
 }
 
 void Window::showOpenDocumentDialog()
@@ -192,11 +202,11 @@ void Window::validate()
     std::stringstream ss;
     while (results.popError(error)) {
         std::string context;
-        for (auto itr = error.context.begin(); itr != error.context.end(); itr++) {
-            context += *itr;
+        for (auto & itr : error.context) {
+            context += itr;
         }
 
-        ss << "Error #" << errorNum << std::endl
+        ss << "Validation error #" << errorNum << std::endl
             << "  context: " << context << std::endl
             << "  desc:    " << error.description << std::endl;
         ++errorNum;
