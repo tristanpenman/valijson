@@ -62,6 +62,10 @@ Validate a document:
 
 Note that Valijson's `SchemaParser` and `Validator` classes expect you to pass in a `RapidJsonAdapter` rather than a `rapidjson::Document`. This is due to the fact that `SchemaParser` and `Validator` are template classes that can be used with any of the JSON parsers supported by Valijson.
 
+### Exceptions
+
+By default, Valijson classes will not throw exceptions (e.g. when failing to parse a schema). To enable exceptions for these cases, `VALIJSON_USE_EXCEPTIONS` must be defined.
+
 ## Memory Management ##
 
 Valijson has been designed to safely manage, and eventually free, the memory that is allocated while parsing a schema or validating a document. When working with an externally loaded schema (i.e. one that is populated using the `SchemaParser` class) you can rely on RAII semantics.
