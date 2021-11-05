@@ -1770,16 +1770,16 @@ private:
     }
 
     /// The JSON value being validated
-    const AdapterType m_target;
+    AdapterType m_target;
 
     /// Vector of strings describing the current object context
-    const std::vector<std::string> m_context;
+    std::vector<std::string> m_context;
 
     /// Optional pointer to a ValidationResults object to be populated
     ValidationResults *m_results;
 
     /// Option to use strict type comparison
-    const bool m_strictTypes;
+    bool m_strictTypes;
 
     /// Cached regex objects for pattern constraint
     std::unordered_map<std::string, std::regex>& m_regexesCache;

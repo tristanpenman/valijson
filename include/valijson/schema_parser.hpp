@@ -2291,7 +2291,7 @@ private:
 private:
 
     /// Version of JSON Schema that should be expected when parsing
-    const Version m_version;
+    Version m_version;
 };
 
 }  // namespace valijson
