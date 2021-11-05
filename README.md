@@ -66,6 +66,24 @@ Note that Valijson's `SchemaParser` and `Validator` classes expect you to pass i
 
 By default, Valijson classes will not throw exceptions (e.g. when failing to parse a schema). To enable exceptions for these cases, `VALIJSON_USE_EXCEPTIONS` must be defined.
 
+### Strong vs Weak Types
+
+Valijson has a notion of strong and weak typing. By default, strong typing is used. For example, the following will create a validator that uses strong typing:
+
+```cpp
+Validator validator;
+```
+
+This validator will not attempt to cast between types to satisfy a schema. So the string `"23"` will not be parsed as a number.
+
+Alternatively, weak typing can be used:
+
+```cpp
+Validator validator(Validator::kWeakTypes);
+```
+
+This will create a validator that will attempt to cast values to satisfy a schema. The original motivation for this was to support the Boost Property Tree library, which can parse JSON, but stores values as strings.
+
 ## Memory Management ##
 
 Valijson has been designed to safely manage, and eventually free, the memory that is allocated while parsing a schema or validating a document. When working with an externally loaded schema (i.e. one that is populated using the `SchemaParser` class) you can rely on RAII semantics.
