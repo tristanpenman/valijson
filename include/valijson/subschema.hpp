@@ -1,8 +1,8 @@
 #pragma once
 
-#include <vector>
-
+#include <functional>
 #include <memory>
+#include <vector>
 
 #include <valijson/constraints/constraint.hpp>
 #include <valijson/internal/optional.hpp>
