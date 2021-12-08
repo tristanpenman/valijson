@@ -36,14 +36,19 @@ struct BasicConstraint: Constraint
         return visitor.visit(*static_cast<const ConstraintType*>(this));
     }
 
-    Constraint * clone(CustomAlloc allocFn, CustomFree) const override
+    OwningPointer clone(CustomAlloc allocFn, CustomFree freeFn) const override
     {
-        void *ptr = allocFn(sizeof(ConstraintType));
+        // smart pointer to automatically free raw memory on exception
+        auto ptr = std::unique_ptr<void, CustomFree>(allocFn(sizeof(ConstraintType)), freeFn);
         if (!ptr) {
             throwRuntimeError("Failed to allocate memory for cloned constraint");
         }
 
-        return new (ptr) ConstraintType(*static_cast<const ConstraintType*>(this));
+        // constructor might throw but the memory will be taken care of anyways
+        (void)new (ptr.get()) ConstraintType(*static_cast<const ConstraintType*>(this));
+
+        // reassign managed memory to smart pointer that will also destroy object instance
+        return OwningPointer(static_cast<const Constraint*>(ptr.release()), freeFn);
     }
 
 protected:

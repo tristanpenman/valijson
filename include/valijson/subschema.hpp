@@ -79,11 +79,6 @@ public:
 #if VALIJSON_USE_EXCEPTIONS
         try {
 #endif
-            for (auto constConstraint : m_constraints) {
-                auto *constraint = const_cast<Constraint *>(constConstraint);
-                constraint->~Constraint();
-                m_freeFn(constraint);
-            }
             m_constraints.clear();
 #if VALIJSON_USE_EXCEPTIONS
         } catch (const std::exception &e) {
@@ -106,18 +101,8 @@ public:
      */
     void addConstraint(const Constraint &constraint)
     {
-        Constraint *newConstraint = constraint.clone(m_allocFn, m_freeFn);
-#if VALIJSON_USE_EXCEPTIONS
-        try {
-#endif
-            m_constraints.push_back(newConstraint);
-#if VALIJSON_USE_EXCEPTIONS
-        } catch (...) {
-            newConstraint->~Constraint();
-            m_freeFn(newConstraint);
-            throw;
-        }
-#endif
+        // the vector allocation might throw but the constraint memory will be taken care of anyways
+        m_constraints.push_back(constraint.clone(m_allocFn, m_freeFn));
     }
 
     /**
@@ -134,7 +119,7 @@ public:
     bool apply(ApplyFunction &applyFunction) const
     {
         bool allTrue = true;
-        for (const Constraint *constraint : m_constraints) {
+        for (auto &&constraint : m_constraints) {
             allTrue = applyFunction(*constraint) && allTrue;
         }
 
@@ -153,7 +138,7 @@ public:
      */
     bool applyStrict(ApplyFunction &applyFunction) const
     {
-        for (const Constraint *constraint : m_constraints) {
+        for (auto &&constraint : m_constraints) {
             if (!applyFunction(*constraint)) {
                 return false;
             }
@@ -296,7 +281,7 @@ private:
     bool m_alwaysInvalid;
 
     /// List of pointers to constraints that apply to this schema.
-    std::vector<const Constraint *> m_constraints;
+    std::vector<Constraint::OwningPointer> m_constraints;
 
     /// Schema description (optional)
     opt::optional<std::string> m_description;
