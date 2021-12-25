@@ -903,26 +903,20 @@ public:
         return visitor.visit(*static_cast<const PolyConstraint*>(this));
     }
 
-    Constraint * clone(CustomAlloc allocFn, CustomFree freeFn) const override
+    OwningPointer clone(CustomAlloc allocFn, CustomFree freeFn) const override
     {
-        void *ptr = allocFn(sizeOf());
+        // smart pointer to automatically free raw memory on exception
+        typedef std::unique_ptr<Constraint, CustomFree> RawOwningPointer;
+        auto ptr = RawOwningPointer(static_cast<Constraint*>(allocFn(sizeOf())), freeFn);
         if (!ptr) {
             throwRuntimeError("Failed to allocate memory for cloned constraint");
         }
 
-#if VALIJSON_USE_EXCEPTIONS
-        try {
-#endif
-            return cloneInto(ptr);
-#if VALIJSON_USE_EXCEPTIONS
-        } catch (...) {
-            freeFn(ptr);
-            throw;
-        }
-#else
-        // pretend to use freeFn to avoid warning in GCC 8.3
-        (void)freeFn;
-#endif
+        // constructor might throw but the memory will be taken care of anyways
+        (void)cloneInto(ptr.get());
+
+        // implicitly convert to smart pointer that will also destroy object instance
+        return ptr;
     }
 
     virtual bool validate(const adapters::Adapter &target,
