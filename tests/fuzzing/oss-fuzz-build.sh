@@ -9,13 +9,15 @@ cmake -Dvalijson_BUILD_EXAMPLES=FALSE \
 	-Dvalijson_EXCLUDE_BOOST=TRUE \
 	..
 
-make -j$(nproc)
+make -j"$(nproc)"
 
 cd ../tests/fuzzing
 
 find ../.. -name "*.o" -exec ar rcs fuzz_lib.a {} \;
 
-$CXX $CXXFLAGS -DVALIJSON_USE_EXCEPTIONS=1 \
+# CXXFLAGS may contain spaces
+# shellcheck disable=SC2086
+"$CXX" $CXXFLAGS -DVALIJSON_USE_EXCEPTIONS=1 \
 	-I/src/valijson/thirdparty/rapidjson-48fbd8c/include \
 	-I/src/valijson/thirdparty/rapidjson-48fbd8c/include/rapidjson \
 	-I/src/valijson/include \
@@ -23,10 +25,11 @@ $CXX $CXXFLAGS -DVALIJSON_USE_EXCEPTIONS=1 \
 	-I/src/valijson/include/valijson/adapters \
 	-c fuzzer.cpp -o fuzzer.o
 
-$CXX $CXXFLAGS $LIB_FUZZING_ENGINE \
+# shellcheck disable=SC2086
+"$CXX" $CXXFLAGS "$LIB_FUZZING_ENGINE" \
 	-DVALIJSON_USE_EXCEPTIONS=1 \
 	-rdynamic fuzzer.o \
-	-o $OUT/fuzzer fuzz_lib.a
+	-o "${OUT}/fuzzer fuzz_lib.a"
 
-zip $OUT/fuzzer_seed_corpus.zip \
-	$SRC/valijson/doc/schema/draft-03.json
+zip "${OUT}/fuzzer_seed_corpus.zip" \
+	"${SRC}/valijson/doc/schema/draft-03.json"
