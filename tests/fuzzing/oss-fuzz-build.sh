@@ -29,7 +29,7 @@ find ../.. -name "*.o" -exec ar rcs fuzz_lib.a {} \;
 "$CXX" $CXXFLAGS "$LIB_FUZZING_ENGINE" \
 	-DVALIJSON_USE_EXCEPTIONS=1 \
 	-rdynamic fuzzer.o \
-	-o "${OUT}/fuzzer fuzz_lib.a"
+	-o "${OUT}/fuzzer" fuzz_lib.a
 
 zip "${OUT}/fuzzer_seed_corpus.zip" \
 	"${SRC}/valijson/doc/schema/draft-03.json"
