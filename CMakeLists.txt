@@ -4,7 +4,7 @@ project(valijson)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 option(valijson_BUILD_EXAMPLES "Build valijson examples." FALSE)
-option(valijson_BUILD_TESTS "Build valijson test suite." TRUE)
+option(valijson_BUILD_TESTS "Build valijson test suite." FALSE)
 option(valijson_EXCLUDE_BOOST "Exclude Boost when building test suite." FALSE)
 option(valijson_USE_EXCEPTIONS "Use exceptions in valijson and included libs." TRUE)
 

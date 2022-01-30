@@ -142,7 +142,7 @@ The examples and test suite can be built using cmake:
     # Build examples and test suite
     mkdir build
     cd build
-    cmake ..
+    cmake .. -Dvalijson_BUILD_TESTS=ON -Dvalijson_BUILD_EXAMPLES=ON
     make
 
     # Run test suite (from build directory)
