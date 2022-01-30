@@ -65,6 +65,7 @@ Note that Valijson's `SchemaParser` and `Validator` classes expect you to pass i
 ### Exceptions
 
 By default, Valijson classes will not throw exceptions (e.g. when failing to parse a schema). To enable exceptions for these cases, `VALIJSON_USE_EXCEPTIONS` must be defined.
+However note that `VALIJSON_USE_EXCEPTIONS` is defined as interface compile definition of the cmake target, and the definition populates all the targets linking Valijson with cmake.
 
 ### Strong vs Weak Types
 

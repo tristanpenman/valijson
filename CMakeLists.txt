@@ -34,6 +34,10 @@ target_include_directories(valijson INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
+if(valijson_USE_EXCEPTIONS)
+    target_compile_definitions(valijson INTERFACE -DVALIJSON_USE_EXCEPTIONS=1)
+endif()
+
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 install(TARGETS valijson
