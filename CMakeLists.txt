@@ -3,9 +3,8 @@ project(valijson)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-option(valijson_INSTALL_HEADERS "Install valijson headers." FALSE)
 option(valijson_BUILD_EXAMPLES "Build valijson examples." FALSE)
-option(valijson_BUILD_TESTS "Build valijson test suite." TRUE)
+option(valijson_BUILD_TESTS "Build valijson test suite." FALSE)
 option(valijson_EXCLUDE_BOOST "Exclude Boost when building test suite." FALSE)
 option(valijson_USE_EXCEPTIONS "Use exceptions in valijson and included libs." TRUE)
 
@@ -35,9 +34,20 @@ target_include_directories(valijson INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
-if(valijson_INSTALL_HEADERS)
-    install(DIRECTORY include/ DESTINATION include)
+if(valijson_USE_EXCEPTIONS)
+    target_compile_definitions(valijson INTERFACE -DVALIJSON_USE_EXCEPTIONS=1)
 endif()
+
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+install(TARGETS valijson
+    EXPORT valijsonConfig
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+install(EXPORT valijsonConfig
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/valijson"
+)
 
 if(NOT valijson_BUILD_TESTS AND NOT valijson_BUILD_EXAMPLES)
     return()

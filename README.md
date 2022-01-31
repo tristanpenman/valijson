@@ -65,6 +65,7 @@ Note that Valijson's `SchemaParser` and `Validator` classes expect you to pass i
 ### Exceptions
 
 By default, Valijson classes will not throw exceptions (e.g. when failing to parse a schema). To enable exceptions for these cases, `VALIJSON_USE_EXCEPTIONS` must be defined.
+However note that `VALIJSON_USE_EXCEPTIONS` is defined as interface compile definition of the cmake target, and the definition populates all the targets linking Valijson with cmake.
 
 ### Strong vs Weak Types
 
@@ -141,13 +142,17 @@ The examples and test suite can be built using cmake:
     # Build examples and test suite
     mkdir build
     cd build
-    cmake ..
+    cmake .. -Dvalijson_BUILD_TESTS=ON -Dvalijson_BUILD_EXAMPLES=ON
     make
 
     # Run test suite (from build directory)
     ./test_suite
 ```
-#### How to add this library to your cmake target ####
+## How to add this library to your cmake target ##
+
+Valijson can be integrated either as git submodule or with find_package().
+
+### Valijson as git submodule ###
 
 Download this repository into your project
 
@@ -172,7 +177,24 @@ add_executable(your-executable ...)
 
 target_link_libraries(your-executable ValiJSON::valijson)
 ```
+### Install Valijson and import it ###
 
+It is possible to install headers by running cmake's install command from the build tree. Once Valijson is installed, use it from other CMake projects using `find_package(Valijson)` in your CMakeLists.txt.
+```bash
+    # Install Valijson
+    git clone --depth=1 git@github.com:tristanpenman/valijson.git
+    cd valijson
+    mkdir build
+    cd build
+    cmake ..
+    cmake --install .
+```
+```cmake
+    # Import installed valijson and link it to your executable
+    find_package(valijson REQUIRED)
+    add_executable(executable main.cpp)
+    target_link_libraries(executable valijson)
+```
 ### Xcode ###
 
 An Xcode project has also been provided, in the 'xcode' directory. Note that in order to run the test suite, you may need to configure the working directory for the 'test\_suite' scheme. It is recommended that you use the 'xcode' directory as the working directory.
