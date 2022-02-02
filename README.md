@@ -1,8 +1,6 @@
 # Valijson #
 
-## Overview ##
-
-Valijson is a header-only [JSON Schema](http://json-schema.org/) Validation library for C++11.
+Valijson is a header-only [JSON Schema](http://json-schema.org/) validation library for C++11.
 
 Valijson provides a simple validation API that allows you to load JSON Schemas, and validate documents loaded by one of several supported parser libraries.
 
