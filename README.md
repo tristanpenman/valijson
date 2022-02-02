@@ -233,7 +233,15 @@ Schemas and target documents can be loaded from file or entered manually. Conten
 
 Here is a screenshot of JSON Inspector in action:
 
-![JSON Inspector in action](./doc/inspector/screenshot.png)
+![JSON Inspector in action](./doc/screenshots/inspector.png)
+
+## Live Demo
+
+A web-based demo can be found [here](https://letmaik.github.io/valijson-wasm), courtesy of [Maik Riechert](https://github.com/letmaik).
+
+This demo uses Emscripten to compile Valijson and Nlohmann JSON (JSON for Modern C++) to WebAssembly. The source code can be found [here](https://github.com/letmaik/valijson-wasm) and is available under the MIT license.
+
+![WebAssembly Demo](doc/screenshots/wasm.png)
 
 ## Documentation ##
 
