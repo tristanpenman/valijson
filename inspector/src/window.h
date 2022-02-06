@@ -22,8 +22,7 @@ public:
     explicit Window(QWidget * parent = 0);
 
 public slots:
-    void refreshDocumentJson();
-    void refreshSchemaJson();
+    void refreshJson();
 
     void showOpenDocumentDialog();
     void showOpenSchemaDialog();
@@ -42,7 +41,8 @@ private:
 
     QTextEdit * m_errors;
 
-    QJsonDocument m_document;
+    QJsonDocument m_documentJson;
+    QJsonDocument m_schemaJson;
 
     valijson::Schema * m_schema;
 };
