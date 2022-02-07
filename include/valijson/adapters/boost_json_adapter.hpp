@@ -485,12 +485,16 @@ class BoostJsonAdapter:
 {
 public:
 
+    // deleted to avoid holding references to temporaries
+    BoostJsonAdapter(boost::json::array &) = delete;
+    BoostJsonAdapter(boost::json::object &) = delete;
+
     /// Construct a BoostJsonAdapter that contains an empty object
     BoostJsonAdapter()
       : BasicAdapter() { }
 
     /// Construct a BoostJsonAdapter using a specific Boost.JSON value
-    BoostJsonAdapter(const boost::json::value &value)
+    explicit BoostJsonAdapter(const boost::json::value &value)
       : BasicAdapter(value) { }
 };
 
