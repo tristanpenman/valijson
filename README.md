@@ -14,48 +14,48 @@ The following code snippets show how you might implement a simple validator usin
 
 Include the necessary headers:
 ```cpp
-    #include <valijson/adapters/rapidjson_adapter.hpp>
-    #include <valijson/utils/rapidjson_utils.hpp>
-    #include <valijson/schema.hpp>
-    #include <valijson/schema_parser.hpp>
-    #include <valijson/validator.hpp>
+#include <valijson/adapters/rapidjson_adapter.hpp>
+#include <valijson/utils/rapidjson_utils.hpp>
+#include <valijson/schema.hpp>
+#include <valijson/schema_parser.hpp>
+#include <valijson/validator.hpp>
 ```
 These are the classes that we'll be using:
 ```cpp
-    using valijson::Schema;
-    using valijson::SchemaParser;
-    using valijson::Validator;
-    using valijson::adapters::RapidJsonAdapter;
+using valijson::Schema;
+using valijson::SchemaParser;
+using valijson::Validator;
+using valijson::adapters::RapidJsonAdapter;
 ```
 We are going to use RapidJSON to load the schema and the target document:
 ```cpp
-    // Load JSON document using RapidJSON with Valijson helper function
-    rapidjson::Document mySchemaDoc;
-    if (!valijson::utils::loadDocument("mySchema.json", mySchemaDoc)) {
-        throw std::runtime_error("Failed to load schema document");
-    }
+// Load JSON document using RapidJSON with Valijson helper function
+rapidjson::Document mySchemaDoc;
+if (!valijson::utils::loadDocument("mySchema.json", mySchemaDoc)) {
+    throw std::runtime_error("Failed to load schema document");
+}
 
-    // Parse JSON schema content using valijson
-    Schema mySchema;
-    SchemaParser parser;
-    RapidJsonAdapter mySchemaAdapter(mySchemaDoc);
-    parser.populateSchema(mySchemaAdapter, mySchema);
+// Parse JSON schema content using valijson
+Schema mySchema;
+SchemaParser parser;
+RapidJsonAdapter mySchemaAdapter(mySchemaDoc);
+parser.populateSchema(mySchemaAdapter, mySchema);
 ```
 Load a document to validate:
 ```cpp
-    rapidjson::Document myTargetDoc;
-    if (!valijson::utils::loadDocument("myTarget.json", myTargetDoc)) {
-        throw std::runtime_error("Failed to load target document");
-    }
+rapidjson::Document myTargetDoc;
+if (!valijson::utils::loadDocument("myTarget.json", myTargetDoc)) {
+    throw std::runtime_error("Failed to load target document");
+}
 ```
 
 Validate a document:
 ```cpp
-    Validator validator;
-    RapidJsonAdapter myTargetAdapter(myTargetDoc);
-    if (!validator.validate(mySchema, myTargetAdapter, NULL)) {
-        throw std::runtime_error("Validation failed.");
-    }
+Validator validator;
+RapidJsonAdapter myTargetAdapter(myTargetDoc);
+if (!validator.validate(mySchema, myTargetAdapter, NULL)) {
+    throw std::runtime_error("Validation failed.");
+}
 ```
 
 Note that Valijson's `SchemaParser` and `Validator` classes expect you to pass in a `RapidJsonAdapter` rather than a `rapidjson::Document`. This is due to the fact that `SchemaParser` and `Validator` are template classes that can be used with any of the JSON parsers supported by Valijson.
@@ -89,39 +89,39 @@ Valijson has been designed to safely manage, and eventually free, the memory tha
 
 Things get more interesting when you build a schema using custom code, as illustrated in the following snippet. This code demonstrates how you would create a schema to verify that the value of a 'description' property (if present) is always a string:
 ```cpp
-    {
-        // Root schema object that manages memory allocated for
-        // constraints or sub-schemas
-        Schema schema;
+{
+    // Root schema object that manages memory allocated for
+    // constraints or sub-schemas
+    Schema schema;
 
-        // Allocating memory for a sub-schema returns a const pointer
-        // which allows inspection but not mutation. This memory will be
-        // freed only when the root schema goes out of scope
-        const Subschema *subschema = schema.createSubschema();
+    // Allocating memory for a sub-schema returns a const pointer
+    // which allows inspection but not mutation. This memory will be
+    // freed only when the root schema goes out of scope
+    const Subschema *subschema = schema.createSubschema();
 
-        {   // Limited scope, for example purposes
+    {   // Limited scope, for example purposes
 
-            // Construct a constraint on the stack
-            TypeConstraint typeConstraint;
-            typeConstraint.addNamedType(TypeConstraint::kString);
+        // Construct a constraint on the stack
+        TypeConstraint typeConstraint;
+        typeConstraint.addNamedType(TypeConstraint::kString);
 
-            // Constraints are added to a sub-schema via the root schema,
-            // which will make a copy of the constraint
-            schema.addConstraintToSubschema(typeConstraint, subschema);
+        // Constraints are added to a sub-schema via the root schema,
+        // which will make a copy of the constraint
+        schema.addConstraintToSubschema(typeConstraint, subschema);
 
-            // Constraint on the stack goes out of scope, but the copy
-            // held by the root schema continues to exist
-        }
-
-        // Include subschema in properties constraint
-        PropertiesConstraint propertiesConstraint;
-        propertiesConstraint.addPropertySubschema("description", subschema);
-
-        // Add the properties constraint
-        schema.addConstraint(propertiesConstraint);
-
-        // Root schema goes out of scope and all allocated memory is freed
+        // Constraint on the stack goes out of scope, but the copy
+        // held by the root schema continues to exist
     }
+
+    // Include subschema in properties constraint
+    PropertiesConstraint propertiesConstraint;
+    propertiesConstraint.addPropertySubschema("description", subschema);
+
+    // Add the properties constraint
+    schema.addConstraint(propertiesConstraint);
+
+    // Root schema goes out of scope and all allocated memory is freed
+}
 ```
 ## JSON References ##
 
@@ -137,14 +137,14 @@ Valijson's' test suite currently contains several hand-crafted tests and uses th
 
 The examples and test suite can be built using cmake:
 ```bash
-    # Build examples and test suite
-    mkdir build
-    cd build
-    cmake .. -Dvalijson_BUILD_TESTS=ON -Dvalijson_BUILD_EXAMPLES=ON
-    make
+# Build examples and test suite
+mkdir build
+cd build
+cmake .. -Dvalijson_BUILD_TESTS=ON -Dvalijson_BUILD_EXAMPLES=ON
+make
 
-    # Run test suite (from build directory)
-    ./test_suite
+# Run test suite (from build directory)
+./test_suite
 ```
 ## How to add this library to your cmake target ##
 
@@ -179,19 +179,19 @@ target_link_libraries(your-executable ValiJSON::valijson)
 
 It is possible to install headers by running cmake's install command from the build tree. Once Valijson is installed, use it from other CMake projects using `find_package(Valijson)` in your CMakeLists.txt.
 ```bash
-    # Install Valijson
-    git clone --depth=1 git@github.com:tristanpenman/valijson.git
-    cd valijson
-    mkdir build
-    cd build
-    cmake ..
-    cmake --install .
+# Install Valijson
+git clone --depth=1 git@github.com:tristanpenman/valijson.git
+cd valijson
+mkdir build
+cd build
+cmake ..
+cmake --install .
 ```
 ```cmake
-    # Import installed valijson and link it to your executable
-    find_package(valijson REQUIRED)
-    add_executable(executable main.cpp)
-    target_link_libraries(executable valijson)
+# Import installed valijson and link it to your executable
+find_package(valijson REQUIRED)
+add_executable(executable main.cpp)
+target_link_libraries(executable valijson)
 ```
 ### Xcode ###
 
@@ -220,11 +220,11 @@ Support for JSON References is in development. It is mostly working, however som
 An example application based on Qt is also included under [inspector](./inspector). It can be used to experiment with JSON Schemas and target documents. JSON Inspector is a self-contained CMake project, so it must be built separately:
 
 ```bash
-    cd inspector
-    mkdir build
-    cd build
-    cmake ..
-    make
+cd inspector
+mkdir build
+cd build
+cmake ..
+make
 ```
 
 Schemas and target documents can be loaded from file or entered manually. Content is parsed dynamically, so you get rapid feedback.
@@ -287,10 +287,10 @@ When using PicoJSON, it may be necessary to include the `picojson.h` before othe
 
 When building Valijson using CMake on macOS, with Qt 5 installed via Homebrew, you may need to set `CMAKE_PREFIX_PATH` so that CMake can find your Qt installation, e.g:
 ```bash
-    mkdir build
-    cd build
-    cmake .. -DCMAKE_PREFIX_PATH=$(brew --prefix qt5)
-    make
+mkdir build
+cd build
+cmake .. -DCMAKE_PREFIX_PATH=$(brew --prefix qt5)
+make
 ```
 ## License ##
 
