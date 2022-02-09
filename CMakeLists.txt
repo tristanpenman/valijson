@@ -67,13 +67,13 @@ find_package(Qt5Core)
 
 # jsoncpp library
 add_library(jsoncpp
-    thirdparty/jsoncpp-1.9.4/src/lib_json/json_reader.cpp
-    thirdparty/jsoncpp-1.9.4/src/lib_json/json_value.cpp
-    thirdparty/jsoncpp-1.9.4/src/lib_json/json_writer.cpp
+    thirdparty/jsoncpp-1.9.5/src/lib_json/json_reader.cpp
+    thirdparty/jsoncpp-1.9.5/src/lib_json/json_value.cpp
+    thirdparty/jsoncpp-1.9.5/src/lib_json/json_writer.cpp
 )
 
-target_include_directories(jsoncpp SYSTEM PRIVATE thirdparty/jsoncpp-1.9.4/include)
-set_target_properties(jsoncpp PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/thirdparty/jsoncpp-1.9.4)
+target_include_directories(jsoncpp SYSTEM PRIVATE thirdparty/jsoncpp-1.9.5/include)
+set_target_properties(jsoncpp PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/thirdparty/jsoncpp-1.9.5)
 
 add_library(json11
     thirdparty/json11-ec4e452/json11.cpp
@@ -86,7 +86,7 @@ set_target_properties(json11 PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINAR
 include_directories(include SYSTEM
     thirdparty/gtest-1.11.0/include
     thirdparty/json11-ec4e452
-    thirdparty/jsoncpp-1.9.4/include
+    thirdparty/jsoncpp-1.9.5/include
     thirdparty/rapidjson-48fbd8c/include
     thirdparty/picojson-1.3.0
     thirdparty/nlohmann-json-3.1.2
@@ -105,8 +105,8 @@ if(valijson_BUILD_TESTS)
 
     set(TEST_SOURCES
         tests/test_adapter_comparison.cpp
-        tests/test_fetch_urn_document_callback.cpp
         tests/test_fetch_absolute_uri_document_callback.cpp
+        tests/test_fetch_urn_document_callback.cpp
         tests/test_json_pointer.cpp
         tests/test_json11_adapter.cpp
         tests/test_jsoncpp_adapter.cpp
