@@ -247,7 +247,7 @@ Doxygen documentation can be built by running 'doxygen' from the project root di
 
 ## Dependencies ##
 
-Valijson requires a compiler with C++11 support.
+Valijson requires a compiler with full C++11 support. Please note that versions of GCC prior to 4.9.0 had incomplete `<regex>` support, so `pattern` constraints may not work. If using GCC, it is recommended that you use GCC 5.0 or later.
 
 When building the test suite, Boost 1.54, Qt 5 and Poco are optional dependencies.
 
