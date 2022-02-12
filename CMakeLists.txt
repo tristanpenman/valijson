@@ -82,6 +82,13 @@ add_library(json11
 target_include_directories(json11 SYSTEM PRIVATE thirdparty/json11-ec4e452)
 set_target_properties(json11 PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/thirdparty/json11-ec4e452)
 
+# yaml-cpp library
+file(GLOB yamlcpp_SOURCES "thirdparty/yaml-cpp-0.7.0/src/*.cpp")
+add_library(yamlcpp ${yamlcpp_SOURCES})
+
+target_include_directories(yamlcpp SYSTEM PRIVATE thirdparty/yamlcpp-0.7.0/include)
+set_target_properties(yamlcpp PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/thirdparty/yamlcpp-0.7.0)
+
 # Not all of these are required for examples build it doesn't hurt to include them
 include_directories(include SYSTEM
     thirdparty/gtest-1.11.0/include
@@ -90,6 +97,7 @@ include_directories(include SYSTEM
     thirdparty/rapidjson-48fbd8c/include
     thirdparty/picojson-1.3.0
     thirdparty/nlohmann-json-3.1.2
+    thirdparty/yaml-cpp-0.7.0/include
     )
 
 if(valijson_BUILD_TESTS)
@@ -116,6 +124,7 @@ if(valijson_BUILD_TESTS)
         tests/test_poly_constraint.cpp
         tests/test_validation_errors.cpp
         tests/test_validator.cpp
+        tests/test_yaml_cpp_adapter.cpp
     )
 
     set(TEST_LIBS gtest gtest_main jsoncpp json11)
