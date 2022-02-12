@@ -402,17 +402,17 @@ class YamlCppValue
 
     bool isBool() const
     {
-        return m_value.IsScalar();
+        return false;
     }
 
     bool isDouble() const
     {
-        return m_value.IsScalar();
+        return false;
     }
 
     bool isInteger() const
     {
-        return m_value.IsScalar();
+        return false;
     }
 
     bool isNull() const
@@ -422,7 +422,7 @@ class YamlCppValue
 
     bool isNumber() const
     {
-        return m_value.IsScalar();
+        return false;
     }
 
     bool isObject() const
@@ -432,7 +432,7 @@ class YamlCppValue
 
     bool isString() const
     {
-        return m_value.IsScalar();
+        return true;
     }
 
   private:

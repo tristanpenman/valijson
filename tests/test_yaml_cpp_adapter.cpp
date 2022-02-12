@@ -34,7 +34,9 @@ TEST_F(TestYamlCppAdapter, BasicArrayIteration)
     // Ensure that the elements are returned in the order they were inserted
     unsigned int expectedValue = 0;
     for (const valijson::adapters::YamlCppAdapter value : adapter.getArray()) {
-        ASSERT_TRUE(value.isNumber());
+        ASSERT_TRUE(value.isString());
+        ASSERT_FALSE(value.isNumber());
+        ASSERT_TRUE(value.maybeDouble());
         EXPECT_EQ(double(expectedValue), value.getDouble());
         expectedValue++;
     }
