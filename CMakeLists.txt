@@ -127,7 +127,7 @@ if(valijson_BUILD_TESTS)
         tests/test_yaml_cpp_adapter.cpp
     )
 
-    set(TEST_LIBS gtest gtest_main jsoncpp json11)
+    set(TEST_LIBS gtest gtest_main jsoncpp json11 yamlcpp)
 
     if(Boost_FOUND)
         include_directories(${Boost_INCLUDE_DIRS})
