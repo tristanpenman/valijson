@@ -681,12 +681,16 @@ inline YamlCppObjectMemberIterator YamlCppObject::end() const
 inline YamlCppObjectMemberIterator
 YamlCppObject::find(const std::string &propertyName) const
 {
-    // TODO: I'm not sure how to do this in yaml-cpp
-    YAML::const_iterator itr;
-    for (itr = m_value.begin(); itr != m_value.end(); ++itr)
-        if (itr->first.as<std::string>() == propertyName)
-            return itr;
-    return itr;
+    YAML::Node result = m_value[propertyName];
+    if (!result.IsDefined())
+        return end();
+
+    // yaml-cpp does not offer an iterator-based lookup,
+    // so instead we create a new placeholder object and
+    // return an iterator to that container instead.
+    YAML::Node wrapper = YAML::Node(YAML::NodeType::Map);
+    wrapper[propertyName] = result;
+    return YamlCppObjectMemberIterator(wrapper.begin());
 }
 
 } // namespace adapters
