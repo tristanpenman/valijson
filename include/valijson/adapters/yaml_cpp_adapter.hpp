@@ -115,7 +115,7 @@ class YamlCppArray
     }
 
     /// Reference to the contained value
-    const YAML::Node &m_value;
+    const YAML::Node m_value;
 };
 
 /**
@@ -203,7 +203,7 @@ class YamlCppObject
     }
 
     /// Reference to the contained object
-    const YAML::Node &m_value;
+    const YAML::Node m_value;
 };
 
 /**
@@ -222,7 +222,8 @@ class YamlCppFrozenValue : public FrozenValue
      *
      * @param  source  the YamlCpp value to be copied
      */
-    explicit YamlCppFrozenValue(YAML::Node source) : m_value(std::move(source))
+    explicit YamlCppFrozenValue(YAML::Node source)
+        : m_value(YAML::Clone(source))
     {
     }
 
@@ -444,7 +445,7 @@ class YamlCppValue
     }
 
     /// Reference to the contained YamlCpp value.
-    const YAML::Node &m_value;
+    const YAML::Node m_value;
 };
 
 /**

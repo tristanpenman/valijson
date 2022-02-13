@@ -98,7 +98,7 @@ include_directories(include SYSTEM
     thirdparty/picojson-1.3.0
     thirdparty/nlohmann-json-3.1.2
     thirdparty/yaml-cpp-0.7.0/include
-    )
+)
 
 if(valijson_BUILD_TESTS)
     if(NOT valijson_EXCLUDE_BOOST)

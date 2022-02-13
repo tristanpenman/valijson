@@ -74,7 +74,9 @@ TEST_F(TestYamlCppAdapter, BasicObjectIteration)
     unsigned int expectedValue = 0;
     for (const valijson::adapters::YamlCppAdapter::ObjectMember member :
          adapter.getObject()) {
-        ASSERT_TRUE(member.second.isNumber());
+        ASSERT_TRUE(member.second.isString());
+        ASSERT_FALSE(member.second.isNumber());
+        ASSERT_TRUE(member.second.maybeDouble());
         EXPECT_EQ(std::to_string(expectedValue), member.first);
         EXPECT_EQ(double(expectedValue), member.second.getDouble());
         expectedValue++;
