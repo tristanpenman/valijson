@@ -49,7 +49,7 @@ TEST_F(TestYamlCppAdapter, BasicObjectIteration)
 {
     const unsigned int numElements = 10;
 
-    // Create a DropBoxJson document that consists of an object that maps
+    // Create a document that consists of an object that maps
     // numeric strings their corresponding numeric values
     YAML::Node document;
     for (uint32_t i = 0; i < numElements; i++) {
@@ -84,4 +84,27 @@ TEST_F(TestYamlCppAdapter, BasicObjectIteration)
 
     // Ensure that the correct number of elements were iterated over
     EXPECT_EQ(numElements, expectedValue);
+}
+
+TEST_F(TestYamlCppAdapter, BasicObjectMemberAccess)
+{
+    const unsigned int numElements = 10;
+
+    // Create a document that consists of an object that maps
+    // numeric strings their corresponding numeric values
+    YAML::Node document;
+    for (uint32_t i = 0; i < numElements; i++) {
+        document[std::to_string(i)] = static_cast<double>(i);
+    }
+    valijson::adapters::YamlCppAdapter adapter(document);
+    const auto adapterObject = adapter.asObject();
+
+    // Ensure that accessing an element that exists produces the expected result.
+    const auto result3 = adapterObject.find("3");
+    EXPECT_NE(result3, adapterObject.end());
+    EXPECT_EQ(result3->second.asDouble(), 3);
+
+    // Ensure that accessing an element that does not exists.
+    const auto result12 = adapterObject.find("12");
+    EXPECT_EQ(result12, adapterObject.end());
 }
