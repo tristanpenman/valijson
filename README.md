@@ -193,12 +193,6 @@ find_package(valijson REQUIRED)
 add_executable(executable main.cpp)
 target_link_libraries(executable valijson)
 ```
-### Xcode ###
-
-An Xcode project has also been provided, in the 'xcode' directory. Note that in order to run the test suite, you may need to configure the working directory for the 'test\_suite' scheme. It is recommended that you use the 'xcode' directory as the working directory.
-
-The Xcode project has been configured so that /usr/local/include is in the include path, and /usr/local/lib is in the library path. These are the locations that homebrew installed Boost on my test system.
-
 ## Examples ##
 
 Building the Valijson Test Suite, using the instructions above, will also compile two example applications: `custom_schema` and `external_schema`.
