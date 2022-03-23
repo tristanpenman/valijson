@@ -192,6 +192,11 @@ public:
       : BasicConstraint(other),
         m_value(other.m_value->clone()) { }
 
+    ~ConstConstraint() override
+    {
+        delete m_value;
+    }
+
     adapters::FrozenValue * getValue() const
     {
         return m_value.get();
