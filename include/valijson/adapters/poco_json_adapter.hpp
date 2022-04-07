@@ -346,7 +346,7 @@ public:
     bool getInteger(int64_t &result) const
     {
         if (m_value.isInteger()) {
-            result = m_value.convert<int>();
+            result = m_value.convert<int64_t>();
             return true;
         }
         return false;
