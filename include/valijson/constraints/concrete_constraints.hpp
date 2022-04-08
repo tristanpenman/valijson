@@ -20,9 +20,9 @@
 #include <string>
 #include <vector>
 
-#include <valijson/adapters/frozen_value.hpp>
 #include <valijson/constraints/basic_constraint.hpp>
 #include <valijson/internal/custom_allocator.hpp>
+#include <valijson/internal/frozen_value.hpp>
 #include <valijson/schema.hpp>
 #include <valijson/exceptions.hpp>
 

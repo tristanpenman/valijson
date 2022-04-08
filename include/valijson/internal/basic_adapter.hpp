@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <sstream>
 
-#include <valijson/adapters/adapter.hpp>
+#include <valijson/internal/adapter.hpp>
 #include <valijson/internal/optional.hpp>
 #include <valijson/exceptions.hpp>
 

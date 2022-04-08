@@ -6,8 +6,8 @@
 #include <memory>
 #include <functional>
 
-#include <valijson/adapters/adapter.hpp>
 #include <valijson/constraints/concrete_constraints.hpp>
+#include <valijson/internal/adapter.hpp>
 #include <valijson/internal/debug.hpp>
 #include <valijson/internal/json_pointer.hpp>
 #include <valijson/internal/json_reference.hpp>
