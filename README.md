@@ -193,6 +193,23 @@ find_package(valijson REQUIRED)
 add_executable(executable main.cpp)
 target_link_libraries(executable valijson)
 ```
+
+## Bundled Headers ##
+
+An alternative way to include Valijson in your project is to generate a bundled header file, containing support for just one parser/adapter.
+
+You can generate a header file using the `bundle.sh` script:
+
+    ./bundle.sh nlohmann_json > valijson_nlohmann_bundled.hpp
+
+This can then be used in your project with a single `#include`:
+
+    #include "valijson_nlohmann_bundled.hpp"
+
+An example can be found in [examples/valijson_nlohmann_bundled_test.cpp](examples/valijson_nlohmann_bundled_test.cpp).
+
+Note: the bundled version of Valijson always embeds a compatibility header in place of `std::optional`.
+
 ## Examples ##
 
 Building the Valijson Test Suite, using the instructions above, will also compile two example applications: `custom_schema` and `external_schema`.
