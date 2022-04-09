@@ -1,14 +1,14 @@
-# Valijson #
+# Valijson
 
 Valijson is a header-only [JSON Schema](http://json-schema.org/) validation library for C++11.
 
 Valijson provides a simple validation API that allows you to load JSON Schemas, and validate documents loaded by one of several supported parser libraries.
 
-## Project Goals ##
+## Project Goals
 
 The goal of this project is to support validation of all constraints available in JSON Schema v7, while being competitive with the performance of a hand-written schema validator.
 
-## Usage ##
+## Usage
 
 The following code snippets show how you might implement a simple validator using RapidJson as the underlying JSON Parser.
 
@@ -83,7 +83,7 @@ Validator validator(Validator::kWeakTypes);
 
 This will create a validator that will attempt to cast values to satisfy a schema. The original motivation for this was to support the Boost Property Tree library, which can parse JSON, but stores values as strings.
 
-## Memory Management ##
+## Memory Management
 
 Valijson has been designed to safely manage, and eventually free, the memory that is allocated while parsing a schema or validating a document. When working with an externally loaded schema (i.e. one that is populated using the `SchemaParser` class) you can rely on RAII semantics.
 
@@ -123,17 +123,17 @@ Things get more interesting when you build a schema using custom code, as illust
     // Root schema goes out of scope and all allocated memory is freed
 }
 ```
-## JSON References ##
+## JSON References
 
 The library includes support for local JSON References. Remote JSON References are supported only when the appropriate callback functions are provided.
 
 Valijson's JSON Reference implementation requires that two callback functions are required. The first is expected to return a pointer to a newly fetched document. Valijson takes ownership of this pointer. The second callback function is used to release ownership of that pointer back to the application. Typically, this would immediately free the memory that was allocated for the document.
 
-## Test Suite ##
+## Test Suite
 
 Valijson's' test suite currently contains several hand-crafted tests and uses the standard [JSON Schema Test Suite](https://github.com/json-schema/JSON-Schema-Test-Suite) to test support for parts of the JSON Schema feature set that have been implemented.
 
-### cmake ###
+### cmake
 
 The examples and test suite can be built using cmake:
 ```bash
@@ -146,11 +146,11 @@ make
 # Run test suite (from build directory)
 ./test_suite
 ```
-## How to add this library to your cmake target ##
+## How to add this library to your cmake target
 
 Valijson can be integrated either as git submodule or with find_package().
 
-### Valijson as git submodule ###
+### Valijson as git submodule
 
 Download this repository into your project
 
@@ -175,7 +175,7 @@ add_executable(your-executable ...)
 
 target_link_libraries(your-executable ValiJSON::valijson)
 ```
-### Install Valijson and import it ###
+### Install Valijson and import it
 
 It is possible to install headers by running cmake's install command from the build tree. Once Valijson is installed, use it from other CMake projects using `find_package(Valijson)` in your CMakeLists.txt.
 ```bash
@@ -194,7 +194,7 @@ add_executable(executable main.cpp)
 target_link_libraries(executable valijson)
 ```
 
-## Bundled Headers ##
+## Bundled Headers
 
 An alternative way to include Valijson in your project is to generate a bundled header file, containing support for just one parser/adapter.
 
@@ -210,13 +210,13 @@ An example can be found in [examples/valijson_nlohmann_bundled_test.cpp](example
 
 Note: the bundled version of Valijson always embeds a compatibility header in place of `std::optional`.
 
-## Examples ##
+## Examples
 
 Building the Valijson Test Suite, using the instructions above, will also compile two example applications: `custom_schema` and `external_schema`.
 
 `custom_schema` shows how you can hard-code a schema definition into an application, while `external_schema` builds on the example code above to show you how to validate and document and report on any validation errors.
 
-## JSON Schema Support ##
+## JSON Schema Support
 
 Valijson supports most of the constraints defined in [Draft 7](https://json-schema.org/draft-07/json-schema-release-notes.html)
 
@@ -252,17 +252,17 @@ This demo uses Emscripten to compile Valijson and Nlohmann JSON (JSON for Modern
 
 ![WebAssembly Demo](doc/screenshots/wasm.png)
 
-## Documentation ##
+## Documentation
 
 Doxygen documentation can be built by running 'doxygen' from the project root directory. Generated documentation will be placed in 'doc/html'. Other relevant documentation such as schemas and specifications have been included in the 'doc' directory.
 
-## Dependencies ##
+## Dependencies
 
 Valijson requires a compiler with full C++11 support. Please note that versions of GCC prior to 4.9.0 had incomplete `<regex>` support, so `pattern` constraints may not work. If using GCC, it is recommended that you use GCC 5.0 or later.
 
 When building the test suite, Boost 1.54, Qt 5 and Poco are optional dependencies.
 
-## Supported Parsers ##
+## Supported Parsers
 
 Valijson supports JSON documents loaded using various JSON parser libraries. It has been tested against the following versions of these libraries:
 
@@ -280,19 +280,19 @@ Other versions of these libraries may work, but have not been tested. In particu
 
 When compiling with older versions of Boost (< 1.76.0) you may see compiler warnings from the `boost::property_tree` headers. This has been addressed in version 1.76.0 of Boost.
 
-## Package Managers ##
+## Package Managers
 
 If you are using [vcpkg](https://github.com/Microsoft/vcpkg) on your project for external dependencies, then you can use the [valijson](https://github.com/microsoft/vcpkg/tree/master/ports/valijson) package. Please see the vcpkg project for any issues regarding the packaging.
 
 You can also use [conan](https://conan.io/) as a package manager to handle [valijson](https://conan.io/center/valijson/0.3/) package. Please see the [conan recipe](https://github.com/conan-io/conan-center-index/tree/master/recipes/valijson) for any issues regarding the packaging via conan.
 
-## Test Suite Requirements ##
+## Test Suite Requirements
 
 Supported versions of these libraries have been included in the 'thirdparty' directory so as to support Valijson's examples and test suite.
 
 The exceptions to this are boost, Poco and Qt5, which due to their size must be installed to a location that CMake can find.
 
-## Known Issues ##
+## Known Issues
 
 When using PicoJSON, it may be necessary to include the `picojson.h` before other headers to ensure that the appropriate macros have been enabled.
 
@@ -303,7 +303,7 @@ cd build
 cmake .. -DCMAKE_PREFIX_PATH=$(brew --prefix qt5)
 make
 ```
-## License ##
+## License
 
 Valijson is licensed under the Simplified BSD License.
 
