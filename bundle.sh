@@ -40,7 +40,7 @@ usage() {
   echo 'Available adapters:'
   echo
   for adapter in "${adapters[@]}"; do
-    echo "  - $(basename ${adapter} _adapter.hpp)"
+    echo "  - ${adapter}"
   done
   echo
   exit 64
