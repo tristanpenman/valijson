@@ -1436,11 +1436,16 @@ private:
     constraints::FormatConstraint makeFormatConstraint(
         const AdapterType &node)
     {
-        constraints::FormatConstraint constraint;
+        if (node.isString()) {
+            const std::string value = node.asString();
+            if (!value.empty()) {
+                constraints::FormatConstraint constraint;
+                constraint.setFormat(value);
+                return constraint;
+            }
+        }
 
-        // TODO
-
-        return constraint;
+        throwRuntimeError("Expected a string value for 'format' constraint.");
     }
 
     /**
