@@ -428,6 +428,33 @@ private:
 };
 
 /**
+ * @brief  Represent a 'format' constraint
+ *
+ * A format constraint restricts the content of string values, as defined by a set of commonly used formats.
+ *
+ * As this is an optional feature in JSON Schema, unrecognised formats will be treated as valid for any string value.
+ */
+class FormatConstraint: public BasicConstraint<FormatConstraint>
+{
+public:
+    FormatConstraint()
+        : m_format() { }
+
+    const std::string & getFormat() const
+    {
+        return m_format;
+    }
+
+    void setFormat(const std::string & format)
+    {
+        m_format = format;
+    }
+
+private:
+    std::string m_format;
+};
+
+/**
  * @brief  Represents non-singular 'items' and 'additionalItems' constraints
  *
  * Unlike the SingularItemsConstraint class, this class represents an 'items'

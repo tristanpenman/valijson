@@ -180,6 +180,10 @@ if(valijson_BUILD_TESTS)
         set_target_properties(test_suite PROPERTIES COMPILE_FLAGS " -pedantic -Werror -Wshadow -Wunused")
     endif()
 
+    if (MSVC)
+        target_compile_options(test_suite PRIVATE "/bigobj")
+    endif()
+
     # Definition for using picojson
     set_target_properties(test_suite PROPERTIES COMPILE_DEFINITIONS "PICOJSON_USE_INT64")
 
