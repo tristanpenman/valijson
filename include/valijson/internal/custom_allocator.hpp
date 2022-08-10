@@ -1,5 +1,7 @@
 #pragma once
 
+#include <limits>
+
 namespace valijson {
 namespace internal {
 
