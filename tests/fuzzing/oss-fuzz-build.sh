@@ -20,8 +20,8 @@ find ../.. -name "*.o" -exec ar rcs fuzz_lib.a {} \;
 # CXXFLAGS may contain spaces
 # shellcheck disable=SC2086
 "$CXX" $CXXFLAGS -DVALIJSON_USE_EXCEPTIONS=1 \
-	-I/src/valijson/thirdparty/rapidjson-48fbd8c/include \
-	-I/src/valijson/thirdparty/rapidjson-48fbd8c/include/rapidjson \
+	-I/src/valijson/thirdparty/rapidjson/include \
+	-I/src/valijson/thirdparty/rapidjson/include/rapidjson \
 	-I/src/valijson/include \
 	-I/src/valijson/include/valijson \
 	-I/src/valijson/include/valijson/adapters \

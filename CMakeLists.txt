@@ -94,7 +94,7 @@ include_directories(include SYSTEM
     thirdparty/gtest-1.11.0/include
     thirdparty/json11-ec4e452
     thirdparty/jsoncpp-1.9.5/include
-    thirdparty/rapidjson-48fbd8c/include
+    thirdparty/rapidjson/include
     thirdparty/picojson
     thirdparty/nlohmann-json-3.1.2
     thirdparty/yaml-cpp-0.7.0/include

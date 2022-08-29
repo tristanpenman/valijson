@@ -1,3 +1,6 @@
 [submodule "thirdparty/picojson"]
 	path = thirdparty/picojson
 	url = https://github.com/tristanpenman/picojson.git
+[submodule "thirdparty/rapidjson"]
+	path = thirdparty/rapidjson
+	url = https://github.com/Tencent/rapidjson.git
