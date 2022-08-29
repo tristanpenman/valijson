@@ -1,0 +1,3 @@
+[submodule "thirdparty/picojson"]
+	path = thirdparty/picojson
+	url = https://github.com/tristanpenman/picojson.git

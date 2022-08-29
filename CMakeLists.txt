@@ -95,7 +95,7 @@ include_directories(include SYSTEM
     thirdparty/json11-ec4e452
     thirdparty/jsoncpp-1.9.5/include
     thirdparty/rapidjson-48fbd8c/include
-    thirdparty/picojson-1.3.0
+    thirdparty/picojson
     thirdparty/nlohmann-json-3.1.2
     thirdparty/yaml-cpp-0.7.0/include
 )
