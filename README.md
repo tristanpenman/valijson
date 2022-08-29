@@ -10,6 +10,10 @@ The goal of this project is to support validation of all constraints available i
 
 ## Usage
 
+Clone the repo, including submodules:
+
+    git clone --recurse-submodules git@github.com:tristanpenman/valijson.git
+
 The following code snippets show how you might implement a simple validator using RapidJson as the underlying JSON Parser.
 
 Include the necessary headers:
@@ -155,7 +159,7 @@ Valijson can be integrated either as git submodule or with find_package().
 Download this repository into your project
 
 ```bash
-git clone https://github.com/tristanpenman/valijson <project-path>/third-party/valijson
+git clone --recurse-submodules https://github.com/tristanpenman/valijson <project-path>/third-party/valijson
 ```
 
 If your project is a git repository
@@ -180,7 +184,7 @@ target_link_libraries(your-executable ValiJSON::valijson)
 It is possible to install headers by running cmake's install command from the build tree. Once Valijson is installed, use it from other CMake projects using `find_package(Valijson)` in your CMakeLists.txt.
 ```bash
 # Install Valijson
-git clone --depth=1 git@github.com:tristanpenman/valijson.git
+git clone --recurse-submodules --depth=1 git@github.com:tristanpenman/valijson.git
 cd valijson
 mkdir build
 cd build
