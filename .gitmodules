@@ -26,3 +26,7 @@
 	path = thirdparty/googletest
 	url = https://github.com/google/googletest.git
 	shallow = true
+[submodule "thirdparty/JSON-Schema-Test-Suite"]
+	path = thirdparty/JSON-Schema-Test-Suite
+	url = https://github.com/json-schema-org/JSON-Schema-Test-Suite.git
+	shallow = true
