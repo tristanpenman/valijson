@@ -67,13 +67,13 @@ find_package(Qt5Core)
 
 # jsoncpp library
 add_library(jsoncpp
-    thirdparty/jsoncpp-1.9.5/src/lib_json/json_reader.cpp
-    thirdparty/jsoncpp-1.9.5/src/lib_json/json_value.cpp
-    thirdparty/jsoncpp-1.9.5/src/lib_json/json_writer.cpp
+    thirdparty/jsoncpp/src/lib_json/json_reader.cpp
+    thirdparty/jsoncpp/src/lib_json/json_value.cpp
+    thirdparty/jsoncpp/src/lib_json/json_writer.cpp
 )
 
-target_include_directories(jsoncpp SYSTEM PRIVATE thirdparty/jsoncpp-1.9.5/include)
-set_target_properties(jsoncpp PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/thirdparty/jsoncpp-1.9.5)
+target_include_directories(jsoncpp SYSTEM PRIVATE thirdparty/jsoncpp/include)
+set_target_properties(jsoncpp PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/thirdparty/jsoncpp)
 
 add_library(json11
     thirdparty/json11-ec4e452/json11.cpp
@@ -93,7 +93,7 @@ set_target_properties(yamlcpp PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINA
 include_directories(include SYSTEM
     thirdparty/gtest-1.11.0/include
     thirdparty/json11-ec4e452
-    thirdparty/jsoncpp-1.9.5/include
+    thirdparty/jsoncpp/include
     thirdparty/rapidjson/include
     thirdparty/picojson
     thirdparty/nlohmann-json/include
