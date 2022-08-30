@@ -91,7 +91,7 @@ set_target_properties(yamlcpp PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINA
 
 # Not all of these are required for examples build it doesn't hurt to include them
 include_directories(include SYSTEM
-    thirdparty/gtest-1.11.0/include
+    thirdparty/googletest/include
     thirdparty/json11
     thirdparty/jsoncpp/include
     thirdparty/rapidjson/include
@@ -109,7 +109,7 @@ if(valijson_BUILD_TESTS)
     set(gtest_force_shared_crt ON)
     option(BUILD_GMOCK FALSE)
     option(INSTALL_GTEST FALSE)
-    add_subdirectory(thirdparty/gtest-1.11.0)
+    add_subdirectory(thirdparty/googletest)
 
     set(TEST_SOURCES
         tests/test_adapter_comparison.cpp
