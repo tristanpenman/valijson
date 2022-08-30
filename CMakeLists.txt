@@ -83,11 +83,11 @@ target_include_directories(json11 SYSTEM PRIVATE thirdparty/json11-ec4e452)
 set_target_properties(json11 PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/thirdparty/json11-ec4e452)
 
 # yaml-cpp library
-file(GLOB yamlcpp_SOURCES "thirdparty/yaml-cpp-0.7.0/src/*.cpp")
+file(GLOB yamlcpp_SOURCES "thirdparty/yaml-cpp/src/*.cpp")
 add_library(yamlcpp ${yamlcpp_SOURCES})
 
-target_include_directories(yamlcpp SYSTEM PRIVATE thirdparty/yamlcpp-0.7.0/include)
-set_target_properties(yamlcpp PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/thirdparty/yamlcpp-0.7.0)
+target_include_directories(yamlcpp SYSTEM PRIVATE thirdparty/yamlcpp/include)
+set_target_properties(yamlcpp PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/thirdparty/yamlcpp)
 
 # Not all of these are required for examples build it doesn't hurt to include them
 include_directories(include SYSTEM
@@ -97,7 +97,7 @@ include_directories(include SYSTEM
     thirdparty/rapidjson/include
     thirdparty/picojson
     thirdparty/nlohmann-json/include
-    thirdparty/yaml-cpp-0.7.0/include
+    thirdparty/yaml-cpp/include
 )
 
 if(valijson_BUILD_TESTS)
