@@ -76,11 +76,11 @@ target_include_directories(jsoncpp SYSTEM PRIVATE thirdparty/jsoncpp/include)
 set_target_properties(jsoncpp PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/thirdparty/jsoncpp)
 
 add_library(json11
-    thirdparty/json11-ec4e452/json11.cpp
+    thirdparty/json11/json11.cpp
 )
 
-target_include_directories(json11 SYSTEM PRIVATE thirdparty/json11-ec4e452)
-set_target_properties(json11 PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/thirdparty/json11-ec4e452)
+target_include_directories(json11 SYSTEM PRIVATE thirdparty/json11)
+set_target_properties(json11 PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/thirdparty/json11)
 
 # yaml-cpp library
 file(GLOB yamlcpp_SOURCES "thirdparty/yaml-cpp/src/*.cpp")
@@ -92,7 +92,7 @@ set_target_properties(yamlcpp PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINA
 # Not all of these are required for examples build it doesn't hurt to include them
 include_directories(include SYSTEM
     thirdparty/gtest-1.11.0/include
-    thirdparty/json11-ec4e452
+    thirdparty/json11
     thirdparty/jsoncpp/include
     thirdparty/rapidjson/include
     thirdparty/picojson
