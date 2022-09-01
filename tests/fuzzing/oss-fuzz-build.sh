@@ -1,5 +1,7 @@
 #!/bin/bash -eu
 
+git submodule update --init --depth 1 thirdparty
+
 # This line causes an abort which breaks fuzzing:
 sed -i '27d' include/valijson/utils/rapidjson_utils.hpp
 
