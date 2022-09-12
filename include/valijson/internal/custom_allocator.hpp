@@ -31,7 +31,7 @@ public:
     };
 
     CustomAllocator()
-      : m_allocFn(::operator new),
+      : m_allocFn([](size_t size) { return ::operator new(size, std::nothrow); }),
         m_freeFn(::operator delete) { }
 
     CustomAllocator(CustomAlloc allocFn, CustomFree freeFn)

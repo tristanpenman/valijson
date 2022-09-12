@@ -47,7 +47,7 @@ public:
      * @brief  Construct a new Subschema object
      */
     Subschema()
-      : m_allocFn(::operator new)
+      : m_allocFn([](size_t size) { return ::operator new(size, std::nothrow); })
       , m_freeFn(::operator delete)
       , m_alwaysInvalid(false) { }
 
