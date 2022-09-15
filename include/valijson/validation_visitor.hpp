@@ -348,12 +348,12 @@ public:
     }
 
     /**
-    * @brief    Validate current node against a FormatConstraint
-    * 
-    * @param    constraint  Constraint that the target must validate against
-    * 
-    * @return   \c true if validation succeeds; \c false otherwise
-    */
+     * @brief    Validate current node against a FormatConstraint
+     * 
+     * @param    constraint  Constraint that the target must validate against
+     * 
+     * @return   \c true if validation succeeds; \c false otherwise
+     */
     bool visit(const FormatConstraint &constraint) override
     {
         const std::string s = m_target.asString();
@@ -1828,13 +1828,13 @@ private:
     }
 
     /**
-    * @brief    Helper function to validate if day is valid for given month
-    * 
-    * @param    month   Month, 1-12
-    * @param    day     Day, 1-31
-    * 
-    * @return   true if day is valid for given month, false otherwise.
-    */
+     * @brief    Helper function to validate if day is valid for given month
+     * 
+     * @param    month   Month, 1-12
+     * @param    day     Day, 1-31
+     * 
+     * @return   \c true if day is valid for given month, \c false otherwise.
+     */
     bool validate_date_range(int month, int day)
     {
         if (month == 2) {
