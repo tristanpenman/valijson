@@ -2708,7 +2708,7 @@ inline std::string extractReferenceToken(std::string::const_iterator begin,
         try {
 #endif
             const char c = decodePercentEncodedChar(token.substr(n + 1, 2));
-            token.replace(n, 3, &c, 1);
+            token.replace(n, 3, 1, c);
 #if VALIJSON_USE_EXCEPTIONS
         } catch (const std::runtime_error &e) {
             throwRuntimeError(
