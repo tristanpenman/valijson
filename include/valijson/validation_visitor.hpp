@@ -1208,8 +1208,10 @@ public:
             return true;
         }
 
+        size_t array_size = m_target.getArraySize();
+
         // Empty arrays are always valid
-        if (m_target.getArraySize() == 0) {
+        if (array_size == 0) {
             return true;
         }
 
@@ -1217,10 +1219,9 @@ public:
 
         const typename AdapterType::Array targetArray = m_target.asArray();
         const typename AdapterType::Array::const_iterator end = targetArray.end();
-        const typename AdapterType::Array::const_iterator secondLast = --targetArray.end();
-        unsigned int outerIndex = 0;
+        
         typename AdapterType::Array::const_iterator outerItr = targetArray.begin();
-        for (; outerItr != secondLast; ++outerItr) {
+        for (unsigned int outerIndex = 0; outerIndex < array_size - 1 /*outerItr != secondLast*/; ++outerItr) {
             unsigned int innerIndex = outerIndex + 1;
             typename AdapterType::Array::const_iterator innerItr(outerItr);
             for (++innerItr; innerItr != end; ++innerItr) {
@@ -1239,7 +1240,7 @@ public:
 
         return validated;
     }
-
+    
 private:
 
     /**
