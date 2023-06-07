@@ -553,14 +553,7 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-    opt::optional<NlohmannJsonObject> getObjectOptional() const
-    {
-        if (m_value.is_object()) {
-            return opt::make_optional(NlohmannJsonObject(m_value));
-        }
-
-        return {};
-    }
+    opt::optional<NlohmannJsonObject> getObjectOptional() const;
 
     /**
      * @brief   Retrieve the number of members in the object
@@ -678,6 +671,17 @@ public:
     {
     }
 };
+
+template <class ValueType>
+opt::optional<NlohmannJsonObject>
+NlohmannJsonValue<ValueType>::getObjectOptional() const
+{
+    if (m_value.is_object()) {
+        return opt::make_optional(NlohmannJsonObject(m_value));
+    }
+
+    return {};
+}
 
 /// Specialisation of the AdapterTraits template struct for NlohmannJsonAdapter.
 template<>
