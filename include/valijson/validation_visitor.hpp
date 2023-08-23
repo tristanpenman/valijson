@@ -349,13 +349,32 @@ public:
 
     /**
      * @brief    Validate current node against a FormatConstraint
-     * 
+     *
      * @param    constraint  Constraint that the target must validate against
-     * 
+     *
      * @return   \c true if validation succeeds; \c false otherwise
      */
     bool visit(const FormatConstraint &constraint) override
     {
+        //
+        // Don't attempt to cast validate the format constraint unless the
+        // target value is known to be a string. Drafts 4-7 of the spec
+        // suggest that 'format' should be treated as an annotation rather
+        // than an assertion, however this is not guaranteed. Given that we
+        // have been treating it as an assertion here, failing quietly on
+        // non-string values seems like the right thing to do, to avoid
+        // this throwing an exception.
+        //
+        // Schemas that need tighter validation around 'format' constaints
+        // should generally pair it with a 'type' constraint.
+        //
+        // Reference:
+        // https://json-schema.org/understanding-json-schema/reference/string.html#format
+        //
+        if (!m_target.maybeString()) {
+            return true;
+        }
+
         const std::string s = m_target.asString();
         const std::string format = constraint.getFormat();
         if (format == "date") {
@@ -1219,7 +1238,7 @@ public:
 
         const typename AdapterType::Array targetArray = m_target.asArray();
         const typename AdapterType::Array::const_iterator end = targetArray.end();
-        
+
         typename AdapterType::Array::const_iterator outerItr = targetArray.begin();
         for (unsigned int outerIndex = 0; outerIndex < array_size - 1 /*outerItr != secondLast*/; ++outerItr) {
             unsigned int innerIndex = outerIndex + 1;
@@ -1240,7 +1259,7 @@ public:
 
         return validated;
     }
-    
+
 private:
 
     /**
@@ -1830,10 +1849,10 @@ private:
 
     /**
      * @brief    Helper function to validate if day is valid for given month
-     * 
+     *
      * @param    month   Month, 1-12
      * @param    day     Day, 1-31
-     * 
+     *
      * @return   \c true if day is valid for given month, \c false otherwise.
      */
     bool validate_date_range(int month, int day)
@@ -1864,7 +1883,7 @@ private:
                 }
                 return false;
             }
-                
+
         }
         return true;
     }
