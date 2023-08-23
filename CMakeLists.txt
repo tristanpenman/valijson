@@ -237,6 +237,10 @@ if(valijson_BUILD_EXAMPLES)
         examples/json_pointers.cpp
     )
 
+    add_executable(picojson_format_test
+        examples/picojson_format_test.cpp
+    )
+
     add_executable(remote_resolution_local_file
         examples/remote_resolution_local_file.cpp
     )
