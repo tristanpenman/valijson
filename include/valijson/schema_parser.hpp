@@ -624,6 +624,14 @@ private:
             updatedScope = currentScope;
         }
 
+        // Add the type constraint first to be the first one to check because other constraints may rely on it
+        if ((itr = object.find("type")) != object.end()) {
+            rootSchema.addConstraintToSubschema(
+                    makeTypeConstraint(rootSchema, rootNode, itr->second, updatedScope, nodePath + "/type", fetchDoc,
+                            docCache, schemaCache),
+                    &subschema);
+        }
+
         if ((itr = object.find("allOf")) != object.end()) {
             rootSchema.addConstraintToSubschema(
                     makeAllOfConstraint(rootSchema, rootNode, itr->second,
@@ -923,13 +931,6 @@ private:
             } else {
                 throwRuntimeError("'title' attribute should have a string value");
             }
-        }
-
-        if ((itr = object.find("type")) != object.end()) {
-            rootSchema.addConstraintToSubschema(
-                    makeTypeConstraint(rootSchema, rootNode, itr->second, updatedScope, nodePath + "/type", fetchDoc,
-                            docCache, schemaCache),
-                    &subschema);
         }
 
         if ((itr = object.find("uniqueItems")) != object.end()) {
