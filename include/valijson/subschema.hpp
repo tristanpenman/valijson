@@ -120,7 +120,7 @@ public:
     {
         bool allTrue = true;
         for (auto &&constraint : m_constraints) {
-            allTrue = applyFunction(*constraint) && allTrue;
+            allTrue = allTrue && applyFunction(*constraint);
         }
 
         return allTrue;
