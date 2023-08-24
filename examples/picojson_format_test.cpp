@@ -31,7 +31,7 @@ constexpr auto validStr = R"JSON([
     "2023-07-18T14:46:22Z"
 ])JSON";
 
-constexpr auto invalidStr = R"JSON([
+constexpr auto invalidStrs = R"JSON([
     ["um 12", "um 12"],
     ["2023-07-18T14:46:22Z"],
     ["2023-07-18T14:46:22Z", "2023-07-18T14:46:22Z", "2023-07-18T14:46:22Z", "2023-07-18T14:46:22Z"]
@@ -80,30 +80,33 @@ int main(int argc, char **argv)
 
     {
         // invalid
-        auto targetJson = Parse(invalidStr, picojson::value{});
-        auto targetAdapter = valijson::adapters::PicoJsonAdapter(targetJson);
-        std::cout << "Invalid Target:" << std::endl << invalidStr << std::endl << std::endl;
+        auto targetJsonArray = Parse(invalidStrs, picojson::value{});
+        std::cout << "Invalid Targets:" << std::endl << invalidStrs << std::endl << std::endl;
 
-        valijson::ValidationResults results;
-        auto validator = valijson::Validator();
-        auto isValid = validator.validate(
-            *validatorSchema,
-            targetAdapter,
-            &results);
+        for (auto &&testCase : targetJsonArray.get<picojson::array>()) {
+            auto targetAdapter = valijson::adapters::PicoJsonAdapter(testCase);
 
-        std::cout << "Is valid: " << (isValid ? "YES" : "NO") << std::endl << std::endl;
+            valijson::ValidationResults results;
+            auto validator = valijson::Validator();
+            auto isValid = validator.validate(
+                *validatorSchema,
+                targetAdapter,
+                &results);
 
-        valijson::ValidationResults::Error error;
-        unsigned int errorNum = 1;
-        while (results.popError(error)) {
-            std::cerr << "Error #" << errorNum << std::endl;
-            std::cerr << "  ";
-            for (const std::string &contextElement : error.context) {
-                std::cerr << contextElement << " ";
+            std::cout << "Is valid: " << (isValid ? "YES" : "NO") << std::endl << std::endl;
+
+            valijson::ValidationResults::Error error;
+            unsigned int errorNum = 1;
+            while (results.popError(error)) {
+                std::cerr << "Error #" << errorNum << std::endl;
+                std::cerr << "  ";
+                for (const std::string &contextElement : error.context) {
+                    std::cerr << contextElement << " ";
+                }
+                std::cerr << std::endl;
+                std::cerr << "    - " << error.description << std::endl << std::endl;
+                ++errorNum;
             }
-            std::cerr << std::endl;
-            std::cerr << "    - " << error.description << std::endl;
-            ++errorNum;
         }
     }
 }
