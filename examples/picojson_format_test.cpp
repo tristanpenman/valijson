@@ -26,7 +26,12 @@ constexpr auto schemaStr = R"JSON({
   "type": "array"
 })JSON";
 
-constexpr auto targetStr = R"JSON([
+constexpr auto validStr = R"JSON([
+    "2023-07-18T14:46:22Z",
+    "2023-07-18T14:46:22Z"
+])JSON";
+
+constexpr auto invalidStr = R"JSON([
     ["um 12", "um 12"],
     ["2023-07-18T14:46:22Z"],
     ["2023-07-18T14:46:22Z", "2023-07-18T14:46:22Z", "2023-07-18T14:46:22Z", "2023-07-18T14:46:22Z"]
@@ -54,32 +59,51 @@ int main(int argc, char **argv)
         auto schemaAdapter = valijson::adapters::PicoJsonAdapter(schemaJson);
         valijson::SchemaParser parser;
         parser.populateSchema(schemaAdapter, *validatorSchema);
-        std::cout << "Schema:" << std::endl << schemaStr << std::endl;
+        std::cout << "Schema:" << std::endl << schemaStr << std::endl << std::endl;;
     }
 
-    auto targetJson = Parse(targetStr, picojson::value{});
-    auto targetAdapter = valijson::adapters::PicoJsonAdapter(targetJson);
-    std::cout << "Target:" << std::endl << targetStr << std::endl;
+    {
+        // valid
+        auto targetJson = Parse(validStr, picojson::value{});
+        auto targetAdapter = valijson::adapters::PicoJsonAdapter(targetJson);
+        std::cout << "Valid Target:" << std::endl << validStr << std::endl << std::endl;
 
-    valijson::ValidationResults results;
-    auto validator = valijson::Validator();
-    [[maybe_unused]] auto isValid = validator.validate(
-        *validatorSchema,
-        targetAdapter,
-        &results);
+        valijson::ValidationResults results;
+        auto validator = valijson::Validator();
+        auto isValid = validator.validate(
+            *validatorSchema,
+            targetAdapter,
+            &results);
 
-    std::cout << "Is valid: " << (isValid ? "YES" : "NO") << std::endl;
+        std::cout << "Is valid: " << (isValid ? "YES" : "NO") << std::endl << std::endl;;
+    }
 
-    valijson::ValidationResults::Error error;
-    unsigned int errorNum = 1;
-    while (results.popError(error)) {
-        std::cerr << "Error #" << errorNum << std::endl;
-        std::cerr << "  ";
-        for (const std::string &contextElement : error.context) {
-            std::cerr << contextElement << " ";
+    {
+        // invalid
+        auto targetJson = Parse(invalidStr, picojson::value{});
+        auto targetAdapter = valijson::adapters::PicoJsonAdapter(targetJson);
+        std::cout << "Invalid Target:" << std::endl << invalidStr << std::endl << std::endl;
+
+        valijson::ValidationResults results;
+        auto validator = valijson::Validator();
+        auto isValid = validator.validate(
+            *validatorSchema,
+            targetAdapter,
+            &results);
+
+        std::cout << "Is valid: " << (isValid ? "YES" : "NO") << std::endl << std::endl;
+
+        valijson::ValidationResults::Error error;
+        unsigned int errorNum = 1;
+        while (results.popError(error)) {
+            std::cerr << "Error #" << errorNum << std::endl;
+            std::cerr << "  ";
+            for (const std::string &contextElement : error.context) {
+                std::cerr << contextElement << " ";
+            }
+            std::cerr << std::endl;
+            std::cerr << "    - " << error.description << std::endl;
+            ++errorNum;
         }
-        std::cerr << std::endl;
-        std::cerr << "    - " << error.description << std::endl;
-        ++errorNum;
     }
 }
