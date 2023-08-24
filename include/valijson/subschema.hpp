@@ -120,7 +120,12 @@ public:
     {
         bool allTrue = true;
         for (auto &&constraint : m_constraints) {
-            allTrue = applyFunction(*constraint) && allTrue;
+            // Even if an application fails, we want to continue checking the
+            // schema. In that case we set allTrue to false, and then fall
+            // through to the next constraint
+            if (!applyFunction(*constraint)) {
+                allTrue = false;
+            }
         }
 
         return allTrue;
