@@ -1,5 +1,5 @@
 #include <iostream>
-#include <string_view>
+#include <string>
 
 #define PICOJSON_USE_INT64
 #include "picojson.h"
@@ -37,7 +37,7 @@ constexpr auto invalidStrs = R"JSON([
     ["2023-07-18T14:46:22Z", "2023-07-18T14:46:22Z", "2023-07-18T14:46:22Z", "2023-07-18T14:46:22Z"]
 ])JSON";
 
-picojson::value Parse(std::string_view serialized, picojson::value def)
+picojson::value Parse(std::string serialized, picojson::value def)
 {
     picojson::value v;
     auto first = serialized.data();
