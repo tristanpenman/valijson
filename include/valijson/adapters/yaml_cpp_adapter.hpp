@@ -433,7 +433,7 @@ class YamlCppValue
 
     bool isString() const
     {
-        return m_value.isScalar();
+        return m_value.IsScalar();
     }
 
   private:
