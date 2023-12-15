@@ -43,6 +43,12 @@ public:
     // Disable copy assignment
     Subschema & operator=(const Subschema &) = delete;
 
+    // Default move construction
+    Subschema(Subschema &&) = default;
+
+    // Default move assignment
+    Subschema & operator=(Subschema &&) = default;
+
     /**
      * @brief  Construct a new Subschema object
      */

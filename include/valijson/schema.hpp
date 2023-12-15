@@ -42,6 +42,12 @@ public:
     // Disable copy assignment
     Schema & operator=(const Schema &) = delete;
 
+    // Default move construction
+    Schema(Schema &&other) = default;
+
+    // Disable copy assignment
+    Schema & operator=(Schema &&) = default;
+
     /**
      * @brief  Clean up and free all memory managed by the Schema
      *
