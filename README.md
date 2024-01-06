@@ -135,7 +135,7 @@ Valijson's JSON Reference implementation requires that two callback functions ar
 
 ## Test Suite
 
-Valijson's' test suite currently contains several hand-crafted tests and uses the standard [JSON Schema Test Suite](https://github.com/json-schema/JSON-Schema-Test-Suite) to test support for parts of the JSON Schema feature set that have been implemented.
+Valijson's test suite currently contains several hand-crafted tests and uses the standard [JSON Schema Test Suite](https://github.com/json-schema/JSON-Schema-Test-Suite) to test support for parts of the JSON Schema feature set that have been implemented.
 
 ### cmake
 
@@ -152,7 +152,7 @@ make
 ```
 ## How to add this library to your cmake target
 
-Valijson can be integrated either as git submodule or with find_package().
+Valijson can be integrated either as git submodule or with `find_package()`.
 
 ### Valijson as git submodule
 
@@ -210,7 +210,7 @@ This can then be used in your project with a single `#include`:
 
     #include "valijson_nlohmann_bundled.hpp"
 
-An example can be found in [examples/valijson_nlohmann_bundled_test.cpp](examples/valijson_nlohmann_bundled_test.cpp).
+An example can be found in [examples/valijson\_nlohmann\_bundled\_test.cpp](examples/valijson_nlohmann_bundled_test.cpp).
 
 Note: the bundled version of Valijson always embeds a compatibility header in place of `std::optional`.
 
@@ -270,7 +270,7 @@ When building the test suite, Boost 1.54, Qt 5 and Poco are optional dependencie
 
 Valijson supports JSON documents loaded using various JSON parser libraries. It has been tested against the following versions of these libraries:
 
- - [boost::property_tree 1.54](http://www.boost.org/doc/libs/1_54_0/doc/html/boost_propertytree/synopsis.html)
+ - [boost::property\_tree 1.54](http://www.boost.org/doc/libs/1_54_0/doc/html/boost_propertytree/synopsis.html)
  - [Boost.JSON 1.75](https://www.boost.org/doc/libs/1_75_0/libs/json/doc/html/index.html)
  - [json11 (commit afcc8d0)](https://github.com/dropbox/json11/tree/afcc8d0d82b1ce2df587a7a0637d05ba493bf5e6)
  - [jsoncpp 1.9.4](https://github.com/open-source-parsers/jsoncpp/archive/1.9.4.tar.gz)
