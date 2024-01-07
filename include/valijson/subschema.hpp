@@ -43,11 +43,39 @@ public:
     // Disable copy assignment
     Subschema & operator=(const Subschema &) = delete;
 
-    // Default move construction
-    Subschema(Subschema &&) = default;
+    /**
+     * @brief Move construct a new Subschema
+     *
+     * @param other Subschema that is moved into the new Subschema
+     */
+    Subschema(Subschema &&other)
+      : m_allocFn(other.m_allocFn),
+        m_freeFn(other.m_freeFn),
+        m_alwaysInvalid(std::move(other.m_alwaysInvalid)),
+        m_constraints(std::move(other.m_constraints)),
+        m_description(std::move(other.m_description)),
+        m_id(std::move(other.m_id)),
+        m_title(std::move(other.m_title)) { }
 
-    // Default move assignment
-    Subschema & operator=(Subschema &&) = default;
+    /**
+     * @brief Move assign a Subschema
+     *
+     * @param other Subschema that is move assigned to this Subschema
+     * @return Subschema&
+     */
+    Subschema & operator=(Subschema &&other)
+    {
+        // Swaps all members
+        std::swap(m_allocFn, other.m_allocFn);
+        std::swap(m_freeFn, other.m_freeFn);
+        std::swap(m_alwaysInvalid, other.m_alwaysInvalid);
+        std::swap(m_constraints, other.m_constraints);
+        std::swap(m_description, other.m_description);
+        std::swap(m_id, other.m_id);
+        std::swap(m_title, other.m_title);
+
+        return *this;
+    }
 
     /**
      * @brief  Construct a new Subschema object
