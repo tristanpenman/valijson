@@ -46,8 +46,8 @@ VALIJSON_NORETURN inline void throwNotSupported() {
 // The idea and interface is based on Boost.Optional library
 // authored by Fernando Luis Cacciola Carballal
 
-# ifndef ___OPTIONAL_HPP___
-# define ___OPTIONAL_HPP___
+# ifndef OPTIONAL_HPP
+# define OPTIONAL_HPP
 
 # include <utility>
 # include <type_traits>
@@ -308,7 +308,7 @@ namespace std{
             unsigned char dummy_;
             T value_;
 
-            constexpr storage_t( trivial_init_t ) noexcept : dummy_() {};
+            constexpr storage_t( trivial_init_t ) noexcept : dummy_() {}
 
             template <class... Args>
             constexpr storage_t( Args&&... args ) : value_(constexpr_forward<Args>(args)...) {}
@@ -323,7 +323,7 @@ namespace std{
             unsigned char dummy_;
             T value_;
 
-            constexpr constexpr_storage_t( trivial_init_t ) noexcept : dummy_() {};
+            constexpr constexpr_storage_t( trivial_init_t ) noexcept : dummy_() {}
 
             template <class... Args>
             constexpr constexpr_storage_t( Args&&... args ) : value_(constexpr_forward<Args>(args)...) {}
@@ -338,7 +338,7 @@ namespace std{
             bool init_;
             storage_t<T> storage_;
 
-            constexpr optional_base() noexcept : init_(false), storage_(trivial_init) {};
+            constexpr optional_base() noexcept : init_(false), storage_(trivial_init) {}
 
             explicit constexpr optional_base(const T& v) : init_(true), storage_(v) {}
 
@@ -361,7 +361,7 @@ namespace std{
             bool init_;
             constexpr_storage_t<T> storage_;
 
-            constexpr constexpr_optional_base() noexcept : init_(false), storage_(trivial_init) {};
+            constexpr constexpr_optional_base() noexcept : init_(false), storage_(trivial_init) {}
 
             explicit constexpr constexpr_optional_base(const T& v) : init_(true), storage_(v) {}
 
@@ -436,8 +436,8 @@ namespace std{
             typedef T value_type;
 
             // 20.5.5.1, constructors
-            constexpr optional() noexcept : OptionalBase<T>()  {};
-            constexpr optional(nullopt_t) noexcept : OptionalBase<T>() {};
+            constexpr optional() noexcept : OptionalBase<T>()  {}
+            constexpr optional(nullopt_t) noexcept : OptionalBase<T>() {}
 
             optional(const optional& rhs)
             : OptionalBase<T>()
@@ -1078,7 +1078,7 @@ namespace std
 # undef TR2_OPTIONAL_REQUIRES
 # undef TR2_OPTIONAL_ASSERTED_EXPRESSION
 
-# endif //___OPTIONAL_HPP___
+# endif //OPTIONAL_HPP
 #pragma once
 
 namespace opt = std::experimental;
@@ -2412,6 +2412,8 @@ private:
 }  // namespace valijson
 #pragma once
 
+#include <limits>
+
 namespace valijson {
 namespace internal {
 
@@ -2441,7 +2443,7 @@ public:
     };
 
     CustomAllocator()
-      : m_allocFn(::operator new),
+      : m_allocFn([](size_t size) { return ::operator new(size, std::nothrow); }),
         m_freeFn(::operator delete) { }
 
     CustomAllocator(CustomAlloc allocFn, CustomFree freeFn)
@@ -2884,7 +2886,6 @@ namespace json_reference {
   * @brief   Extract URI from JSON Reference relative to the current schema
   *
   * @param   jsonRef  JSON Reference to extract from
-  * @param   schema   Schema that JSON Reference URI is relative to
   *
   * @return  Optional string containing URI
   */
@@ -3198,11 +3199,17 @@ public:
     // Disable copy assignment
     Subschema & operator=(const Subschema &) = delete;
 
+    // Default move construction
+    Subschema(Subschema &&) = default;
+
+    // Default move assignment
+    Subschema & operator=(Subschema &&) = default;
+
     /**
      * @brief  Construct a new Subschema object
      */
     Subschema()
-      : m_allocFn(::operator new)
+      : m_allocFn([](size_t size) { return ::operator new(size, std::nothrow); })
       , m_freeFn(::operator delete)
       , m_alwaysInvalid(false) { }
 
@@ -3275,7 +3282,12 @@ public:
     {
         bool allTrue = true;
         for (auto &&constraint : m_constraints) {
-            allTrue = applyFunction(*constraint) && allTrue;
+            // Even if an application fails, we want to continue checking the
+            // schema. In that case we set allTrue to false, and then fall
+            // through to the next constraint
+            if (!applyFunction(*constraint)) {
+                allTrue = false;
+            }
         }
 
         return allTrue;
@@ -3491,6 +3503,12 @@ public:
     // Disable copy assignment
     Schema & operator=(const Schema &) = delete;
 
+    // Default move construction
+    Schema(Schema &&other) = default;
+
+    // Disable copy assignment
+    Schema & operator=(Schema &&) = default;
+
     /**
      * @brief  Clean up and free all memory managed by the Schema
      *
@@ -3683,6 +3701,7 @@ class ConstConstraint;
 class ContainsConstraint;
 class DependenciesConstraint;
 class EnumConstraint;
+class FormatConstraint;
 class LinearItemsConstraint;
 class MaxItemsConstraint;
 class MaximumConstraint;
@@ -3719,6 +3738,7 @@ protected:
     typedef constraints::ContainsConstraint ContainsConstraint;
     typedef constraints::DependenciesConstraint DependenciesConstraint;
     typedef constraints::EnumConstraint EnumConstraint;
+    typedef constraints::FormatConstraint FormatConstraint;
     typedef constraints::LinearItemsConstraint LinearItemsConstraint;
     typedef constraints::MaximumConstraint MaximumConstraint;
     typedef constraints::MaxItemsConstraint MaxItemsConstraint;
@@ -3750,6 +3770,7 @@ public:
     virtual bool visit(const ContainsConstraint &) = 0;
     virtual bool visit(const DependenciesConstraint &) = 0;
     virtual bool visit(const EnumConstraint &) = 0;
+    virtual bool visit(const FormatConstraint &) = 0;
     virtual bool visit(const LinearItemsConstraint &) = 0;
     virtual bool visit(const MaximumConstraint &) = 0;
     virtual bool visit(const MaxItemsConstraint &) = 0;
@@ -4254,6 +4275,33 @@ private:
     typedef std::vector<const EnumValue *, internal::CustomAllocator<const EnumValue *>> EnumValues;
 
     EnumValues m_enumValues;
+};
+
+/**
+ * @brief  Represent a 'format' constraint
+ *
+ * A format constraint restricts the content of string values, as defined by a set of commonly used formats.
+ *
+ * As this is an optional feature in JSON Schema, unrecognised formats will be treated as valid for any string value.
+ */
+class FormatConstraint: public BasicConstraint<FormatConstraint>
+{
+public:
+    FormatConstraint()
+        : m_format() { }
+
+    const std::string & getFormat() const
+    {
+        return m_format;
+    }
+
+    void setFormat(const std::string & format)
+    {
+        m_format = format;
+    }
+
+private:
+    std::string m_format;
 };
 
 /**
@@ -5420,24 +5468,24 @@ private:
      * those $ref nodes in the schema cache. An entry will be added to the
      * schema cache for each node visited on the path to the concrete node.
      *
-     * @param  rootSchema    The Schema instance, and root subschema, through
-     *                       which other subschemas can be created and
-     *                       modified
-     * @param  rootNode      Reference to the node from which JSON References
-     *                       will be resolved when they refer to the current
-     *                       document
-     * @param  node          Reference to the node to parse
-     * @param  currentScope  URI for current resolution scope
-     * @param  nodePath      JSON Pointer representing path to current node
-     * @param  fetchDoc      Function to fetch remote JSON documents (optional)
-     * @param  parentSchema  Optional pointer to the parent schema, used to
-     *                       support required keyword in Draft 3
-     * @param  ownName       Optional pointer to a node name, used to support
-     *                       the 'required' keyword in Draft 3
-     * @param  docCache      Cache of resolved and fetched remote documents
-     * @param  schemaCache   Cache of populated schemas
-     * @param  newCacheKeys  A list of keys that should be added to the cache
-     *                       when recursion terminates
+     * @param  rootSchema      The Schema instance, and root subschema, through
+     *                         which other subschemas can be created and
+     *                         modified
+     * @param  rootNode        Reference to the node from which JSON References
+     *                         will be resolved when they refer to the current
+     *                         document
+     * @param  node            Reference to the node to parse
+     * @param  currentScope    URI for current resolution scope
+     * @param  nodePath        JSON Pointer representing path to current node
+     * @param  fetchDoc        Function to fetch remote JSON documents (optional)
+     * @param  parentSubschema Optional pointer to the parent schema, used to
+     *                         support required keyword in Draft 3
+     * @param  ownName         Optional pointer to a node name, used to support
+     *                         the 'required' keyword in Draft 3
+     * @param  docCache        Cache of resolved and fetched remote documents
+     * @param  schemaCache     Cache of populated schemas
+     * @param  newCacheKeys    A list of keys that should be added to the cache
+     *                         when recursion terminates
      */
     template<typename AdapterType>
     const Subschema * makeOrReuseSchema(
@@ -5586,22 +5634,22 @@ private:
      * a concrete node, an entry will be added to the schema cache for each of
      * the nodes in that path.
      *
-     * @param  rootSchema    The Schema instance, and root subschema, through
-     *                       which other subschemas can be created and
-     *                       modified
-     * @param  rootNode      Reference to the node from which JSON References
-     *                       will be resolved when they refer to the current
-     *                       document
-     * @param  node          Reference to the node to parse
-     * @param  currentScope  URI for current resolution scope
-     * @param  nodePath      JSON Pointer representing path to current node
-     * @param  fetchDoc      Function to fetch remote JSON documents (optional)
-     * @param  parentSchema  Optional pointer to the parent schema, used to
-     *                       support required keyword in Draft 3
-     * @param  ownName       Optional pointer to a node name, used to support
-     *                       the 'required' keyword in Draft 3
-     * @param  docCache      Cache of resolved and fetched remote documents
-     * @param  schemaCache   Cache of populated schemas
+     * @param  rootSchema      The Schema instance, and root subschema, through
+     *                         which other subschemas can be created and
+     *                         modified
+     * @param  rootNode        Reference to the node from which JSON References
+     *                         will be resolved when they refer to the current
+     *                         document
+     * @param  node            Reference to the node to parse
+     * @param  currentScope    URI for current resolution scope
+     * @param  nodePath        JSON Pointer representing path to current node
+     * @param  fetchDoc        Function to fetch remote JSON documents (optional)
+     * @param  parentSubschema Optional pointer to the parent schema, used to
+     *                         support required keyword in Draft 3
+     * @param  ownName         Optional pointer to a node name, used to support
+     *                         the 'required' keyword in Draft 3
+     * @param  docCache        Cache of resolved and fetched remote documents
+     * @param  schemaCache     Cache of populated schemas
      */
     template<typename AdapterType>
     const Subschema * makeOrReuseSchema(
@@ -5638,7 +5686,7 @@ private:
      *                          will be resolved when they refer to the current
      *                          document
      * @param  node             Reference to node to parse
-     * @param  schema           Reference to Schema to populate
+     * @param  subschema        Reference to Schema to populate
      * @param  currentScope     URI for current resolution scope
      * @param  nodePath         JSON Pointer representing path to current node
      * @param  fetchDoc         Optional function to fetch remote JSON documents
@@ -5704,6 +5752,14 @@ private:
             }
         } else {
             updatedScope = currentScope;
+        }
+
+        // Add the type constraint first to be the first one to check because other constraints may rely on it
+        if ((itr = object.find("type")) != object.end()) {
+            rootSchema.addConstraintToSubschema(
+                    makeTypeConstraint(rootSchema, rootNode, itr->second, updatedScope, nodePath + "/type", fetchDoc,
+                            docCache, schemaCache),
+                    &subschema);
         }
 
         if ((itr = object.find("allOf")) != object.end()) {
@@ -5774,6 +5830,10 @@ private:
 
         if ((itr = object.find("enum")) != object.end()) {
             rootSchema.addConstraintToSubschema(makeEnumConstraint(itr->second), &subschema);
+        }
+
+        if ((itr = object.find("format")) != object.end()) {
+            rootSchema.addConstraintToSubschema(makeFormatConstraint(itr->second), &subschema);
         }
 
         {
@@ -6001,13 +6061,6 @@ private:
             } else {
                 throwRuntimeError("'title' attribute should have a string value");
             }
-        }
-
-        if ((itr = object.find("type")) != object.end()) {
-            rootSchema.addConstraintToSubschema(
-                    makeTypeConstraint(rootSchema, rootNode, itr->second, updatedScope, nodePath + "/type", fetchDoc,
-                            docCache, schemaCache),
-                    &subschema);
         }
 
         if ((itr = object.find("uniqueItems")) != object.end()) {
@@ -6250,7 +6303,7 @@ private:
      *                               a schema that will be used when the conditional
      *                               evaluates to false.
      * @param   currentScope         URI for current resolution scope
-     * @param   containsPath         JSON Pointer representing the path to
+     * @param   nodePath             JSON Pointer representing the path to
      *                               the 'contains' node
      * @param   fetchDoc             Function to fetch remote JSON documents
      *                               (optional)
@@ -6504,6 +6557,29 @@ private:
     }
 
     /**
+     * @brief   Make a new FormatConstraint object
+     *
+     * @param   node  JSON node containing the configuration for this constraint
+     *
+     * @return  pointer to a new FormatConstraint that belongs to the caller
+     */
+    template<typename AdapterType>
+    constraints::FormatConstraint makeFormatConstraint(
+        const AdapterType &node)
+    {
+        if (node.isString()) {
+            const std::string value = node.asString();
+            if (!value.empty()) {
+                constraints::FormatConstraint constraint;
+                constraint.setFormat(value);
+                return constraint;
+            }
+        }
+
+        throwRuntimeError("Expected a string value for 'format' constraint.");
+    }
+
+    /**
      * @brief   Make a new ItemsConstraint object.
      *
      * @param   rootSchema           The Schema instance, and root subschema,
@@ -6618,14 +6694,9 @@ private:
      * @param   items                Optional pointer to a JSON node containing
      *                               an object mapping property names to
      *                               schemas.
-     * @param   additionalItems      Optional pointer to a JSON node containing
-     *                               an additional properties schema or a
-     *                               boolean value.
      * @param   currentScope         URI for current resolution scope
      * @param   itemsPath            JSON Pointer representing the path to
      *                               the 'items' node
-     * @param   additionalItemsPath  JSON Pointer representing the path to
-     *                               the 'additionalItems' node
      * @param   fetchDoc             Function to fetch remote JSON documents
      *                               (optional)
      * @param   docCache             Cache of resolved and fetched remote
@@ -6677,13 +6748,6 @@ private:
     /**
      * @brief   Make a new MaximumConstraint object (draft 3 and 4).
      *
-     * @param   rootSchema        The Schema instance, and root subschema,
-     *                            through which other subschemas can be
-     *                            created and modified
-     * @param   rootNode          Reference to the node from which JSON
-     *                            References will be resolved when they refer
-     *                            to the current document; used for recursive
-     *                            parsing of schemas
      * @param   node              JSON node containing the maximum value.
      * @param   exclusiveMaximum  Optional pointer to a JSON boolean value that
      *                            indicates whether maximum value is excluded
@@ -6718,9 +6782,6 @@ private:
      * @brief   Make a new MaximumConstraint object that is always exclusive (draft 7).
      *
      * @param   node       JSON node containing an integer, representing the maximum value.
-     *
-     * @param   exclusive  Optional pointer to a JSON boolean value that indicates whether the
-     *                     maximum value is excluded from the range of permitted values.
      *
      * @return  pointer to a new Maximum that belongs to the caller
      */
@@ -6817,7 +6878,7 @@ private:
      * @param  node              JSON node containing an integer, representing
      *                           the minimum value.
      *
-     * @param  exclusiveMaximum  Optional pointer to a JSON boolean value that
+     * @param  exclusiveMinimum  Optional pointer to a JSON boolean value that
      *                           indicates whether the minimum value is
      *                           excluded from the range of permitted values.
      *
@@ -6850,9 +6911,6 @@ private:
      * @brief   Make a new MinimumConstraint object that is always exclusive (draft 7).
      *
      * @param   node       JSON node containing an integer, representing the minimum value.
-     *
-     * @param   exclusive  Optional pointer to a JSON boolean value that indicates whether the
-     *                     minimum value is excluded from the range of permitted values.
      *
      * @return  pointer to a new MinimumConstraint that belongs to the caller
      */
@@ -7520,7 +7578,7 @@ public:
     {
         result = 0;
         return true;
-    };
+    }
 
     StdStringObject asObject() const
     {
@@ -7556,67 +7614,67 @@ public:
         return new StdStringFrozenValue(m_value);
     }
 
-    static StdStringArray getArray()
+    VALIJSON_NORETURN static StdStringArray getArray()
     {
         throwNotSupported();
     }
 
-    size_t getArraySize() const override
+    VALIJSON_NORETURN size_t getArraySize() const override
     {
         throwNotSupported();
     }
 
-    bool getArraySize(size_t &) const override
+    VALIJSON_NORETURN bool getArraySize(size_t &) const override
     {
         throwNotSupported();
     }
 
-    bool getBool() const override
+    VALIJSON_NORETURN bool getBool() const override
     {
         throwNotSupported();
     }
 
-    bool getBool(bool &) const override
+    VALIJSON_NORETURN bool getBool(bool &) const override
     {
         throwNotSupported();
     }
 
-    double getDouble() const override
+    VALIJSON_NORETURN double getDouble() const override
     {
         throwNotSupported();
     }
 
-    bool getDouble(double &) const override
+    VALIJSON_NORETURN bool getDouble(double &) const override
     {
         throwNotSupported();
     }
 
-    int64_t getInteger() const override
+    VALIJSON_NORETURN int64_t getInteger() const override
     {
         throwNotSupported();
     }
 
-    bool getInteger(int64_t &) const override
+    VALIJSON_NORETURN bool getInteger(int64_t &) const override
     {
         throwNotSupported();
     }
 
-    double getNumber() const override
+    VALIJSON_NORETURN double getNumber() const override
     {
         throwNotSupported();
     }
 
-    bool getNumber(double &) const override
+    VALIJSON_NORETURN bool getNumber(double &) const override
     {
         throwNotSupported();
     }
 
-    size_t getObjectSize() const override
+    VALIJSON_NORETURN size_t getObjectSize() const override
     {
         throwNotSupported();
     }
 
-    bool getObjectSize(size_t &) const override
+    VALIJSON_NORETURN bool getObjectSize(size_t &) const override
     {
         throwNotSupported();
     }
@@ -7735,12 +7793,12 @@ public:
     using pointer = StdStringAdapter*;
     using reference = StdStringAdapter&;
 
-    StdStringAdapter operator*() const
+    VALIJSON_NORETURN StdStringAdapter operator*() const
     {
         throwNotSupported();
     }
 
-    DerefProxy<StdStringAdapter> operator->() const
+    VALIJSON_NORETURN DerefProxy<StdStringAdapter> operator->() const
     {
         throwNotSupported();
     }
@@ -7755,22 +7813,22 @@ public:
         return false;
     }
 
-    const StdStringArrayValueIterator& operator++()
+    VALIJSON_NORETURN const StdStringArrayValueIterator& operator++()
     {
         throwNotSupported();
     }
 
-    StdStringArrayValueIterator operator++(int)
+    VALIJSON_NORETURN StdStringArrayValueIterator operator++(int)
     {
         throwNotSupported();
     }
 
-    const StdStringArrayValueIterator& operator--()
+    VALIJSON_NORETURN const StdStringArrayValueIterator& operator--()
     {
         throwNotSupported();
     }
 
-    void advance(std::ptrdiff_t)
+    VALIJSON_NORETURN void advance(std::ptrdiff_t)
     {
         throwNotSupported();
     }
@@ -7795,12 +7853,12 @@ public:
     using pointer = StdStringObjectMember*;
     using reference = StdStringObjectMember&;
 
-    StdStringObjectMember operator*() const
+    VALIJSON_NORETURN StdStringObjectMember operator*() const
     {
         throwNotSupported();
     }
 
-    DerefProxy<StdStringObjectMember> operator->() const
+    VALIJSON_NORETURN DerefProxy<StdStringObjectMember> operator->() const
     {
         throwNotSupported();
     }
@@ -7815,17 +7873,17 @@ public:
         return false;
     }
 
-    const StdStringObjectMemberIterator& operator++()
+    VALIJSON_NORETURN const StdStringObjectMemberIterator& operator++()
     {
         throwNotSupported();
     }
 
-    StdStringObjectMemberIterator operator++(int)
+    VALIJSON_NORETURN StdStringObjectMemberIterator operator++(int)
     {
         throwNotSupported();
     }
 
-    const StdStringObjectMemberIterator& operator--()
+    VALIJSON_NORETURN const StdStringObjectMemberIterator& operator--()
     {
         throwNotSupported();
     }
@@ -8313,6 +8371,83 @@ public:
         }
 
         return numValidated > 0;
+    }
+
+    /**
+     * @brief    Validate current node against a FormatConstraint
+     *
+     * @param    constraint  Constraint that the target must validate against
+     *
+     * @return   \c true if validation succeeds; \c false otherwise
+     */
+    bool visit(const FormatConstraint &constraint) override
+    {
+        //
+        // Don't attempt to cast validate the format constraint unless the
+        // target value is known to be a string. Drafts 4-7 of the spec
+        // suggest that 'format' should be treated as an annotation rather
+        // than an assertion, however this is not guaranteed. Given that we
+        // have been treating it as an assertion here, failing quietly on
+        // non-string values seems like the right thing to do, to avoid
+        // this throwing an exception.
+        //
+        // Schemas that need tighter validation around 'format' constaints
+        // should generally pair it with a 'type' constraint.
+        //
+        // Reference:
+        // https://json-schema.org/understanding-json-schema/reference/string.html#format
+        //
+        if (!m_target.maybeString()) {
+            return true;
+        }
+
+        const std::string s = m_target.asString();
+        const std::string format = constraint.getFormat();
+        if (format == "date") {
+            // Matches dates like: 2022-07-18
+            std::regex date_regex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$");
+            std::smatch matches;
+            if (std::regex_match(s, matches, date_regex)) {
+                const auto month = std::stoi(matches[2].str());
+                const auto day = std::stoi(matches[3].str());
+                return validate_date_range(month, day);
+            } else {
+                if (m_results) {
+                    m_results->pushError(m_context,
+                                         "String should be a valid date");
+                }
+                return false;
+            }
+        } else if (format == "time") {
+            // Matches times like: 16:52:45Z, 16:52:45+02:00
+            std::regex time_regex("^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
+            if (std::regex_match(s, time_regex)) {
+                return true;
+            } else {
+                if (m_results) {
+                    m_results->pushError(m_context,
+                                         "String should be a valid time");
+                }
+                return false;
+            }
+        } else if (format == "date-time") {
+            // Matches data times like: 2022-07-18T16:52:45Z, 2022-07-18T16:52:45+02:00
+            std::regex datetime_regex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])[Tt]([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
+            std::smatch matches;
+            if (std::regex_match(s, matches, datetime_regex)) {
+                const auto month = std::stoi(matches[2].str());
+                const auto day = std::stoi(matches[3].str());
+                return validate_date_range(month, day);
+            } else {
+                if (m_results) {
+                    m_results->pushError(m_context,
+                                         "String should be a valid date-time");
+                }
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -9118,8 +9253,10 @@ public:
             return true;
         }
 
+        size_t array_size = m_target.getArraySize();
+
         // Empty arrays are always valid
-        if (m_target.getArraySize() == 0) {
+        if (array_size == 0) {
             return true;
         }
 
@@ -9127,10 +9264,9 @@ public:
 
         const typename AdapterType::Array targetArray = m_target.asArray();
         const typename AdapterType::Array::const_iterator end = targetArray.end();
-        const typename AdapterType::Array::const_iterator secondLast = --targetArray.end();
-        unsigned int outerIndex = 0;
+
         typename AdapterType::Array::const_iterator outerItr = targetArray.begin();
-        for (; outerItr != secondLast; ++outerItr) {
+        for (unsigned int outerIndex = 0; outerIndex < array_size - 1 /*outerItr != secondLast*/; ++outerItr) {
             unsigned int innerIndex = outerIndex + 1;
             typename AdapterType::Array::const_iterator innerItr(outerItr);
             for (++innerItr; innerItr != end; ++innerItr) {
@@ -9737,6 +9873,47 @@ private:
         return constraint.accept(visitor);
     }
 
+    /**
+     * @brief    Helper function to validate if day is valid for given month
+     *
+     * @param    month   Month, 1-12
+     * @param    day     Day, 1-31
+     *
+     * @return   \c true if day is valid for given month, \c false otherwise.
+     */
+    bool validate_date_range(int month, int day)
+    {
+        if (month == 2) {
+            if (day < 0 || day > 29) {
+                if (m_results) {
+                    m_results->pushError(m_context,
+                                         "String should be a valid date-time");
+                }
+                return false;
+            }
+        } else {
+            int limit = 31;
+            if (month <= 7) {
+                if (month % 2 == 0) {
+                    limit = 30;
+                }
+            } else {
+                if (month % 2 != 0) {
+                    limit = 30;
+                }
+            }
+            if (day < 0 || day > limit) {
+                if (m_results) {
+                    m_results->pushError(m_context,
+                                         "String should be a valid date-time");
+                }
+                return false;
+            }
+
+        }
+        return true;
+    }
+
     /// The JSON value being validated
     AdapterType m_target;
 
@@ -9868,10 +10045,193 @@ namespace valijson {
 namespace adapters {
 
 class NlohmannJsonAdapter;
-class NlohmannJsonArrayValueIterator;
-class NlohmannJsonObjectMemberIterator;
 
 typedef std::pair<std::string, NlohmannJsonAdapter> NlohmannJsonObjectMember;
+
+/**
+ * @brief   Class for iterating over values held in a JSON array.
+ *
+ * This class provides a JSON array iterator that dereferences as an instance of
+ * NlohmannJsonAdapter representing a value stored in the array. It has been
+ * implemented using the boost iterator_facade template.
+ *
+ * @see NlohmannJsonArray
+ */
+template <class ValueType>
+class NlohmannJsonArrayValueIterator
+{
+  public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using value_type = ValueType;
+    using difference_type = ValueType;
+    using pointer = ValueType *;
+    using reference = ValueType &;
+
+    /**
+     * @brief   Construct a new NlohmannJsonArrayValueIterator using an existing
+     *          NlohmannJson iterator.
+     *
+     * @param   itr  NlohmannJson iterator to store
+     */
+    NlohmannJsonArrayValueIterator(const nlohmann::json::const_iterator &itr)
+        : m_itr(itr)
+    {
+    }
+
+    /// Returns a NlohmannJsonAdapter that contains the value of the current
+    /// element.
+    ValueType operator*() const
+    {
+        return ValueType(*m_itr);
+    }
+
+    DerefProxy<ValueType> operator->() const
+    {
+        return DerefProxy<ValueType>(**this);
+    }
+
+    /**
+     * @brief   Compare this iterator against another iterator.
+     *
+     * Note that this directly compares the iterators, not the underlying
+     * values, and assumes that two identical iterators will point to the same
+     * underlying object.
+     *
+     * @param   other  iterator to compare against
+     *
+     * @returns true   if the iterators are equal, false otherwise.
+     */
+    bool operator==(const NlohmannJsonArrayValueIterator &other) const
+    {
+        return m_itr == other.m_itr;
+    }
+
+    bool operator!=(const NlohmannJsonArrayValueIterator &other) const
+    {
+        return !(m_itr == other.m_itr);
+    }
+
+    const NlohmannJsonArrayValueIterator &operator++()
+    {
+        m_itr++;
+
+        return *this;
+    }
+
+    NlohmannJsonArrayValueIterator operator++(int)
+    {
+        NlohmannJsonArrayValueIterator iterator_pre(m_itr);
+        ++(*this);
+        return iterator_pre;
+    }
+
+    const NlohmannJsonArrayValueIterator &operator--()
+    {
+        m_itr--;
+
+        return *this;
+    }
+
+    void advance(std::ptrdiff_t n)
+    {
+        m_itr += n;
+    }
+
+  private:
+    nlohmann::json::const_iterator m_itr;
+};
+
+
+/**
+ * @brief   Class for iterating over the members belonging to a JSON object.
+ *
+ * This class provides a JSON object iterator that dereferences as an instance
+ * of NlohmannJsonObjectMember representing one of the members of the object. It
+ * has been implemented using the boost iterator_facade template.
+ *
+ * @see NlohmannJsonObject
+ * @see NlohmannJsonObjectMember
+ */
+template <class ValueType> class NlohmannJsonObjectMemberIterator
+{
+  public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using value_type = ValueType;
+    using difference_type = ValueType;
+    using pointer = ValueType *;
+    using reference = ValueType &;
+
+    /**
+     * @brief   Construct an iterator from a NlohmannJson iterator.
+     *
+     * @param   itr  NlohmannJson iterator to store
+     */
+    NlohmannJsonObjectMemberIterator(const nlohmann::json::const_iterator &itr)
+        : m_itr(itr)
+    {
+    }
+
+    /**
+     * @brief   Returns a NlohmannJsonObjectMember that contains the key and
+     * value belonging to the object member identified by the iterator.
+     */
+    ValueType operator*() const
+    {
+        return ValueType(m_itr.key(), m_itr.value());
+    }
+
+    DerefProxy<ValueType> operator->() const
+    {
+        return DerefProxy<ValueType>(**this);
+    }
+
+    /**
+     * @brief   Compare this iterator with another iterator.
+     *
+     * Note that this directly compares the iterators, not the underlying
+     * values, and assumes that two identical iterators will point to the same
+     * underlying object.
+     *
+     * @param   other  Iterator to compare with
+     *
+     * @returns true if the underlying iterators are equal, false otherwise
+     */
+    bool operator==(const NlohmannJsonObjectMemberIterator &other) const
+    {
+        return m_itr == other.m_itr;
+    }
+
+    bool operator!=(const NlohmannJsonObjectMemberIterator &other) const
+    {
+        return !(m_itr == other.m_itr);
+    }
+
+    const NlohmannJsonObjectMemberIterator &operator++()
+    {
+        m_itr++;
+
+        return *this;
+    }
+
+    NlohmannJsonObjectMemberIterator operator++(int)
+    {
+        NlohmannJsonObjectMemberIterator iterator_pre(m_itr);
+        ++(*this);
+        return iterator_pre;
+    }
+
+    const NlohmannJsonObjectMemberIterator &operator--()
+    {
+        m_itr--;
+
+        return *this;
+    }
+
+  private:
+    /// Iternal copy of the original NlohmannJson iterator
+    nlohmann::json::const_iterator m_itr;
+};
+
 
 /**
  * @brief  Light weight wrapper for a NlohmannJson array value.
@@ -9884,12 +10244,13 @@ typedef std::pair<std::string, NlohmannJsonAdapter> NlohmannJsonObjectMember;
  * NlohmannJson value, assumed to be an array, so there is very little overhead
  * associated with copy construction and passing by value.
  */
+template <class ValueType>
 class NlohmannJsonArray
 {
 public:
 
-    typedef NlohmannJsonArrayValueIterator const_iterator;
-    typedef NlohmannJsonArrayValueIterator iterator;
+    typedef NlohmannJsonArrayValueIterator<ValueType> const_iterator;
+    typedef NlohmannJsonArrayValueIterator<ValueType> iterator;
 
     /// Construct a NlohmannJsonArray referencing an empty array.
     NlohmannJsonArray()
@@ -9918,7 +10279,10 @@ public:
      * The iterator return by this function is effectively the iterator
      * returned by the underlying NlohmannJson implementation.
      */
-    NlohmannJsonArrayValueIterator begin() const;
+    NlohmannJsonArrayValueIterator<ValueType> begin() const {
+      return m_value.begin();
+    }
+
 
     /**
      * @brief   Return an iterator for one-past the last element of the array.
@@ -9926,7 +10290,9 @@ public:
      * The iterator return by this function is effectively the iterator
      * returned by the underlying NlohmannJson implementation.
      */
-    NlohmannJsonArrayValueIterator end() const;
+    NlohmannJsonArrayValueIterator<ValueType> end() const {
+      return m_value.end();
+    }
 
     /// Return the number of elements in the array
     size_t size() const
@@ -9966,8 +10332,8 @@ class NlohmannJsonObject
 {
 public:
 
-    typedef NlohmannJsonObjectMemberIterator const_iterator;
-    typedef NlohmannJsonObjectMemberIterator iterator;
+    typedef NlohmannJsonObjectMemberIterator<NlohmannJsonObjectMember> const_iterator;
+    typedef NlohmannJsonObjectMemberIterator<NlohmannJsonObjectMember> iterator;
 
     /// Construct a NlohmannJsonObject referencing an empty object singleton.
     NlohmannJsonObject()
@@ -9996,7 +10362,7 @@ public:
      * The iterator return by this function is effectively a wrapper around
      * the iterator value returned by the underlying NlohmannJson implementation.
      */
-    NlohmannJsonObjectMemberIterator begin() const;
+    NlohmannJsonObjectMemberIterator<NlohmannJsonObjectMember> begin() const;
 
     /**
      * @brief   Return an iterator for an invalid object member that indicates
@@ -10005,7 +10371,7 @@ public:
      * The iterator return by this function is effectively a wrapper around
      * the iterator value returned by the underlying NlohmannJson implementation.
      */
-    NlohmannJsonObjectMemberIterator end() const;
+    NlohmannJsonObjectMemberIterator<NlohmannJsonObjectMember> end() const;
 
     /**
      * @brief   Return an iterator for the object member with the specified
@@ -10016,7 +10382,8 @@ public:
      *
      * @param   propertyName  property name to search for
      */
-    NlohmannJsonObjectMemberIterator find(const std::string &propertyName) const;
+    NlohmannJsonObjectMemberIterator<NlohmannJsonObjectMember>
+    find(const std::string &propertyName) const;
 
     /// Returns the number of members belonging to this object.
     size_t size() const
@@ -10091,6 +10458,7 @@ private:
  *
  * @see BasicAdapter
  */
+template<class ValueType>
 class NlohmannJsonValue
 {
 public:
@@ -10124,10 +10492,10 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-    opt::optional<NlohmannJsonArray> getArrayOptional() const
+    opt::optional<NlohmannJsonArray<ValueType>> getArrayOptional() const
     {
         if (m_value.is_array()) {
-            return opt::make_optional(NlohmannJsonArray(m_value));
+            return opt::make_optional(NlohmannJsonArray<ValueType>(m_value));
         }
 
         return {};
@@ -10192,14 +10560,7 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-    opt::optional<NlohmannJsonObject> getObjectOptional() const
-    {
-        if (m_value.is_object()) {
-            return opt::make_optional(NlohmannJsonObject(m_value));
-        }
-
-        return {};
-    }
+    opt::optional<NlohmannJsonObject> getObjectOptional() const;
 
     /**
      * @brief   Retrieve the number of members in the object
@@ -10299,202 +10660,35 @@ private:
  * @see Adapter
  * @see BasicAdapter
  */
-class NlohmannJsonAdapter:
-    public BasicAdapter<NlohmannJsonAdapter,
-        NlohmannJsonArray,
-        NlohmannJsonObjectMember,
-        NlohmannJsonObject,
-        NlohmannJsonValue>
+class NlohmannJsonAdapter
+    : public BasicAdapter<NlohmannJsonAdapter,
+                          NlohmannJsonArray<NlohmannJsonAdapter>,
+                          NlohmannJsonObjectMember, NlohmannJsonObject,
+                          NlohmannJsonValue<NlohmannJsonAdapter>>
 {
 public:
     /// Construct a NlohmannJsonAdapter that contains an empty object
     NlohmannJsonAdapter()
       : BasicAdapter() { }
 
-    /// Construct a NlohmannJsonAdapter containing a specific Nlohmann Json object
+    /// Construct a NlohmannJsonAdapter containing a specific Nlohmann Json
+    /// object
     NlohmannJsonAdapter(const nlohmann::json &value)
-      : BasicAdapter(NlohmannJsonValue{value}) { }
+        : BasicAdapter(NlohmannJsonValue<NlohmannJsonAdapter>{value})
+    {
+    }
 };
 
-/**
- * @brief   Class for iterating over values held in a JSON array.
- *
- * This class provides a JSON array iterator that dereferences as an instance of
- * NlohmannJsonAdapter representing a value stored in the array. It has been
- * implemented using the boost iterator_facade template.
- *
- * @see NlohmannJsonArray
- */
-class NlohmannJsonArrayValueIterator
+template <class ValueType>
+opt::optional<NlohmannJsonObject>
+NlohmannJsonValue<ValueType>::getObjectOptional() const
 {
-public:
-    using iterator_category = std::bidirectional_iterator_tag;
-    using value_type = NlohmannJsonAdapter;
-    using difference_type = NlohmannJsonAdapter;
-    using pointer = NlohmannJsonAdapter*;
-    using reference = NlohmannJsonAdapter&;
-
-    /**
-     * @brief   Construct a new NlohmannJsonArrayValueIterator using an existing
-     *          NlohmannJson iterator.
-     *
-     * @param   itr  NlohmannJson iterator to store
-     */
-    NlohmannJsonArrayValueIterator(const nlohmann::json::const_iterator &itr)
-      : m_itr(itr) { }
-
-    /// Returns a NlohmannJsonAdapter that contains the value of the current
-    /// element.
-    NlohmannJsonAdapter operator*() const
-    {
-        return NlohmannJsonAdapter(*m_itr);
+    if (m_value.is_object()) {
+        return opt::make_optional(NlohmannJsonObject(m_value));
     }
 
-    DerefProxy<NlohmannJsonAdapter> operator->() const
-    {
-        return DerefProxy<NlohmannJsonAdapter>(**this);
-    }
-
-    /**
-     * @brief   Compare this iterator against another iterator.
-     *
-     * Note that this directly compares the iterators, not the underlying
-     * values, and assumes that two identical iterators will point to the same
-     * underlying object.
-     *
-     * @param   other  iterator to compare against
-     *
-     * @returns true   if the iterators are equal, false otherwise.
-     */
-    bool operator==(const NlohmannJsonArrayValueIterator &other) const
-    {
-        return m_itr == other.m_itr;
-    }
-
-    bool operator!=(const NlohmannJsonArrayValueIterator &other) const
-    {
-        return !(m_itr == other.m_itr);
-    }
-
-    const NlohmannJsonArrayValueIterator& operator++()
-    {
-        m_itr++;
-
-        return *this;
-    }
-
-    NlohmannJsonArrayValueIterator operator++(int)
-    {
-        NlohmannJsonArrayValueIterator iterator_pre(m_itr);
-        ++(*this);
-        return iterator_pre;
-    }
-
-    const NlohmannJsonArrayValueIterator& operator--()
-    {
-        m_itr--;
-
-        return *this;
-    }
-
-    void advance(std::ptrdiff_t n)
-    {
-        m_itr += n;
-    }
-
-private:
-    nlohmann::json::const_iterator m_itr;
-};
-
-
-/**
- * @brief   Class for iterating over the members belonging to a JSON object.
- *
- * This class provides a JSON object iterator that dereferences as an instance
- * of NlohmannJsonObjectMember representing one of the members of the object. It
- * has been implemented using the boost iterator_facade template.
- *
- * @see NlohmannJsonObject
- * @see NlohmannJsonObjectMember
- */
-class NlohmannJsonObjectMemberIterator
-{
-public:
-    using iterator_category = std::bidirectional_iterator_tag;
-    using value_type = NlohmannJsonObjectMember;
-    using difference_type = NlohmannJsonObjectMember;
-    using pointer = NlohmannJsonObjectMember*;
-    using reference = NlohmannJsonObjectMember&;
-
-    /**
-     * @brief   Construct an iterator from a NlohmannJson iterator.
-     *
-     * @param   itr  NlohmannJson iterator to store
-     */
-    NlohmannJsonObjectMemberIterator(const nlohmann::json::const_iterator &itr)
-      : m_itr(itr) { }
-
-    /**
-     * @brief   Returns a NlohmannJsonObjectMember that contains the key and value
-     *          belonging to the object member identified by the iterator.
-     */
-    NlohmannJsonObjectMember operator*() const
-    {
-        return NlohmannJsonObjectMember(m_itr.key(), m_itr.value());
-    }
-
-    DerefProxy<NlohmannJsonObjectMember> operator->() const
-    {
-        return DerefProxy<NlohmannJsonObjectMember>(**this);
-    }
-
-    /**
-     * @brief   Compare this iterator with another iterator.
-     *
-     * Note that this directly compares the iterators, not the underlying
-     * values, and assumes that two identical iterators will point to the same
-     * underlying object.
-     *
-     * @param   other  Iterator to compare with
-     *
-     * @returns true if the underlying iterators are equal, false otherwise
-     */
-    bool operator==(const NlohmannJsonObjectMemberIterator &other) const
-    {
-        return m_itr == other.m_itr;
-    }
-
-    bool operator!=(const NlohmannJsonObjectMemberIterator &other) const
-    {
-        return !(m_itr == other.m_itr);
-    }
-
-    const NlohmannJsonObjectMemberIterator& operator++()
-    {
-        m_itr++;
-
-        return *this;
-    }
-
-    NlohmannJsonObjectMemberIterator operator++(int)
-    {
-        NlohmannJsonObjectMemberIterator iterator_pre(m_itr);
-        ++(*this);
-        return iterator_pre;
-    }
-
-    const NlohmannJsonObjectMemberIterator& operator--()
-    {
-        m_itr--;
-
-        return *this;
-    }
-
-private:
-
-    /// Iternal copy of the original NlohmannJson iterator
-    nlohmann::json::const_iterator m_itr;
-};
+    return {};
+}
 
 /// Specialisation of the AdapterTraits template struct for NlohmannJsonAdapter.
 template<>
@@ -10513,27 +10707,21 @@ inline bool NlohmannJsonFrozenValue::equalTo(const Adapter &other, bool strict) 
     return NlohmannJsonAdapter(m_value).equalTo(other, strict);
 }
 
-inline NlohmannJsonArrayValueIterator NlohmannJsonArray::begin() const
+
+inline NlohmannJsonObjectMemberIterator<NlohmannJsonObjectMember>
+NlohmannJsonObject::begin() const
 {
     return m_value.begin();
 }
 
-inline NlohmannJsonArrayValueIterator NlohmannJsonArray::end() const
+inline NlohmannJsonObjectMemberIterator<NlohmannJsonObjectMember>
+NlohmannJsonObject::end() const
 {
     return m_value.end();
 }
 
-inline NlohmannJsonObjectMemberIterator NlohmannJsonObject::begin() const
-{
-    return m_value.begin();
-}
-
-inline NlohmannJsonObjectMemberIterator NlohmannJsonObject::end() const
-{
-    return m_value.end();
-}
-
-inline NlohmannJsonObjectMemberIterator NlohmannJsonObject::find(
+inline NlohmannJsonObjectMemberIterator<NlohmannJsonObjectMember>
+NlohmannJsonObject::find(
         const std::string &propertyName) const
 {
     return m_value.find(propertyName);
