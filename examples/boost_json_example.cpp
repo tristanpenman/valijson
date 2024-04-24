@@ -45,7 +45,7 @@ const auto targetJson = R"({
 
 int main()
 {
-    json::error_code ec;
+    boost::system::error_code ec;
     auto schemaDoc = json::parse(schemaJson, ec);
     if (ec) {
         std::cerr << "Error parsing schema json: " << ec.message() << std::endl;

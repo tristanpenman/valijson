@@ -23,7 +23,7 @@ inline bool loadDocument(const std::string &path, boost::json::value &document)
 #if VALIJSON_USE_EXCEPTIONS
     try {
 #endif
-      boost::json::error_code errorCode;
+      boost::system::error_code errorCode;
       boost::json::string_view stringView{file};
       document = boost::json::parse(stringView, errorCode);
         if (errorCode) {
