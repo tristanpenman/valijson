@@ -87,6 +87,34 @@ Validator validator(Validator::kWeakTypes);
 
 This will create a validator that will attempt to cast values to satisfy a schema. The original motivation for this was to support the Boost Property Tree library, which can parse JSON, but stores values as strings.
 
+## Regular Expression Engine
+
+When enforcing a 'pattern' property, a regular expression engine is in used. By default, the DefaultRegexEngine use std::regex.
+std::regex has no protection against catastrophic backtracking and implementation with gcc is so suboptimal that it can easily leads to segmentation fault.
+One can customise the regular expression engine by implementing it's own wrapper to it and using a ValidatorT with the custom type.
+
+The regular expression engine wrapper must implement the following interface
+```cpp
+struct MyRegexpEngine
+{
+    MyRegexpEngine(const std::string& pattern)
+    {
+        //implementation specific
+    }
+
+    static bool search(const std::string& s, const MyRegexpEngine& r)
+    {
+	    //implementation specific
+    }
+};
+
+```
+
+Then to use it
+```cpp
+    using MyValidator = ValidatorT<MyRegexpEngine>;
+```
+
 ## Memory Management
 
 Valijson has been designed to safely manage, and eventually free, the memory that is allocated while parsing a schema or validating a document. When working with an externally loaded schema (i.e. one that is populated using the `SchemaParser` class) you can rely on RAII semantics.
