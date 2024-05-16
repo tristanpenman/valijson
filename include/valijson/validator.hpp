@@ -80,20 +80,21 @@ private:
 
 /**
  * @brief   Struct that provides a default Regular Expression Engine using std::regex
- *
  */
 struct DefaultRegexEngine
 {
     DefaultRegexEngine(const std::string& pattern)
-	: regex(pattern) { }
+      : regex(pattern) { }
 
     static bool search(const std::string& s, const DefaultRegexEngine& r)
     {
-	    return std::regex_search(s, r.regex);
+        return std::regex_search(s, r.regex);
     }
+
+private:
     std::regex regex;
 };
-    
+
 using Validator = ValidatorT<DefaultRegexEngine>;
-    
+
 }  // namespace valijson

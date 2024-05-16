@@ -36,54 +36,53 @@ using valijson::Schema;
 using valijson::SchemaParser;
 using valijson::Validator;
 
-namespace
-{
-void createFileFromContent(const std::string& filename, const std::string& content)
+static void createFileFromContent(const std::string& filename, const std::string& content)
 {
     std::ofstream outfile(filename, std::ofstream::out | std::ofstream::trunc);
     outfile << content << std::endl;
     outfile.close();
 };
-    
-}
 
 //Potentially :
-// Define a struct CustomRegexEngine that handle both problem and use it as replacement of Validator..
+// Define a struct CustomRegexEngine that handle both problem and use it as replacement of Validator.
 //using CustomValidator = ValidatorT<CustomRegexEngine>;
 
 TEST(valijson, valijson_be_robust_against_bad_regular_expression)
 {
-    GTEST_SKIP() << "Skipping begin it cause segmentation fault with default Validator";
-    const std::string schema = R"(
+    GTEST_SKIP() << "Skipping: causes segmentation fault with default Validator";
+
+    static const std::string schema = R"(
     {
         "properties": {
-	        "text": {
-	            "pattern": "^[\\s\\S]+$",
-	            "type": "string"
-        	}
+            "text": {
+                "pattern": "^[\\s\\S]+$",
+                "type": "string"
+            }
         }
-	}
+    }
     )";
-    
+
     createFileFromContent("schema.json", schema);
     rapidjson::Document mySchemaDoc;
     ASSERT_TRUE(valijson::utils::loadDocument("schema.json", mySchemaDoc));
-    
+
     Schema mySchema;
     SchemaParser parser;
     RapidJsonAdapter mySchemaAdapter(mySchemaDoc);
     parser.populateSchema(mySchemaAdapter, mySchema);
     rapidjson::Document myTargetDoc;
+
     std::string payload = "{ \"text\" :  \"";
-    for (int i = 0; i< 100000; ++i)
-	payload += 'A';
+    for (int i = 0; i< 100000; ++i) {
+        payload += 'A';
+    }
     payload += "\"}";
-	    
+
     createFileFromContent("payload.json", payload);
-    
+
     ASSERT_TRUE(valijson::utils::loadDocument("payload.json", myTargetDoc));
 
-    //This test crash (segfault) is validator is not customized with custom RegexpEngine
+    // This test crash (segfault) is validator is not customized with custom RegexpEngine
     Validator validator;
     RapidJsonAdapter myTargetAdapter(myTargetDoc);
     ASSERT_TRUE(validator.validate(mySchema, myTargetAdapter, nullptr));
@@ -91,32 +90,32 @@ TEST(valijson, valijson_be_robust_against_bad_regular_expression)
 
 TEST(valijson, valijson_be_robust_against_catastrophic_backtracking_regular_expression)
 {
-    GTEST_SKIP() << "Skipping begin it hangs due to non management of catastrophic backtracking with default Validator";
-    
-    const std::string schema = R"(
+    GTEST_SKIP() << "Skipping: hangs due to non management of catastrophic backtracking with default Validator";
+
+    static const std::string schema = R"(
     {
         "properties": {
-	        "text": {
-	            "pattern": "((A+)*)+$",
-	            "type": "string"
-        	}
+            "text": {
+                "pattern": "((A+)*)+$",
+                "type": "string"
+            }
         }
-	}
+    }
     )";
-    
+
     createFileFromContent("schema.json", schema);
     rapidjson::Document mySchemaDoc;
     ASSERT_TRUE(valijson::utils::loadDocument("schema.json", mySchemaDoc));
-    
+
     Schema mySchema;
     SchemaParser parser;
     RapidJsonAdapter mySchemaAdapter(mySchemaDoc);
     parser.populateSchema(mySchemaAdapter, mySchema);
     rapidjson::Document myTargetDoc;
+
     std::string payload = "{ \"text\" :  \"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC\"}";
-	    
     createFileFromContent("payload.json", payload);
-    
+
     ASSERT_TRUE(valijson::utils::loadDocument("payload.json", myTargetDoc));
 
     //This test takes endless time if validator is not customized with custom RegexpEngine

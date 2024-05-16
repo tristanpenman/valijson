@@ -89,31 +89,35 @@ This will create a validator that will attempt to cast values to satisfy a schem
 
 ## Regular Expression Engine
 
-When enforcing a 'pattern' property, a regular expression engine is in used. By default, the DefaultRegexEngine use std::regex.
-std::regex has no protection against catastrophic backtracking and implementation with gcc is so suboptimal that it can easily leads to segmentation fault.
-One can customise the regular expression engine by implementing it's own wrapper to it and using a ValidatorT with the custom type.
+When enforcing a 'pattern' property, a regular expression engine is used. By default, the default regular expression (`DefaultRegexEngine`) uses `std::regex`.
+Unfortunaltey, `std::regex` has no protection against catastrophic backtracking and the implementation in gcc is so suboptimal that it can easily lead to segmentation faults.
 
-The regular expression engine wrapper must implement the following interface
+This behaviour can be customised by implementing a wrapper for alternative regular expression engine.
+
+To do this, you must implement the following interface:
+
 ```cpp
 struct MyRegexpEngine
 {
     MyRegexpEngine(const std::string& pattern)
     {
-        //implementation specific
+        // implementation specific
     }
 
     static bool search(const std::string& s, const MyRegexpEngine& r)
     {
-	    //implementation specific
+        // implementation specific
     }
 };
-
 ```
 
-Then to use it
+Then to use it, you must define a customer validator type:
+
 ```cpp
     using MyValidator = ValidatorT<MyRegexpEngine>;
 ```
+
+Once you've done this, `MyValidator` can be used in place of the default `valijson::Validator` type.
 
 ## Memory Management
 
