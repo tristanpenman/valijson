@@ -124,6 +124,7 @@ if(valijson_BUILD_TESTS)
         tests/test_poly_constraint.cpp
         tests/test_validation_errors.cpp
         tests/test_validator.cpp
+        tests/test_validator_with_custom_regular_expression_engine.cpp
         tests/test_yaml_cpp_adapter.cpp
     )
 
