@@ -49,6 +49,10 @@ install(EXPORT valijsonConfig
     DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/valijson"
 )
 
+install(FILES bundle.sh
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+  
 if(NOT valijson_BUILD_TESTS AND NOT valijson_BUILD_EXAMPLES)
     return()
 endif()
