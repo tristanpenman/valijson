@@ -723,7 +723,7 @@ public:
 
     std::ptrdiff_t difference(const GenericRapidJsonArrayValueIterator<ValueType> &other)
     {
-        return std::distance(m_itr, other.itr);
+        return std::distance(m_itr, other.m_itr);
     }
 
 private:
@@ -820,7 +820,7 @@ public:
 
     std::ptrdiff_t difference(const GenericRapidJsonObjectMemberIterator &other)
     {
-        return std::distance(m_itr, other.itr);
+        return std::distance(m_itr, other.m_itr);
     }
 
 private:

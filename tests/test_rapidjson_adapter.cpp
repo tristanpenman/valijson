@@ -45,6 +45,23 @@ void testBasicArrayIteration()
         expectedValue++;
     }
 
+    // Check that plain iterators work too
+    expectedValue = 0;
+    for (auto itr = adapter.getArray().begin(); itr != adapter.getArray().end(); itr++) {
+        ASSERT_TRUE( itr->isNumber() );
+        EXPECT_EQ( double(expectedValue), itr->getDouble() );
+        expectedValue++;
+    }
+
+    // Check difference
+    auto a = adapter.getArray().begin();
+    auto b = a;
+    const auto c = b.difference(a);
+    EXPECT_EQ( 0, c );
+    b++;
+    const auto d = a.difference(b);
+    EXPECT_EQ( 1, d );
+
     // Ensure that the correct number of elements were iterated over
     EXPECT_EQ(numElements, expectedValue);
 }
@@ -87,6 +104,15 @@ void testBasicObjectIteration()
         EXPECT_EQ( double(expectedValue), member.second.getDouble() );
         expectedValue++;
     }
+
+    // Check difference
+    auto a = adapter.getObject().begin();
+    auto b = a;
+    const auto c = b.difference(a);
+    EXPECT_EQ( 0, c );
+    b++;
+    const auto d = a.difference(b);
+    EXPECT_EQ( 1, d );
 
     // Ensure that the correct number of elements were iterated over
     EXPECT_EQ( numElements, expectedValue );
