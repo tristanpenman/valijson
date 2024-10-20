@@ -4,11 +4,11 @@
 #include <string>
 #include <regex>
 #include <unordered_map>
+#include <utility>
 
 #include <valijson/adapters/std_string_adapter.hpp>
 #include <valijson/constraints/concrete_constraints.hpp>
 #include <valijson/constraints/constraint_visitor.hpp>
-#include <utility>
 #include <valijson/validation_results.hpp>
 
 #include <valijson/utils/utf8_utils.hpp>
