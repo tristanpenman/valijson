@@ -1040,13 +1040,14 @@ private:
             resolveThenPopulateSchema(rootSchema, newRootNode, referencedAdapter, subschema, {}, actualJsonPointer,
                     fetchDoc, parentSchema, ownName, docCache, schemaCache);
 
-        } else {
+        } else if (!actualJsonPointer.empty()) {
             const AdapterType &referencedAdapter =
                     internal::json_pointer::resolveJsonPointer(rootNode, actualJsonPointer);
 
-            // TODO: Need to detect degenerate circular references
             resolveThenPopulateSchema(rootSchema, rootNode, referencedAdapter, subschema, {}, actualJsonPointer,
                     fetchDoc, parentSchema, ownName, docCache, schemaCache);
+        } else {
+            throwRuntimeError("Cannot resolve reference \"" + jsonRef + "\".");
         }
     }
 
