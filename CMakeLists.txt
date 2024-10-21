@@ -126,6 +126,7 @@ if(valijson_BUILD_TESTS)
         tests/test_validator.cpp
         tests/test_validator_with_custom_regular_expression_engine.cpp
         tests/test_yaml_cpp_adapter.cpp
+        tests/test_utf8_utils.cpp
     )
 
     set(TEST_LIBS gtest gtest_main jsoncpp json11 yamlcpp)
