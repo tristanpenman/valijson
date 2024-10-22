@@ -1,43 +1,78 @@
-#include <stdexcept>
-#include <unistd.h>
-
-#include <document.h>
 #include <valijson/adapters/rapidjson_adapter.hpp>
-#include <valijson/utils/rapidjson_utils.hpp>
-#include <valijson/schema.hpp>
 #include <valijson/schema_parser.hpp>
+#include <valijson/validator.hpp>
 
 using valijson::Schema;
 using valijson::SchemaParser;
+using valijson::ValidationResults;
+using valijson::Validator;
+using valijson::adapters::AdapterTraits;
 using valijson::adapters::RapidJsonAdapter;
+using AdapterType = RapidJsonAdapter;
 
-extern "C" int
-LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+void runOneTest(const AdapterType &test, const Schema &schema,
+                Validator::TypeCheckingMode mode)
 {
-    if(size<3) return 0;
-    char input_file[256];
-    sprintf(input_file, "/tmp/libfuzzer.json");
-    FILE *fp = fopen(input_file, "wb");
-    if (!fp)
-        return 0;
-    fwrite(data, size, 1, fp);
-    fclose(fp);
-
-    rapidjson::Document schemaDocument;
-    if (!valijson::utils::loadDocument(input_file, schemaDocument)) {
-        return 1;
-    }
-    
-    Schema schema;
-    SchemaParser parser;
-    RapidJsonAdapter schemaDocumentAdapter(schemaDocument);
     try {
-        parser.populateSchema(schemaDocumentAdapter, schema);
-    } catch (std::exception &e) {
-        unlink(input_file);
-        return 1;
+        if (!test.isObject()) {
+            return;
+        }
+
+        const AdapterType::Object testObject = test.getObject();
+        const auto dataItr = testObject.find("data");
+
+        if (dataItr == testObject.end()) {
+            return;
+        }
+
+        Validator validator(mode);
+        ValidationResults results;
+        validator.validate(schema, dataItr->second, &results);
+    } catch (const std::exception &) {
+    }
+}
+
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+{
+    AdapterTraits<AdapterType>::DocumentType document;
+    document.template Parse<rapidjson::kParseIterativeFlag>(reinterpret_cast<const char *>(data), size);
+
+    if (document.HasParseError() || !document.IsArray()) {
+        return 0;
     }
 
-    unlink(input_file);
-    return 1;
+    for (const auto &testCase : AdapterType(document).getArray()) {
+        if (!testCase.isObject()) {
+            continue;
+        }
+
+        const AdapterType::Object object = testCase.getObject();
+        const auto schemaItr = object.find("schema");
+        const auto testsItr = object.find("tests");
+
+        if (schemaItr == object.end() || testsItr == object.end() ||
+            !testsItr->second.isArray()) {
+            continue;
+        }
+
+        Schema schema;
+        SchemaParser parser(size % 2 ? SchemaParser::kDraft4
+                                     : SchemaParser::kDraft7);
+
+        try {
+            parser.populateSchema(schemaItr->second, schema);
+        } catch (const std::exception &) {
+            continue;
+        }
+
+        const auto mode = testsItr->second.hasStrictTypes()
+                              ? Validator::kStrongTypes
+                              : Validator::kWeakTypes;
+
+        for (const AdapterType test : testsItr->second.getArray()) {
+            runOneTest(test, schema, mode);
+        }
+    }
+
+    return 0;
 }
