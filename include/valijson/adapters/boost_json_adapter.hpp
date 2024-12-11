@@ -268,7 +268,7 @@ public:
       : m_value(emptyObject()) { }
 
     /**
-     * @brief  Construct a BoostJsonValue for for a specific Boost.JSON value
+     * @brief  Construct a BoostJsonValue for a specific Boost.JSON value
      */
     BoostJsonValue(const boost::json::value &value)
       : m_value(value) { }
