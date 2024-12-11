@@ -5520,7 +5520,7 @@ private:
             // visited before arriving at the current node
             updateSchemaCache(schemaCache, newCacheKeys, subschema);
 
-            // Schema cache did not contain a pre-existing schema corresponding
+            // Schema cache did not contain a preexisting schema corresponding
             // to the current node, so the schema that was returned will need
             // to be populated
             if (!cachedPtr) {
