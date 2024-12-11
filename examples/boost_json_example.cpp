@@ -61,7 +61,7 @@ int main()
 
     iter = obj.find("$ref");
     if (iter != obj.cend()) {
-        std::cerr << "Invalid iterator for non-existent key $ref" << std::endl;
+        std::cerr << "Invalid iterator for nonexistent key $ref" << std::endl;
         return 3;
     }
 
