@@ -90,7 +90,7 @@ This will create a validator that will attempt to cast values to satisfy a schem
 ## Regular Expression Engine
 
 When enforcing a 'pattern' property, a regular expression engine is used. By default, the default regular expression (`DefaultRegexEngine`) uses `std::regex`.
-Unfortunaltey, `std::regex` has no protection against catastrophic backtracking and the implementation in gcc is so suboptimal that it can easily lead to segmentation faults.
+Unfortunately, `std::regex` has no protection against catastrophic backtracking and the implementation in gcc is so suboptimal that it can easily lead to segmentation faults.
 
 This behaviour can be customised by implementing a wrapper for alternative regular expression engine.
 
