@@ -5201,7 +5201,7 @@ public:
     };
 
     /**
-     * @brief  Add a custom contraint to this SchemaParser
+     * @brief  Add a custom constraint to this SchemaParser
 
      * @param  key      name that will be used to identify relevant constraints
      *                  while parsing a schema document
@@ -9801,7 +9801,7 @@ private:
      * The return value depends on whether a given schema validates, with the
      * actual return value for a given case being decided at construction time.
      * The return value is used by the 'applyToSubschemas' functions in the
-     * AllOfConstraint, AnyOfConstraint and OneOfConstrant classes to decide
+     * AllOfConstraint, AnyOfConstraint and OneOfConstraint classes to decide
      * whether to terminate early.
      *
      * The functor uses output parameters (provided at construction) to update

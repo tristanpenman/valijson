@@ -71,7 +71,7 @@ public:
     };
 
     /**
-     * @brief  Add a custom contraint to this SchemaParser
+     * @brief  Add a custom constraint to this SchemaParser
 
      * @param  key      name that will be used to identify relevant constraints
      *                  while parsing a schema document
