@@ -8121,7 +8121,7 @@ public:
             // The apply() function will iterate over all constraints in the
             // schema, even if the callback function returns false. Once
             // iteration is complete, the apply() function will return true
-            // only if all invokations of the callback function returned true.
+            // only if all invocations of the callback function returned true.
             if (!subschema.apply(fn)) {
                 return false;
             }
