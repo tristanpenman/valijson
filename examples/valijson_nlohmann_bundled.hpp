@@ -6435,7 +6435,7 @@ private:
      * When parsing a Draft 3 schema, in addition to the formats above, the
      * following format can be used:
      *  - a string that names a single property that must be present if the
-     *    dependent property is presnet
+     *    dependent property is present
      *
      * Multiple methods can be used in the same dependency constraint.
      *
