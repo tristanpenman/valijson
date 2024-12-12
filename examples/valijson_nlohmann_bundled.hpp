@@ -10228,7 +10228,7 @@ template <class ValueType> class NlohmannJsonObjectMemberIterator
     }
 
   private:
-    /// Iternal copy of the original NlohmannJson iterator
+    /// Internal copy of the original NlohmannJson iterator
     nlohmann::json::const_iterator m_itr;
 };
 

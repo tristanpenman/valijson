@@ -673,7 +673,7 @@ public:
 
 private:
 
-    /// Iternal copy of the original Boost.JSON iterator
+    /// Internal copy of the original Boost.JSON iterator
     boost::json::object::const_iterator m_itr;
 };
 
