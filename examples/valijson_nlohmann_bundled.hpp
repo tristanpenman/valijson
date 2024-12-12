@@ -8201,7 +8201,7 @@ public:
      *
      * A conditional constraint allows a document to be validated against one of two additional
      * subschemas (specified via 'then' or 'else' properties) depending on whether the document
-     * satifies an optional subschema (specified via the 'if' property).
+     * satisfies an optional subschema (specified via the 'if' property).
      *
      * @param   constraint  ConditionalConstraint that the current node must validate against
      *
