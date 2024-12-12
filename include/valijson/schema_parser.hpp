@@ -1673,7 +1673,7 @@ private:
      * @brief   Make a new MaxItemsConstraint object.
      *
      * @param   node  JSON node containing an integer value representing the
-     *                maximum number of items that may be contaned by an array.
+     *                maximum number of items that may be contained by an array.
      *
      * @return  pointer to a new MaxItemsConstraint that belongs to the caller.
      */
