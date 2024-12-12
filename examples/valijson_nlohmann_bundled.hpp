@@ -8134,7 +8134,7 @@ public:
      * @brief  Validate a value against an AllOfConstraint
      *
      * An allOf constraint provides a set of child schemas against which the
-     * target must be validated in order for the constraint to the satifisfied.
+     * target must be validated in order for the constraint to the satisfied.
      *
      * When a ValidationResults object has been set via the 'results' member
      * variable, validation will proceed as long as no fatal errors occur,
@@ -8162,7 +8162,7 @@ public:
      *
      * An anyOf constraint provides a set of child schemas, any of which the
      * target may be validated against in order for the constraint to the
-     * satifisfied.
+     * satisfied.
      *
      * Because an anyOf constraint does not require the target to validate
      * against all child schemas, if validation against a single schema fails,
