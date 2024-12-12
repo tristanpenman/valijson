@@ -365,7 +365,7 @@ public:
         // non-string values seems like the right thing to do, to avoid
         // this throwing an exception.
         //
-        // Schemas that need tighter validation around 'format' constaints
+        // Schemas that need tighter validation around 'format' constraints
         // should generally pair it with a 'type' constraint.
         //
         // Reference:
