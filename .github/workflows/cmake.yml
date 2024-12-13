@@ -24,6 +24,7 @@ jobs:
 
     - name: Install dependencies
       run: |
+        sudo apt update --yes
         sudo apt install --yes libboost-all-dev qtbase5-dev libcurlpp-dev libcurl4-openssl-dev
 
     - name: Configure CMake
