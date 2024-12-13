@@ -83,11 +83,11 @@ VALIJSON_NORETURN inline void throwNotSupported() {
 #
 # if defined __clang_major__
 #   if (__clang_major__ == 3 && __clang_minor__ >= 5)
-#     define TR2_OPTIONAL_CLANG_3_5_AND_HIGHTER_
+#     define TR2_OPTIONAL_CLANG_3_5_AND_HIGHER_
 #   elif (__clang_major__ > 3)
-#     define TR2_OPTIONAL_CLANG_3_5_AND_HIGHTER_
+#     define TR2_OPTIONAL_CLANG_3_5_AND_HIGHER_
 #   endif
-#   if defined TR2_OPTIONAL_CLANG_3_5_AND_HIGHTER_
+#   if defined TR2_OPTIONAL_CLANG_3_5_AND_HIGHER_
 #     define TR2_OPTIONAL_CLANG_3_4_2_AND_HIGHER_
 #   elif (__clang_major__ == 3 && __clang_minor__ == 4 && __clang_patchlevel__ >= 2)
 #     define TR2_OPTIONAL_CLANG_3_4_2_AND_HIGHER_
@@ -123,7 +123,7 @@ VALIJSON_NORETURN inline void throwNotSupported() {
 #   define OPTIONAL_CONSTEXPR_INIT_LIST
 # endif
 
-# if defined TR2_OPTIONAL_CLANG_3_5_AND_HIGHTER_ && (defined __cplusplus) && (__cplusplus != 201103L)
+# if defined TR2_OPTIONAL_CLANG_3_5_AND_HIGHER_ && (defined __cplusplus) && (__cplusplus != 201103L)
 #   define OPTIONAL_HAS_MOVE_ACCESSORS 1
 # else
 #   define OPTIONAL_HAS_MOVE_ACCESSORS 0
@@ -1152,7 +1152,7 @@ public:
      *
      * This function shall return a boolean value if the Adapter contains either
      * an actual boolean value, or one of the strings 'true' or 'false'.
-     * The string comparison is case sensitive.
+     * The string comparison is case-sensitive.
      *
      * An exception shall be thrown if the value cannot be cast to a boolean.
      *
@@ -1165,7 +1165,7 @@ public:
      *
      * This function shall retrieve a boolean value if the Adapter contains
      * either an actual boolean value, or one of the strings 'true' or 'false'.
-     * The string comparison is case sensitive.
+     * The string comparison is case-sensitive.
      *
      * The retrieved value is returned via reference.
      *
@@ -2732,7 +2732,7 @@ inline std::string extractReferenceToken(std::string::const_iterator begin,
  * at least one character in length to be considered valid.
  *
  * Once the next reference token has been identified, it will be used either as
- * an array index or as an the name an object member. The validity of a
+ * an array index or as the name of an object member. The validity of a
  * reference token depends on the type of the node currently being traversed,
  * and the applicability of the token to that node. For example, an array can
  * only be dereferenced by a non-negative integral index.
@@ -3453,7 +3453,7 @@ private:
     /// Schema description (optional)
     opt::optional<std::string> m_description;
 
-    /// Id to apply when resolving the schema URI
+    /// ID to apply when resolving the schema URI
     opt::optional<std::string> m_id;
 
     /// Title string associated with the schema (optional)
@@ -3550,7 +3550,7 @@ public:
     void addConstraintToSubschema(const Constraint &constraint,
             const Subschema *subschema)
     {
-        // TODO: Check heirarchy for subschemas that do not belong...
+        // TODO: Check hierarchy for subschemas that do not belong...
 
         mutableSubschema(subschema)->addConstraint(constraint);
     }
@@ -5201,7 +5201,7 @@ public:
     };
 
     /**
-     * @brief  Add a custom contraint to this SchemaParser
+     * @brief  Add a custom constraint to this SchemaParser
 
      * @param  key      name that will be used to identify relevant constraints
      *                  while parsing a schema document
@@ -5520,7 +5520,7 @@ private:
             // visited before arriving at the current node
             updateSchemaCache(schemaCache, newCacheKeys, subschema);
 
-            // Schema cache did not contain a pre-existing schema corresponding
+            // Schema cache did not contain a preexisting schema corresponding
             // to the current node, so the schema that was returned will need
             // to be populated
             if (!cachedPtr) {
@@ -6435,11 +6435,11 @@ private:
      * When parsing a Draft 3 schema, in addition to the formats above, the
      * following format can be used:
      *  - a string that names a single property that must be present if the
-     *    dependent property is presnet
+     *    dependent property is present
      *
      * Multiple methods can be used in the same dependency constraint.
      *
-     * If the format of any part of the the dependency node does not match one
+     * If the format of any part of the dependency node does not match one
      * of these formats, an exception will be thrown.
      *
      * @param   rootSchema    The Schema instance, and root subschema, through
@@ -6623,7 +6623,7 @@ private:
     {
         constraints::LinearItemsConstraint constraint;
 
-        // Construct a Schema object for the the additionalItems constraint,
+        // Construct a Schema object for the additionalItems constraint,
         // if the additionalItems property is present
         if (additionalItems) {
             if (additionalItems->maybeBool()) {
@@ -6802,7 +6802,7 @@ private:
      * @brief   Make a new MaxItemsConstraint object.
      *
      * @param   node  JSON node containing an integer value representing the
-     *                maximum number of items that may be contaned by an array.
+     *                maximum number of items that may be contained by an array.
      *
      * @return  pointer to a new MaxItemsConstraint that belongs to the caller.
      */
@@ -8121,7 +8121,7 @@ public:
             // The apply() function will iterate over all constraints in the
             // schema, even if the callback function returns false. Once
             // iteration is complete, the apply() function will return true
-            // only if all invokations of the callback function returned true.
+            // only if all invocations of the callback function returned true.
             if (!subschema.apply(fn)) {
                 return false;
             }
@@ -8134,7 +8134,7 @@ public:
      * @brief  Validate a value against an AllOfConstraint
      *
      * An allOf constraint provides a set of child schemas against which the
-     * target must be validated in order for the constraint to the satifisfied.
+     * target must be validated in order for the constraint to the satisfied.
      *
      * When a ValidationResults object has been set via the 'results' member
      * variable, validation will proceed as long as no fatal errors occur,
@@ -8162,7 +8162,7 @@ public:
      *
      * An anyOf constraint provides a set of child schemas, any of which the
      * target may be validated against in order for the constraint to the
-     * satifisfied.
+     * satisfied.
      *
      * Because an anyOf constraint does not require the target to validate
      * against all child schemas, if validation against a single schema fails,
@@ -8201,7 +8201,7 @@ public:
      *
      * A conditional constraint allows a document to be validated against one of two additional
      * subschemas (specified via 'then' or 'else' properties) depending on whether the document
-     * satifies an optional subschema (specified via the 'if' property).
+     * satisfies an optional subschema (specified via the 'if' property).
      *
      * @param   constraint  ConditionalConstraint that the current node must validate against
      *
@@ -8391,7 +8391,7 @@ public:
         // non-string values seems like the right thing to do, to avoid
         // this throwing an exception.
         //
-        // Schemas that need tighter validation around 'format' constaints
+        // Schemas that need tighter validation around 'format' constraints
         // should generally pair it with a 'type' constraint.
         //
         // Reference:
@@ -9801,7 +9801,7 @@ private:
      * The return value depends on whether a given schema validates, with the
      * actual return value for a given case being decided at construction time.
      * The return value is used by the 'applyToSubschemas' functions in the
-     * AllOfConstraint, AnyOfConstraint and OneOfConstrant classes to decide
+     * AllOfConstraint, AnyOfConstraint and OneOfConstraint classes to decide
      * whether to terminate early.
      *
      * The functor uses output parameters (provided at construction) to update
@@ -10228,7 +10228,7 @@ template <class ValueType> class NlohmannJsonObjectMemberIterator
     }
 
   private:
-    /// Iternal copy of the original NlohmannJson iterator
+    /// Internal copy of the original NlohmannJson iterator
     nlohmann::json::const_iterator m_itr;
 };
 

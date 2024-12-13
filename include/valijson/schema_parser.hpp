@@ -71,7 +71,7 @@ public:
     };
 
     /**
-     * @brief  Add a custom contraint to this SchemaParser
+     * @brief  Add a custom constraint to this SchemaParser
 
      * @param  key      name that will be used to identify relevant constraints
      *                  while parsing a schema document
@@ -390,7 +390,7 @@ private:
             // visited before arriving at the current node
             updateSchemaCache(schemaCache, newCacheKeys, subschema);
 
-            // Schema cache did not contain a pre-existing schema corresponding
+            // Schema cache did not contain a preexisting schema corresponding
             // to the current node, so the schema that was returned will need
             // to be populated
             if (!cachedPtr) {
@@ -1306,11 +1306,11 @@ private:
      * When parsing a Draft 3 schema, in addition to the formats above, the
      * following format can be used:
      *  - a string that names a single property that must be present if the
-     *    dependent property is presnet
+     *    dependent property is present
      *
      * Multiple methods can be used in the same dependency constraint.
      *
-     * If the format of any part of the the dependency node does not match one
+     * If the format of any part of the dependency node does not match one
      * of these formats, an exception will be thrown.
      *
      * @param   rootSchema    The Schema instance, and root subschema, through
@@ -1494,7 +1494,7 @@ private:
     {
         constraints::LinearItemsConstraint constraint;
 
-        // Construct a Schema object for the the additionalItems constraint,
+        // Construct a Schema object for the additionalItems constraint,
         // if the additionalItems property is present
         if (additionalItems) {
             if (additionalItems->maybeBool()) {
@@ -1673,7 +1673,7 @@ private:
      * @brief   Make a new MaxItemsConstraint object.
      *
      * @param   node  JSON node containing an integer value representing the
-     *                maximum number of items that may be contaned by an array.
+     *                maximum number of items that may be contained by an array.
      *
      * @return  pointer to a new MaxItemsConstraint that belongs to the caller.
      */

@@ -95,7 +95,7 @@ public:
             // The apply() function will iterate over all constraints in the
             // schema, even if the callback function returns false. Once
             // iteration is complete, the apply() function will return true
-            // only if all invokations of the callback function returned true.
+            // only if all invocations of the callback function returned true.
             if (!subschema.apply(fn)) {
                 return false;
             }
@@ -108,7 +108,7 @@ public:
      * @brief  Validate a value against an AllOfConstraint
      *
      * An allOf constraint provides a set of child schemas against which the
-     * target must be validated in order for the constraint to the satifisfied.
+     * target must be validated in order for the constraint to the satisfied.
      *
      * When a ValidationResults object has been set via the 'results' member
      * variable, validation will proceed as long as no fatal errors occur,
@@ -136,7 +136,7 @@ public:
      *
      * An anyOf constraint provides a set of child schemas, any of which the
      * target may be validated against in order for the constraint to the
-     * satifisfied.
+     * satisfied.
      *
      * Because an anyOf constraint does not require the target to validate
      * against all child schemas, if validation against a single schema fails,
@@ -175,7 +175,7 @@ public:
      *
      * A conditional constraint allows a document to be validated against one of two additional
      * subschemas (specified via 'then' or 'else' properties) depending on whether the document
-     * satifies an optional subschema (specified via the 'if' property).
+     * satisfies an optional subschema (specified via the 'if' property).
      *
      * @param   constraint  ConditionalConstraint that the current node must validate against
      *
@@ -365,7 +365,7 @@ public:
         // non-string values seems like the right thing to do, to avoid
         // this throwing an exception.
         //
-        // Schemas that need tighter validation around 'format' constaints
+        // Schemas that need tighter validation around 'format' constraints
         // should generally pair it with a 'type' constraint.
         //
         // Reference:
@@ -1775,7 +1775,7 @@ private:
      * The return value depends on whether a given schema validates, with the
      * actual return value for a given case being decided at construction time.
      * The return value is used by the 'applyToSubschemas' functions in the
-     * AllOfConstraint, AnyOfConstraint and OneOfConstrant classes to decide
+     * AllOfConstraint, AnyOfConstraint and OneOfConstraint classes to decide
      * whether to terminate early.
      *
      * The functor uses output parameters (provided at construction) to update

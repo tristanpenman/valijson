@@ -579,14 +579,14 @@ Internet-Draft           JSON Schema Media Type            November 2010
    This attribute indicates if the value of the instance (if the
    instance is a number) can not equal the number defined by the
    "minimum" attribute.  This is false by default, meaning the instance
-   value can be greater then or equal to the minimum value.
+   value can be greater than or equal to the minimum value.
 
 5.12.  exclusiveMaximum
 
    This attribute indicates if the value of the instance (if the
    instance is a number) can not equal the number defined by the
    "maximum" attribute.  This is false by default, meaning the instance
-   value can be less then or equal to the maximum value.
+   value can be less than or equal to the maximum value.
 
 5.13.  minItems
 

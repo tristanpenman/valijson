@@ -122,6 +122,6 @@ TEST(valijson, valijson_be_robust_against_catastrophic_backtracking_regular_expr
     Validator validator;
     RapidJsonAdapter myTargetAdapter(myTargetDoc);
 
-    //payload is correct regarding the regexp but evaluation is impossible due to catastrophic regexp bactracking. so we return false.
+    //payload is correct regarding the regexp but evaluation is impossible due to catastrophic regexp backtracking. so we return false.
     ASSERT_FALSE(validator.validate(mySchema, myTargetAdapter, nullptr));
 }

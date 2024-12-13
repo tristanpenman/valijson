@@ -213,7 +213,7 @@ public:
     /**
      * @brief  Make a copy of a Boost property tree POD value
      *
-     * @param  source  string containing the POD vlaue
+     * @param  source  string containing the POD value
      */
     explicit PropertyTreeFrozenValue(const boost::property_tree::ptree::data_type &source)
       : m_value(source) { }

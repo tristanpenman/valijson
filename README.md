@@ -90,7 +90,7 @@ This will create a validator that will attempt to cast values to satisfy a schem
 ## Regular Expression Engine
 
 When enforcing a 'pattern' property, a regular expression engine is used. By default, the default regular expression (`DefaultRegexEngine`) uses `std::regex`.
-Unfortunaltey, `std::regex` has no protection against catastrophic backtracking and the implementation in gcc is so suboptimal that it can easily lead to segmentation faults.
+Unfortunately, `std::regex` has no protection against catastrophic backtracking and the implementation in gcc is so suboptimal that it can easily lead to segmentation faults.
 
 This behaviour can be customised by implementing a wrapper for alternative regular expression engine.
 
@@ -282,9 +282,9 @@ Here is a screenshot of JSON Inspector in action:
 
 ## Live Demo
 
-A web-based demo can be found [here](https://letmaik.github.io/valijson-wasm), courtesy of [Maik Riechert](https://github.com/letmaik).
+A [web-based demo is available](https://letmaik.github.io/valijson-wasm), courtesy of [Maik Riechert](https://github.com/letmaik).
 
-This demo uses Emscripten to compile Valijson and Nlohmann JSON (JSON for Modern C++) to WebAssembly. The source code can be found [here](https://github.com/letmaik/valijson-wasm) and is available under the MIT license.
+This demo uses Emscripten to compile Valijson and Nlohmann JSON (JSON for Modern C++) to WebAssembly. The source code can be found in [letmaik/valijson-wasm](https://github.com/letmaik/valijson-wasm) and is available under the MIT license.
 
 ![WebAssembly Demo](doc/screenshots/wasm.png)
 
