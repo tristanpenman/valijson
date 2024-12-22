@@ -231,6 +231,10 @@ if(valijson_BUILD_EXAMPLES)
         examples/array_iteration_template_fn.cpp
     )
 
+    add_executable(check_schema
+        examples/check_schema.cpp
+    )
+
     add_executable(object_iteration
         examples/object_iteration.cpp
     )
@@ -265,6 +269,7 @@ if(valijson_BUILD_EXAMPLES)
     target_link_libraries(external_schema ${Boost_LIBRARIES})
     target_link_libraries(array_iteration_basics jsoncpp)
     target_link_libraries(array_iteration_template_fn jsoncpp)
+    target_link_libraries(check_schema jsoncpp)
     target_link_libraries(object_iteration jsoncpp)
     target_link_libraries(json_pointers)
 endif()
