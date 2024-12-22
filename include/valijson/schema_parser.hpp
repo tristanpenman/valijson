@@ -1,10 +1,8 @@
 #pragma once
 
-#include <stdexcept>
+#include <functional>
 #include <iostream>
 #include <vector>
-#include <memory>
-#include <functional>
 
 #include <valijson/constraints/concrete_constraints.hpp>
 #include <valijson/internal/adapter.hpp>
@@ -14,6 +12,7 @@
 #include <valijson/internal/uri.hpp>
 #include <valijson/constraint_builder.hpp>
 #include <valijson/schema.hpp>
+#include <valijson/schema_cache.hpp>
 #include <valijson/exceptions.hpp>
 
 namespace valijson {
@@ -109,8 +108,8 @@ public:
     void populateSchema(
         const AdapterType &node,
         Schema &schema,
-        typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc = nullptr ,
-        typename FunctionPtrs<AdapterType>::FreeDoc freeDoc = nullptr )
+        typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc = nullptr,
+        typename FunctionPtrs<AdapterType>::FreeDoc freeDoc = nullptr)
     {
         if ((fetchDoc == nullptr ) ^ (freeDoc == nullptr)) {
             throwRuntimeError("Remote document fetching can't be enabled without both fetch and free functions");
@@ -147,8 +146,6 @@ private:
 
         typedef std::map<std::string, const DocumentType*> Type;
     };
-
-    typedef std::map<std::string, const Subschema *> SchemaCache;
 
     /**
      * @brief  Free memory used by fetched documents
@@ -476,6 +473,10 @@ private:
                     currentScope, actualJsonPointer, fetchDoc, parentSubschema,
                     ownName, docCache, schemaCache, newCacheKeys);
 
+        }
+
+        if (std::find(newCacheKeys.begin(), newCacheKeys.end(), queryKey) != newCacheKeys.end()) {
+            throwRuntimeError("found cycle while resolving JSON reference");
         }
 
         // JSON References in nested schema will be resolved relative to the
