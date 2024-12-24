@@ -3,11 +3,18 @@
 #include <gtest/gtest.h>
 
 #include <valijson/internal/json_pointer.hpp>
-
 #include <valijson/adapters/rapidjson_adapter.hpp>
+#include <valijson/schema.hpp>
+#include <valijson/schema_parser.hpp>
+#include <valijson/utils/rapidjson_utils.hpp>
+
+#define TEST_DATA_DIR "../tests/data"
 
 using valijson::adapters::RapidJsonAdapter;
 using valijson::internal::json_pointer::resolveJsonPointer;
+using valijson::utils::loadDocument;
+using valijson::Schema;
+using valijson::SchemaParser;
 
 typedef rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator> RapidJsonCrtAllocator;
 
@@ -306,4 +313,17 @@ TEST_F(TestJsonPointer, JsonPointerTestCases)
 #endif
         }
     }
+}
+
+TEST_F(TestJsonPointer, CircularReferences)
+{
+    // Load schema document
+    rapidjson::Document schemaDocument;
+    ASSERT_TRUE( loadDocument(TEST_DATA_DIR "/schemas/circular_reference.schema.json", schemaDocument) );
+    RapidJsonAdapter schemaAdapter(schemaDocument);
+
+    // Attempt to parse schema
+    Schema schema;
+    SchemaParser parser;
+    EXPECT_THROW(parser.populateSchema(schemaAdapter, schema), std::runtime_error);
 }

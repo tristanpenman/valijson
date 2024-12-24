@@ -1,0 +1,8 @@
+{
+  "description": "Circular reference when parsing properties keyword",
+  "properties": {
+    "foo": {"$ref": "#/properties/bar"},
+    "bar": {"$ref": "#/properties/baz"},
+    "baz": {"$ref": "#/properties/foo"}
+  }
+}
