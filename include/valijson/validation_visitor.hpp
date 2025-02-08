@@ -383,7 +383,7 @@ public:
         const std::string format = constraint.getFormat();
         if (format == "date") {
             // Matches dates like: 2022-07-18
-            std::regex date_regex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$");
+            static const std::regex date_regex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$");
             std::smatch matches;
             if (std::regex_match(s, matches, date_regex)) {
                 const auto month = std::stoi(matches[2].str());
@@ -399,11 +399,9 @@ public:
         } else if (format == "time") {
             // Strict mode matches times like: 16:52:45Z, 16:52:45+02:00
             // Permissive mode also matches date/times like 16:52:45
-            std::regex time_regex(m_strictDateTime
-                ? "^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$"
-                : "^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])?|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
-
-            if (std::regex_match(s, time_regex)) {
+            static const std::regex strictRegex("^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
+            static const std::regex permissiveRegex("^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])?|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
+            if (std::regex_match(s, m_strictDateTime ? strictRegex : permissiveRegex)) {
                 return true;
             } else {
                 if (m_results) {
@@ -415,12 +413,10 @@ public:
         } else if (format == "date-time") {
             // Strict mode matches date/times like: 2022-07-18T16:52:45Z, 2022-07-18T16:52:45+02:00
             // Permissive mode also matches date/times like: 2022-07-18T16:52:45
-            std::regex datetime_regex(m_strictDateTime
-                ? "^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])[Tt]([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$"
-                : "^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])[Tt]([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])?|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
-
+            static const std::regex strictRegex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])[Tt]([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
+            static const std::regex permissiveRegex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])[Tt]([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])?|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
             std::smatch matches;
-            if (std::regex_match(s, matches, datetime_regex)) {
+            if (std::regex_match(s, matches, m_strictDateTime ? strictRegex : permissiveRegex)) {
                 const auto month = std::stoi(matches[2].str());
                 const auto day = std::stoi(matches[3].str());
                 return validate_date_range(month, day);
