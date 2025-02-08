@@ -77,6 +77,12 @@ Valijson has a notion of strong and weak typing. By default, strong typing is us
 Validator validator;
 ```
 
+This is equivalent to:
+
+```cpp
+Validator validator(Validator::kStrongTypes);
+```
+
 This validator will not attempt to cast between types to satisfy a schema. So the string `"23"` will not be parsed as a number.
 
 Alternatively, weak typing can be used:
@@ -86,6 +92,22 @@ Validator validator(Validator::kWeakTypes);
 ```
 
 This will create a validator that will attempt to cast values to satisfy a schema. The original motivation for this was to support the Boost Property Tree library, which can parse JSON, but stores values as strings.
+
+### Strict vs Permissive Date/Time Formats
+
+JSON Schema supports validation of certain types using the `format` keyword. Supported formats include `time`, `date`, and `date-time`. When `date-time` is used, the input is validated according to [RFC 3999](./doc/specifications/rfc3339-timestamps.txt). By default, RFC 3999 requires that all date/time strings are unambiguous - i.e. are defined in terms of a local time zone. This is controlled by the `Z` suffix (for UTC) or a `+01:00` style modifier.
+
+Valijson can be configured to allow ambiguous date/time strings.
+
+```cpp
+Validator validator(Validator::kStrongTypes, Validator::kPermissiveDateTime);
+```
+
+The default is strict date/time validation, which is equivalent to:
+
+```cpp
+Validator validator(Validator::kStrongTypes, Validator::kStrictDateTime);
+```
 
 ## Regular Expression Engine
 

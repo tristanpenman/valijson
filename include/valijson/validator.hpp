@@ -35,7 +35,9 @@ public:
      * @brief  Construct a Validator that uses strong type checking by default
      */
     ValidatorT()
-      : strictTypes(true) { }
+      : strictTypes(true)
+      , strictDateTime(true)
+    { }
 
     /**
      * @brief  Construct a Validator using a specific type checking mode
