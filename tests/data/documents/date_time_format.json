@@ -1,0 +1,22 @@
+[
+  {
+    "timestamp": "AAA",
+    "validity": "invalid"
+  },
+  {
+    "timestamp": "2000",
+    "validity": "invalid"
+  },
+  {
+    "timestamp": "2000-01-01T00:00:00",
+    "validity": "permissive"
+  },
+  {
+    "timestamp": "2000-01-01T00:00:00Z",
+    "validity": "strict"
+  },
+  {
+    "timestamp": "2000-01-01T00:00:00+02:00",
+    "validity": "strict"
+  }
+]

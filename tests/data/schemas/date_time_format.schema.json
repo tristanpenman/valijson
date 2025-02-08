@@ -1,0 +1,7 @@
+{
+  "properties": {
+    "timestamp": {
+      "format": "date-time"
+    }
+  }
+}
