@@ -13,14 +13,23 @@ if(MSVC)
 else()
     include(CheckCXXCompilerFlag)
     CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+    CHECK_CXX_COMPILER_FLAG("-std=c++17" COMPILER_SUPPORTS_CXX17)
     if(!COMPILER_SUPPORTS_CXX11)
         message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+    endif()
+    if(!COMPILER_SUPPORTS_CXX17)
+        message(WARNING "The compiler ${CMAKE_CXX_COMPILER} has no C++17 support. Some features (including PocoJSON support) may be unavailable.")
     endif()
 
     # Suppress boost warnings that aren't relevant to the test suite
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_BIND_GLOBAL_PLACEHOLDERS")
 
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
+    if(COMPILER_SUPPORTS_CXX17)
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall")
+    elseif(COMPILER_SUPPORTS_CXX11)
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
+    endif()
+
     SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 endif()
 
@@ -62,7 +71,7 @@ else()
     add_compile_definitions(VALIJSON_USE_EXCEPTIONS=0)
 endif()
 
-find_package(Poco OPTIONAL_COMPONENTS JSON)
+find_package(Poco COMPONENTS JSON)
 find_package(Qt5Core)
 
 # jsoncpp library
@@ -154,9 +163,14 @@ if(valijson_BUILD_TESTS)
     endif()
 
     if(Poco_FOUND)
-        include_directories(${Poco_INCLUDE_DIRS})
-        list(APPEND TEST_SOURCES tests/test_poco_json_adapter.cpp)
-        list(APPEND TEST_LIBS ${Poco_Foundation_LIBRARIES} ${Poco_JSON_LIBRARIES})
+        if(COMPILER_SUPPORTS_CXX17)
+            list(APPEND TEST_SOURCES tests/test_poco_json_adapter.cpp)
+            list(APPEND TEST_LIBS
+                Poco::Foundation
+                Poco::JSON)
+        else()
+            message(WARNING "Poco found, but the compiler ${CMAKE_CXX_COMPILER} has no C++17 support. Poco will be disabled in this build.")
+        endif()
     endif()
 
     if(Qt5Core_FOUND)
@@ -180,7 +194,10 @@ if(valijson_BUILD_TESTS)
     endif()
 
     if(NOT MSVC)
-        set_target_properties(test_suite PROPERTIES COMPILE_FLAGS " -pedantic -Werror -Wshadow -Wunused")
+        set_target_properties(test_suite PROPERTIES
+            COMPILE_FLAGS " -pedantic -Werror -Wshadow -Wunused"
+            CXX_STANDARD 17
+        )
     endif()
 
     if (MSVC)
