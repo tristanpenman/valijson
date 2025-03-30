@@ -71,7 +71,7 @@ else()
     add_compile_definitions(VALIJSON_USE_EXCEPTIONS=0)
 endif()
 
-find_package(Poco COMPONENTS JSON)
+find_package(Poco COMPONENTS Foundation JSON)
 find_package(Qt5Core)
 
 # jsoncpp library
