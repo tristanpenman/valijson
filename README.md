@@ -1,6 +1,6 @@
 # Valijson
 
-Valijson is a header-only [JSON Schema](http://json-schema.org/) validation library for C++11.
+Valijson is a header-only [JSON Schema](http://json-schema.org/) validation library for _Modern C++_.
 
 Valijson provides a simple validation API that allows you to load JSON Schemas, and validate documents loaded by one of several supported parser libraries.
 
@@ -316,7 +316,7 @@ Doxygen documentation can be built by running 'doxygen' from the project root di
 
 ## Dependencies
 
-Valijson requires a compiler with full C++11 support. Please note that versions of GCC prior to 4.9.0 had incomplete `<regex>` support, so `pattern` constraints may not work. If using GCC, it is recommended that you use GCC 5.0 or later.
+Valijson requires a compiler with full C++14 support.
 
 When building the test suite, Boost 1.54, Qt 5 and Poco are optional dependencies.
 
@@ -331,7 +331,7 @@ Valijson supports JSON documents loaded using various JSON parser libraries. It 
  - [nlohmann/json 1.1.0](https://github.com/nlohmann/json/archive/v1.1.0.tar.gz)
  - [rapidjson (commit 48fbd8c)](https://github.com/Tencent/rapidjson/tree/48fbd8cd202ca54031fe799db2ad44ffa8e77c13)
  - [PicoJSON 1.3.0](https://github.com/kazuho/picojson/archive/v1.3.0.tar.gz)
- - [Poco JSON 1.7.8](https://pocoproject.org/docs/Poco.JSON.html)
+ - [Poco JSON 1.14.0](https://pocoproject.org/docs/Poco.JSON.html)
  - [Qt 5.8](http://doc.qt.io/qt-5/json.html)
 
 Other versions of these libraries may work, but have not been tested. In particular, versions of jsoncpp going back to 0.5.0 should also work correctly.
