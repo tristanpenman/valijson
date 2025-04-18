@@ -8,3 +8,4 @@ doc/html
 cmake-build-*
 CMakeFiles/
 .vs
+a.out
