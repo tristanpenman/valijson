@@ -201,6 +201,12 @@ It can be harder to add new element types, especially when there are multiple Vi
 
 The Visitor pattern can also requires breaking encapsulation to some extent (e.g. if the visitor might need access to internals that would otherwise be excluded from a public interface). It's not uncommon to see C++ `friend` declarations being used as a workaround for this.
 
+## Schema Validation
+
+You have a stable class hierarchy and need to perform many unrelated operations.
+
+You want to keep operations decoupled from the objects they operate on.
+
 ## Validation Errors
 
 TODO: How are validation errors reported?
