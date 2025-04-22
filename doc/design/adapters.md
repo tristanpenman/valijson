@@ -19,23 +19,25 @@ This architecture has proven to be versatile and easy for new contributors to wo
 
 The initial design goals for Valijson were:
 
-* **Performance** - To have performance that is competitive with hand-written validators. At the time (~2012), there weren't many options for validating JSON Schema in C++. My team was writing validation code by hand, using otherwise complete JSON Schemas as a reference.
+* **Performance** - To have performance that is competitive with hand-written validators. At the time (~2012), there weren't many options for validating JSON Schema in C++. My team was writing validation code by hand, using JSON Schema documents as a reference.
 
-* **Support multiple parsers** - Valijson was originally designed to work with three parsers: JsonCpp, RapidJSON and Boost Property Trees. These were the parsers used by my employer at the time, across various projects. I wanted to use the same validator regardless of which JSON parser a particular project used.
+* **Support multiple parsers** - Valijson was originally designed to work with three parsers: JsonCpp, RapidJSON and Boost Property Trees. These were the parsers used by my employer at the time. I wanted to use the same validator regardless of which JSON parser a particular project used.
 
 * **Header only** - Header only libraries have the advantage of being easy to integrate into existing code-bases. I wanted to reduce the friction for adopting Valijson.
 
 ## Architecture
 
-Achieving high performance while supporting multiple parsers meant that static dispatch would be preferrable (as opposed to dynamic dispatch). Thus, Valijson makes heavy use of C++ Class Templates to allow composability.
+Achieving high performance while supporting multiple parsers meant that static dispatch would be preferrable (as opposed to dynamic dispatch). Thus, Valijson makes heavy use of C++ Class Templates to allow composability. This could be seen as a variation of [Policy-based Design](https://en.wikipedia.org/wiki/Modern_C%2B%2B_Design#Policy-based_design), as popularised by Andrei Alexandrescu.
 
 ### Class Templates
 
 Class Templates have the advantage of being optimisation friendly, as the compiler can "see through" potentially costly code paths.
 
-Central to Valijson's architecture is the _Parser Adapter_. A Parser Adapter (or just Adapter for short) provides a facade for a specific JSON parser library, ensuring that it conforms to an interface expected by Valijson's JSON Schema validator. This could be achieved using polymorphism, but I wanted to avoid dynamic dispatch.
+Central to Valijson's architecture is the _Parser Adapter_. A Parser Adapter (or just Adapter for short) provides a facade for a specific JSON parser library, ensuring that it conforms to an interface used by Valijson's JSON Schema validator. While this could be achieved using polymorphism (or [dynamic dispatch](https://en.wikipedia.org/wiki/Dynamic_dispatch)), I wanted to avoid the overhead associated dynamic dispatch.
 
-Class Templates were a natural fit for this architecture, allowing Adapters to conform to the interface, without the overhead of dynamic dispatch.
+C++ Class Templates were therefore a natural fit for this architecture, allowing Adapters to conform to a common interface. The validator could then be implemented in terms of this interface.
+
+Note: This makes it sound like the Adapter interface was designed up-front. In reality, the Adapter interface evolved alongside the validator implementation.
 
 ### Alternative: Code Generation
 
@@ -55,7 +57,7 @@ The implementation for each parser is fully contained in a single header file, n
 * `rapidjson_adapter.hpp` implements an adapter for RapidJSON
 * and so on...
 
-For general use, each parser adapter provides a corresponding `utils` file. e.g. `rapidjson_utils.hpp`. This file contains a specialisation of the `loadDocument` template function, catered towards loading documents using that specific parser.
+For convenience, each parser adapter provides a corresponding `utils` file. e.g. `rapidjson_utils.hpp`. This file contains a specialisation of the `loadDocument` template function, making it easier to load documents using that specific parser.
 
 The purpose of this is to make it easier to read JSON documents from disk:
 
@@ -71,7 +73,7 @@ The purpose of this is to make it easier to read JSON documents from disk:
 
 Here's the general process you would follow:
 
-1. **Learn.** The first thing to do when implementing an adapter is to become familiar with the API for the target parser. The key areas to focus on are object and array iteration, how different value types are identified, and any memory management constraints / requirements.
+1. **Learn the API.** The first thing to do when implementing an adapter is to become familiar with the API for the target parser. The key areas to focus on are object and array iteration, how different value types are identified, and any memory management constraints / requirements.
 
 2. **Copy an existing adapter.** Most adapter implementations begin by using an existing adapter as a template. Start by picking a similar parser (according to the knowledge gained in step 1).
 
