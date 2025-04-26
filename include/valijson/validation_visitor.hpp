@@ -1605,14 +1605,17 @@ private:
             // PropertiesConstraint. does std::regex currently support
             // custom allocators? Anyway, this isn't an issue here, because Valijson's
             // JSON Scheme validator does not yet support custom allocators.
-            const std::regex r(patternPropertyStr);
+            auto it = m_regexesCache.find(patternPropertyStr);
+            if (it == m_regexesCache.end()) {
+                it = m_regexesCache.emplace(patternPropertyStr, RegexEngine(patternPropertyStr)).first;
+            }
 
             bool matchFound = false;
 
             // Recursively validate all matching properties
             typedef const typename AdapterType::ObjectMember ObjectMember;
             for (const ObjectMember m : m_object) {
-                if (std::regex_search(m.first, r)) {
+                if (RegexEngine::search(m.first, it->second)) {
                     matchFound = true;
                     if (m_propertiesMatched) {
                         m_propertiesMatched->insert(m.first);
