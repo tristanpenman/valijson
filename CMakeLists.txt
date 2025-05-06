@@ -8,6 +8,9 @@ option(valijson_BUILD_TESTS "Build valijson test suite." FALSE)
 option(valijson_EXCLUDE_BOOST "Exclude Boost when building test suite." FALSE)
 option(valijson_USE_EXCEPTIONS "Use exceptions in valijson and included libs." TRUE)
 
+option(valijson_USE_BOOST_REGEX "Use boost::regex instead of std::regex internally." FALSE)
+mark_as_advanced(valijson_USE_BOOST_REGEX)
+
 if(MSVC)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
 else()
@@ -45,6 +48,9 @@ target_include_directories(valijson INTERFACE
 
 if(valijson_USE_EXCEPTIONS)
     target_compile_definitions(valijson INTERFACE -DVALIJSON_USE_EXCEPTIONS=1)
+endif()
+if (valijson_USE_BOOST_REGEX)
+    target_compile_definitions(valijson INTERFACE -DVALIJSON_USE_BOOST_REGEX=1)
 endif()
 
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

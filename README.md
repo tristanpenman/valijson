@@ -141,6 +141,8 @@ Then to use it, you must define a customer validator type:
 
 Once you've done this, `MyValidator` can be used in place of the default `valijson::Validator` type.
 
+Alternatively the library can be instructed to use `boost::regex` by specifying either `valijson_USE_BOOST_REGEX=TRUE` in CMake or defining `VALIJSON_USE_BOOST_REGEX=1` as a `#define` before including any valijson headers. Note that the library does not source `boost::regex` for you when specifying this option- it is assumed you have it already.
+
 ## Memory Management
 
 Valijson has been designed to safely manage, and eventually free, the memory that is allocated while parsing a schema or validating a document. When working with an externally loaded schema (i.e. one that is populated using the `SchemaParser` class) you can rely on RAII semantics.

@@ -106,11 +106,11 @@ struct DefaultRegexEngine
 
     static bool search(const std::string& s, const DefaultRegexEngine& r)
     {
-        return std::regex_search(s, r.regex);
+        return internal::regex_search(s, r.regex);
     }
 
 private:
-    std::regex regex;
+    internal::regex regex;
 };
 
 using Validator = ValidatorT<DefaultRegexEngine>;
