@@ -2,10 +2,10 @@
 
 #include <cmath>
 #include <string>
-#include <regex>
 #include <unordered_map>
 #include <utility>
 
+#include <valijson/internal/regex.hpp>
 #include <valijson/adapters/std_string_adapter.hpp>
 #include <valijson/constraints/concrete_constraints.hpp>
 #include <valijson/constraints/constraint_visitor.hpp>
@@ -383,9 +383,9 @@ public:
         const std::string format = constraint.getFormat();
         if (format == "date") {
             // Matches dates like: 2022-07-18
-            static const std::regex date_regex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$");
-            std::smatch matches;
-            if (std::regex_match(s, matches, date_regex)) {
+            static const internal::regex date_regex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$");
+            internal::smatch matches;
+            if (internal::regex_match(s, matches, date_regex)) {
                 const auto month = std::stoi(matches[2].str());
                 const auto day = std::stoi(matches[3].str());
                 return validate_date_range(month, day);
@@ -399,9 +399,9 @@ public:
         } else if (format == "time") {
             // Strict mode matches times like: 16:52:45Z, 16:52:45+02:00
             // Permissive mode also matches date/times like 16:52:45
-            static const std::regex strictRegex("^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
-            static const std::regex permissiveRegex("^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])?|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
-            if (std::regex_match(s, m_strictDateTime ? strictRegex : permissiveRegex)) {
+            static const internal::regex strictRegex("^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
+            static const internal::regex permissiveRegex("^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])?|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
+            if (internal::regex_match(s, m_strictDateTime ? strictRegex : permissiveRegex)) {
                 return true;
             } else {
                 if (m_results) {
@@ -413,10 +413,10 @@ public:
         } else if (format == "date-time") {
             // Strict mode matches date/times like: 2022-07-18T16:52:45Z, 2022-07-18T16:52:45+02:00
             // Permissive mode also matches date/times like: 2022-07-18T16:52:45
-            static const std::regex strictRegex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])[Tt]([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
-            static const std::regex permissiveRegex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])[Tt]([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])?|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
-            std::smatch matches;
-            if (std::regex_match(s, matches, m_strictDateTime ? strictRegex : permissiveRegex)) {
+            static const internal::regex strictRegex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])[Tt]([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
+            static const internal::regex permissiveRegex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])[Tt]([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])?|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
+            internal::smatch matches;
+            if (internal::regex_match(s, matches, m_strictDateTime ? strictRegex : permissiveRegex)) {
                 const auto month = std::stoi(matches[2].str());
                 const auto day = std::stoi(matches[3].str());
                 return validate_date_range(month, day);
@@ -1602,7 +1602,7 @@ private:
             const std::string patternPropertyStr(patternProperty.c_str());
 
             // It would be nice to store pre-allocated regex objects in the
-            // PropertiesConstraint. does std::regex currently support
+            // PropertiesConstraint. does internal::regex currently support
             // custom allocators? Anyway, this isn't an issue here, because Valijson's
             // JSON Scheme validator does not yet support custom allocators.
             auto it = m_regexesCache.find(patternPropertyStr);
