@@ -690,7 +690,7 @@ private:
                             makeMultipleOfDoubleConstraint(itr->second),
                             &subschema);
                 } else {
-                    throwRuntimeError("Expected an numeric value for "
+                    throwRuntimeError("Expected a numeric value for "
                             " 'divisibleBy' constraint.");
                 }
             } else {
@@ -853,7 +853,7 @@ private:
                         makeMultipleOfDoubleConstraint(itr->second),
                         &subschema);
             } else {
-                throwRuntimeError("Expected an numeric value for 'multipleOf' constraint.");
+                throwRuntimeError("Expected a numeric value for 'multipleOf' constraint.");
             }
         }
 
