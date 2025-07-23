@@ -5,7 +5,7 @@ git submodule update --init --depth 1 thirdparty
 mkdir build
 cd build
 cmake \
-  -Dvalijson_BUILD_TESTS=FALSE \
+  -Dvalijson_BUILD_TESTS=TRUE \
   -Dvalijson_BUILD_EXAMPLES=FALSE \
   -Dvalijson_EXCLUDE_BOOST=TRUE \
   ..
