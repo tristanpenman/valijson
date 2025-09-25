@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 
 #include <boost/json.hpp>
@@ -294,10 +295,10 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-    opt::optional<BoostJsonArray> getArrayOptional() const
+    std::optional<BoostJsonArray> getArrayOptional() const
     {
         if (m_value.is_array()) {
-            return opt::make_optional(BoostJsonArray(m_value));
+            return std::make_optional(BoostJsonArray(m_value));
         }
 
         return {};
@@ -362,10 +363,10 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-    opt::optional<BoostJsonObject> getObjectOptional() const
+    std::optional<BoostJsonObject> getObjectOptional() const
     {
         if (m_value.is_object()) {
-            return opt::make_optional(BoostJsonObject(m_value));
+            return std::make_optional(BoostJsonObject(m_value));
         }
 
 #if __cplusplus >= 201703

@@ -26,6 +26,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <iterator>
 
@@ -287,10 +288,10 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-    opt::optional<JsonCppArray> getArrayOptional() const
+    std::optional<JsonCppArray> getArrayOptional() const
     {
         if (m_value.isArray()) {
-            return opt::make_optional(JsonCppArray(m_value));
+            return std::make_optional(JsonCppArray(m_value));
         }
 
         return {};
@@ -356,10 +357,10 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-    opt::optional<JsonCppObject> getObjectOptional() const
+    std::optional<JsonCppObject> getObjectOptional() const
     {
         if (m_value.isObject()) {
-            return opt::make_optional(JsonCppObject(m_value));
+            return std::make_optional(JsonCppObject(m_value));
         }
 
         return {};

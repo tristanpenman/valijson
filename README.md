@@ -2,7 +2,7 @@
 
 Valijson is a header-only [JSON Schema](http://json-schema.org/) validation library for _Modern C++_.
 
-Valijson provides a simple validation API that allows you to load JSON Schemas, and validate documents loaded by one of several supported parser libraries.
+Valijson provides a simple validation API that allows you to load JSON Schemas, and validate documents loaded by one of several supported parser libraries. A compiler with full C++17 support is required.
 
 ## Project Goals
 
@@ -268,7 +268,6 @@ This can then be used in your project with a single `#include`:
 
 An example can be found in [examples/valijson\_nlohmann\_bundled\_test.cpp](examples/valijson_nlohmann_bundled_test.cpp).
 
-Note: the bundled version of Valijson always embeds a compatibility header in place of `std::optional`.
 
 ## Examples
 

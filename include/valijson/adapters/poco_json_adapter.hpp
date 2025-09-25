@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include <Poco/JSON/Object.h>
 
@@ -293,13 +294,13 @@ public:
     *
     * Otherwise it will return an empty optional.
     */
-    opt::optional<PocoJsonArray> getArrayOptional() const
+    std::optional<PocoJsonArray> getArrayOptional() const
     {
         if (m_value.type() == typeid(Poco::JSON::Array::Ptr)) {
-            return opt::make_optional(PocoJsonArray(m_value));
+            return std::make_optional(PocoJsonArray(m_value));
         }
 
-        return opt::optional<PocoJsonArray>();
+        return std::optional<PocoJsonArray>();
     }
 
     /**
@@ -361,13 +362,13 @@ public:
     *
     * Otherwise it will return an empty optional.
     */
-    opt::optional<PocoJsonObject> getObjectOptional() const
+    std::optional<PocoJsonObject> getObjectOptional() const
     {
         if (m_value.type() == typeid(Poco::JSON::Object::Ptr)) {
-            return opt::make_optional(PocoJsonObject(m_value));
+            return std::make_optional(PocoJsonObject(m_value));
         }
 
-        return opt::optional<PocoJsonObject>();
+        return std::optional<PocoJsonObject>();
     }
 
     /**

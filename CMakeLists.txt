@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.10.0)
 project(valijson)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 option(valijson_BUILD_EXAMPLES "Build valijson examples." FALSE)
@@ -14,25 +18,8 @@ mark_as_advanced(valijson_USE_BOOST_REGEX)
 if(MSVC)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
 else()
-    include(CheckCXXCompilerFlag)
-    CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
-    CHECK_CXX_COMPILER_FLAG("-std=c++17" COMPILER_SUPPORTS_CXX17)
-    if(!COMPILER_SUPPORTS_CXX11)
-        message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
-    endif()
-    if(!COMPILER_SUPPORTS_CXX17)
-        message(WARNING "The compiler ${CMAKE_CXX_COMPILER} has no C++17 support. Some features (including PocoJSON support) may be unavailable.")
-    endif()
-
     # Suppress boost warnings that aren't relevant to the test suite
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_BIND_GLOBAL_PLACEHOLDERS")
-
-    if(COMPILER_SUPPORTS_CXX17)
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall")
-    elseif(COMPILER_SUPPORTS_CXX11)
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
-    endif()
-
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -DBOOST_BIND_GLOBAL_PLACEHOLDERS")
     SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 endif()
 
@@ -40,6 +27,8 @@ add_library(valijson INTERFACE)
 # create alias, so that user could always write target_link_libraries(... ValiJSON::valijson)
 # despite of valijson target is imported or not
 add_library(ValiJSON::valijson ALIAS valijson)
+
+target_compile_features(valijson INTERFACE cxx_std_17)
 
 include(GNUInstallDirs)
 target_include_directories(valijson INTERFACE

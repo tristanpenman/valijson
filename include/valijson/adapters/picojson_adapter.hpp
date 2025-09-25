@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 
 #ifdef _MSC_VER
@@ -300,10 +301,10 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-    opt::optional<PicoJsonArray> getArrayOptional() const
+    std::optional<PicoJsonArray> getArrayOptional() const
     {
         if (m_value.is<picojson::array>()) {
-            return opt::make_optional(PicoJsonArray(m_value));
+            return std::make_optional(PicoJsonArray(m_value));
         }
 
         return {};
@@ -370,10 +371,10 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-    opt::optional<PicoJsonObject> getObjectOptional() const
+    std::optional<PicoJsonObject> getObjectOptional() const
     {
         if (m_value.is<picojson::object>()) {
-            return opt::make_optional(PicoJsonObject(m_value));
+            return std::make_optional(PicoJsonObject(m_value));
         }
 
         return {};

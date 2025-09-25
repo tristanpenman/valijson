@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <iostream>
+#include <optional>
 #include <vector>
 
 #include <valijson/constraints/concrete_constraints.hpp>
@@ -120,7 +121,7 @@ public:
 #if VALIJSON_USE_EXCEPTIONS
         try {
 #endif
-            resolveThenPopulateSchema(schema, node, node, schema, opt::optional<std::string>(), "", fetchDoc, nullptr,
+            resolveThenPopulateSchema(schema, node, node, schema, std::optional<std::string>(), "", fetchDoc, nullptr,
                     nullptr, docCache, schemaCache);
 #if VALIJSON_USE_EXCEPTIONS
         } catch (...) {
@@ -191,9 +192,9 @@ private:
      * document URI should be used to replace the path, query and fragment
      * portions of URI provided by the resolution scope.
      */
-    virtual opt::optional<std::string> resolveDocumentUri(
-            const opt::optional<std::string>& resolutionScope,
-            const opt::optional<std::string>& documentUri)
+    virtual std::optional<std::string> resolveDocumentUri(
+            const std::optional<std::string>& resolutionScope,
+            const std::optional<std::string>& documentUri)
     {
         if (resolutionScope) {
             if (documentUri) {
@@ -259,7 +260,7 @@ private:
     /**
      * Sanitise an optional JSON Pointer, trimming trailing slashes
      */
-    static std::string sanitiseJsonPointer(const opt::optional<std::string>& input)
+    static std::string sanitiseJsonPointer(const std::optional<std::string>& input)
     {
         if (input) {
             // Trim trailing slash(es)
@@ -359,7 +360,7 @@ private:
         Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &node,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         const Subschema *parentSubschema,
@@ -401,7 +402,7 @@ private:
 
         // Returns a document URI if the reference points somewhere
         // other than the current document
-        const opt::optional<std::string> documentUri = internal::json_reference::getJsonReferenceUri(jsonRef);
+        const std::optional<std::string> documentUri = internal::json_reference::getJsonReferenceUri(jsonRef);
 
         // Extract JSON Pointer from JSON Reference, with any trailing
         // slashes removed so that keys in the schema cache end
@@ -413,7 +414,7 @@ private:
         // scope. An absolute document URI will take precedence when
         // present, otherwise we need to resolve the URI relative to
         // the current resolution scope
-        const opt::optional<std::string> actualDocumentUri = resolveDocumentUri(currentScope, documentUri);
+        const std::optional<std::string> actualDocumentUri = resolveDocumentUri(currentScope, documentUri);
 
         // Construct a key to search the schema cache for an existing schema
         const std::string queryKey = actualDocumentUri ? (*actualDocumentUri + actualJsonPointer) : actualJsonPointer;
@@ -527,7 +528,7 @@ private:
         Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &node,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         const Subschema *parentSubschema,
@@ -574,7 +575,7 @@ private:
         const AdapterType &rootNode,
         const AdapterType &node,
         const Subschema &subschema,
-        const opt::optional<std::string>& currentScope,
+        const std::optional<std::string>& currentScope,
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         const Subschema *parentSubschema,
@@ -612,7 +613,7 @@ private:
         typename AdapterType::Object::const_iterator itr(object.end());
 
         // Check for 'id' attribute and update current scope
-        opt::optional<std::string> updatedScope;
+        std::optional<std::string> updatedScope;
         if ((itr = object.find("id")) != object.end() && itr->second.maybeString()) {
             const std::string id = itr->second.asString();
             rootSchema.setSubschemaId(&subschema, itr->second.asString());
@@ -913,7 +914,7 @@ private:
         if ((itr = object.find("required")) != object.end()) {
             if (m_version == kDraft3) {
                 if (parentSubschema && ownName) {
-                    opt::optional<constraints::RequiredConstraint> constraint =
+                    std::optional<constraints::RequiredConstraint> constraint =
                             makeRequiredConstraintForSelf(itr->second, *ownName);
                     if (constraint) {
                         rootSchema.addConstraintToSubschema(*constraint, parentSubschema);
@@ -935,7 +936,7 @@ private:
         }
 
         if ((itr = object.find("uniqueItems")) != object.end()) {
-            opt::optional<constraints::UniqueItemsConstraint> constraint = makeUniqueItemsConstraint(itr->second);
+            std::optional<constraints::UniqueItemsConstraint> constraint = makeUniqueItemsConstraint(itr->second);
             if (constraint) {
                 rootSchema.addConstraintToSubschema(*constraint, &subschema);
             }
@@ -991,7 +992,7 @@ private:
         const AdapterType &rootNode,
         const AdapterType &node,
         const Subschema &subschema,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         const Subschema *parentSchema,
@@ -1008,7 +1009,7 @@ private:
 
         // Returns a document URI if the reference points somewhere
         // other than the current document
-        const opt::optional<std::string> documentUri = internal::json_reference::getJsonReferenceUri(jsonRef);
+        const std::optional<std::string> documentUri = internal::json_reference::getJsonReferenceUri(jsonRef);
 
         // Extract JSON Pointer from JSON Reference
         const std::string actualJsonPointer = sanitiseJsonPointer(
@@ -1075,7 +1076,7 @@ private:
         Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &node,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
@@ -1127,7 +1128,7 @@ private:
         Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &node,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
@@ -1192,7 +1193,7 @@ private:
         const AdapterType &ifNode,
         const AdapterType *thenNode,
         const AdapterType *elseNode,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
@@ -1267,7 +1268,7 @@ private:
         Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &contains,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &containsPath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
@@ -1335,7 +1336,7 @@ private:
         Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &node,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
@@ -1486,7 +1487,7 @@ private:
         const AdapterType &rootNode,
         const AdapterType *items,
         const AdapterType *additionalItems,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &itemsPath,
         const std::string &additionalItemsPath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
@@ -1582,7 +1583,7 @@ private:
         Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &items,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &itemsPath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
@@ -1925,7 +1926,7 @@ private:
         Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &node,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
@@ -1965,7 +1966,7 @@ private:
         Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &node,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
@@ -2047,7 +2048,7 @@ private:
         const AdapterType *properties,
         const AdapterType *patternProperties,
         const AdapterType *additionalProperties,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &propertiesPath,
         const std::string &patternPropertiesPath,
         const std::string &additionalPropertiesPath,
@@ -2128,7 +2129,7 @@ private:
         Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &currentNode,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
@@ -2154,7 +2155,7 @@ private:
      *          caller
      */
     template<typename AdapterType>
-    opt::optional<constraints::RequiredConstraint>
+    std::optional<constraints::RequiredConstraint>
             makeRequiredConstraintForSelf(const AdapterType &node,
                     const std::string &name)
     {
@@ -2168,7 +2169,7 @@ private:
             return constraint;
         }
 
-        return opt::optional<constraints::RequiredConstraint>();
+        return std::optional<constraints::RequiredConstraint>();
     }
 
     /**
@@ -2221,7 +2222,7 @@ private:
         Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &node,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
@@ -2284,7 +2285,7 @@ private:
      *          the caller, or nullptr if the boolean value is false.
      */
     template<typename AdapterType>
-    opt::optional<constraints::UniqueItemsConstraint> makeUniqueItemsConstraint(const AdapterType &node)
+    std::optional<constraints::UniqueItemsConstraint> makeUniqueItemsConstraint(const AdapterType &node)
     {
         if (node.isBool() || node.maybeBool()) {
             // If the boolean value is true, this function will return a pointer
@@ -2293,7 +2294,7 @@ private:
             if (node.asBool()) {
                 return constraints::UniqueItemsConstraint();
             } else {
-                return opt::optional<constraints::UniqueItemsConstraint>();
+                return std::optional<constraints::UniqueItemsConstraint>();
             }
         }
 
