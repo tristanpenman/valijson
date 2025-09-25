@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include <yaml-cpp/yaml.h>
 
@@ -283,10 +284,10 @@ class YamlCppValue
      *
      * Otherwise it will return an empty optional.
      */
-    opt::optional<YamlCppArray> getArrayOptional() const
+    std::optional<YamlCppArray> getArrayOptional() const
     {
         if (m_value.IsSequence()) {
-            return opt::make_optional(YamlCppArray(m_value));
+            return std::make_optional(YamlCppArray(m_value));
         }
 
         return {};
@@ -351,10 +352,10 @@ class YamlCppValue
      *
      * Otherwise it will return an empty optional.
      */
-    opt::optional<YamlCppObject> getObjectOptional() const
+    std::optional<YamlCppObject> getObjectOptional() const
     {
         if (m_value.IsMap()) {
-            return opt::make_optional(YamlCppObject(m_value));
+            return std::make_optional(YamlCppObject(m_value));
         }
 
         return {};

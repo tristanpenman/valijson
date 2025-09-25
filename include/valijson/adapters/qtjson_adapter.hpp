@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -299,13 +300,13 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-    opt::optional<QtJsonArray> getArrayOptional() const
+    std::optional<QtJsonArray> getArrayOptional() const
     {
         if (m_value.isArray()) {
-            return opt::make_optional(QtJsonArray(m_value));
+            return std::make_optional(QtJsonArray(m_value));
         }
 
-        return opt::optional<QtJsonArray>();
+        return std::optional<QtJsonArray>();
     }
 
     /**
@@ -369,13 +370,13 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-    opt::optional<QtJsonObject> getObjectOptional() const
+    std::optional<QtJsonObject> getObjectOptional() const
     {
         if (m_value.isObject()) {
-            return opt::make_optional(QtJsonObject(m_value));
+            return std::make_optional(QtJsonObject(m_value));
         }
 
-        return opt::optional<QtJsonObject>();
+        return std::optional<QtJsonObject>();
     }
 
     /**

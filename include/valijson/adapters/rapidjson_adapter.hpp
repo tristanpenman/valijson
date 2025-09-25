@@ -40,6 +40,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include <iterator>
 
@@ -422,10 +423,10 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-    opt::optional<GenericRapidJsonArray<ValueType>> getArrayOptional() const
+    std::optional<GenericRapidJsonArray<ValueType>> getArrayOptional() const
     {
         if (m_value.IsArray()) {
-            return opt::make_optional(GenericRapidJsonArray<ValueType>(m_value));
+            return std::make_optional(GenericRapidJsonArray<ValueType>(m_value));
         }
 
         return {};
@@ -500,10 +501,10 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-    opt::optional<GenericRapidJsonObject<ValueType>> getObjectOptional() const
+    std::optional<GenericRapidJsonObject<ValueType>> getObjectOptional() const
     {
         if (m_value.IsObject()) {
-            return opt::make_optional(GenericRapidJsonObject<ValueType>(m_value));
+            return std::make_optional(GenericRapidJsonObject<ValueType>(m_value));
         }
 
         return {};

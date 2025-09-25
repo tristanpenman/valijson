@@ -8,7 +8,6 @@
 #include <string>
 
 #include <valijson/internal/adapter.hpp>
-#include <valijson/internal/optional.hpp>
 #include <valijson/exceptions.hpp>
 
 #ifdef _MSC_VER

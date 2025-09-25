@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include <json11.hpp>
 
@@ -291,10 +292,10 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-    opt::optional<Json11Array> getArrayOptional() const
+    std::optional<Json11Array> getArrayOptional() const
     {
         if (m_value.is_array()) {
-            return opt::make_optional(Json11Array(m_value));
+            return std::make_optional(Json11Array(m_value));
         }
 
         return {};
@@ -359,10 +360,10 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-    opt::optional<Json11Object> getObjectOptional() const
+    std::optional<Json11Object> getObjectOptional() const
     {
         if (m_value.is_object()) {
-            return opt::make_optional(Json11Object(m_value));
+            return std::make_optional(Json11Object(m_value));
         }
 
         return {};

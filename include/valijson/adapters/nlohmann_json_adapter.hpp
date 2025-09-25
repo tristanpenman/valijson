@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include <nlohmann/json.hpp>
 
@@ -485,10 +486,10 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-    opt::optional<NlohmannJsonArray<ValueType>> getArrayOptional() const
+    std::optional<NlohmannJsonArray<ValueType>> getArrayOptional() const
     {
         if (m_value.is_array()) {
-            return opt::make_optional(NlohmannJsonArray<ValueType>(m_value));
+            return std::make_optional(NlohmannJsonArray<ValueType>(m_value));
         }
 
         return {};
@@ -553,7 +554,7 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-    opt::optional<NlohmannJsonObject> getObjectOptional() const;
+    std::optional<NlohmannJsonObject> getObjectOptional() const;
 
     /**
      * @brief   Retrieve the number of members in the object
@@ -673,11 +674,11 @@ public:
 };
 
 template <class ValueType>
-opt::optional<NlohmannJsonObject>
+std::optional<NlohmannJsonObject>
 NlohmannJsonValue<ValueType>::getObjectOptional() const
 {
     if (m_value.is_object()) {
-        return opt::make_optional(NlohmannJsonObject(m_value));
+        return std::make_optional(NlohmannJsonObject(m_value));
     }
 
     return {};
