@@ -37,1051 +37,6 @@ VALIJSON_NORETURN inline void throwNotSupported() {
 }
 
 } // namespace valijson
-// Copyright (C) 2011 - 2012 Andrzej Krzemienski.
-//
-// Use, modification, and distribution is subject to the Boost Software
-// License, Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt)
-//
-// The idea and interface is based on Boost.Optional library
-// authored by Fernando Luis Cacciola Carballal
-
-# ifndef OPTIONAL_HPP
-# define OPTIONAL_HPP
-
-# include <utility>
-# include <type_traits>
-# include <initializer_list>
-# include <cassert>
-# include <functional>
-# include <string>
-# include <stdexcept>
-
-# define TR2_OPTIONAL_REQUIRES(...) typename enable_if<__VA_ARGS__::value, bool>::type = false
-
-# if defined __GNUC__ // NOTE: GNUC is also defined for Clang
-#   if (__GNUC__ == 4) && (__GNUC_MINOR__ >= 8)
-#     define TR2_OPTIONAL_GCC_4_8_AND_HIGHER___
-#   elif (__GNUC__ > 4)
-#     define TR2_OPTIONAL_GCC_4_8_AND_HIGHER___
-#   endif
-#
-#   if (__GNUC__ == 4) && (__GNUC_MINOR__ >= 7)
-#     define TR2_OPTIONAL_GCC_4_7_AND_HIGHER___
-#   elif (__GNUC__ > 4)
-#     define TR2_OPTIONAL_GCC_4_7_AND_HIGHER___
-#   endif
-#
-#   if (__GNUC__ == 4) && (__GNUC_MINOR__ == 8) && (__GNUC_PATCHLEVEL__ >= 1)
-#     define TR2_OPTIONAL_GCC_4_8_1_AND_HIGHER___
-#   elif (__GNUC__ == 4) && (__GNUC_MINOR__ >= 9)
-#     define TR2_OPTIONAL_GCC_4_8_1_AND_HIGHER___
-#   elif (__GNUC__ > 4)
-#     define TR2_OPTIONAL_GCC_4_8_1_AND_HIGHER___
-#   endif
-# endif
-#
-# if defined __clang_major__
-#   if (__clang_major__ == 3 && __clang_minor__ >= 5)
-#     define TR2_OPTIONAL_CLANG_3_5_AND_HIGHER_
-#   elif (__clang_major__ > 3)
-#     define TR2_OPTIONAL_CLANG_3_5_AND_HIGHER_
-#   endif
-#   if defined TR2_OPTIONAL_CLANG_3_5_AND_HIGHER_
-#     define TR2_OPTIONAL_CLANG_3_4_2_AND_HIGHER_
-#   elif (__clang_major__ == 3 && __clang_minor__ == 4 && __clang_patchlevel__ >= 2)
-#     define TR2_OPTIONAL_CLANG_3_4_2_AND_HIGHER_
-#   endif
-# endif
-#
-# if defined _MSC_VER
-#   if (_MSC_VER >= 1900)
-#     define TR2_OPTIONAL_MSVC_2015_AND_HIGHER___
-#   endif
-# endif
-
-# if defined __clang__
-#   if (__clang_major__ > 2) || (__clang_major__ == 2) && (__clang_minor__ >= 9)
-#     define OPTIONAL_HAS_THIS_RVALUE_REFS 1
-#   else
-#     define OPTIONAL_HAS_THIS_RVALUE_REFS 0
-#   endif
-# elif defined TR2_OPTIONAL_GCC_4_8_1_AND_HIGHER___
-#   define OPTIONAL_HAS_THIS_RVALUE_REFS 1
-# elif defined TR2_OPTIONAL_MSVC_2015_AND_HIGHER___
-#   define OPTIONAL_HAS_THIS_RVALUE_REFS 1
-# else
-#   define OPTIONAL_HAS_THIS_RVALUE_REFS 0
-# endif
-
-
-# if defined TR2_OPTIONAL_GCC_4_8_1_AND_HIGHER___
-#   define OPTIONAL_HAS_CONSTEXPR_INIT_LIST 1
-#   define OPTIONAL_CONSTEXPR_INIT_LIST constexpr
-# else
-#   define OPTIONAL_HAS_CONSTEXPR_INIT_LIST 0
-#   define OPTIONAL_CONSTEXPR_INIT_LIST
-# endif
-
-# if defined TR2_OPTIONAL_CLANG_3_5_AND_HIGHER_ && (defined __cplusplus) && (__cplusplus != 201103L)
-#   define OPTIONAL_HAS_MOVE_ACCESSORS 1
-# else
-#   define OPTIONAL_HAS_MOVE_ACCESSORS 0
-# endif
-
-# // In C++11 constexpr implies const, so we need to make non-const members also non-constexpr
-# if (defined __cplusplus) && (__cplusplus == 201103L)
-#   define OPTIONAL_MUTABLE_CONSTEXPR
-# else
-#   define OPTIONAL_MUTABLE_CONSTEXPR constexpr
-# endif
-
-namespace std{
-
-    namespace experimental{
-
-        // BEGIN workaround for missing is_trivially_destructible
-# if defined TR2_OPTIONAL_GCC_4_8_AND_HIGHER___
-        // leave it: it is already there
-# elif defined TR2_OPTIONAL_CLANG_3_4_2_AND_HIGHER_
-        // leave it: it is already there
-# elif defined TR2_OPTIONAL_MSVC_2015_AND_HIGHER___
-        // leave it: it is already there
-# elif defined TR2_OPTIONAL_DISABLE_EMULATION_OF_TYPE_TRAITS
-        // leave it: the user doesn't want it
-# else
-        template <typename T>
-        using is_trivially_destructible = std::has_trivial_destructor<T>;
-# endif
-        // END workaround for missing is_trivially_destructible
-
-# if (defined TR2_OPTIONAL_GCC_4_7_AND_HIGHER___)
-        // leave it; our metafunctions are already defined.
-# elif defined TR2_OPTIONAL_CLANG_3_4_2_AND_HIGHER_
-        // leave it; our metafunctions are already defined.
-# elif defined TR2_OPTIONAL_MSVC_2015_AND_HIGHER___
-        // leave it: it is already there
-# elif defined TR2_OPTIONAL_DISABLE_EMULATION_OF_TYPE_TRAITS
-        // leave it: the user doesn't want it
-# else
-
-
-        // workaround for missing traits in GCC and CLANG
-        template <class T>
-        struct is_nothrow_move_constructible
-        {
-            constexpr static bool value = std::is_nothrow_constructible<T, T&&>::value;
-        };
-
-
-        template <class T, class U>
-        struct is_assignable
-        {
-            template <class X, class Y>
-            constexpr static bool has_assign(...) { return false; }
-
-            template <class X, class Y, size_t S = sizeof((std::declval<X>() = std::declval<Y>(), true)) >
-            // the comma operator is necessary for the cases where operator= returns void
-            constexpr static bool has_assign(bool) { return true; }
-
-            constexpr static bool value = has_assign<T, U>(true);
-        };
-
-
-        template <class T>
-        struct is_nothrow_move_assignable
-        {
-            template <class X, bool has_any_move_assign>
-            struct has_nothrow_move_assign {
-    constexpr static bool value = false;
-            };
-
-            template <class X>
-            struct has_nothrow_move_assign<X, true> {
-    constexpr static bool value = noexcept( std::declval<X&>() = std::declval<X&&>() );
-            };
-
-            constexpr static bool value = has_nothrow_move_assign<T, is_assignable<T&, T&&>::value>::value;
-        };
-        // end workaround
-
-
-# endif
-
-
-
-        // 20.5.4, optional for object types
-        template <class T> class optional;
-
-        // 20.5.5, optional for lvalue reference types
-        template <class T> class optional<T&>;
-
-
-        // workaround: std utility functions aren't constexpr yet
-        template <class T> inline constexpr T&& constexpr_forward(typename std::remove_reference<T>::type& t) noexcept
-        {
-            return static_cast<T&&>(t);
-        }
-
-        template <class T> inline constexpr T&& constexpr_forward(typename std::remove_reference<T>::type&& t) noexcept
-        {
-            static_assert(!std::is_lvalue_reference<T>::value, "!!");
-            return static_cast<T&&>(t);
-        }
-
-        template <class T> inline constexpr typename std::remove_reference<T>::type&& constexpr_move(T&& t) noexcept
-        {
-            return static_cast<typename std::remove_reference<T>::type&&>(t);
-        }
-
-
-#if defined NDEBUG
-# define TR2_OPTIONAL_ASSERTED_EXPRESSION(CHECK, EXPR) (EXPR)
-#else
-# define TR2_OPTIONAL_ASSERTED_EXPRESSION(CHECK, EXPR) ((CHECK) ? (EXPR) : ([]{assert(!#CHECK);}(), (EXPR)))
-#endif
-
-
-        namespace detail_
-        {
-
-            // static_addressof: a constexpr version of addressof
-            template <typename T>
-            struct has_overloaded_addressof
-            {
-                template <class X>
-                constexpr static bool has_overload(...) { return false; }
-
-                template <class X, size_t S = sizeof(std::declval<X&>().operator&()) >
-                constexpr static bool has_overload(bool) { return true; }
-
-                constexpr static bool value = has_overload<T>(true);
-            };
-
-            template <typename T, TR2_OPTIONAL_REQUIRES(!has_overloaded_addressof<T>)>
-            constexpr T* static_addressof(T& ref)
-            {
-                return &ref;
-            }
-
-            template <typename T, TR2_OPTIONAL_REQUIRES(has_overloaded_addressof<T>)>
-            T* static_addressof(T& ref)
-            {
-                return std::addressof(ref);
-            }
-
-
-            // the call to convert<A>(b) has return type A and converts b to type A iff b decltype(b) is implicitly convertible to A
-            template <class U>
-            constexpr U convert(U v) { return v; }
-
-        } // namespace detail
-
-
-        constexpr struct trivial_init_t{} trivial_init{};
-
-
-        // 20.5.6, In-place construction
-        constexpr struct in_place_t{} in_place{};
-
-
-        // 20.5.7, Disengaged state indicator
-        struct nullopt_t
-        {
-            struct init{};
-            constexpr explicit nullopt_t(init){}
-        };
-        constexpr nullopt_t nullopt{nullopt_t::init()};
-
-
-        // 20.5.8, class bad_optional_access
-        class bad_optional_access : public logic_error {
-        public:
-            explicit bad_optional_access(const string& what_arg) : logic_error{what_arg} {}
-            explicit bad_optional_access(const char* what_arg) : logic_error{what_arg} {}
-        };
-
-
-        template <class T>
-        union storage_t
-        {
-            unsigned char dummy_;
-            T value_;
-
-            constexpr storage_t( trivial_init_t ) noexcept : dummy_() {}
-
-            template <class... Args>
-            constexpr storage_t( Args&&... args ) : value_(constexpr_forward<Args>(args)...) {}
-
-            ~storage_t(){}
-        };
-
-
-        template <class T>
-        union constexpr_storage_t
-        {
-            unsigned char dummy_;
-            T value_;
-
-            constexpr constexpr_storage_t( trivial_init_t ) noexcept : dummy_() {}
-
-            template <class... Args>
-            constexpr constexpr_storage_t( Args&&... args ) : value_(constexpr_forward<Args>(args)...) {}
-
-            ~constexpr_storage_t() = default;
-        };
-
-
-        template <class T>
-        struct optional_base
-        {
-            bool init_;
-            storage_t<T> storage_;
-
-            constexpr optional_base() noexcept : init_(false), storage_(trivial_init) {}
-
-            explicit constexpr optional_base(const T& v) : init_(true), storage_(v) {}
-
-            explicit constexpr optional_base(T&& v) : init_(true), storage_(constexpr_move(v)) {}
-
-            template <class... Args> explicit optional_base(in_place_t, Args&&... args)
-            : init_(true), storage_(constexpr_forward<Args>(args)...) {}
-
-            template <class U, class... Args, TR2_OPTIONAL_REQUIRES(is_constructible<T, std::initializer_list<U>>)>
-            explicit optional_base(in_place_t, std::initializer_list<U> il, Args&&... args)
-            : init_(true), storage_(il, std::forward<Args>(args)...) {}
-
-            ~optional_base() { if (init_) storage_.value_.T::~T(); }
-        };
-
-
-        template <class T>
-        struct constexpr_optional_base
-        {
-            bool init_;
-            constexpr_storage_t<T> storage_;
-
-            constexpr constexpr_optional_base() noexcept : init_(false), storage_(trivial_init) {}
-
-            explicit constexpr constexpr_optional_base(const T& v) : init_(true), storage_(v) {}
-
-            explicit constexpr constexpr_optional_base(T&& v) : init_(true), storage_(constexpr_move(v)) {}
-
-            template <class... Args> explicit constexpr constexpr_optional_base(in_place_t, Args&&... args)
-            : init_(true), storage_(constexpr_forward<Args>(args)...) {}
-
-            template <class U, class... Args, TR2_OPTIONAL_REQUIRES(is_constructible<T, std::initializer_list<U>>)>
-            OPTIONAL_CONSTEXPR_INIT_LIST explicit constexpr_optional_base(in_place_t, std::initializer_list<U> il, Args&&... args)
-            : init_(true), storage_(il, std::forward<Args>(args)...) {}
-
-            ~constexpr_optional_base() = default;
-        };
-
-        template <class T>
-        using OptionalBase = typename std::conditional<
-        is_trivially_destructible<T>::value,
-        constexpr_optional_base<typename std::remove_const<T>::type>,
-        optional_base<typename std::remove_const<T>::type>
-        >::type;
-
-
-
-        template <class T>
-        class optional : private OptionalBase<T>
-        {
-            static_assert( !std::is_same<typename std::decay<T>::type, nullopt_t>::value, "bad T" );
-            static_assert( !std::is_same<typename std::decay<T>::type, in_place_t>::value, "bad T" );
-
-
-            constexpr bool initialized() const noexcept { return OptionalBase<T>::init_; }
-            typename std::remove_const<T>::type* dataptr() {  return std::addressof(OptionalBase<T>::storage_.value_); }
-            constexpr const T* dataptr() const { return detail_::static_addressof(OptionalBase<T>::storage_.value_); }
-
-# if OPTIONAL_HAS_THIS_RVALUE_REFS == 1
-            constexpr const T& contained_val() const& { return OptionalBase<T>::storage_.value_; }
-#   if OPTIONAL_HAS_MOVE_ACCESSORS == 1
-            OPTIONAL_MUTABLE_CONSTEXPR T&& contained_val() && { return std::move(OptionalBase<T>::storage_.value_); }
-            OPTIONAL_MUTABLE_CONSTEXPR T& contained_val() & { return OptionalBase<T>::storage_.value_; }
-#   else
-            T& contained_val() & { return OptionalBase<T>::storage_.value_; }
-            T&& contained_val() && { return std::move(OptionalBase<T>::storage_.value_); }
-#   endif
-# else
-            constexpr const T& contained_val() const { return OptionalBase<T>::storage_.value_; }
-            T& contained_val() { return OptionalBase<T>::storage_.value_; }
-# endif
-
-            void clear() noexcept {
-    if (initialized()) dataptr()->T::~T();
-    OptionalBase<T>::init_ = false;
-            }
-
-            template <class... Args>
-            void initialize(Args&&... args) noexcept(noexcept(T(std::forward<Args>(args)...)))
-            {
-    assert(!OptionalBase<T>::init_);
-    ::new (static_cast<void*>(dataptr())) T(std::forward<Args>(args)...);
-    OptionalBase<T>::init_ = true;
-            }
-
-            template <class U, class... Args>
-            void initialize(std::initializer_list<U> il, Args&&... args) noexcept(noexcept(T(il, std::forward<Args>(args)...)))
-            {
-    assert(!OptionalBase<T>::init_);
-    ::new (static_cast<void*>(dataptr())) T(il, std::forward<Args>(args)...);
-    OptionalBase<T>::init_ = true;
-            }
-
-        public:
-            typedef T value_type;
-
-            // 20.5.5.1, constructors
-            constexpr optional() noexcept : OptionalBase<T>()  {}
-            constexpr optional(nullopt_t) noexcept : OptionalBase<T>() {}
-
-            optional(const optional& rhs)
-            : OptionalBase<T>()
-            {
-    if (rhs.initialized()) {
-        ::new (static_cast<void*>(dataptr())) T(*rhs);
-        OptionalBase<T>::init_ = true;
-    }
-            }
-
-            optional(optional&& rhs) noexcept(is_nothrow_move_constructible<T>::value)
-            : OptionalBase<T>()
-            {
-    if (rhs.initialized()) {
-        ::new (static_cast<void*>(dataptr())) T(std::move(*rhs));
-        OptionalBase<T>::init_ = true;
-    }
-            }
-
-            constexpr optional(const T& v) : OptionalBase<T>(v) {}
-
-            constexpr optional(T&& v) : OptionalBase<T>(constexpr_move(v)) {}
-
-            template <class... Args>
-            explicit constexpr optional(in_place_t, Args&&... args)
-            : OptionalBase<T>(in_place_t{}, constexpr_forward<Args>(args)...) {}
-
-            template <class U, class... Args, TR2_OPTIONAL_REQUIRES(is_constructible<T, std::initializer_list<U>>)>
-            OPTIONAL_CONSTEXPR_INIT_LIST explicit optional(in_place_t, std::initializer_list<U> il, Args&&... args)
-            : OptionalBase<T>(in_place_t{}, il, constexpr_forward<Args>(args)...) {}
-
-            // 20.5.4.2, Destructor
-            ~optional() = default;
-
-            // 20.5.4.3, assignment
-            optional& operator=(nullopt_t) noexcept
-            {
-    clear();
-    return *this;
-            }
-
-            optional& operator=(const optional& rhs)
-            {
-    if      (initialized() == true  && rhs.initialized() == false) clear();
-    else if (initialized() == false && rhs.initialized() == true)  initialize(*rhs);
-    else if (initialized() == true  && rhs.initialized() == true)  contained_val() = *rhs;
-    return *this;
-            }
-
-            optional& operator=(optional&& rhs)
-            noexcept(is_nothrow_move_assignable<T>::value && is_nothrow_move_constructible<T>::value)
-            {
-    if      (initialized() == true  && rhs.initialized() == false) clear();
-        else if (initialized() == false && rhs.initialized() == true)  initialize(std::move(*rhs));
-            else if (initialized() == true  && rhs.initialized() == true)  contained_val() = std::move(*rhs);
-    return *this;
-            }
-
-            template <class U>
-            auto operator=(U&& v)
-            -> typename enable_if
-            <
-            is_same<typename decay<U>::type, T>::value,
-            optional&
-            >::type
-            {
-    if (initialized()) { contained_val() = std::forward<U>(v); }
-    else               { initialize(std::forward<U>(v));  }
-    return *this;
-            }
-
-
-            template <class... Args>
-            void emplace(Args&&... args)
-            {
-    clear();
-    initialize(std::forward<Args>(args)...);
-            }
-
-            template <class U, class... Args>
-            void emplace(initializer_list<U> il, Args&&... args)
-            {
-    clear();
-    initialize<U, Args...>(il, std::forward<Args>(args)...);
-            }
-
-            // 20.5.4.4, Swap
-            void swap(optional<T>& rhs) noexcept(is_nothrow_move_constructible<T>::value && noexcept(swap(declval<T&>(), declval<T&>())))
-            {
-    if      (initialized() == true  && rhs.initialized() == false) { rhs.initialize(std::move(**this)); clear(); }
-    else if (initialized() == false && rhs.initialized() == true)  { initialize(std::move(*rhs)); rhs.clear(); }
-    else if (initialized() == true  && rhs.initialized() == true)  { using std::swap; swap(**this, *rhs); }
-            }
-
-            // 20.5.4.5, Observers
-
-            explicit constexpr operator bool() const noexcept { return initialized(); }
-
-            constexpr T const* operator ->() const {
-    return TR2_OPTIONAL_ASSERTED_EXPRESSION(initialized(), dataptr());
-            }
-
-# if OPTIONAL_HAS_MOVE_ACCESSORS == 1
-
-            OPTIONAL_MUTABLE_CONSTEXPR T* operator ->() {
-    assert (initialized());
-    return dataptr();
-            }
-
-            constexpr T const& operator *() const& {
-    return TR2_OPTIONAL_ASSERTED_EXPRESSION(initialized(), contained_val());
-            }
-
-            OPTIONAL_MUTABLE_CONSTEXPR T& operator *() & {
-    assert (initialized());
-    return contained_val();
-            }
-
-            OPTIONAL_MUTABLE_CONSTEXPR T&& operator *() && {
-    assert (initialized());
-    return constexpr_move(contained_val());
-            }
-
-            constexpr T const& value() const& {
-    return initialized() ? contained_val() : (valijson::throwRuntimeError("bad optional access"), contained_val());
-            }
-
-            OPTIONAL_MUTABLE_CONSTEXPR T& value() & {
-    return initialized() ? contained_val() : (valijson::throwRuntimeError("bad optional access"), contained_val());
-            }
-
-            OPTIONAL_MUTABLE_CONSTEXPR T&& value() && {
-    if (!initialized()) valijson::throwRuntimeError("bad optional access");
-        return std::move(contained_val());
-            }
-
-# else
-
-            T* operator ->() {
-    assert (initialized());
-    return dataptr();
-            }
-
-            constexpr T const& operator *() const {
-    return TR2_OPTIONAL_ASSERTED_EXPRESSION(initialized(), contained_val());
-            }
-
-            T& operator *() {
-    assert (initialized());
-    return contained_val();
-            }
-
-            constexpr T const& value() const {
-    return initialized() ? contained_val() : (valijson::throwRuntimeError("bad optional access"), contained_val());
-            }
-
-            T& value() {
-    return initialized() ? contained_val() : (valijson::throwRuntimeError("bad optional access"), contained_val());
-            }
-
-# endif
-
-# if OPTIONAL_HAS_THIS_RVALUE_REFS == 1
-
-            template <class V>
-            constexpr T value_or(V&& v) const&
-            {
-    return *this ? **this : detail_::convert<T>(constexpr_forward<V>(v));
-            }
-
-#   if OPTIONAL_HAS_MOVE_ACCESSORS == 1
-
-            template <class V>
-            OPTIONAL_MUTABLE_CONSTEXPR T value_or(V&& v) &&
-            {
-    return *this ? constexpr_move(const_cast<optional<T>&>(*this).contained_val()) : detail_::convert<T>(constexpr_forward<V>(v));
-            }
-
-#   else
-
-            template <class V>
-            T value_or(V&& v) &&
-            {
-    return *this ? constexpr_move(const_cast<optional<T>&>(*this).contained_val()) : detail_::convert<T>(constexpr_forward<V>(v));
-            }
-
-#   endif
-
-# else
-
-            template <class V>
-            constexpr T value_or(V&& v) const
-            {
-    return *this ? **this : detail_::convert<T>(constexpr_forward<V>(v));
-            }
-
-# endif
-
-        };
-
-
-        template <class T>
-        class optional<T&>
-        {
-            static_assert( !std::is_same<T, nullopt_t>::value, "bad T" );
-            static_assert( !std::is_same<T, in_place_t>::value, "bad T" );
-            T* ref;
-
-        public:
-
-            // 20.5.5.1, construction/destruction
-            constexpr optional() noexcept : ref(nullptr) {}
-
-            constexpr optional(nullopt_t) noexcept : ref(nullptr) {}
-
-            constexpr optional(T& v) noexcept : ref(detail_::static_addressof(v)) {}
-
-            optional(T&&) = delete;
-
-            constexpr optional(const optional& rhs) noexcept : ref(rhs.ref) {}
-
-            explicit constexpr optional(in_place_t, T& v) noexcept : ref(detail_::static_addressof(v)) {}
-
-            explicit optional(in_place_t, T&&) = delete;
-
-            ~optional() = default;
-
-            // 20.5.5.2, mutation
-            optional& operator=(nullopt_t) noexcept {
-    ref = nullptr;
-    return *this;
-            }
-
-            // optional& operator=(const optional& rhs) noexcept {
-            // ref = rhs.ref;
-            // return *this;
-            // }
-
-            // optional& operator=(optional&& rhs) noexcept {
-            // ref = rhs.ref;
-            // return *this;
-            // }
-
-            template <typename U>
-            auto operator=(U&& rhs) noexcept
-            -> typename enable_if
-            <
-            is_same<typename decay<U>::type, optional<T&>>::value,
-            optional&
-            >::type
-            {
-    ref = rhs.ref;
-    return *this;
-            }
-
-            template <typename U>
-            auto operator=(U&& rhs) noexcept
-            -> typename enable_if
-            <
-            !is_same<typename decay<U>::type, optional<T&>>::value,
-            optional&
-            >::type
-            = delete;
-
-            void emplace(T& v) noexcept {
-    ref = detail_::static_addressof(v);
-            }
-
-            void emplace(T&&) = delete;
-
-
-            void swap(optional<T&>& rhs) noexcept
-            {
-    std::swap(ref, rhs.ref);
-            }
-
-            // 20.5.5.3, observers
-            constexpr T* operator->() const {
-    return TR2_OPTIONAL_ASSERTED_EXPRESSION(ref, ref);
-            }
-
-            constexpr T& operator*() const {
-    return TR2_OPTIONAL_ASSERTED_EXPRESSION(ref, *ref);
-            }
-
-            constexpr T& value() const {
-    return ref ? *ref : (valijson::throwRuntimeError("bad optional access"), *ref);
-            }
-
-            explicit constexpr operator bool() const noexcept {
-    return ref != nullptr;
-            }
-
-            template <class V>
-            constexpr typename decay<T>::type value_or(V&& v) const
-            {
-    return *this ? **this : detail_::convert<typename decay<T>::type>(constexpr_forward<V>(v));
-            }
-        };
-
-
-        template <class T>
-        class optional<T&&>
-        {
-            static_assert( sizeof(T) == 0, "optional rvalue references disallowed" );
-        };
-
-
-        // 20.5.8, Relational operators
-        template <class T> constexpr bool operator==(const optional<T>& x, const optional<T>& y)
-        {
-            return bool(x) != bool(y) ? false : bool(x) == false ? true : *x == *y;
-        }
-
-        template <class T> constexpr bool operator!=(const optional<T>& x, const optional<T>& y)
-        {
-            return !(x == y);
-        }
-
-        template <class T> constexpr bool operator<(const optional<T>& x, const optional<T>& y)
-        {
-            return (!y) ? false : (!x) ? true : *x < *y;
-        }
-
-        template <class T> constexpr bool operator>(const optional<T>& x, const optional<T>& y)
-        {
-            return (y < x);
-        }
-
-        template <class T> constexpr bool operator<=(const optional<T>& x, const optional<T>& y)
-        {
-            return !(y < x);
-        }
-
-        template <class T> constexpr bool operator>=(const optional<T>& x, const optional<T>& y)
-        {
-            return !(x < y);
-        }
-
-
-        // 20.5.9, Comparison with nullopt
-        template <class T> constexpr bool operator==(const optional<T>& x, nullopt_t) noexcept
-        {
-            return (!x);
-        }
-
-        template <class T> constexpr bool operator==(nullopt_t, const optional<T>& x) noexcept
-        {
-            return (!x);
-        }
-
-        template <class T> constexpr bool operator!=(const optional<T>& x, nullopt_t) noexcept
-        {
-            return bool(x);
-        }
-
-        template <class T> constexpr bool operator!=(nullopt_t, const optional<T>& x) noexcept
-        {
-            return bool(x);
-        }
-
-        template <class T> constexpr bool operator<(const optional<T>&, nullopt_t) noexcept
-        {
-            return false;
-        }
-
-        template <class T> constexpr bool operator<(nullopt_t, const optional<T>& x) noexcept
-        {
-            return bool(x);
-        }
-
-        template <class T> constexpr bool operator<=(const optional<T>& x, nullopt_t) noexcept
-        {
-            return (!x);
-        }
-
-        template <class T> constexpr bool operator<=(nullopt_t, const optional<T>&) noexcept
-        {
-            return true;
-        }
-
-        template <class T> constexpr bool operator>(const optional<T>& x, nullopt_t) noexcept
-        {
-            return bool(x);
-        }
-
-        template <class T> constexpr bool operator>(nullopt_t, const optional<T>&) noexcept
-        {
-            return false;
-        }
-
-        template <class T> constexpr bool operator>=(const optional<T>&, nullopt_t) noexcept
-        {
-            return true;
-        }
-
-        template <class T> constexpr bool operator>=(nullopt_t, const optional<T>& x) noexcept
-        {
-            return (!x);
-        }
-
-
-
-        // 20.5.10, Comparison with T
-        template <class T> constexpr bool operator==(const optional<T>& x, const T& v)
-        {
-            return bool(x) ? *x == v : false;
-        }
-
-        template <class T> constexpr bool operator==(const T& v, const optional<T>& x)
-        {
-            return bool(x) ? v == *x : false;
-        }
-
-        template <class T> constexpr bool operator!=(const optional<T>& x, const T& v)
-        {
-            return bool(x) ? *x != v : true;
-        }
-
-        template <class T> constexpr bool operator!=(const T& v, const optional<T>& x)
-        {
-            return bool(x) ? v != *x : true;
-        }
-
-        template <class T> constexpr bool operator<(const optional<T>& x, const T& v)
-        {
-            return bool(x) ? *x < v : true;
-        }
-
-        template <class T> constexpr bool operator>(const T& v, const optional<T>& x)
-        {
-            return bool(x) ? v > *x : true;
-        }
-
-        template <class T> constexpr bool operator>(const optional<T>& x, const T& v)
-        {
-            return bool(x) ? *x > v : false;
-        }
-
-        template <class T> constexpr bool operator<(const T& v, const optional<T>& x)
-        {
-            return bool(x) ? v < *x : false;
-        }
-
-        template <class T> constexpr bool operator>=(const optional<T>& x, const T& v)
-        {
-            return bool(x) ? *x >= v : false;
-        }
-
-        template <class T> constexpr bool operator<=(const T& v, const optional<T>& x)
-        {
-            return bool(x) ? v <= *x : false;
-        }
-
-        template <class T> constexpr bool operator<=(const optional<T>& x, const T& v)
-        {
-            return bool(x) ? *x <= v : true;
-        }
-
-        template <class T> constexpr bool operator>=(const T& v, const optional<T>& x)
-        {
-            return bool(x) ? v >= *x : true;
-        }
-
-
-        // Comparison of optional<T&> with T
-        template <class T> constexpr bool operator==(const optional<T&>& x, const T& v)
-        {
-            return bool(x) ? *x == v : false;
-        }
-
-        template <class T> constexpr bool operator==(const T& v, const optional<T&>& x)
-        {
-            return bool(x) ? v == *x : false;
-        }
-
-        template <class T> constexpr bool operator!=(const optional<T&>& x, const T& v)
-        {
-            return bool(x) ? *x != v : true;
-        }
-
-        template <class T> constexpr bool operator!=(const T& v, const optional<T&>& x)
-        {
-            return bool(x) ? v != *x : true;
-        }
-
-        template <class T> constexpr bool operator<(const optional<T&>& x, const T& v)
-        {
-            return bool(x) ? *x < v : true;
-        }
-
-        template <class T> constexpr bool operator>(const T& v, const optional<T&>& x)
-        {
-            return bool(x) ? v > *x : true;
-        }
-
-        template <class T> constexpr bool operator>(const optional<T&>& x, const T& v)
-        {
-            return bool(x) ? *x > v : false;
-        }
-
-        template <class T> constexpr bool operator<(const T& v, const optional<T&>& x)
-        {
-            return bool(x) ? v < *x : false;
-        }
-
-        template <class T> constexpr bool operator>=(const optional<T&>& x, const T& v)
-        {
-            return bool(x) ? *x >= v : false;
-        }
-
-        template <class T> constexpr bool operator<=(const T& v, const optional<T&>& x)
-        {
-            return bool(x) ? v <= *x : false;
-        }
-
-        template <class T> constexpr bool operator<=(const optional<T&>& x, const T& v)
-        {
-            return bool(x) ? *x <= v : true;
-        }
-
-        template <class T> constexpr bool operator>=(const T& v, const optional<T&>& x)
-        {
-            return bool(x) ? v >= *x : true;
-        }
-
-        // Comparison of optional<T const&> with T
-        template <class T> constexpr bool operator==(const optional<const T&>& x, const T& v)
-        {
-            return bool(x) ? *x == v : false;
-        }
-
-        template <class T> constexpr bool operator==(const T& v, const optional<const T&>& x)
-        {
-            return bool(x) ? v == *x : false;
-        }
-
-        template <class T> constexpr bool operator!=(const optional<const T&>& x, const T& v)
-        {
-            return bool(x) ? *x != v : true;
-        }
-
-        template <class T> constexpr bool operator!=(const T& v, const optional<const T&>& x)
-        {
-            return bool(x) ? v != *x : true;
-        }
-
-        template <class T> constexpr bool operator<(const optional<const T&>& x, const T& v)
-        {
-            return bool(x) ? *x < v : true;
-        }
-
-        template <class T> constexpr bool operator>(const T& v, const optional<const T&>& x)
-        {
-            return bool(x) ? v > *x : true;
-        }
-
-        template <class T> constexpr bool operator>(const optional<const T&>& x, const T& v)
-        {
-            return bool(x) ? *x > v : false;
-        }
-
-        template <class T> constexpr bool operator<(const T& v, const optional<const T&>& x)
-        {
-            return bool(x) ? v < *x : false;
-        }
-
-        template <class T> constexpr bool operator>=(const optional<const T&>& x, const T& v)
-        {
-            return bool(x) ? *x >= v : false;
-        }
-
-        template <class T> constexpr bool operator<=(const T& v, const optional<const T&>& x)
-        {
-            return bool(x) ? v <= *x : false;
-        }
-
-        template <class T> constexpr bool operator<=(const optional<const T&>& x, const T& v)
-        {
-            return bool(x) ? *x <= v : true;
-        }
-
-        template <class T> constexpr bool operator>=(const T& v, const optional<const T&>& x)
-        {
-            return bool(x) ? v >= *x : true;
-        }
-
-
-        // 20.5.12, Specialized algorithms
-        template <class T>
-        void swap(optional<T>& x, optional<T>& y) noexcept(noexcept(x.swap(y)))
-        {
-            x.swap(y);
-        }
-
-
-        template <class T>
-        constexpr optional<typename decay<T>::type> make_optional(T&& v)
-        {
-            return optional<typename decay<T>::type>(constexpr_forward<T>(v));
-        }
-
-        template <class X>
-        constexpr optional<X&> make_optional(reference_wrapper<X> v)
-        {
-            return optional<X&>(v.get());
-        }
-
-
-    } // namespace experimental
-} // namespace std
-
-namespace std
-{
-    template <typename T>
-    struct hash<std::experimental::optional<T>>
-    {
-        typedef typename hash<T>::result_type result_type;
-        typedef std::experimental::optional<T> argument_type;
-
-        constexpr result_type operator()(argument_type const& arg) const {
-            return arg ? std::hash<T>{}(*arg) : result_type{};
-        }
-    };
-
-    template <typename T>
-    struct hash<std::experimental::optional<T&>>
-    {
-        typedef typename hash<T>::result_type result_type;
-        typedef std::experimental::optional<T&> argument_type;
-
-        constexpr result_type operator()(argument_type const& arg) const {
-            return arg ? std::hash<T>{}(*arg) : result_type{};
-        }
-    };
-}
-
-# undef TR2_OPTIONAL_REQUIRES
-# undef TR2_OPTIONAL_ASSERTED_EXPRESSION
-
-# endif //OPTIONAL_HPP
-#pragma once
-
-namespace opt = std::experimental;
 #pragma once
 
 #include <functional>
@@ -1557,6 +512,7 @@ struct AdapterTraits
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <sstream>
 
 
@@ -1791,7 +747,7 @@ public:
         // effort of constructing an ArrayType instance if the value is
         // definitely an array.
         if (m_value.isArray()) {
-            const opt::optional<Array> array = m_value.getArrayOptional();
+            const std::optional<Array> array = m_value.getArrayOptional();
             for (const AdapterType element : *array) {
                 if (!fn(element)) {
                     return false;
@@ -1809,7 +765,7 @@ public:
         }
 
         if (m_value.isObject()) {
-            const opt::optional<Object> object = m_value.getObjectOptional();
+            const std::optional<Object> object = m_value.getObjectOptional();
             for (const ObjectMemberType member : *object) {
                 if (!fn(member.first, AdapterType(member.second))) {
                     return false;
@@ -2051,7 +1007,7 @@ public:
                 other.asString() == asString();
         } else if (isArray()) {
             if (other.isArray() && getArraySize() == other.getArraySize()) {
-                const opt::optional<ArrayType> array = m_value.getArrayOptional();
+                const std::optional<ArrayType> array = m_value.getArrayOptional();
                 if (array) {
                     ArrayComparisonFunctor fn(*array, strict);
                     return other.applyToArray(fn);
@@ -2061,7 +1017,7 @@ public:
             }
         } else if (isObject()) {
             if (other.isObject() && other.getObjectSize() == getObjectSize()) {
-                const opt::optional<ObjectType> object = m_value.getObjectOptional();
+                const std::optional<ObjectType> object = m_value.getObjectOptional();
                 if (object) {
                     ObjectComparisonFunctor fn(*object, strict);
                     return other.applyToObject(fn);
@@ -2090,7 +1046,7 @@ public:
      */
     ArrayType getArray() const
     {
-        opt::optional<ArrayType> arrayValue = m_value.getArrayOptional();
+        std::optional<ArrayType> arrayValue = m_value.getArrayOptional();
         if (arrayValue) {
             return *arrayValue;
         }
@@ -2199,7 +1155,7 @@ public:
      */
     ObjectType getObject() const
     {
-        opt::optional<ObjectType> objectValue = m_value.getObjectOptional();
+        std::optional<ObjectType> objectValue = m_value.getObjectOptional();
         if (objectValue) {
             return *objectValue;
         }
@@ -2874,9 +1830,9 @@ inline AdapterType resolveJsonPointer(
 #endif
 #pragma once
 
+#include <optional>
 #include <stdexcept>
 #include <string>
-
 
 namespace valijson {
 namespace internal {
@@ -2889,14 +1845,14 @@ namespace json_reference {
   *
   * @return  Optional string containing URI
   */
-inline opt::optional<std::string> getJsonReferenceUri(
+inline std::optional<std::string> getJsonReferenceUri(
     const std::string &jsonRef)
 {
     const size_t ptrPos = jsonRef.find('#');
     if (ptrPos == 0) {
         // The JSON Reference does not contain a URI, but might contain a
         // JSON Pointer that refers to the current document
-        return opt::optional<std::string>();
+        return std::optional<std::string>();
     } else if (ptrPos != std::string::npos) {
         // The JSON Reference contains a URI and possibly a JSON Pointer
         return jsonRef.substr(0, ptrPos);
@@ -2913,7 +1869,7 @@ inline opt::optional<std::string> getJsonReferenceUri(
   *
   * @return  Optional string containing JSON Pointer
   */
-inline opt::optional<std::string> getJsonReferencePointer(
+inline std::optional<std::string> getJsonReferencePointer(
     const std::string &jsonRef)
 {
     // Attempt to extract JSON Pointer if '#' character is present. Note
@@ -2924,16 +1880,43 @@ inline opt::optional<std::string> getJsonReferencePointer(
         return jsonRef.substr(ptrPos + 1);
     }
 
-    return opt::optional<std::string>();
+    return std::optional<std::string>();
 }
 
 } // namespace json_reference
 } // namespace internal
 } // namespace valijson
-#pragma once
+#if defined(VALIJSON_USE_BOOST_REGEX) && VALIJSON_USE_BOOST_REGEX
+
+#include <boost/regex.hpp>
+
+namespace valijson {
+namespace internal {
+using boost::regex;
+using boost::regex_match;
+using boost::regex_search;
+using boost::smatch;
+} // namespace internal
+} // namespace valijson
+
+#else
 
 #include <regex>
+
+namespace valijson {
+namespace internal {
+using std::regex;
+using std::regex_match;
+using std::regex_search;
+using std::smatch;
+} // namespace internal
+} // namespace valijson
+
+#endif
+#pragma once
+
 #include <string>
+
 
 namespace valijson {
 namespace internal {
@@ -2957,10 +1940,10 @@ inline bool isUriAbsolute(const std::string &documentUri)
  * This function validates that the URI matches the RFC 8141 spec
  */
 inline bool isUrn(const std::string &documentUri) {
-  static const std::regex pattern(
+  static const internal::regex pattern(
       "^((urn)|(URN)):(?!urn:)([a-zA-Z0-9][a-zA-Z0-9-]{1,31})(:[-a-zA-Z0-9\\\\._~%!$&'()\\/*+,;=]+)+(\\?[-a-zA-Z0-9\\\\._~%!$&'()\\/*+,;:=]+){0,1}(#[-a-zA-Z0-9\\\\._~%!$&'()\\/*+,;:=]+){0,1}$");
 
-  return std::regex_match(documentUri, pattern);
+  return internal::regex_match(documentUri, pattern);
 }
 
 /**
@@ -3035,53 +2018,42 @@ inline bool loadFile(const std::string &path, std::string &dest)
 namespace valijson {
 namespace utils {
 
-static const uint32_t offsetsFromUTF8[6] = {
-    0x00000000UL, 0x00003080UL, 0x000E2080UL,
-    0x03C82080UL, 0xFA082080UL, 0x82082080UL
-};
-
 /* is c the start of a utf8 sequence? */
-inline bool isutf(char c) {
-    return ((c & 0xC0) != 0x80);
-}
-
-/* reads the next utf-8 sequence out of a string, updating an index */
-inline uint64_t u8_nextchar(const char *s, uint64_t *i)
+inline bool isutf(char c)
 {
-    uint64_t ch = 0;
-    int sz = 0;
-
-    do {
-        ch <<= 6;
-        ch += static_cast<unsigned char>(s[(*i)++]);
-        sz++;
-    } while (s[*i] && !isutf(s[*i]));
-    ch -= offsetsFromUTF8[sz-1];
-
-    return ch;
+    return ((c & 0xC0) != 0x80);
 }
 
 /* number of characters */
 inline uint64_t u8_strlen(const char *s)
 {
-    constexpr auto maxLength = std::numeric_limits<uint64_t>::max();
     uint64_t count = 0;
-    uint64_t i = 0;
 
-    while (s[i] != 0 && u8_nextchar(s, &i) != 0) {
-        if (i == maxLength) {
-            throwRuntimeError(
-                    "String exceeded maximum size of " +
-                    std::to_string(maxLength) + " bytes.");
+    while (*s) {
+        unsigned char p = static_cast<unsigned char>(*s);
+
+        size_t seqLen = p < 0x80   ? 1  // 0xxxxxxx: 1-byte (ASCII)
+                        : p < 0xE0 ? 2  // 110xxxxx: 2-byte sequence
+                        : p < 0xF0 ? 3  // 1110xxxx: 3-byte sequence
+                        : p < 0xF8 ? 4  // 11110xxx: 4-byte sequence
+                                   : 1; // treat as a single character
+
+        for (size_t i = 1; i < seqLen; ++i) {
+            if (s[i] == 0 || isutf(s[i])) {
+                seqLen = i;
+                break;
+            }
         }
+
+        s += seqLen;
         count++;
     }
 
     return count;
 }
 
-}  // namespace utils
-}  // namespace valijson
+} // namespace utils
+} // namespace valijson
 #pragma once
 
 #include <memory>
@@ -3161,6 +2133,7 @@ struct Constraint
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <vector>
 
 
@@ -3199,11 +2172,39 @@ public:
     // Disable copy assignment
     Subschema & operator=(const Subschema &) = delete;
 
-    // Default move construction
-    Subschema(Subschema &&) = default;
+    /**
+     * @brief Move construct a new Subschema
+     *
+     * @param other Subschema that is moved into the new Subschema
+     */
+    Subschema(Subschema &&other)
+      : m_allocFn(other.m_allocFn),
+        m_freeFn(other.m_freeFn),
+        m_alwaysInvalid(std::move(other.m_alwaysInvalid)),
+        m_constraints(std::move(other.m_constraints)),
+        m_description(std::move(other.m_description)),
+        m_id(std::move(other.m_id)),
+        m_title(std::move(other.m_title)) { }
 
-    // Default move assignment
-    Subschema & operator=(Subschema &&) = default;
+    /**
+     * @brief Move assign a Subschema
+     *
+     * @param other Subschema that is move assigned to this Subschema
+     * @return Subschema&
+     */
+    Subschema & operator=(Subschema &&other)
+    {
+        // Swaps all members
+        std::swap(m_allocFn, other.m_allocFn);
+        std::swap(m_freeFn, other.m_freeFn);
+        std::swap(m_alwaysInvalid, other.m_alwaysInvalid);
+        std::swap(m_constraints, other.m_constraints);
+        std::swap(m_description, other.m_description);
+        std::swap(m_id, other.m_id);
+        std::swap(m_title, other.m_title);
+
+        return *this;
+    }
 
     /**
      * @brief  Construct a new Subschema object
@@ -3228,9 +2229,9 @@ public:
       , m_alwaysInvalid(false)
     {
         // explicitly initialise optionals. See: https://github.com/tristanpenman/valijson/issues/124
-        m_description = opt::nullopt;
-        m_id = opt::nullopt;
-        m_title = opt::nullopt;
+        m_description = std::nullopt;
+        m_id = std::nullopt;
+        m_title = std::nullopt;
     }
 
     /**
@@ -3451,16 +2452,27 @@ private:
     std::vector<Constraint::OwningPointer> m_constraints;
 
     /// Schema description (optional)
-    opt::optional<std::string> m_description;
+    std::optional<std::string> m_description;
 
     /// ID to apply when resolving the schema URI
-    opt::optional<std::string> m_id;
+    std::optional<std::string> m_id;
 
     /// Title string associated with the schema (optional)
-    opt::optional<std::string> m_title;
+    std::optional<std::string> m_title;
 };
 
 } // namespace valijson
+#pragma once
+
+#include <map>
+#include <string>
+
+
+namespace valijson {
+
+typedef std::map<std::string, const Subschema *> SchemaCache;
+
+}  // namespace valijson
 #pragma once
 
 #include <cstdio>
@@ -3503,11 +2515,37 @@ public:
     // Disable copy assignment
     Schema & operator=(const Schema &) = delete;
 
-    // Default move construction
-    Schema(Schema &&other) = default;
+    /**
+     * @brief Move construct a new Schema
+     *
+     * @param other Schema that is moved into the new Schema
+     */
+    Schema(Schema &&other)
+      : Subschema(std::move(other)),
+        subschemaSet(std::move(other.subschemaSet)),
+        sharedEmptySubschema(other.sharedEmptySubschema)
+    {
+        // Makes other invalid by setting sharedEmptySubschema to nullptr
+        other.sharedEmptySubschema = nullptr;
+    }
 
-    // Disable copy assignment
-    Schema & operator=(Schema &&) = default;
+    /**
+     * @brief Move assign a Schema
+     *
+     * @param other Schema that is move assigned to this Schema
+     * @return Schema&
+     */
+    Schema & operator=(Schema &&other)
+    {
+        // Calls the base class move assignment operator
+        Subschema::operator=(std::move(other));
+
+        // Swaps all Schema members
+        std::swap(subschemaSet, other.subschemaSet);
+        std::swap(sharedEmptySubschema, other.sharedEmptySubschema);
+
+        return *this;
+    }
 
     /**
      * @brief  Clean up and free all memory managed by the Schema
@@ -3517,9 +2555,12 @@ public:
      */
     ~Schema() override
     {
-        sharedEmptySubschema->~Subschema();
-        m_freeFn(const_cast<Subschema *>(sharedEmptySubschema));
-        sharedEmptySubschema = nullptr;
+        if(sharedEmptySubschema != nullptr)
+        {
+            sharedEmptySubschema->~Subschema();
+            m_freeFn(const_cast<Subschema *>(sharedEmptySubschema));
+            sharedEmptySubschema = nullptr;
+        }
 
 #if VALIJSON_USE_EXCEPTIONS
         try {
@@ -3874,6 +2915,7 @@ protected:
 #include <set>
 #include <string>
 #include <vector>
+#include <cmath>
 
 
 #ifdef _MSC_VER
@@ -4634,6 +3676,11 @@ public:
 
     void setDivisor(double newValue)
     {
+        if (!std::isfinite(newValue) || newValue <= 0.0) {
+            throwRuntimeError(
+                "Divisor for 'multipleOf' or 'divisibleBy' must be positive");
+        }
+
         m_value = newValue;
     }
 
@@ -4663,6 +3710,11 @@ public:
 
     void setDivisor(int64_t newValue)
     {
+        if (newValue <= 0) {
+            throwRuntimeError(
+                "Divisor for 'multipleOf' or 'divisibleBy' must be positive");
+        }
+
         m_value = newValue;
     }
 
@@ -5139,11 +4191,10 @@ public:
 }  // namespace valijson
 #pragma once
 
-#include <stdexcept>
-#include <iostream>
-#include <vector>
-#include <memory>
 #include <functional>
+#include <iostream>
+#include <optional>
+#include <vector>
 
 
 namespace valijson {
@@ -5239,8 +4290,8 @@ public:
     void populateSchema(
         const AdapterType &node,
         Schema &schema,
-        typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc = nullptr ,
-        typename FunctionPtrs<AdapterType>::FreeDoc freeDoc = nullptr )
+        typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc = nullptr,
+        typename FunctionPtrs<AdapterType>::FreeDoc freeDoc = nullptr)
     {
         if ((fetchDoc == nullptr ) ^ (freeDoc == nullptr)) {
             throwRuntimeError("Remote document fetching can't be enabled without both fetch and free functions");
@@ -5251,7 +4302,7 @@ public:
 #if VALIJSON_USE_EXCEPTIONS
         try {
 #endif
-            resolveThenPopulateSchema(schema, node, node, schema, opt::optional<std::string>(), "", fetchDoc, nullptr,
+            resolveThenPopulateSchema(schema, node, node, schema, std::optional<std::string>(), "", fetchDoc, nullptr,
                     nullptr, docCache, schemaCache);
 #if VALIJSON_USE_EXCEPTIONS
         } catch (...) {
@@ -5277,8 +4328,6 @@ private:
 
         typedef std::map<std::string, const DocumentType*> Type;
     };
-
-    typedef std::map<std::string, const Subschema *> SchemaCache;
 
     /**
      * @brief  Free memory used by fetched documents
@@ -5324,9 +4373,9 @@ private:
      * document URI should be used to replace the path, query and fragment
      * portions of URI provided by the resolution scope.
      */
-    virtual opt::optional<std::string> resolveDocumentUri(
-            const opt::optional<std::string>& resolutionScope,
-            const opt::optional<std::string>& documentUri)
+    virtual std::optional<std::string> resolveDocumentUri(
+            const std::optional<std::string>& resolutionScope,
+            const std::optional<std::string>& documentUri)
     {
         if (resolutionScope) {
             if (documentUri) {
@@ -5392,7 +4441,7 @@ private:
     /**
      * Sanitise an optional JSON Pointer, trimming trailing slashes
      */
-    static std::string sanitiseJsonPointer(const opt::optional<std::string>& input)
+    static std::string sanitiseJsonPointer(const std::optional<std::string>& input)
     {
         if (input) {
             // Trim trailing slash(es)
@@ -5492,7 +4541,7 @@ private:
         Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &node,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         const Subschema *parentSubschema,
@@ -5534,7 +4583,7 @@ private:
 
         // Returns a document URI if the reference points somewhere
         // other than the current document
-        const opt::optional<std::string> documentUri = internal::json_reference::getJsonReferenceUri(jsonRef);
+        const std::optional<std::string> documentUri = internal::json_reference::getJsonReferenceUri(jsonRef);
 
         // Extract JSON Pointer from JSON Reference, with any trailing
         // slashes removed so that keys in the schema cache end
@@ -5546,7 +4595,7 @@ private:
         // scope. An absolute document URI will take precedence when
         // present, otherwise we need to resolve the URI relative to
         // the current resolution scope
-        const opt::optional<std::string> actualDocumentUri = resolveDocumentUri(currentScope, documentUri);
+        const std::optional<std::string> actualDocumentUri = resolveDocumentUri(currentScope, documentUri);
 
         // Construct a key to search the schema cache for an existing schema
         const std::string queryKey = actualDocumentUri ? (*actualDocumentUri + actualJsonPointer) : actualJsonPointer;
@@ -5608,6 +4657,10 @@ private:
 
         }
 
+        if (std::find(newCacheKeys.begin(), newCacheKeys.end(), queryKey) != newCacheKeys.end()) {
+            throwRuntimeError("found cycle while resolving JSON reference");
+        }
+
         // JSON References in nested schema will be resolved relative to the
         // current document
         const AdapterType &referencedAdapter =
@@ -5656,7 +4709,7 @@ private:
         Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &node,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         const Subschema *parentSubschema,
@@ -5703,7 +4756,7 @@ private:
         const AdapterType &rootNode,
         const AdapterType &node,
         const Subschema &subschema,
-        const opt::optional<std::string>& currentScope,
+        const std::optional<std::string>& currentScope,
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         const Subschema *parentSubschema,
@@ -5741,7 +4794,7 @@ private:
         typename AdapterType::Object::const_iterator itr(object.end());
 
         // Check for 'id' attribute and update current scope
-        opt::optional<std::string> updatedScope;
+        std::optional<std::string> updatedScope;
         if ((itr = object.find("id")) != object.end() && itr->second.maybeString()) {
             const std::string id = itr->second.asString();
             rootSchema.setSubschemaId(&subschema, itr->second.asString());
@@ -5819,7 +4872,7 @@ private:
                             makeMultipleOfDoubleConstraint(itr->second),
                             &subschema);
                 } else {
-                    throwRuntimeError("Expected an numeric value for "
+                    throwRuntimeError("Expected a numeric value for "
                             " 'divisibleBy' constraint.");
                 }
             } else {
@@ -5982,7 +5035,7 @@ private:
                         makeMultipleOfDoubleConstraint(itr->second),
                         &subschema);
             } else {
-                throwRuntimeError("Expected an numeric value for 'divisibleBy' constraint.");
+                throwRuntimeError("Expected a numeric value for 'multipleOf' constraint.");
             }
         }
 
@@ -6042,7 +5095,7 @@ private:
         if ((itr = object.find("required")) != object.end()) {
             if (m_version == kDraft3) {
                 if (parentSubschema && ownName) {
-                    opt::optional<constraints::RequiredConstraint> constraint =
+                    std::optional<constraints::RequiredConstraint> constraint =
                             makeRequiredConstraintForSelf(itr->second, *ownName);
                     if (constraint) {
                         rootSchema.addConstraintToSubschema(*constraint, parentSubschema);
@@ -6064,7 +5117,7 @@ private:
         }
 
         if ((itr = object.find("uniqueItems")) != object.end()) {
-            opt::optional<constraints::UniqueItemsConstraint> constraint = makeUniqueItemsConstraint(itr->second);
+            std::optional<constraints::UniqueItemsConstraint> constraint = makeUniqueItemsConstraint(itr->second);
             if (constraint) {
                 rootSchema.addConstraintToSubschema(*constraint, &subschema);
             }
@@ -6120,7 +5173,7 @@ private:
         const AdapterType &rootNode,
         const AdapterType &node,
         const Subschema &subschema,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         const Subschema *parentSchema,
@@ -6137,7 +5190,7 @@ private:
 
         // Returns a document URI if the reference points somewhere
         // other than the current document
-        const opt::optional<std::string> documentUri = internal::json_reference::getJsonReferenceUri(jsonRef);
+        const std::optional<std::string> documentUri = internal::json_reference::getJsonReferenceUri(jsonRef);
 
         // Extract JSON Pointer from JSON Reference
         const std::string actualJsonPointer = sanitiseJsonPointer(
@@ -6170,13 +5223,14 @@ private:
             resolveThenPopulateSchema(rootSchema, newRootNode, referencedAdapter, subschema, {}, actualJsonPointer,
                     fetchDoc, parentSchema, ownName, docCache, schemaCache);
 
-        } else {
+        } else if (!actualJsonPointer.empty()) {
             const AdapterType &referencedAdapter =
                     internal::json_pointer::resolveJsonPointer(rootNode, actualJsonPointer);
 
-            // TODO: Need to detect degenerate circular references
             resolveThenPopulateSchema(rootSchema, rootNode, referencedAdapter, subschema, {}, actualJsonPointer,
                     fetchDoc, parentSchema, ownName, docCache, schemaCache);
+        } else {
+            throwRuntimeError("Cannot resolve reference \"" + jsonRef + "\".");
         }
     }
 
@@ -6203,7 +5257,7 @@ private:
         Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &node,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
@@ -6255,7 +5309,7 @@ private:
         Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &node,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
@@ -6320,7 +5374,7 @@ private:
         const AdapterType &ifNode,
         const AdapterType *thenNode,
         const AdapterType *elseNode,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
@@ -6395,7 +5449,7 @@ private:
         Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &contains,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &containsPath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
@@ -6463,7 +5517,7 @@ private:
         Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &node,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
@@ -6614,7 +5668,7 @@ private:
         const AdapterType &rootNode,
         const AdapterType *items,
         const AdapterType *additionalItems,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &itemsPath,
         const std::string &additionalItemsPath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
@@ -6710,7 +5764,7 @@ private:
         Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &items,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &itemsPath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
@@ -7053,7 +6107,7 @@ private:
         Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &node,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
@@ -7093,7 +6147,7 @@ private:
         Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &node,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
@@ -7175,7 +6229,7 @@ private:
         const AdapterType *properties,
         const AdapterType *patternProperties,
         const AdapterType *additionalProperties,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &propertiesPath,
         const std::string &patternPropertiesPath,
         const std::string &additionalPropertiesPath,
@@ -7256,7 +6310,7 @@ private:
         Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &currentNode,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
@@ -7282,7 +6336,7 @@ private:
      *          caller
      */
     template<typename AdapterType>
-    opt::optional<constraints::RequiredConstraint>
+    std::optional<constraints::RequiredConstraint>
             makeRequiredConstraintForSelf(const AdapterType &node,
                     const std::string &name)
     {
@@ -7296,7 +6350,7 @@ private:
             return constraint;
         }
 
-        return opt::optional<constraints::RequiredConstraint>();
+        return std::optional<constraints::RequiredConstraint>();
     }
 
     /**
@@ -7349,7 +6403,7 @@ private:
         Schema &rootSchema,
         const AdapterType &rootNode,
         const AdapterType &node,
-        const opt::optional<std::string> currentScope,
+        const std::optional<std::string> currentScope,
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
@@ -7412,7 +6466,7 @@ private:
      *          the caller, or nullptr if the boolean value is false.
      */
     template<typename AdapterType>
-    opt::optional<constraints::UniqueItemsConstraint> makeUniqueItemsConstraint(const AdapterType &node)
+    std::optional<constraints::UniqueItemsConstraint> makeUniqueItemsConstraint(const AdapterType &node)
     {
         if (node.isBool() || node.maybeBool()) {
             // If the boolean value is true, this function will return a pointer
@@ -7421,7 +6475,7 @@ private:
             if (node.asBool()) {
                 return constraints::UniqueItemsConstraint();
             } else {
-                return opt::optional<constraints::UniqueItemsConstraint>();
+                return std::optional<constraints::UniqueItemsConstraint>();
             }
         }
 
@@ -8033,10 +7087,9 @@ private:
 
 #include <cmath>
 #include <string>
-#include <regex>
 #include <unordered_map>
-
 #include <utility>
+
 
 
 #ifdef _MSC_VER
@@ -8054,7 +7107,7 @@ class ValidationResults;
  *
  * @tparam  AdapterType  Adapter type for the target document.
  */
-template<typename AdapterType>
+template<typename AdapterType, typename RegexEngine>
 class ValidationVisitor: public constraints::ConstraintVisitor
 {
 public:
@@ -8070,18 +7123,20 @@ public:
      *                      recording error descriptions. If this pointer is set
      *                      to nullptr, validation errors will caused validation to
      *                      stop immediately.
-     * @param  regexesCache Cache of already created std::regex objects for pattern
+     * @param  regexesCache Cache of already created RegexEngine objects for pattern
      *                      constraints.
      */
     ValidationVisitor(const AdapterType &target,
                       std::vector<std::string> context,
                       const bool strictTypes,
+                      const bool strictDateTime,
                       ValidationResults *results,
-                      std::unordered_map<std::string, std::regex>& regexesCache)
+                      std::unordered_map<std::string, RegexEngine>& regexesCache)
       : m_target(target),
         m_context(std::move(context)),
         m_results(results),
         m_strictTypes(strictTypes),
+        m_strictDateTime(strictDateTime),
         m_regexesCache(regexesCache) { }
 
     /**
@@ -8181,7 +7236,9 @@ public:
         ValidationResults newResults;
         ValidationResults *childResults = (m_results) ? &newResults : nullptr;
 
-        ValidationVisitor<AdapterType> v(m_target, m_context, m_strictTypes, childResults, m_regexesCache);
+        ValidationVisitor<AdapterType, RegexEngine> v(
+            m_target, m_context, m_strictTypes, m_strictDateTime, childResults, m_regexesCache);
+
         constraint.applyToSubschemas(
                 ValidateSubschemas(m_target, m_context, false, true, v, childResults, &numValidated, nullptr));
 
@@ -8213,8 +7270,8 @@ public:
         ValidationResults* conditionalResults = (m_results) ? &newResults : nullptr;
 
         // Create a validator to evaluate the conditional
-        ValidationVisitor ifValidator(m_target, m_context, m_strictTypes, nullptr, m_regexesCache);
-        ValidationVisitor thenElseValidator(m_target, m_context, m_strictTypes, conditionalResults, m_regexesCache);
+        ValidationVisitor ifValidator(m_target, m_context, m_strictTypes, m_strictDateTime, nullptr, m_regexesCache);
+        ValidationVisitor thenElseValidator(m_target, m_context, m_strictTypes, m_strictDateTime, conditionalResults, m_regexesCache);
 
         bool validated = false;
         if (ifValidator.validateSchema(*constraint.getIfSubschema())) {
@@ -8278,7 +7335,7 @@ public:
 
         bool validated = false;
         for (const auto &el : arr) {
-            ValidationVisitor containsValidator(el, m_context, m_strictTypes, nullptr, m_regexesCache);
+            ValidationVisitor containsValidator(el, m_context, m_strictTypes, m_strictDateTime, nullptr, m_regexesCache);
             if (containsValidator.validateSchema(*subschema)) {
                 validated = true;
                 break;
@@ -8405,9 +7462,9 @@ public:
         const std::string format = constraint.getFormat();
         if (format == "date") {
             // Matches dates like: 2022-07-18
-            std::regex date_regex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$");
-            std::smatch matches;
-            if (std::regex_match(s, matches, date_regex)) {
+            static const internal::regex date_regex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$");
+            internal::smatch matches;
+            if (internal::regex_match(s, matches, date_regex)) {
                 const auto month = std::stoi(matches[2].str());
                 const auto day = std::stoi(matches[3].str());
                 return validate_date_range(month, day);
@@ -8419,9 +7476,11 @@ public:
                 return false;
             }
         } else if (format == "time") {
-            // Matches times like: 16:52:45Z, 16:52:45+02:00
-            std::regex time_regex("^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
-            if (std::regex_match(s, time_regex)) {
+            // Strict mode matches times like: 16:52:45Z, 16:52:45+02:00
+            // Permissive mode also matches date/times like 16:52:45
+            static const internal::regex strictRegex("^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
+            static const internal::regex permissiveRegex("^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])?|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
+            if (internal::regex_match(s, m_strictDateTime ? strictRegex : permissiveRegex)) {
                 return true;
             } else {
                 if (m_results) {
@@ -8431,10 +7490,12 @@ public:
                 return false;
             }
         } else if (format == "date-time") {
-            // Matches data times like: 2022-07-18T16:52:45Z, 2022-07-18T16:52:45+02:00
-            std::regex datetime_regex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])[Tt]([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
-            std::smatch matches;
-            if (std::regex_match(s, matches, datetime_regex)) {
+            // Strict mode matches date/times like: 2022-07-18T16:52:45Z, 2022-07-18T16:52:45+02:00
+            // Permissive mode also matches date/times like: 2022-07-18T16:52:45
+            static const internal::regex strictRegex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])[Tt]([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
+            static const internal::regex permissiveRegex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])[Tt]([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])?|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
+            internal::smatch matches;
+            if (internal::regex_match(s, matches, m_strictDateTime ? strictRegex : permissiveRegex)) {
                 const auto month = std::stoi(matches[2].str());
                 const auto day = std::stoi(matches[3].str());
                 return validate_date_range(month, day);
@@ -8501,7 +7562,8 @@ public:
             }
 
             constraint.applyToItemSubschemas(
-                    ValidateItems(arr, m_context, true, m_results != nullptr, m_strictTypes, m_results, &numValidated,
+                    ValidateItems(arr, m_context, true, m_results != nullptr,
+                            m_strictTypes, m_strictDateTime, m_results, &numValidated,
                             &validated, m_regexesCache));
 
             if (!m_results && !validated) {
@@ -8524,7 +7586,8 @@ public:
                     std::vector<std::string> newContext = m_context;
                     newContext.push_back("[" + std::to_string(index) + "]");
 
-                    ValidationVisitor<AdapterType> validator(*itr, newContext, m_strictTypes, m_results, m_regexesCache);
+                    ValidationVisitor<AdapterType, RegexEngine> validator(
+                        *itr, newContext, m_strictTypes, m_strictDateTime, m_results, m_regexesCache);
 
                     if (!validator.validateSchema(*additionalItemsSubschema)) {
                         if (m_results) {
@@ -8900,7 +7963,7 @@ public:
             return false;
         }
 
-        ValidationVisitor<AdapterType> v(m_target, m_context, m_strictTypes, nullptr, m_regexesCache);
+        ValidationVisitor<AdapterType, RegexEngine> v(m_target, m_context, m_strictTypes, m_strictDateTime, nullptr, m_regexesCache);
         if (v.validateSchema(*subschema)) {
             if (m_results) {
                 m_results->pushError(m_context,
@@ -8926,8 +7989,9 @@ public:
 
         ValidationResults newResults;
         ValidationResults *childResults = (m_results) ? &newResults : nullptr;
+        ValidationVisitor<AdapterType, RegexEngine> v(
+            m_target, m_context, m_strictTypes, m_strictDateTime, childResults, m_regexesCache);
 
-        ValidationVisitor<AdapterType> v(m_target, m_context, m_strictTypes, childResults, m_regexesCache);
         constraint.applyToSubschemas(
                 ValidateSubschemas(m_target, m_context, true, true, v, childResults, &numValidated, nullptr));
 
@@ -8969,10 +8033,10 @@ public:
         std::string pattern(constraint.getPattern<std::string::allocator_type>());
         auto it = m_regexesCache.find(pattern);
         if (it == m_regexesCache.end()) {
-            it = m_regexesCache.emplace(pattern, std::regex(pattern)).first;
+            it = m_regexesCache.emplace(pattern, RegexEngine(pattern)).first;
         }
 
-        if (!std::regex_search(m_target.asString(), it->second)) {
+        if (!RegexEngine::search(m_target.asString(), it->second)) {
             if (m_results) {
                 m_results->pushError(m_context, "Failed to match regex specified by 'pattern' constraint.");
             }
@@ -9035,7 +8099,8 @@ public:
         const typename AdapterType::Object object = m_target.asObject();
         constraint.applyToProperties(
                 ValidatePropertySubschemas(
-                        object, m_context, true, m_results != nullptr, true, m_strictTypes, m_results,
+                        object, m_context, true, m_results != nullptr, true, m_strictTypes,
+                        m_strictDateTime, m_results,
                         &propertiesMatched, &validated, m_regexesCache));
 
         // Exit early if validation failed, and we're not collecting exhaustive
@@ -9048,7 +8113,8 @@ public:
         // constraints
         constraint.applyToPatternProperties(
                 ValidatePatternPropertySubschemas(
-                        object, m_context, true, false, true, m_strictTypes, m_results, &propertiesMatched,
+                        object, m_context, true, false, true, m_strictTypes, m_strictDateTime,
+                        m_results, &propertiesMatched,
                         &validated, m_regexesCache));
 
         // Validate against additionalProperties subschema for any properties
@@ -9083,7 +8149,7 @@ public:
                 newContext.push_back("[" + m.first + "]");
 
                 // Create a validator to validate the property's value
-                ValidationVisitor validator(m.second, newContext, m_strictTypes, m_results, m_regexesCache);
+                ValidationVisitor validator(m.second, newContext, m_strictTypes, m_strictDateTime, m_results, m_regexesCache);
                 if (!validator.validateSchema(*additionalPropertiesSubschema)) {
                     if (m_results) {
                         m_results->pushError(m_context, "Failed to validate against additional properties schema");
@@ -9112,7 +8178,9 @@ public:
 
         for (const typename AdapterType::ObjectMember m : m_target.asObject()) {
             adapters::StdStringAdapter stringAdapter(m.first);
-            ValidationVisitor<adapters::StdStringAdapter> validator(stringAdapter, m_context, m_strictTypes, nullptr, m_regexesCache);
+            ValidationVisitor<adapters::StdStringAdapter, RegexEngine> validator(
+                stringAdapter, m_context, m_strictTypes, m_strictDateTime, nullptr, m_regexesCache);
+
             if (!validator.validateSchema(*constraint.getSubschema())) {
                 return false;
             }
@@ -9181,7 +8249,8 @@ public:
             newContext.push_back("[" + std::to_string(index) + "]");
 
             // Create a validator for the current array item
-            ValidationVisitor<AdapterType> validationVisitor(item, newContext, m_strictTypes, m_results, m_regexesCache);
+            ValidationVisitor<AdapterType, RegexEngine> validationVisitor(
+                item, newContext, m_strictTypes, m_strictDateTime, m_results, m_regexesCache);
 
             // Perform validation
             if (!validationVisitor.validateSchema(*itemsSubschema)) {
@@ -9443,15 +8512,17 @@ private:
                 bool continueOnSuccess,
                 bool continueOnFailure,
                 bool strictTypes,
+                bool strictDateTime,
                 ValidationResults *results,
                 unsigned int *numValidated,
                 bool *validated,
-                std::unordered_map<std::string, std::regex>& regexesCache)
+                std::unordered_map<std::string, RegexEngine>& regexesCache)
           : m_arr(arr),
             m_context(context),
             m_continueOnSuccess(continueOnSuccess),
             m_continueOnFailure(continueOnFailure),
             m_strictTypes(strictTypes),
+            m_strictDateTime(strictDateTime),
             m_results(results),
             m_numValidated(numValidated),
             m_validated(validated),
@@ -9473,7 +8544,7 @@ private:
             itr.advance(index);
 
             // Validate current array item
-            ValidationVisitor validator(*itr, newContext, m_strictTypes, m_results, m_regexesCache);
+            ValidationVisitor validator(*itr, newContext, m_strictTypes, m_strictDateTime, m_results, m_regexesCache);
             if (validator.validateSchema(*subschema)) {
                 if (m_numValidated) {
                     (*m_numValidated)++;
@@ -9500,10 +8571,11 @@ private:
         bool m_continueOnSuccess;
         bool m_continueOnFailure;
         bool m_strictTypes;
+        bool m_strictDateTime;
         ValidationResults * const m_results;
         unsigned int * const m_numValidated;
         bool * const m_validated;
-        std::unordered_map<std::string, std::regex>& m_regexesCache;
+        std::unordered_map<std::string, RegexEngine>& m_regexesCache;
     };
 
     /**
@@ -9586,16 +8658,18 @@ private:
                 bool continueOnFailure,
                 bool continueIfUnmatched,
                 bool strictTypes,
+                bool strictDateTime,
                 ValidationResults *results,
                 std::set<std::string> *propertiesMatched,
                 bool *validated,
-                std::unordered_map<std::string, std::regex>& regexesCache)
+                std::unordered_map<std::string, RegexEngine>& regexesCache)
           : m_object(object),
             m_context(context),
             m_continueOnSuccess(continueOnSuccess),
             m_continueOnFailure(continueOnFailure),
             m_continueIfUnmatched(continueIfUnmatched),
             m_strictTypes(strictTypes),
+            m_strictDateTime(strictDateTime),
             m_results(results),
             m_propertiesMatched(propertiesMatched),
             m_validated(validated),
@@ -9607,17 +8681,20 @@ private:
             const std::string patternPropertyStr(patternProperty.c_str());
 
             // It would be nice to store pre-allocated regex objects in the
-            // PropertiesConstraint. does std::regex currently support
+            // PropertiesConstraint. does internal::regex currently support
             // custom allocators? Anyway, this isn't an issue here, because Valijson's
             // JSON Scheme validator does not yet support custom allocators.
-            const std::regex r(patternPropertyStr);
+            auto it = m_regexesCache.find(patternPropertyStr);
+            if (it == m_regexesCache.end()) {
+                it = m_regexesCache.emplace(patternPropertyStr, RegexEngine(patternPropertyStr)).first;
+            }
 
             bool matchFound = false;
 
             // Recursively validate all matching properties
             typedef const typename AdapterType::ObjectMember ObjectMember;
             for (const ObjectMember m : m_object) {
-                if (std::regex_search(m.first, r)) {
+                if (RegexEngine::search(m.first, it->second)) {
                     matchFound = true;
                     if (m_propertiesMatched) {
                         m_propertiesMatched->insert(m.first);
@@ -9628,7 +8705,7 @@ private:
                     newContext.push_back("[" + m.first + "]");
 
                     // Recursively validate property's value
-                    ValidationVisitor validator(m.second, newContext, m_strictTypes, m_results, m_regexesCache);
+                    ValidationVisitor validator(m.second, newContext, m_strictTypes, m_strictDateTime, m_results, m_regexesCache);
                     if (validator.validateSchema(*subschema)) {
                         continue;
                     }
@@ -9663,10 +8740,11 @@ private:
         const bool m_continueOnFailure;
         const bool m_continueIfUnmatched;
         const bool m_strictTypes;
+        const bool m_strictDateTime;
         ValidationResults * const m_results;
         std::set<std::string> * const m_propertiesMatched;
         bool * const m_validated;
-        std::unordered_map<std::string, std::regex>& m_regexesCache;
+        std::unordered_map<std::string, RegexEngine>& m_regexesCache;
     };
 
     /**
@@ -9682,16 +8760,18 @@ private:
                 bool continueOnFailure,
                 bool continueIfUnmatched,
                 bool strictTypes,
+                bool strictDateTime,
                 ValidationResults *results,
                 std::set<std::string> *propertiesMatched,
                 bool *validated,
-                std::unordered_map<std::string, std::regex>& regexesCache)
+                std::unordered_map<std::string, RegexEngine>& regexesCache)
           : m_object(object),
             m_context(context),
             m_continueOnSuccess(continueOnSuccess),
             m_continueOnFailure(continueOnFailure),
             m_continueIfUnmatched(continueIfUnmatched),
             m_strictTypes(strictTypes),
+            m_strictDateTime(strictDateTime),
             m_results(results),
             m_propertiesMatched(propertiesMatched),
             m_validated(validated),
@@ -9715,7 +8795,7 @@ private:
             newContext.push_back("[" + propertyNameKey + "]");
 
             // Recursively validate property's value
-            ValidationVisitor validator(itr->second, newContext, m_strictTypes, m_results, m_regexesCache);
+            ValidationVisitor validator(itr->second, newContext, m_strictTypes, m_strictDateTime, m_results, m_regexesCache);
             if (validator.validateSchema(*subschema)) {
                 return m_continueOnSuccess;
             }
@@ -9739,10 +8819,11 @@ private:
         const bool m_continueOnFailure;
         const bool m_continueIfUnmatched;
         const bool m_strictTypes;
+        const bool m_strictDateTime;
         ValidationResults * const m_results;
         std::set<std::string> * const m_propertiesMatched;
         bool * const m_validated;
-        std::unordered_map<std::string, std::regex>& m_regexesCache;
+        std::unordered_map<std::string, RegexEngine>& m_regexesCache;
     };
 
     /**
@@ -9868,7 +8949,7 @@ private:
      *
      * @return  true if the visitor returns successfully, false otherwise.
      */
-    static bool validationCallback(const constraints::Constraint &constraint, ValidationVisitor<AdapterType> &visitor)
+    static bool validationCallback(const constraints::Constraint &constraint, ValidationVisitor<AdapterType, RegexEngine> &visitor)
     {
         return constraint.accept(visitor);
     }
@@ -9926,8 +9007,11 @@ private:
     /// Option to use strict type comparison
     bool m_strictTypes;
 
+    /// Option to parse date/time values strictly, according to RFC-3999
+    bool m_strictDateTime;
+
     /// Cached regex objects for pattern constraint
-    std::unordered_map<std::string, std::regex>& m_regexesCache;
+    std::unordered_map<std::string, RegexEngine>& m_regexesCache;
 };
 
 }  // namespace valijson
@@ -9943,10 +9027,15 @@ namespace valijson {
 class Schema;
 class ValidationResults;
 
+
 /**
- * @brief  Class that provides validation functionality.
+ * @brief   Class that provides validation functionality.
+ *
+ * @tparam  RegexEngine regular expression engine used for pattern constraint validation.
+
  */
-class Validator
+template <typename RegexEngine>
+class ValidatorT
 {
 public:
     enum TypeCheckingMode
@@ -9955,19 +9044,29 @@ public:
         kWeakTypes
     };
 
+    enum DateTimeMode
+    {
+        kStrictDateTime,
+        kPermissiveDateTime
+    };
+
     /**
      * @brief  Construct a Validator that uses strong type checking by default
      */
-    Validator()
-      : strictTypes(true) { }
+    ValidatorT()
+      : strictTypes(true)
+      , strictDateTime(true)
+    { }
 
     /**
      * @brief  Construct a Validator using a specific type checking mode
      *
      * @param  typeCheckingMode  choice of strong or weak type checking
      */
-    Validator(TypeCheckingMode typeCheckingMode)
-      : strictTypes(typeCheckingMode == kStrongTypes) { }
+    ValidatorT(TypeCheckingMode typeCheckingMode, DateTimeMode dateTimeMode = kStrictDateTime)
+      : strictTypes(typeCheckingMode == kStrongTypes)
+      , strictDateTime(dateTimeMode == kStrictDateTime)
+    { }
 
     /**
      * @brief  Validate a JSON document and optionally return the results.
@@ -9993,8 +9092,13 @@ public:
             ValidationResults *results)
     {
         // Construct a ValidationVisitor to perform validation at the root level
-        ValidationVisitor<AdapterType> v(target,
-                std::vector<std::string>(1, "<root>"), strictTypes, results, regexesCache);
+        ValidationVisitor<AdapterType, RegexEngine> v(
+                target,
+                std::vector<std::string>(1, "<root>"),
+                strictTypes,
+                strictDateTime,
+                results,
+                regexesCache);
 
         return v.validateSchema(schema);
     }
@@ -10004,9 +9108,31 @@ private:
     /// Flag indicating that strict type comparisons should be used
     bool strictTypes;
 
+    /// Parse date/time values strictly, according to RFC-3999
+    bool strictDateTime;
+
     /// Cached regex objects for pattern constraint. Key - pattern.
-    std::unordered_map<std::string, std::regex> regexesCache;
+    std::unordered_map<std::string, RegexEngine> regexesCache;
 };
+
+/**
+ * @brief   Struct that provides a default Regular Expression Engine using std::regex
+ */
+struct DefaultRegexEngine
+{
+    DefaultRegexEngine(const std::string& pattern)
+      : regex(pattern) { }
+
+    static bool search(const std::string& s, const DefaultRegexEngine& r)
+    {
+        return internal::regex_search(s, r.regex);
+    }
+
+private:
+    internal::regex regex;
+};
+
+using Validator = ValidatorT<DefaultRegexEngine>;
 
 }  // namespace valijson
 /**
@@ -10036,6 +9162,7 @@ private:
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include <nlohmann/json.hpp>
 
@@ -10492,10 +9619,10 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-    opt::optional<NlohmannJsonArray<ValueType>> getArrayOptional() const
+    std::optional<NlohmannJsonArray<ValueType>> getArrayOptional() const
     {
         if (m_value.is_array()) {
-            return opt::make_optional(NlohmannJsonArray<ValueType>(m_value));
+            return std::make_optional(NlohmannJsonArray<ValueType>(m_value));
         }
 
         return {};
@@ -10560,7 +9687,7 @@ public:
      *
      * Otherwise it will return an empty optional.
      */
-    opt::optional<NlohmannJsonObject> getObjectOptional() const;
+    std::optional<NlohmannJsonObject> getObjectOptional() const;
 
     /**
      * @brief   Retrieve the number of members in the object
@@ -10680,11 +9807,11 @@ public:
 };
 
 template <class ValueType>
-opt::optional<NlohmannJsonObject>
+std::optional<NlohmannJsonObject>
 NlohmannJsonValue<ValueType>::getObjectOptional() const
 {
     if (m_value.is_object()) {
-        return opt::make_optional(NlohmannJsonObject(m_value));
+        return std::make_optional(NlohmannJsonObject(m_value));
     }
 
     return {};
