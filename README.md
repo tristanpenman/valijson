@@ -8,6 +8,20 @@ Valijson provides a simple validation API that allows you to load JSON Schemas, 
 
 The goal of this project is to support validation of all constraints available in JSON Schema v7, while being competitive with the performance of a hand-written schema validator.
 
+## Version Compatibility
+
+Valijson is currently maintained across three active minor versions. The key difference between each version is the underlying C++ standard that each targets. The legacy `v1.0.x` series remains compatible with C++14, while the `v1.1.x` series adopts C++17, and the upcoming `v1.2.x` line will move to C++20.
+
+| Version  | C++ Standard | Notes                         | Branch
+|----------|--------------|-------------------------------|--------
+| v1.0.x   | C++14        | Legacy release line.          | [v1.0.x](https://github.com/tristanpenman/valijson/tree/v1.0.x)
+| v1.1.x   | C++17        | Current C++17-focused series. | [master](https://github.com/tristanpenman/valijson/tree/master)
+| v1.2.x   | C++20        | Planned C++20-ready version.  | [v1.2.x](https://github.com/tristanpenman/valijson/tree/v1.2.x)
+
+The [master](https://github.com/tristanpenman/valijson/tree/master) branch on GitHub currently tracks the v1.1.x series.
+
+Code written for Valijson `v1.0.x` that already compiles in a C++14 environment should continue to build with minimal adjustments when moving to v1.1 and C++17.
+
 ## Usage
 
 Clone the repo, including submodules:
