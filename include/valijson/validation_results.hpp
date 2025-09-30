@@ -38,18 +38,24 @@ public:
     /**
      * @brief  Describes a validation error.
      *
-     * This struct is used to pass around the context and description of a
-     * validation error.
+     * This struct is used to pass around the path and description of a
+     * validation error. The path is stored in two formats. First is 'context',
+     * a legacy format, used only by Valijson. Second is JSON Pointer format,
+     * which is defined in RFC 6901.
      */
     struct Error
     {
-        /// Path to the node that failed validation (LEGACY).
+        /**
+         * Path to the node that failed validation (LEGACY).
+         *
+         * @deprecated use \c jsonPointer instead
+         */
         std::vector<std::string> context;
 
         /// A detailed description of the validation error.
         std::string description;
 
-        /// JSON Pointer (RFC 6901) identifying the node that failed validation.
+        /// JSON Pointer identifying the node that failed validation.
         std::string jsonPointer;
     };
 
@@ -90,7 +96,7 @@ public:
     /**
      * @brief  Push an error onto the back of the queue.
      *
-     * @param  context      Context of the validation error.
+     * @param  path         Path of the validation error.
      * @param  description  Description of the validation error.
      */
     void

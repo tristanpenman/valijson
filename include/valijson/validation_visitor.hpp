@@ -1075,7 +1075,7 @@ public:
                 ValidationVisitor validator(m.second, newPath, m_strictTypes, m_strictDateTime, m_results, m_regexesCache);
                 if (!validator.validateSchema(*additionalPropertiesSubschema)) {
                     if (m_results) {
-                        m_results->pushError(m_path, "Failed to validate against additional properties schema");
+                        m_results->pushError(m_path, "Failed to validate against additional properties schema.");
                     }
 
                     validated = false;
