@@ -35,7 +35,7 @@ public:
 
     bool validate(
             const Adapter &,
-            const std::vector<std::string> &context,
+            const ValidationResults::Path &path,
             ValidationResults *results) const override
     {
         if (m_shouldValidate) {
@@ -43,8 +43,7 @@ public:
         }
 
         if (results) {
-            results->pushError(context,
-                    "StubPolyConstraint intentionally failed validation");
+            results->pushError(path, "StubPolyConstraint intentionally failed validation");
         }
 
         return false;
