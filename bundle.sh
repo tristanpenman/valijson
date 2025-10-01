@@ -82,13 +82,13 @@ common_headers=(
   include/valijson/subschema.hpp
   include/valijson/schema_cache.hpp
   include/valijson/schema.hpp
+  include/valijson/validation_results.hpp
   include/valijson/constraints/constraint_visitor.hpp
   include/valijson/constraints/basic_constraint.hpp
   include/valijson/constraints/concrete_constraints.hpp
   include/valijson/constraint_builder.hpp
   include/valijson/schema_parser.hpp
   include/valijson/adapters/std_string_adapter.hpp
-  include/valijson/validation_results.hpp
   include/valijson/validation_visitor.hpp
   include/valijson/validator.hpp)
 
