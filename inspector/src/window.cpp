@@ -208,14 +208,9 @@ void Window::validate()
     unsigned int errorNum = 1;
     std::stringstream ss;
     while (results.popError(error)) {
-        std::string context;
-        for (auto & itr : error.context) {
-            context += itr;
-        }
-
-        ss << "Validation error #" << errorNum << std::endl
-            << "  context: " << context << std::endl
-            << "  desc:    " << error.description << std::endl;
+        ss << "Validation error #" << errorNum << std::endl;
+        ss << "  reference: #" << error.jsonPointer << std::endl;
+        ss << "  description: " << error.description << std::endl << std::endl;
         ++errorNum;
     }
 
