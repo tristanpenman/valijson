@@ -30,9 +30,9 @@ int main(int argc, char *argv[])
     // Parse the json schema into an internal schema format
     Schema schema;
     SchemaParser parser;
-    NlohmannJsonAdapter schemaDocumentAdapter(schemaDocument);
+    NlohmannJsonAdapter schemaAdapter(schemaDocument);
     try {
-        parser.populateSchema(schemaDocumentAdapter, schema);
+        parser.populateSchema(schemaAdapter, schema);
     } catch (std::exception &e) {
         cerr << "Failed to parse schema: " << e.what() << endl;
         return 1;
@@ -41,26 +41,21 @@ int main(int argc, char *argv[])
     // Perform validation
     Validator validator(Validator::kStrongTypes);
     ValidationResults results;
-    NlohmannJsonAdapter targetDocumentAdapter(targetDocument);
-    if (!validator.validate(schema, targetDocumentAdapter, &results)) {
-        std::cerr << "Validation failed." << endl;
-        ValidationResults::Error error;
-        unsigned int errorNum = 1;
-        while (results.popError(error)) {
-
-            std::string context;
-            std::vector<std::string>::iterator itr = error.context.begin();
-            for (; itr != error.context.end(); itr++) {
-                context += *itr;
-            }
-
-            cerr << "Error #" << errorNum << std::endl
-                 << "  context: " << context << endl
-                 << "  desc:    " << error.description << endl;
-            ++errorNum;
-        }
-        return 1;
+    NlohmannJsonAdapter targetAdapter(targetDocument);
+    if (validator.validate(schema, targetAdapter, &results)) {
+        std::cerr << "Validation succeeded." << std::endl;
+        return 0;
     }
 
-    return 0;
+    std::cerr << "Validation failed." << std::endl;
+    valijson::ValidationResults::Error error;
+    unsigned int errorNum = 1;
+    while (results.popError(error)) {
+        std::cerr << "Error #" << errorNum << std::endl;
+        std::cerr << " @ " << error.jsonPointer << std::endl;
+        std::cerr << " - " << error.description << std::endl;
+        ++errorNum;
+    }
+
+    return 1;
 }

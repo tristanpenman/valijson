@@ -26,11 +26,14 @@ Code written for Valijson `v1.0.x` that already compiles in a C++14 environment 
 
 Clone the repo, including submodules:
 
-    git clone --recurse-submodules git@github.com:tristanpenman/valijson.git
+```bash
+git clone --recurse-submodules git@github.com:tristanpenman/valijson.git
+```
 
 The following code snippets show how you might implement a simple validator using RapidJson as the underlying JSON Parser.
 
 Include the necessary headers:
+
 ```cpp
 #include <valijson/adapters/rapidjson_adapter.hpp>
 #include <valijson/utils/rapidjson_utils.hpp>
@@ -38,14 +41,18 @@ Include the necessary headers:
 #include <valijson/schema_parser.hpp>
 #include <valijson/validator.hpp>
 ```
+
 These are the classes that we'll be using:
+
 ```cpp
 using valijson::Schema;
 using valijson::SchemaParser;
 using valijson::Validator;
 using valijson::adapters::RapidJsonAdapter;
 ```
+
 We are going to use RapidJSON to load the schema and the target document:
+
 ```cpp
 // Load JSON document using RapidJSON with Valijson helper function
 rapidjson::Document mySchemaDoc;
@@ -59,7 +66,9 @@ SchemaParser parser;
 RapidJsonAdapter mySchemaAdapter(mySchemaDoc);
 parser.populateSchema(mySchemaAdapter, mySchema);
 ```
+
 Load a document to validate:
+
 ```cpp
 rapidjson::Document myTargetDoc;
 if (!valijson::utils::loadDocument("myTarget.json", myTargetDoc)) {
@@ -67,7 +76,9 @@ if (!valijson::utils::loadDocument("myTarget.json", myTargetDoc)) {
 }
 ```
 
+
 Validate a document:
+
 ```cpp
 Validator validator;
 RapidJsonAdapter myTargetAdapter(myTargetDoc);
@@ -162,6 +173,7 @@ Alternatively the library can be instructed to use `boost::regex` by specifying 
 Valijson has been designed to safely manage, and eventually free, the memory that is allocated while parsing a schema or validating a document. When working with an externally loaded schema (i.e. one that is populated using the `SchemaParser` class) you can rely on RAII semantics.
 
 Things get more interesting when you build a schema using custom code, as illustrated in the following snippet. This code demonstrates how you would create a schema to verify that the value of a 'description' property (if present) is always a string:
+
 ```cpp
 {
     // Root schema object that manages memory allocated for
@@ -197,6 +209,7 @@ Things get more interesting when you build a schema using custom code, as illust
     // Root schema goes out of scope and all allocated memory is freed
 }
 ```
+
 ## JSON References
 
 The library includes support for local JSON References. Remote JSON References are supported only when the appropriate callback functions are provided.
@@ -210,6 +223,7 @@ Valijson's test suite currently contains several hand-crafted tests and uses the
 ### cmake
 
 The examples and test suite can be built using cmake:
+
 ```bash
 # Build examples and test suite
 mkdir build
@@ -220,6 +234,7 @@ make
 # Run test suite (from build directory)
 ./test_suite
 ```
+
 ## How to add this library to your cmake target
 
 Valijson can be integrated either as git submodule or with `find_package()`.
@@ -252,6 +267,7 @@ target_link_libraries(your-executable ValiJSON::valijson)
 ### Install Valijson and import it
 
 It is possible to install headers by running cmake's install command from the build tree. Once Valijson is installed, use it from other CMake projects using `find_package(Valijson)` in your CMakeLists.txt.
+
 ```bash
 # Install Valijson
 git clone --recurse-submodules --depth=1 git@github.com:tristanpenman/valijson.git
@@ -261,6 +277,7 @@ cd build
 cmake ..
 cmake --install .
 ```
+
 ```cmake
 # Import installed valijson and link it to your executable
 find_package(valijson REQUIRED)
@@ -274,11 +291,15 @@ An alternative way to include Valijson in your project is to generate a bundled 
 
 You can generate a header file using the `bundle.sh` script:
 
-    ./bundle.sh nlohmann_json > valijson_nlohmann_bundled.hpp
+```bash
+./bundle.sh nlohmann_json > valijson_nlohmann_bundled.hpp
+```
 
 This can then be used in your project with a single `#include`:
 
-    #include "valijson_nlohmann_bundled.hpp"
+```cpp
+#include "valijson_nlohmann_bundled.hpp"
+```
 
 An example can be found in [examples/valijson\_nlohmann\_bundled\_test.cpp](examples/valijson_nlohmann_bundled_test.cpp).
 
@@ -370,12 +391,14 @@ The exceptions to this are boost, Poco and Qt5, which due to their size must be 
 When using PicoJSON, it may be necessary to include the `picojson.h` before other headers to ensure that the appropriate macros have been enabled.
 
 When building Valijson using CMake on macOS, with Qt 5 installed via Homebrew, you may need to set `CMAKE_PREFIX_PATH` so that CMake can find your Qt installation, e.g:
+
 ```bash
 mkdir build
 cd build
 cmake .. -DCMAKE_PREFIX_PATH=$(brew --prefix qt5)
 make
 ```
+
 ## License
 
 Valijson is licensed under the Simplified BSD License.
