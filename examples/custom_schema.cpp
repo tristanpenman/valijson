@@ -201,22 +201,20 @@ int main(int argc, char *argv[])
     Validator validator;
     ValidationResults results;
     RapidJsonAdapter targetDocumentAdapter(targetDocument);
-    if (!validator.validate(schema, targetDocumentAdapter, &results)) {
-        std::cerr << "Validation failed." << endl;
-        ValidationResults::Error error;
-        unsigned int errorNum = 1;
-        while (results.popError(error)) {
-            cerr << "Error #" << errorNum << std::endl;
-            cerr << "  ";
-            for (const std::string &contextElement : error.context) {
-                cerr << contextElement << " ";
-            }
-            cerr << endl;
-            cerr << "    - " << error.description << endl;
-            ++errorNum;
-        }
-        return 1;
+    if (validator.validate(schema, targetDocumentAdapter, &results)) {
+        cerr << "Validation succeeded." << endl;
+        return 0;
     }
 
-    return 0;
+    cerr << "Validation failed." << endl;
+    ValidationResults::Error error;
+    unsigned int errorNum = 1;
+    while (results.popError(error)) {
+        cerr << "Error #" << errorNum << endl;
+        cerr << " @ " << error.jsonPointer << endl;
+        cerr << " - " << error.description << endl;
+        ++errorNum;
+    }
+
+    return 1;
 }

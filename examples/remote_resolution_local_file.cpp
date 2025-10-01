@@ -78,25 +78,20 @@ int main(int argc, char *argv[])
     Validator validator(Validator::kWeakTypes);
     ValidationResults results;
     RapidJsonAdapter targetDocumentAdapter(targetDocument);
-    if (!validator.validate(schema, targetDocumentAdapter, &results)) {
-        std::cerr << "Validation failed." << endl;
-        ValidationResults::Error error;
-        unsigned int errorNum = 1;
-        while (results.popError(error)) {
-
-            std::string context;
-            std::vector<std::string>::iterator itr = error.context.begin();
-            for (; itr != error.context.end(); itr++) {
-                context += *itr;
-            }
-
-            cerr << "Error #" << errorNum << std::endl
-                 << "  context: " << context << endl
-                 << "  desc:    " << error.description << endl;
-            ++errorNum;
-        }
-        return 1;
+    if (validator.validate(schema, targetDocumentAdapter, &results)) {
+        std::cerr << "Validation succeeded." << std::endl;
+        return 0;
     }
 
-    return 0;
+    std::cerr << "Validation failed." << endl;
+    ValidationResults::Error error;
+    unsigned int errorNum = 1;
+    while (results.popError(error)) {
+        std::cerr << "Error #" << errorNum << std::endl;
+        std::cerr << " @ " << error.jsonPointer << std::endl;
+        std::cerr << " - " << error.description << std::endl;
+        ++errorNum;
+    }
+
+    return 1;
 }

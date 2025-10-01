@@ -99,12 +99,8 @@ int main(int argc, char **argv)
             unsigned int errorNum = 1;
             while (results.popError(error)) {
                 std::cerr << "Error #" << errorNum << std::endl;
-                std::cerr << "  ";
-                for (const std::string &contextElement : error.context) {
-                    std::cerr << contextElement << " ";
-                }
-                std::cerr << std::endl;
-                std::cerr << "    - " << error.description << std::endl << std::endl;
+                std::cerr << " @ " << error.jsonPointer << std::endl;
+                std::cerr << " - " << error.description << std::endl;
                 ++errorNum;
             }
         }
