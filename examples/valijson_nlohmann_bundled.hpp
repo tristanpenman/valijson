@@ -1079,6 +1079,33 @@ namespace std
 # undef TR2_OPTIONAL_ASSERTED_EXPRESSION
 
 # endif //OPTIONAL_HPP
+#if defined(VALIJSON_USE_BOOST_REGEX) && VALIJSON_USE_BOOST_REGEX
+
+#include <boost/regex.hpp>
+
+namespace valijson {
+namespace internal {
+using boost::regex;
+using boost::regex_match;
+using boost::regex_search;
+using boost::smatch;
+} // namespace internal
+} // namespace valijson
+
+#else
+
+#include <regex>
+
+namespace valijson {
+namespace internal {
+using std::regex;
+using std::regex_match;
+using std::regex_search;
+using std::smatch;
+} // namespace internal
+} // namespace valijson
+
+#endif
 #pragma once
 
 namespace opt = std::experimental;
@@ -2930,33 +2957,6 @@ inline opt::optional<std::string> getJsonReferencePointer(
 } // namespace json_reference
 } // namespace internal
 } // namespace valijson
-#if defined(VALIJSON_USE_BOOST_REGEX) && VALIJSON_USE_BOOST_REGEX
-
-#include <boost/regex.hpp>
-
-namespace valijson {
-namespace internal {
-using boost::regex;
-using boost::regex_match;
-using boost::regex_search;
-using boost::smatch;
-} // namespace internal
-} // namespace valijson
-
-#else
-
-#include <regex>
-
-namespace valijson {
-namespace internal {
-using std::regex;
-using std::regex_match;
-using std::regex_search;
-using std::smatch;
-} // namespace internal
-} // namespace valijson
-
-#endif
 #pragma once
 
 #include <string>

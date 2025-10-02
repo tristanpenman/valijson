@@ -66,6 +66,7 @@ fi
 common_headers=(
   include/valijson/exceptions.hpp
   include/compat/optional.hpp
+  include/valijson/internal/regex.hpp
   include/valijson/internal/optional_bundled.hpp
   include/valijson/internal/adapter.hpp
   include/valijson/internal/basic_adapter.hpp
@@ -74,7 +75,6 @@ common_headers=(
   include/valijson/internal/frozen_value.hpp
   include/valijson/internal/json_pointer.hpp
   include/valijson/internal/json_reference.hpp
-  include/valijson/internal/regex.hpp
   include/valijson/internal/uri.hpp
   include/valijson/utils/file_utils.hpp
   include/valijson/utils/utf8_utils.hpp
