@@ -117,7 +117,7 @@ public:
 
     /// Construct a RapidJsonArray referencing an empty array singleton.
     GenericRapidJsonArray()
-      : m_value(emptyArray()) { }
+      : m_value(emptyArray) { }
 
     /**
      * @brief   Construct a RapidJsonArray referencing a specific RapidJson
@@ -150,16 +150,8 @@ public:
 
 private:
 
-    /**
-     * @brief   Return a reference to a RapidJson value that is an empty array.
-     *
-     * Note that the value returned by this function is a singleton.
-     */
-    static const ValueType & emptyArray()
-    {
-        static const ValueType array(rapidjson::kArrayType);
-        return array;
-    }
+    /// Shared RapidJson ValueType instance used to represent empty array.
+    static inline const ValueType emptyArray = ValueType(rapidjson::kArrayType);
 
     /// Reference to the contained value
     const ValueType &m_value;
@@ -186,7 +178,7 @@ public:
 
     /// Construct a GenericRapidJsonObject referencing an empty object singleton.
     GenericRapidJsonObject()
-      : m_value(emptyObject()) { }
+      : m_value(emptyObject) { }
 
     /**
      * @brief   Construct a GenericRapidJsonObject referencing a specific
@@ -241,16 +233,8 @@ public:
 
 private:
 
-    /**
-     * @brief   Return a reference to a RapidJson value that is empty object.
-     *
-     * Note that the value returned by this function is a singleton.
-     */
-    static const ValueType & emptyObject()
-    {
-        static ValueType object(rapidjson::kObjectType);
-        return object;
-    }
+    /// Shared RapidJson ValueType instance used to represent empty object.
+    static inline const ValueType emptyObject = ValueType(rapidjson::kObjectType);
 
     /// Reference to the contained object
     const ValueType &m_value;
@@ -396,7 +380,7 @@ class GenericRapidJsonValue
 public:
     /// Construct a wrapper for the empty object singleton
     GenericRapidJsonValue()
-      : m_value(emptyObject()) { }
+      : m_value(emptyObject) { }
 
     /// Construct a wrapper for a specific RapidJson value
     GenericRapidJsonValue(const ValueType &value)
@@ -588,12 +572,8 @@ public:
 
 private:
 
-    /// Return a reference to an empty object singleton
-    static const ValueType & emptyObject()
-    {
-        static const ValueType object(rapidjson::kObjectType);
-        return object;
-    }
+    /// Shared RapidJson value instance used to represent an empty object
+    static inline const ValueType emptyObject = ValueType(rapidjson::kObjectType);
 
     /// Reference to the contained RapidJson value.
     const ValueType &m_value;

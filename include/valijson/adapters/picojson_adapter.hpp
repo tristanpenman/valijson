@@ -70,7 +70,7 @@ public:
 
     /// Construct a PicoJsonArray referencing an empty array.
     PicoJsonArray()
-      : m_value(emptyArray()) { }
+      : m_value(emptyArray) { }
 
     /**
      * @brief   Construct a PicoJsonArray referencing a specific PicoJson
@@ -114,16 +114,9 @@ public:
 
 private:
 
-    /**
-     * @brief   Return a reference to a PicoJson value that is an empty array.
-     *
-     * Note that the value returned by this function is a singleton.
-     */
-    static const picojson::value & emptyArray()
-    {
-        static const picojson::value array(picojson::array_type, false);
-        return array;
-    }
+    /// Shared picojson::value instance used to represent empty array.
+    static inline const picojson::value emptyArray =
+        picojson::value(picojson::array_type, false);
 
     /// Reference to the contained value
     const picojson::value &m_value;
@@ -149,7 +142,7 @@ public:
 
     /// Construct a PicoJsonObject referencing an empty object singleton.
     PicoJsonObject()
-      : m_value(emptyObject()) { }
+      : m_value(emptyObject) { }
 
     /**
      * @brief   Construct a PicoJsonObject referencing a specific PicoJson
@@ -205,16 +198,9 @@ public:
 
 private:
 
-    /**
-     * @brief   Return a reference to a PicoJson value that is empty object.
-     *
-     * Note that the value returned by this function is a singleton.
-     */
-    static const picojson::value & emptyObject()
-    {
-        static const picojson::value object(picojson::object_type, false);
-        return object;
-    }
+    /// Shared picojson::value instance used to represent empty object.
+    static inline const picojson::value emptyObject =
+        picojson::value(picojson::object_type, false);
 
     /// Reference to the contained object
     const picojson::value &m_value;
@@ -274,7 +260,7 @@ public:
 
     /// Construct a wrapper for the empty object singleton
     PicoJsonValue()
-      : m_value(emptyObject()) { }
+      : m_value(emptyObject) { }
 
     /// Construct a wrapper for a specific PicoJson value
     PicoJsonValue(const picojson::value &value)
@@ -463,12 +449,9 @@ public:
 
 private:
 
-    /// Return a reference to an empty object singleton
-    static const picojson::value & emptyObject()
-    {
-        static const picojson::value object(picojson::object_type, false);
-        return object;
-    }
+    /// Shared PicoJson value instance used to represent an empty object
+    static inline const picojson::value emptyObject =
+        picojson::value(picojson::object_type, false);
 
     /// Reference to the contained PicoJson value.
     const picojson::value &m_value;

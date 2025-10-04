@@ -63,7 +63,7 @@ public:
 
     /// Construct a PocoJsonArray referencing an empty array.
     PocoJsonArray()
-        : m_value(emptyArray())
+        : m_value(emptyArray)
     { }
 
     /**
@@ -108,13 +108,9 @@ public:
 private:
 
     /**
-    * @brief   Return a PocoJson value that is an empty array.
+    * @brief   Shared PocoJson value used to represent an empty array.
     */
-    static Poco::Dynamic::Var emptyArray()
-    {
-        Poco::Dynamic::Var array = Poco::JSON::Array::Ptr();
-        return array;
-    }
+    static inline const Poco::Dynamic::Var emptyArray = Poco::JSON::Array::Ptr();
 
     /// Contained value
     Poco::Dynamic::Var m_value;
@@ -140,7 +136,7 @@ public:
 
     /// Construct a PocoJsonObject an empty object.
     PocoJsonObject()
-        : m_value(emptyObject())
+        : m_value(emptyObject)
     { }
 
     /**
@@ -197,13 +193,9 @@ public:
 private:
 
     /**
-    * @brief   Return a PocoJson value that is empty object.
+    * @brief   Shared PocoJson value used to represent an empty object.
     */
-    static Poco::Dynamic::Var emptyObject()
-    {
-        Poco::Dynamic::Var object = Poco::JSON::Object::Ptr();
-        return object;
-    }
+    static inline const Poco::Dynamic::Var emptyObject = Poco::JSON::Object::Ptr();
 
     /// Contained value
     Poco::Dynamic::Var m_value;
@@ -265,7 +257,7 @@ public:
 
     /// Construct a wrapper for the empty object
     PocoJsonValue()
-        : m_value(emptyObject())
+        : m_value(emptyObject)
     { }
 
     /// Construct a wrapper for a specific PocoJson value
@@ -449,12 +441,8 @@ public:
 
 private:
 
-    /// Return an empty object
-    static Poco::Dynamic::Var emptyObject()
-    {
-        Poco::Dynamic::Var object = Poco::JSON::Object::Ptr();
-        return object;
-    }
+    /// Shared PocoJson value used to represent an empty object
+    static inline const Poco::Dynamic::Var emptyObject = Poco::JSON::Object::Ptr();
 
     /// Contained value
     Poco::Dynamic::Var m_value;

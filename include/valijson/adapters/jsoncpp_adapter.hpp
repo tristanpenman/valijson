@@ -66,7 +66,7 @@ public:
 
     /// Construct a JsonCppArray referencing an empty array.
     JsonCppArray()
-      : m_value(emptyArray()) { }
+      : m_value(emptyArray) { }
 
     /**
      * @brief   Construct a JsonCppArray referencing a specific JsonCpp value.
@@ -108,20 +108,11 @@ public:
 
 private:
 
-    /**
-     * @brief   Return a reference to a JsonCpp value that is an empty array.
-     *
-     * Note that the value returned by this function is a singleton.
-     */
-    static const Json::Value & emptyArray()
-    {
-        static const Json::Value array(Json::arrayValue);
-        return array;
-    }
+    /// Shared Json::Value instance used to represent empty array.
+    static inline const Json::Value emptyArray = Json::Value(Json::arrayValue);
 
     /// Reference to the contained array
     const Json::Value &m_value;
-
 };
 
 /**
@@ -144,7 +135,7 @@ public:
 
     /// Construct a JsonCppObject referencing an empty object singleton.
     JsonCppObject()
-      : m_value(emptyObject()) { }
+      : m_value(emptyObject) { }
 
     /**
      * @brief   Construct a JsonCppObject referencing a specific JsonCpp value.
@@ -196,12 +187,8 @@ public:
 
 private:
 
-    /// Return a reference to an empty JsonCpp object
-    static const Json::Value & emptyObject()
-    {
-        static const Json::Value object(Json::objectValue);
-        return object;
-    }
+    /// Shared Json::Value instance used to represent empty object.
+    static inline const Json::Value emptyObject = Json::Value(Json::objectValue);
 
     /// Reference to the contained object
     const Json::Value &m_value;
@@ -261,7 +248,7 @@ public:
 
     /// Construct a wrapper for the empty object singleton
     JsonCppValue()
-      : m_value(emptyObject()) { }
+      : m_value(emptyObject) { }
 
     /// Construct a wrapper for a specific JsonCpp value
     JsonCppValue(const Json::Value &value)
@@ -444,12 +431,8 @@ public:
 
 private:
 
-    /// Return a reference to an empty object singleton.
-    static const Json::Value &emptyObject()
-    {
-        static Json::Value object(Json::objectValue);
-        return object;
-    }
+    /// Shared Json::Value instance used to represent empty object.
+    static inline const Json::Value emptyObject = Json::Value(Json::objectValue);
 
     /// Reference to the contained JsonCpp value
     const Json::Value &m_value;

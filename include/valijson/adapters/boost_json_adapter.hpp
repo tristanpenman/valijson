@@ -64,7 +64,7 @@ public:
 
     /// Construct a BoostJsonArray referencing an empty array.
     BoostJsonArray()
-      : m_value(emptyArray()) { }
+      : m_value(emptyArray) { }
 
     /**
      * @brief   Construct BoostJsonArray referencing a specific Boost.JSON
@@ -105,18 +105,10 @@ public:
     }
 
 private:
-    /**
-     * @brief   Return a reference to a Boost.JSON value that is an empty array.
-     *
-     * Note that the value returned by this function is a singleton.
-     */
-    static const boost::json::array & emptyArray()
-    {
-        static const boost::json::array array;
-        return array;
-    }
+    /// Shared Boost.JSON instance used to represent empty array.
+    static inline const boost::json::array emptyArray;
 
-    /// Reference to the contained value
+    /// Reference to the contained value.
     const boost::json::array &m_value;
 };
 
@@ -140,7 +132,7 @@ public:
 
     /// Construct a BoostJsonObject referencing an empty object singleton.
     BoostJsonObject()
-      : m_value(emptyObject()) { }
+      : m_value(emptyObject) { }
 
     /**
      * @brief   Construct a BoostJsonObject referencing a specific Boost.JSON
@@ -196,18 +188,10 @@ public:
 
 private:
 
-    /**
-     * @brief   Return a reference to an empty Boost.JSON.
-     *
-     * Note that the value returned by this function is a singleton.
-     */
-    static const boost::json::object & emptyObject()
-    {
-        static const boost::json::object object;
-        return object;
-    }
+    /// Shared Boost.JSON instance used to represent empty object.
+    static inline const boost::json::object emptyObject;
 
-    /// Reference to the contained object
+    /// Reference to the contained object.
     const boost::json::object &m_value;
 
 };
@@ -266,7 +250,7 @@ public:
 
     /// Construct a wrapper for the empty object singleton
     BoostJsonValue()
-      : m_value(emptyObject()) { }
+      : m_value(emptyObject) { }
 
     /**
      * @brief  Construct a BoostJsonValue for a specific Boost.JSON value
@@ -456,12 +440,8 @@ public:
 
 private:
 
-    /// Return a reference to an empty object singleton
-    static const boost::json::value & emptyObject()
-    {
-        static const boost::json::value object;
-        return object;
-    }
+    /// Shared Boost.JSON instance used to represent empty object.
+    static inline const boost::json::value emptyObject;
 
     /// Reference to the contained Boost.JSON value.
     const boost::json::value &m_value;
