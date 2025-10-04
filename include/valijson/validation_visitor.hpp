@@ -3,6 +3,7 @@
 #include <cmath>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 
 #include <valijson/internal/regex.hpp>
@@ -1012,7 +1013,10 @@ public:
         bool validated = true;
 
         // Track which properties have already been validated
-        std::set<std::string> propertiesMatched;
+        std::unordered_set<std::string> propertiesMatched;
+
+        // reserve space for as many properties as we expect to see
+        propertiesMatched.reserve(m_target.getObjectSize());
 
         // Validate properties against subschemas for matching 'properties'
         // constraints
@@ -1589,7 +1593,7 @@ private:
                 bool strictTypes,
                 bool strictDateTime,
                 ValidationResults *results,
-                std::set<std::string> *propertiesMatched,
+                std::unordered_set<std::string> *propertiesMatched,
                 bool *validated,
                 std::unordered_map<std::string, RegexEngine>& regexesCache)
           : m_object(object),
@@ -1674,7 +1678,7 @@ private:
         const bool m_strictTypes;
         const bool m_strictDateTime;
         ValidationResults * const m_results;
-        std::set<std::string> * const m_propertiesMatched;
+        std::unordered_set<std::string> * const m_propertiesMatched;
         bool * const m_validated;
         std::unordered_map<std::string, RegexEngine>& m_regexesCache;
     };
@@ -1694,7 +1698,7 @@ private:
                 bool strictTypes,
                 bool strictDateTime,
                 ValidationResults *results,
-                std::set<std::string> *propertiesMatched,
+                std::unordered_set<std::string> *propertiesMatched,
                 bool *validated,
                 std::unordered_map<std::string, RegexEngine>& regexesCache)
           : m_object(object),
@@ -1756,7 +1760,7 @@ private:
         const bool m_strictTypes;
         const bool m_strictDateTime;
         ValidationResults * const m_results;
-        std::set<std::string> * const m_propertiesMatched;
+        std::unordered_set<std::string> * const m_propertiesMatched;
         bool * const m_validated;
         std::unordered_map<std::string, RegexEngine>& m_regexesCache;
     };
