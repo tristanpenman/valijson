@@ -264,6 +264,10 @@ if(valijson_BUILD_EXAMPLES)
         examples/remote_resolution_local_file.cpp
     )
 
+    add_executable(valijson_benchmark
+        examples/valijson_benchmark.cpp
+    )
+
     add_executable(valijson_nlohmann_bundled_test
         examples/valijson_nlohmann_bundled_test.cpp
     )

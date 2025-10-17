@@ -310,6 +310,37 @@ Building the Valijson Test Suite, using the instructions above, will also compil
 
 `custom_schema` shows how you can hard-code a schema definition into an application, while `external_schema` builds on the example code above to show you how to validate and document and report on any validation errors.
 
+## Benchmarking
+
+The examples include a benchmarking program (`valijson_benchmark`), which uses [Nlohmann JSON](https://github.com/nlohmann/json) as the underlying parser. Swapping out alternative parsers for your own testing is relatively straight-forward.
+
+Running `valijson_benchmark` with no arguments, will print out usage instructions:
+
+```
+Usage: ./valijson_benchmark <iterations> <schema> <document|directory> [document|directory]...
+```
+
+* The first argument is the number of iterations to run.
+* The second argument is a schema to load for benchmarking.
+* All subsequent arguments are paths to JSON documents, or directories containing JSON documents.
+
+A sample schema and a pair of test documents can be found in [etc](etc).
+
+```
+mkdir -p build
+cd build
+cmake .. -Dvalijson_BUILD_EXAMPLES=1
+make valijson_benchmark
+./valijson_benchmark 1000000 ../etc/hello-world.schema.json ../etc/hello-world.document.*
+```
+
+The output should look something like this (results from a MacBook Air M3):
+```
+Validated 2000000 documents in 6.63379 seconds.
+Documents: 2, Iterations: 1000000 (301487 per second)
+1000000 validation failure(s) encountered.
+```
+
 ## JSON Schema Support
 
 Valijson supports most of the constraints defined in [Draft 7](https://json-schema.org/draft-07/json-schema-release-notes.html)
@@ -342,7 +373,7 @@ Here is a screenshot of JSON Inspector in action:
 
 A [web-based demo is available](https://letmaik.github.io/valijson-wasm), courtesy of [Maik Riechert](https://github.com/letmaik).
 
-This demo uses Emscripten to compile Valijson and Nlohmann JSON (JSON for Modern C++) to WebAssembly. The source code can be found in [letmaik/valijson-wasm](https://github.com/letmaik/valijson-wasm) and is available under the MIT license.
+This demo uses Emscripten to compile Valijson and [Nlohmann JSON](https://github.com/nlohmann/json) (JSON for Modern C++) to WebAssembly. The source code can be found in [letmaik/valijson-wasm](https://github.com/letmaik/valijson-wasm) and is available under the MIT license.
 
 ![WebAssembly Demo](doc/screenshots/wasm.png)
 
