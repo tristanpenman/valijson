@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include <cmath>
 #include <optional>
 #include <string>
 #include <nlohmann/json.hpp>
@@ -514,7 +515,8 @@ public:
     {
         if (m_value.is_number_float()) {
             result = m_value.get<double>();
-            return true;
+            // NaN and Infinity are always serialized as null
+            return std::isfinite(result);
         }
 
         return false;
@@ -588,7 +590,11 @@ public:
 
     bool isDouble() const
     {
-        return m_value.is_number_float();
+        if (!m_value.is_number_float()) {
+            return false;
+        }
+        // NaN and Infinity are always serialized as null
+        return std::isfinite(m_value.get<double>());
     }
 
     bool isInteger() const
@@ -598,12 +604,26 @@ public:
 
     bool isNull() const
     {
-        return m_value.is_null();
+        if (m_value.is_null()) {
+            return true;
+        }
+        // NaN and Infinity are always serialized as null
+        if (m_value.is_number_float()) {
+            return !std::isfinite(m_value.get<double>());
+        }
+        return false;
     }
 
     bool isNumber() const
     {
-        return m_value.is_number();
+        if (!m_value.is_number()) {
+            return false;
+        }
+        // NaN and Infinity are always serialized as null
+        if (m_value.is_number_float()) {
+            return std::isfinite(m_value.get<double>());
+        }
+        return true;  // integers are always finite
     }
 
     bool isObject() const
