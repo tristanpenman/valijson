@@ -160,7 +160,7 @@ void Window::refreshJson()
     }
 
     try {
-        valijson::adapters::QtJsonAdapter adapter(m_schemaJson.object());
+        valijson::adapters::QtJsonAdapter adapter(m_schemaJson);
         valijson::SchemaParser parser;
         delete m_schema;
         m_schema = new valijson::Schema();
@@ -197,7 +197,7 @@ void Window::validate()
 {
     valijson::ValidationResults results;
     valijson::Validator validator;
-    valijson::adapters::QtJsonAdapter adapter(m_documentJson.object());
+    valijson::adapters::QtJsonAdapter adapter(m_documentJson);
 
     if (validator.validate(*m_schema, adapter, &results)) {
         m_errors->setText("Document is valid.");

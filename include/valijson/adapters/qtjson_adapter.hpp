@@ -371,7 +371,7 @@ public:
      */
     opt::optional<QtJsonObject> getObjectOptional() const
     {
-        if (m_value.isObject()) {
+        if (m_value.isObject() && !m_value.isArray()) {
             return opt::make_optional(QtJsonObject(m_value));
         }
 
@@ -391,7 +391,7 @@ public:
      */
     bool getObjectSize(size_t &result) const
     {
-        if (m_value.isObject()) {
+        if (m_value.isObject() && !m_value.isArray()) {
             const QJsonObject &object = m_value.toObject();
             result = object.size();
             return true;
@@ -448,7 +448,7 @@ public:
 
     bool isObject() const
     {
-        return m_value.isObject();
+        return m_value.isObject() && !m_value.isArray();
     }
 
     bool isString() const
@@ -494,6 +494,10 @@ public:
     /// Construct a QtJsonAdapter containing a specific QtJson value
     QtJsonAdapter(const QJsonValue &value)
       : BasicAdapter(value) { }
+
+    QtJsonAdapter(const QJsonDocument &document)
+      : BasicAdapter(document.isArray() ? QJsonValue(document.array())
+                                        : QJsonValue(document.object())) { }
 };
 
 /**
