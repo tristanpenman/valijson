@@ -1,6 +1,12 @@
 #include <gtest/gtest.h>
 
+#include <cmath>
+#include <limits>
+
 #include <valijson/adapters/nlohmann_json_adapter.hpp>
+#include <valijson/schema.hpp>
+#include <valijson/schema_parser.hpp>
+#include <valijson/validator.hpp>
 
 class TestNlohmannJsonAdapter : public testing::Test
 {
@@ -80,4 +86,98 @@ TEST_F(TestNlohmannJsonAdapter, BasicObjectIteration)
 
     // Ensure that the correct number of elements were iterated over
     EXPECT_EQ( numElements, expectedValue );
+}
+
+TEST_F(TestNlohmannJsonAdapter, NonFiniteNumbersRejected)
+{
+    using namespace valijson;
+    using namespace valijson::adapters;
+
+    nlohmann::json schemaJson = {
+        {"type", "object"},
+        {"properties", {
+            {"value", {{"type", "number"}}}
+        }},
+        {"required", nlohmann::json::array({"value"})}
+    };
+
+    Schema schema;
+    SchemaParser parser;
+    NlohmannJsonAdapter schemaAdapter(schemaJson);
+    parser.populateSchema(schemaAdapter, schema);
+    Validator validator(Validator::kStrongTypes);
+
+    nlohmann::json docWithNaN;
+    docWithNaN["value"] = std::numeric_limits<double>::quiet_NaN();
+    NlohmannJsonAdapter adapterNaN(docWithNaN);
+    EXPECT_FALSE(validator.validate(schema, adapterNaN, nullptr))
+        << "Validation should fail for NaN (serializes to null)";
+
+    nlohmann::json docWithPosInf;
+    docWithPosInf["value"] = std::numeric_limits<double>::infinity();
+    NlohmannJsonAdapter adapterPosInf(docWithPosInf);
+    EXPECT_FALSE(validator.validate(schema, adapterPosInf, nullptr))
+        << "Validation should fail for positive infinity (serializes to null)";
+
+    nlohmann::json docWithNegInf;
+    docWithNegInf["value"] = -std::numeric_limits<double>::infinity();
+    NlohmannJsonAdapter adapterNegInf(docWithNegInf);
+    EXPECT_FALSE(validator.validate(schema, adapterNegInf, nullptr))
+        << "Validation should fail for negative infinity (serializes to null)";
+
+    nlohmann::json docWithNull;
+    docWithNull["value"] = nullptr;
+    NlohmannJsonAdapter adapterNull(docWithNull);
+    EXPECT_FALSE(validator.validate(schema, adapterNull, nullptr))
+        << "Validation should fail for explicit null";
+
+    nlohmann::json docWithFinite;
+    docWithFinite["value"] = 42.5;
+    NlohmannJsonAdapter adapterFinite(docWithFinite);
+    EXPECT_TRUE(validator.validate(schema, adapterFinite, nullptr))
+        << "Validation should pass for normal finite number";
+
+    nlohmann::json docWithZero;
+    docWithZero["value"] = 0.0;
+    NlohmannJsonAdapter adapterZero(docWithZero);
+    EXPECT_TRUE(validator.validate(schema, adapterZero, nullptr))
+        << "Validation should pass for zero";
+
+    nlohmann::json docWithLarge;
+    docWithLarge["value"] = std::numeric_limits<double>::max();
+    NlohmannJsonAdapter adapterLarge(docWithLarge);
+    EXPECT_TRUE(validator.validate(schema, adapterLarge, nullptr))
+        << "Validation should pass for very large but finite number";
+}
+
+TEST_F(TestNlohmannJsonAdapter, NonFiniteNumbersRejectedEvenWhenNullAllowed)
+{
+    using namespace valijson;
+    using namespace valijson::adapters;
+
+    nlohmann::json schemaJson = {
+        {"type", "object"},
+        {"properties", {
+            {"value", {{"type", nlohmann::json::array({"number", "null"})}}}
+        }},
+        {"required", nlohmann::json::array({"value"})}
+    };
+
+    Schema schema;
+    SchemaParser parser;
+    NlohmannJsonAdapter schemaAdapter(schemaJson);
+    parser.populateSchema(schemaAdapter, schema);
+    Validator validator(Validator::kStrongTypes);
+
+    nlohmann::json docWithNaN;
+    docWithNaN["value"] = std::numeric_limits<double>::quiet_NaN();
+    NlohmannJsonAdapter adapterNaN(docWithNaN);
+    EXPECT_TRUE(validator.validate(schema, adapterNaN, nullptr))
+        << "NaN should pass validation when null is allowed";
+
+    nlohmann::json docWithInf;
+    docWithInf["value"] = std::numeric_limits<double>::infinity();
+    NlohmannJsonAdapter adapterInf(docWithInf);
+    EXPECT_TRUE(validator.validate(schema, adapterInf, nullptr))
+        << "Infinity should pass validation when null is allowed";
 }
