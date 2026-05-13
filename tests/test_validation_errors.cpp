@@ -42,9 +42,11 @@ TEST_F(TestValidationErrors, AllOfConstraintFailure)
     schemaParser.populateSchema(schemaAdapter, schema);
 #endif
 
-    // Load test document
+    // Use doubles with non-zero fractional parts so that they fail the
+    // schema's integer type check. (Numbers like 1.0 are treated as integers
+    // per the JSON Schema specification.)
     rapidjson::Document testDocument;
-    ASSERT_TRUE( loadDocument(TEST_DATA_DIR "/documents/array_doubles_1_2_3.json", testDocument) );
+    ASSERT_TRUE( loadDocument(TEST_DATA_DIR "/documents/array_doubles_1p5_2p5_3p5.json", testDocument) );
     RapidJsonAdapter testAdapter(testDocument);
 
     Validator validator;

@@ -704,6 +704,16 @@ private:
             rootSchema.addConstraintToSubschema(makeEnumConstraint(itr->second), &subschema);
         }
 
+        // Draft 3's 'extends' keyword is equivalent to 'allOf' in later drafts
+        // and accepts either a single schema or an array of schemas.
+        if (m_version == kDraft3 && (itr = object.find("extends")) != object.end()) {
+            rootSchema.addConstraintToSubschema(
+                    makeExtendsConstraint(rootSchema, rootNode, itr->second,
+                            updatedScope, nodePath + "/extends", fetchDoc,
+                            docCache, schemaCache),
+                    &subschema);
+        }
+
         if ((itr = object.find("format")) != object.end()) {
             rootSchema.addConstraintToSubschema(makeFormatConstraint(itr->second), &subschema);
         }
@@ -1100,6 +1110,55 @@ private:
             } else {
                 throwRuntimeError("Expected element to be a valid schema in 'allOf' constraint.");
             }
+        }
+
+        return constraint;
+    }
+
+    /**
+     * @brief   Make a new constraint object for Draft 3's 'extends' keyword.
+     *
+     * The value of 'extends' may be either a single schema or an array of
+     * schemas. The instance is required to validate against every schema
+     * listed, so the keyword is modelled as an AllOfConstraint.
+     */
+    template<typename AdapterType>
+    constraints::AllOfConstraint makeExtendsConstraint(
+        Schema &rootSchema,
+        const AdapterType &rootNode,
+        const AdapterType &node,
+        const std::optional<std::string> currentScope,
+        const std::string &nodePath,
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
+        typename DocumentCache<AdapterType>::Type &docCache,
+        SchemaCache &schemaCache)
+    {
+        constraints::AllOfConstraint constraint;
+
+        if (node.maybeArray()) {
+            int index = 0;
+            for (const AdapterType schemaNode : node.asArray()) {
+                if (!schemaNode.maybeObject()) {
+                    throwRuntimeError("Expected element to be a valid schema "
+                            "in 'extends' constraint.");
+                }
+                const std::string childPath = nodePath + "/"
+                        + std::to_string(index);
+                const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                        rootSchema, rootNode, schemaNode, currentScope,
+                        childPath, fetchDoc, nullptr, nullptr, docCache,
+                        schemaCache);
+                constraint.addSubschema(subschema);
+                index++;
+            }
+        } else if (node.maybeObject()) {
+            const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                    rootSchema, rootNode, node, currentScope, nodePath,
+                    fetchDoc, nullptr, nullptr, docCache, schemaCache);
+            constraint.addSubschema(subschema);
+        } else {
+            throwRuntimeError("Expected schema or array of schemas for "
+                    "'extends' constraint.");
         }
 
         return constraint;

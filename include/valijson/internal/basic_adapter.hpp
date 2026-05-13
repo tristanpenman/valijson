@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cmath>
 #include <cstdint>
+#include <limits>
 #include <optional>
 #include <sstream>
 
@@ -83,6 +85,24 @@ template<
 class BasicAdapter: public Adapter
 {
 protected:
+
+    /// Returns true if @p d is a finite double whose value is exactly an
+    /// integer representable as int64_t. JSON Schema treats numbers with a
+    /// zero fractional part as integers, even if encoded as floats.
+    static bool doubleIsIntegral(double d)
+    {
+        if (!std::isfinite(d)) {
+            return false;
+        }
+        if (d < static_cast<double>(std::numeric_limits<int64_t>::min())) {
+            return false;
+        }
+        if (d > static_cast<double>(std::numeric_limits<int64_t>::max())) {
+            return false;
+        }
+        double intPart = 0.0;
+        return std::modf(d, &intPart) == 0.0;
+    }
 
     /**
      * @brief   Functor for comparing two arrays.
@@ -382,6 +402,12 @@ public:
     {
         if (m_value.isInteger()) {
             return m_value.getInteger(result);
+        } else if (m_value.isDouble()) {
+            double d;
+            if (m_value.getDouble(d) && doubleIsIntegral(d)) {
+                result = static_cast<int64_t>(d);
+                return true;
+            }
         } else if (m_value.isString()) {
             std::string s;
             if (m_value.getString(s)) {
@@ -785,6 +811,11 @@ public:
     {
         if (m_value.isInteger()) {
             return true;
+        } else if (m_value.isDouble()) {
+            double d;
+            if (m_value.getDouble(d) && doubleIsIntegral(d)) {
+                return true;
+            }
         } else if (maybeString()) {
             std::string s;
             if (m_value.getString(s)) {
