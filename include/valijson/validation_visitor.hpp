@@ -613,7 +613,7 @@ public:
         }
 
         const std::string s = m_target.asString();
-        const uint64_t len = utils::u8_strlen(s.c_str());
+        const uint64_t len = utils::u8_strlen(s.c_str(), s.size());
         const uint64_t maxLength = constraint.getMaxLength();
         if (len <= maxLength) {
             return true;
@@ -729,7 +729,7 @@ public:
         }
 
         const std::string s = m_target.asString();
-        const uint64_t len = utils::u8_strlen(s.c_str());
+        const uint64_t len = utils::u8_strlen(s.c_str(), s.size());
         const uint64_t minLength = constraint.getMinLength();
         if (len >= minLength) {
             return true;
