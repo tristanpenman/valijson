@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <charconv>
 #include <string>
 
 #include <valijson/internal/adapter.hpp>
@@ -314,10 +315,11 @@ public:
 
     bool maybeDouble() const override
     {
-        const char *b = m_value.c_str();
-        char *e = nullptr;
-        strtod(b, &e);
-        return e != b && e == b + m_value.length();
+        const char *b = m_value.data();
+        const char *end = b + m_value.length();
+        double x;
+        auto [ptr, ec] = std::from_chars(b, end, x);
+        return ec == std::errc() && ptr == end;
     }
 
     bool maybeInteger() const override
