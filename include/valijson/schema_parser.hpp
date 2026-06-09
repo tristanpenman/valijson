@@ -263,17 +263,144 @@ private:
     static std::string sanitiseJsonPointer(const std::optional<std::string>& input)
     {
         if (input) {
-            // Trim trailing slash(es)
-            std::string sanitised = *input;
-            sanitised.erase(sanitised.find_last_not_of('/') + 1,
-                    std::string::npos);
+            if (*input == "/") {
+                return "";
+            }
 
-            return sanitised;
+            return *input;
         }
 
         // If the JSON Pointer is not set, assume that the URI points to
         // the root of the document
         return "";
+    }
+
+    static std::string escapeJsonPointerToken(const std::string &token)
+    {
+        std::string result;
+        for (const char c : token) {
+            if (c == '~') {
+                result += "~0";
+            } else if (c == '/') {
+                result += "~1";
+            } else {
+                result += c;
+            }
+        }
+
+        return result;
+    }
+
+    const char *idKeyword() const
+    {
+        return m_version == kDraft7 ? "$id" : "id";
+    }
+
+    std::optional<std::string> resolveId(
+            const std::optional<std::string> &currentScope,
+            const std::string &id) const
+    {
+        if (!currentScope || internal::uri::isUriAbsolute(id) ||
+                internal::uri::isUrn(id)) {
+            return id;
+        }
+
+        return internal::uri::resolveRelativeUri(*currentScope, id);
+    }
+
+    template<typename AdapterType>
+    bool findSchemaById(
+            const AdapterType &node,
+            const std::optional<std::string> &currentScope,
+            const std::string &targetUri,
+            const std::string &nodePath,
+            std::string &foundPath,
+            std::optional<std::string> &foundScope) const
+    {
+        std::optional<std::string> updatedScope = currentScope;
+
+        if (node.isObject()) {
+            const typename AdapterType::Object object = node.asObject();
+            const typename AdapterType::Object::const_iterator itr =
+                    object.find(idKeyword());
+            if (itr != object.end() && itr->second.maybeString()) {
+                updatedScope = resolveId(currentScope, itr->second.asString());
+                if (updatedScope && *updatedScope == targetUri) {
+                    foundPath = nodePath;
+                    foundScope = currentScope;
+                    return true;
+                }
+            }
+
+            for (const typename AdapterType::ObjectMember member : object) {
+                const std::string childPath =
+                        nodePath + "/" + escapeJsonPointerToken(member.first);
+                if (findSchemaById(member.second, updatedScope, targetUri,
+                            childPath, foundPath, foundScope)) {
+                    return true;
+                }
+            }
+        } else if (node.maybeArray()) {
+            size_t index = 0;
+            for (const AdapterType item : node.asArray()) {
+                const std::string childPath = nodePath + "/" +
+                        std::to_string(index++);
+                if (findSchemaById(item, updatedScope, targetUri, childPath,
+                            foundPath, foundScope)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    template<typename AdapterType>
+    bool findScopeForPath(
+            const AdapterType &node,
+            const std::optional<std::string> &currentScope,
+            const std::string &targetPath,
+            const std::string &nodePath,
+            std::optional<std::string> &foundScope) const
+    {
+        if (nodePath == targetPath) {
+            foundScope = currentScope;
+            return true;
+        }
+
+        std::optional<std::string> updatedScope = currentScope;
+
+        if (node.isObject()) {
+            const typename AdapterType::Object object = node.asObject();
+            const typename AdapterType::Object::const_iterator itr =
+                    object.find(idKeyword());
+            if (itr != object.end() && itr->second.maybeString()) {
+                updatedScope = resolveId(currentScope, itr->second.asString());
+            }
+
+            for (const typename AdapterType::ObjectMember member : object) {
+                const std::string childPath =
+                        nodePath + "/" + escapeJsonPointerToken(member.first);
+                if (findScopeForPath(member.second, updatedScope, targetPath,
+                            childPath, foundScope)) {
+                    return true;
+                }
+            }
+        } else {
+            if (node.maybeArray()) {
+                size_t index = 0;
+                for (const AdapterType item : node.asArray()) {
+                    const std::string childPath = nodePath + "/" +
+                            std::to_string(index++);
+                    if (findScopeForPath(item, updatedScope, targetPath,
+                                childPath, foundScope)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -387,6 +514,9 @@ private:
             // Add cache entries for keys belonging to any $ref nodes that were
             // visited before arriving at the current node
             updateSchemaCache(schemaCache, newCacheKeys, subschema);
+            if (!cachedPtr) {
+                schemaCache.emplace(schemaCacheKey, subschema);
+            }
 
             // Schema cache did not contain a preexisting schema corresponding
             // to the current node, so the schema that was returned will need
@@ -419,6 +549,36 @@ private:
         // Construct a key to search the schema cache for an existing schema
         const std::string queryKey = actualDocumentUri ? (*actualDocumentUri + actualJsonPointer) : actualJsonPointer;
 
+        if (!actualJsonPointer.empty() && actualJsonPointer[0] != '/') {
+            const std::string idRef = actualDocumentUri ?
+                    (*actualDocumentUri + "#" + actualJsonPointer) :
+                    ("#" + actualJsonPointer);
+            std::string registeredPath;
+            std::optional<std::string> registeredScope;
+            if (findSchemaById(rootNode, currentScope, idRef,
+                        "", registeredPath, registeredScope)) {
+                const AdapterType registeredRoot =
+                        internal::json_pointer::resolveJsonPointerStrict(
+                                rootNode, registeredPath);
+
+                const Subschema *cachedPtr = querySchemaCache(schemaCache, idRef);
+                if (cachedPtr) {
+                    updateSchemaCache(schemaCache, newCacheKeys, cachedPtr);
+                    return cachedPtr;
+                }
+
+                const Subschema *subschema = rootSchema.createSubschema();
+                newCacheKeys.push_back(idRef);
+                updateSchemaCache(schemaCache, newCacheKeys, subschema);
+
+                populateSchema(rootSchema, registeredRoot, registeredRoot,
+                        *subschema, registeredScope, "", fetchDoc,
+                        parentSubschema, ownName, docCache, schemaCache);
+
+                return subschema;
+            }
+        }
+
         // Check for the second termination condition (found a $ref node that
         // already has an entry in the schema cache)
         const Subschema *cachedPtr = querySchemaCache(schemaCache, queryKey);
@@ -428,6 +588,36 @@ private:
         }
 
         if (actualDocumentUri && (!currentScope || *actualDocumentUri != *currentScope)) {
+            std::string registeredPath;
+            std::optional<std::string> registeredScope;
+            if (findSchemaById(rootNode, currentScope, *actualDocumentUri,
+                        "", registeredPath, registeredScope)) {
+                const AdapterType registeredRoot =
+                        internal::json_pointer::resolveJsonPointerStrict(
+                                rootNode, registeredPath);
+                const AdapterType referencedAdapter = actualJsonPointer.empty()
+                        ? registeredRoot
+                        : internal::json_pointer::resolveJsonPointerStrict(
+                                registeredRoot, actualJsonPointer);
+
+                std::optional<std::string> referencedScope = registeredScope;
+                if (!actualJsonPointer.empty()) {
+                    findScopeForPath(registeredRoot, registeredScope,
+                            actualJsonPointer, "", referencedScope);
+                }
+
+                const Subschema *subschema = rootSchema.createSubschema();
+                newCacheKeys.push_back(queryKey);
+                updateSchemaCache(schemaCache, newCacheKeys, subschema);
+
+                populateSchema(rootSchema, registeredRoot, referencedAdapter,
+                        *subschema, referencedScope, actualJsonPointer,
+                        fetchDoc, parentSubschema, ownName, docCache,
+                        schemaCache);
+
+                return subschema;
+            }
+
             const typename FunctionPtrs<AdapterType>::DocumentType *newDoc = nullptr;
 
             // Have we seen this document before?
@@ -463,7 +653,7 @@ private:
 
             // Find where we need to be in the document
             const AdapterType &referencedAdapter =
-                    internal::json_pointer::resolveJsonPointer(newRootNode,
+                    internal::json_pointer::resolveJsonPointerStrict(newRootNode,
                             actualJsonPointer);
 
             newCacheKeys.push_back(queryKey);
@@ -471,7 +661,7 @@ private:
             // Populate the schema, starting from the referenced node, with
             // nested JSON References resolved relative to the new root node
             return makeOrReuseSchema(rootSchema, newRootNode, referencedAdapter,
-                    currentScope, actualJsonPointer, fetchDoc, parentSubschema,
+                    actualDocumentUri, actualJsonPointer, fetchDoc, parentSubschema,
                     ownName, docCache, schemaCache, newCacheKeys);
 
         }
@@ -483,15 +673,19 @@ private:
         // JSON References in nested schema will be resolved relative to the
         // current document
         const AdapterType &referencedAdapter =
-                internal::json_pointer::resolveJsonPointer(
+                internal::json_pointer::resolveJsonPointerStrict(
                         rootNode, actualJsonPointer);
 
         newCacheKeys.push_back(queryKey);
 
+        std::optional<std::string> referencedScope = currentScope;
+        findScopeForPath(rootNode, currentScope, actualJsonPointer, "",
+                referencedScope);
+
         // Populate the schema, starting from the referenced node, with
         // nested JSON References resolved relative to the new root node
         return makeOrReuseSchema(rootSchema, rootNode, referencedAdapter,
-                currentScope, actualJsonPointer, fetchDoc, parentSubschema,
+                referencedScope, actualJsonPointer, fetchDoc, parentSubschema,
                 ownName, docCache, schemaCache, newCacheKeys);
     }
 
@@ -612,18 +806,20 @@ private:
         const typename AdapterType::Object object = node.asObject();
         typename AdapterType::Object::const_iterator itr(object.end());
 
-        // Check for 'id' attribute and update current scope
+        // Check for schema identifier attribute and update current scope.
         std::optional<std::string> updatedScope;
-        if ((itr = object.find("id")) != object.end() && itr->second.maybeString()) {
+        bool foundId = false;
+        if ((itr = object.find(idKeyword())) != object.end() && itr->second.maybeString()) {
+            foundId = true;
             const std::string id = itr->second.asString();
             rootSchema.setSubschemaId(&subschema, itr->second.asString());
-            if (!currentScope || internal::uri::isUriAbsolute(id) || internal::uri::isUrn(id)) {
-                updatedScope = id;
-            } else {
-                updatedScope = internal::uri::resolveRelativeUri(*currentScope, id);
-            }
+            updatedScope = resolveId(currentScope, id);
         } else {
             updatedScope = currentScope;
+        }
+
+        if (foundId && updatedScope) {
+            schemaCache.emplace(*updatedScope, &subschema);
         }
 
         // Add the type constraint first to be the first one to check because other constraints may rely on it
@@ -1025,39 +1221,87 @@ private:
         const std::string actualJsonPointer = sanitiseJsonPointer(
                 internal::json_reference::getJsonReferencePointer(jsonRef));
 
-        if (documentUri && (internal::uri::isUriAbsolute(*documentUri) || internal::uri::isUrn(*documentUri))) {
+        const std::optional<std::string> actualDocumentUri =
+                resolveDocumentUri(currentScope, documentUri);
+
+        if (!actualJsonPointer.empty() && actualJsonPointer[0] != '/') {
+            const std::string idRef = actualDocumentUri ?
+                    (*actualDocumentUri + "#" + actualJsonPointer) :
+                    ("#" + actualJsonPointer);
+            std::string registeredPath;
+            std::optional<std::string> registeredScope;
+            if (findSchemaById(rootNode, currentScope, idRef,
+                        "", registeredPath, registeredScope)) {
+                const AdapterType registeredRoot =
+                        internal::json_pointer::resolveJsonPointerStrict(
+                                rootNode, registeredPath);
+
+                resolveThenPopulateSchema(rootSchema, registeredRoot,
+                        registeredRoot, subschema, registeredScope,
+                        "", fetchDoc, parentSchema, ownName,
+                        docCache, schemaCache);
+                return;
+            }
+        }
+
+        if (actualDocumentUri && (!currentScope || *actualDocumentUri != *currentScope)) {
+            std::string registeredPath;
+            std::optional<std::string> registeredScope;
+            if (findSchemaById(rootNode, currentScope, *actualDocumentUri,
+                        "", registeredPath, registeredScope)) {
+                const AdapterType registeredRoot =
+                        internal::json_pointer::resolveJsonPointerStrict(
+                                rootNode, registeredPath);
+                const AdapterType referencedAdapter = actualJsonPointer.empty()
+                        ? registeredRoot
+                        : internal::json_pointer::resolveJsonPointerStrict(
+                                registeredRoot, actualJsonPointer);
+
+                resolveThenPopulateSchema(rootSchema, registeredRoot,
+                        referencedAdapter, subschema, registeredScope,
+                        actualJsonPointer, fetchDoc,
+                        parentSchema, ownName, docCache, schemaCache);
+                return;
+            }
+
             // Resolve reference against remote document
             if (!fetchDoc) {
                 throwRuntimeError("Fetching of remote JSON References not enabled.");
             }
 
-            const typename DocumentCache<AdapterType>::DocumentType *newDoc = fetchDoc(*documentUri);
+            const typename DocumentCache<AdapterType>::DocumentType *newDoc = fetchDoc(*actualDocumentUri);
 
             // Can't proceed without the remote document
             if (!newDoc) {
-                throwRuntimeError("Failed to fetch referenced schema document: " + *documentUri);
+                throwRuntimeError("Failed to fetch referenced schema document: " + *actualDocumentUri);
             }
 
             // Add to document cache
             typedef typename DocumentCache<AdapterType>::Type::value_type DocCacheValueType;
 
-            docCache.insert(DocCacheValueType(*documentUri, newDoc));
+            docCache.insert(DocCacheValueType(*actualDocumentUri, newDoc));
 
             const AdapterType newRootNode(*newDoc);
 
             const AdapterType &referencedAdapter =
-                internal::json_pointer::resolveJsonPointer(newRootNode, actualJsonPointer);
+                internal::json_pointer::resolveJsonPointerStrict(newRootNode, actualJsonPointer);
 
             // TODO: Need to detect degenerate circular references
-            resolveThenPopulateSchema(rootSchema, newRootNode, referencedAdapter, subschema, {}, actualJsonPointer,
-                    fetchDoc, parentSchema, ownName, docCache, schemaCache);
+            resolveThenPopulateSchema(rootSchema, newRootNode, referencedAdapter,
+                    subschema, actualDocumentUri, actualJsonPointer, fetchDoc,
+                    parentSchema, ownName, docCache, schemaCache);
 
         } else if (!actualJsonPointer.empty()) {
             const AdapterType &referencedAdapter =
-                    internal::json_pointer::resolveJsonPointer(rootNode, actualJsonPointer);
+                    internal::json_pointer::resolveJsonPointerStrict(rootNode, actualJsonPointer);
 
-            resolveThenPopulateSchema(rootSchema, rootNode, referencedAdapter, subschema, {}, actualJsonPointer,
-                    fetchDoc, parentSchema, ownName, docCache, schemaCache);
+            std::optional<std::string> referencedScope = currentScope;
+            findScopeForPath(rootNode, currentScope, actualJsonPointer, "",
+                    referencedScope);
+
+            resolveThenPopulateSchema(rootSchema, rootNode, referencedAdapter,
+                    subschema, referencedScope, actualJsonPointer, fetchDoc,
+                    parentSchema, ownName, docCache, schemaCache);
         } else {
             throwRuntimeError("Cannot resolve reference \"" + jsonRef + "\".");
         }
@@ -1440,10 +1684,13 @@ private:
             // process it as a dependent schema.
             } else if (member.second.isObject() || (m_version == kDraft7 && member.second.maybeBool())) {
                 // Parse dependent subschema
+                const std::string childPath = nodePath + "/" +
+                        escapeJsonPointerToken(member.first);
                 const Subschema *childSubschema =
                         makeOrReuseSchema<AdapterType>(rootSchema, rootNode,
-                                member.second, currentScope, nodePath, fetchDoc,
-                                nullptr, nullptr, docCache, schemaCache);
+                                member.second, currentScope, childPath,
+                                fetchDoc, nullptr, nullptr, docCache,
+                                schemaCache);
                 dependenciesConstraint.addSchemaDependency(member.first,
                         childSubschema);
 
