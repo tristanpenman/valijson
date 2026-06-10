@@ -159,14 +159,10 @@ if(valijson_BUILD_TESTS)
     endif()
 
     if(Poco_FOUND)
-        if(COMPILER_SUPPORTS_CXX17)
-            list(APPEND TEST_SOURCES tests/test_poco_json_adapter.cpp)
-            list(APPEND TEST_LIBS
-                Poco::Foundation
-                Poco::JSON)
-        else()
-            message(WARNING "Poco found, but the compiler ${CMAKE_CXX_COMPILER} has no C++17 support. Poco will be disabled in this build.")
-        endif()
+        list(APPEND TEST_SOURCES tests/test_poco_json_adapter.cpp)
+        list(APPEND TEST_LIBS
+            Poco::Foundation
+            Poco::JSON)
     endif()
 
     if(Qt5Core_FOUND)
