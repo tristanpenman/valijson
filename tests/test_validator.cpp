@@ -438,9 +438,15 @@ TEST_F(TestValidator, Draft4_Properties)
     processDraft4TestFile(TEST_SUITE_DIR "draft4/properties.json");
 }
 
-// TODO: broken ref
+TEST_F(TestValidator, Draft4_Ref)
+{
+    processDraft4TestFile(TEST_SUITE_DIR "draft4/ref.json");
+}
 
-// TODO: broken refRemote
+TEST_F(TestValidator, Draft4_RefRemote)
+{
+    processDraft4TestFile(TEST_SUITE_DIR "draft4/refRemote.json");
+}
 
 TEST_F(TestValidator, Draft4_Required)
 {
