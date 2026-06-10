@@ -152,6 +152,23 @@ private:
         return m_version == kDraft7 || m_version == kDraft202012;
     }
 
+    /**
+     * @brief  Resolve legacy definitions references against Draft 2020-12 $defs.
+     */
+    std::string applyDefinitionsAlias(const std::string &jsonPointer) const
+    {
+        if (m_version != kDraft202012) {
+            return jsonPointer;
+        }
+
+        static const std::string definitionsToken = "/definitions";
+        if (jsonPointer == definitionsToken ||
+                jsonPointer.find(definitionsToken + "/") == 0) {
+            return "/$defs" + jsonPointer.substr(definitionsToken.size());
+        }
+
+        return jsonPointer;
+    }
 
     template<typename AdapterType>
     struct DocumentCache
@@ -550,8 +567,8 @@ private:
         // Extract JSON Pointer from JSON Reference, with any trailing
         // slashes removed so that keys in the schema cache end
         // consistently
-        const std::string actualJsonPointer = sanitiseJsonPointer(
-                internal::json_reference::getJsonReferencePointer(jsonRef));
+        const std::string actualJsonPointer = applyDefinitionsAlias(sanitiseJsonPointer(
+                internal::json_reference::getJsonReferencePointer(jsonRef)));
 
         // Determine the actual document URI based on the resolution
         // scope. An absolute document URI will take precedence when
@@ -1232,8 +1249,8 @@ private:
         const std::optional<std::string> documentUri = internal::json_reference::getJsonReferenceUri(jsonRef);
 
         // Extract JSON Pointer from JSON Reference
-        const std::string actualJsonPointer = sanitiseJsonPointer(
-                internal::json_reference::getJsonReferencePointer(jsonRef));
+        const std::string actualJsonPointer = applyDefinitionsAlias(sanitiseJsonPointer(
+                internal::json_reference::getJsonReferencePointer(jsonRef)));
 
         const std::optional<std::string> actualDocumentUri =
                 resolveDocumentUri(currentScope, documentUri);

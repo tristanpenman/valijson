@@ -44,3 +44,32 @@ TEST_F(TestSchemaParserDialects, Draft202012ReadsDollarId)
     ASSERT_TRUE(schema.hasId());
     EXPECT_EQ("https://example.com/schema", schema.getId());
 }
+
+TEST_F(TestSchemaParserDialects, Draft202012AliasesDollarDefsToDefinitions)
+{
+    rapidjson::Document schemaDocument;
+    schemaDocument.Parse(R"({
+        "$defs": {
+            "positiveInteger": {
+                "type": "integer",
+                "minimum": 1
+            }
+        },
+        "$ref": "#/definitions/positiveInteger"
+    })");
+    ASSERT_FALSE(schemaDocument.HasParseError());
+
+    Schema schema;
+    SchemaParser schemaParser(SchemaParser::kDraft202012);
+    schemaParser.populateSchema(RapidJsonAdapter(schemaDocument), schema);
+
+    rapidjson::Document validDocument;
+    validDocument.SetInt(2);
+
+    rapidjson::Document invalidDocument;
+    invalidDocument.SetInt(0);
+
+    Validator validator;
+    EXPECT_TRUE(validator.validate(schema, RapidJsonAdapter(validDocument), nullptr));
+    EXPECT_FALSE(validator.validate(schema, RapidJsonAdapter(invalidDocument), nullptr));
+}

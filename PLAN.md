@@ -10,7 +10,7 @@ The road to full draft 2020-12 support.
 ## Non-annotation keywords
 
 * ~~`$id` parsing~~
-* `$defs` alias/support
+* ~~`$defs` alias/support~~
 * `dependentRequired`
 * `dependentSchemas`
 * `prefixItems`
