@@ -3567,14 +3567,22 @@ private:
 class LinearItemsConstraint: public BasicConstraint<LinearItemsConstraint>
 {
 public:
+    enum RemainingItemsMode {
+        kAdditionalItems,
+        kItems,
+        kUnevaluatedItems
+    };
+
     LinearItemsConstraint()
       : m_itemSubschemas(Allocator::rebind<const Subschema *>::other(m_allocator)),
-        m_additionalItemsSubschema(nullptr) { }
+        m_additionalItemsSubschema(nullptr),
+        m_remainingItemsMode(kAdditionalItems) { }
 
     LinearItemsConstraint(CustomAlloc allocFn, CustomFree freeFn)
       : BasicConstraint(allocFn, freeFn),
         m_itemSubschemas(Allocator::rebind<const Subschema *>::other(m_allocator)),
-        m_additionalItemsSubschema(nullptr) { }
+        m_additionalItemsSubschema(nullptr),
+        m_remainingItemsMode(kAdditionalItems) { }
 
     void addItemSubschema(const Subschema *subschema)
     {
@@ -3604,9 +3612,19 @@ public:
         return m_itemSubschemas.size();
     }
 
+    RemainingItemsMode getRemainingItemsMode() const
+    {
+        return m_remainingItemsMode;
+    }
+
     void setAdditionalItemsSubschema(const Subschema *subschema)
     {
         m_additionalItemsSubschema = subschema;
+    }
+
+    void setRemainingItemsMode(RemainingItemsMode mode)
+    {
+        m_remainingItemsMode = mode;
     }
 
 private:
@@ -3615,6 +3633,7 @@ private:
     Subschemas m_itemSubschemas;
 
     const Subschema* m_additionalItemsSubschema;
+    RemainingItemsMode m_remainingItemsMode;
 };
 
 /**
@@ -4538,6 +4557,24 @@ private:
         return m_version == kDraft7 || m_version == kDraft202012;
     }
 
+    /**
+     * @brief  Resolve legacy definitions references against Draft 2020-12 $defs.
+     */
+    std::string applyDefinitionsAlias(const std::string &jsonPointer) const
+    {
+        if (m_version != kDraft202012) {
+            return jsonPointer;
+        }
+
+        static const std::string definitionsToken = "/definitions";
+        if (jsonPointer == definitionsToken ||
+                jsonPointer.find(definitionsToken + "/") == 0) {
+            return "/$defs" + jsonPointer.substr(definitionsToken.size());
+        }
+
+        return jsonPointer;
+    }
+
     template<typename AdapterType>
     struct DocumentCache
     {
@@ -4805,8 +4842,8 @@ private:
         // Extract JSON Pointer from JSON Reference, with any trailing
         // slashes removed so that keys in the schema cache end
         // consistently
-        const std::string actualJsonPointer = sanitiseJsonPointer(
-                internal::json_reference::getJsonReferencePointer(jsonRef));
+        const std::string actualJsonPointer = applyDefinitionsAlias(sanitiseJsonPointer(
+                internal::json_reference::getJsonReferencePointer(jsonRef)));
 
         // Determine the actual document URI based on the resolution
         // scope. An absolute document URI will take precedence when
@@ -5113,7 +5150,25 @@ private:
             const typename AdapterType::Object::const_iterator itemsItr =
                     object.find("items");
 
-            if (object.end() != itemsItr) {
+            if (m_version == kDraft202012) {
+                const typename AdapterType::Object::const_iterator
+                        prefixItemsItr = object.find("prefixItems"),
+                        unevaluatedItemsItr = object.find("unevaluatedItems");
+
+                if (object.end() != prefixItemsItr || object.end() != itemsItr ||
+                        object.end() != unevaluatedItemsItr) {
+                    rootSchema.addConstraintToSubschema(
+                            makeDraft202012ItemsConstraint(rootSchema, rootNode,
+                                    prefixItemsItr != object.end() ? &prefixItemsItr->second : nullptr,
+                                    itemsItr != object.end() ? &itemsItr->second : nullptr,
+                                    unevaluatedItemsItr != object.end() ? &unevaluatedItemsItr->second : nullptr,
+                                    updatedScope, nodePath + "/prefixItems",
+                                    nodePath + "/items",
+                                    nodePath + "/unevaluatedItems", fetchDoc,
+                                    docCache, schemaCache),
+                            &subschema);
+                }
+            } else if (object.end() != itemsItr) {
                 if (!itemsItr->second.isArray()) {
                     rootSchema.addConstraintToSubschema(
                             makeSingularItemsConstraint(rootSchema, rootNode,
@@ -5413,8 +5468,8 @@ private:
         const std::optional<std::string> documentUri = internal::json_reference::getJsonReferenceUri(jsonRef);
 
         // Extract JSON Pointer from JSON Reference
-        const std::string actualJsonPointer = sanitiseJsonPointer(
-                internal::json_reference::getJsonReferencePointer(jsonRef));
+        const std::string actualJsonPointer = applyDefinitionsAlias(sanitiseJsonPointer(
+                internal::json_reference::getJsonReferencePointer(jsonRef)));
 
         if (documentUri && (internal::uri::isUriAbsolute(*documentUri) || internal::uri::isUrn(*documentUri))) {
             // Resolve reference against remote document
@@ -5950,6 +6005,72 @@ private:
             } else {
                 throwRuntimeError("Expected array value for non-singular 'items' constraint.");
             }
+        }
+
+        return constraint;
+    }
+
+    /**
+     * @brief   Make a Draft 2020-12 items constraint.
+     */
+    template<typename AdapterType>
+    constraints::LinearItemsConstraint makeDraft202012ItemsConstraint(
+        Schema &rootSchema,
+        const AdapterType &rootNode,
+        const AdapterType *prefixItems,
+        const AdapterType *items,
+        const AdapterType *unevaluatedItems,
+        const std::optional<std::string> currentScope,
+        const std::string &prefixItemsPath,
+        const std::string &itemsPath,
+        const std::string &unevaluatedItemsPath,
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
+        typename DocumentCache<AdapterType>::Type &docCache,
+        SchemaCache &schemaCache)
+    {
+        constraints::LinearItemsConstraint constraint;
+
+        if (prefixItems) {
+            if (!prefixItems->maybeArray()) {
+                throwRuntimeError("Expected array value for 'prefixItems' constraint.");
+            }
+
+            int index = 0;
+            for (const AdapterType v : prefixItems->asArray()) {
+                if (!v.maybeObject() && !v.maybeBool()) {
+                    throwRuntimeError("Expected array element to be a valid schema in 'prefixItems' constraint.");
+                }
+
+                const std::string childPath = prefixItemsPath + "/" +
+                        std::to_string(index);
+                const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                        rootSchema, rootNode, v, currentScope, childPath,
+                        fetchDoc, nullptr, nullptr, docCache, schemaCache);
+                constraint.addItemSubschema(subschema);
+                index++;
+            }
+        }
+
+        const AdapterType *additionalSchema = items ? items : unevaluatedItems;
+        const std::string &additionalSchemaPath = items ? itemsPath : unevaluatedItemsPath;
+        if (items) {
+            constraint.setRemainingItemsMode(constraints::LinearItemsConstraint::kItems);
+        } else if (unevaluatedItems) {
+            constraint.setRemainingItemsMode(constraints::LinearItemsConstraint::kUnevaluatedItems);
+        }
+
+        if (additionalSchema) {
+            if (additionalSchema->maybeObject() || additionalSchema->maybeBool()) {
+                const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                        rootSchema, rootNode, *additionalSchema, currentScope,
+                        additionalSchemaPath, fetchDoc, nullptr, nullptr,
+                        docCache, schemaCache);
+                constraint.setAdditionalItemsSubschema(subschema);
+            } else {
+                throwRuntimeError("Expected valid schema for Draft 2020-12 'items' or 'unevaluatedItems' constraint.");
+            }
+        } else {
+            constraint.setAdditionalItemsSubschema(rootSchema.emptySubschema());
         }
 
         return constraint;
@@ -7250,7 +7371,8 @@ public:
         m_results(results),
         m_strictTypes(strictTypes),
         m_strictDateTime(strictDateTime),
-        m_regexesCache(regexesCache) { }
+        m_regexesCache(regexesCache),
+        m_evaluatedArrayItemCount(0) { }
 
     /**
      * @brief  Validate the target against a schema.
@@ -7647,6 +7769,12 @@ public:
         // Sub-schema to validate against when number of items in array exceeds
         // the number of sub-schemas provided by the 'items' constraint
         const Subschema * const additionalItemsSubschema = constraint.getAdditionalItemsSubschema();
+        const typename LinearItemsConstraint::RemainingItemsMode remainingItemsMode =
+                constraint.getRemainingItemsMode();
+        const char *remainingItemsDescription =
+                remainingItemsMode == LinearItemsConstraint::kItems ? "items" :
+                remainingItemsMode == LinearItemsConstraint::kUnevaluatedItems ? "unevaluated items" :
+                "additional items";
 
         // Track how many items are validated using 'items' constraint
         unsigned int numValidated = 0;
@@ -7676,9 +7804,18 @@ public:
                             m_strictTypes, m_strictDateTime, m_results, &numValidated,
                             &validated, m_regexesCache));
 
+            if (numValidated > m_evaluatedArrayItemCount) {
+                m_evaluatedArrayItemCount = numValidated;
+            }
+
             if (!m_results && !validated) {
                 return false;
             }
+        }
+
+        if (remainingItemsMode == LinearItemsConstraint::kUnevaluatedItems &&
+                m_evaluatedArrayItemCount > numValidated) {
+            numValidated = m_evaluatedArrayItemCount;
         }
 
         // Validate remaining items using 'additionalItems' sub-schema
@@ -7706,7 +7843,7 @@ public:
                     if (!validator.validateSchema(*additionalItemsSubschema)) {
                         if (m_results) {
                             m_results->pushError(m_path, "Failed to validate item #" + std::to_string(index) +
-                                    " against additional items schema.");
+                                    std::string(" against ") + remainingItemsDescription + " schema.");
                             validated = false;
                         } else {
                             return false;
@@ -7714,6 +7851,11 @@ public:
                     }
 
                     index++;
+                }
+
+                if (validated && (remainingItemsMode == LinearItemsConstraint::kItems ||
+                        remainingItemsMode == LinearItemsConstraint::kUnevaluatedItems)) {
+                    m_evaluatedArrayItemCount = arrSize;
                 }
 
             } else if (m_results) {
@@ -9137,6 +9279,9 @@ private:
 
     /// Cached regex objects for pattern constraint
     std::unordered_map<std::string, RegexEngine>& m_regexesCache;
+
+    /// Number of array items evaluated by item applicators on this target.
+    size_t m_evaluatedArrayItemCount;
 };
 
 }  // namespace valijson

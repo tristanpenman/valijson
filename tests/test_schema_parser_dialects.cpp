@@ -73,3 +73,142 @@ TEST_F(TestSchemaParserDialects, Draft202012AliasesDollarDefsToDefinitions)
     EXPECT_TRUE(validator.validate(schema, RapidJsonAdapter(validDocument), nullptr));
     EXPECT_FALSE(validator.validate(schema, RapidJsonAdapter(invalidDocument), nullptr));
 }
+
+TEST_F(TestSchemaParserDialects, Draft202012PrefixItemsValidatesTupleElements)
+{
+    rapidjson::Document schemaDocument;
+    schemaDocument.Parse(R"({
+        "prefixItems": [
+            { "type": "string" },
+            { "type": "number" }
+        ]
+    })");
+    ASSERT_FALSE(schemaDocument.HasParseError());
+
+    Schema schema;
+    SchemaParser schemaParser(SchemaParser::kDraft202012);
+    schemaParser.populateSchema(RapidJsonAdapter(schemaDocument), schema);
+
+    rapidjson::Document validDocument;
+    validDocument.Parse(R"(["first", 2, false])");
+    ASSERT_FALSE(validDocument.HasParseError());
+
+    rapidjson::Document invalidDocument;
+    invalidDocument.Parse(R"([1, 2])");
+    ASSERT_FALSE(invalidDocument.HasParseError());
+
+    Validator validator;
+    EXPECT_TRUE(validator.validate(schema, RapidJsonAdapter(validDocument), nullptr));
+    EXPECT_FALSE(validator.validate(schema, RapidJsonAdapter(invalidDocument), nullptr));
+}
+
+TEST_F(TestSchemaParserDialects, Draft202012ItemsAppliesAfterPrefixItems)
+{
+    rapidjson::Document schemaDocument;
+    schemaDocument.Parse(R"({
+        "prefixItems": [
+            { "type": "string" }
+        ],
+        "items": { "type": "number" }
+    })");
+    ASSERT_FALSE(schemaDocument.HasParseError());
+
+    Schema schema;
+    SchemaParser schemaParser(SchemaParser::kDraft202012);
+    schemaParser.populateSchema(RapidJsonAdapter(schemaDocument), schema);
+
+    rapidjson::Document validDocument;
+    validDocument.Parse(R"(["first", 2, 3])");
+    ASSERT_FALSE(validDocument.HasParseError());
+
+    rapidjson::Document invalidDocument;
+    invalidDocument.Parse(R"(["first", 2, "third"])");
+    ASSERT_FALSE(invalidDocument.HasParseError());
+
+    Validator validator;
+    EXPECT_TRUE(validator.validate(schema, RapidJsonAdapter(validDocument), nullptr));
+    EXPECT_FALSE(validator.validate(schema, RapidJsonAdapter(invalidDocument), nullptr));
+}
+
+TEST_F(TestSchemaParserDialects, Draft202012UnevaluatedItemsAppliesAfterPrefixItems)
+{
+    rapidjson::Document schemaDocument;
+    schemaDocument.Parse(R"({
+        "prefixItems": [
+            { "type": "string" }
+        ],
+        "unevaluatedItems": false
+    })");
+    ASSERT_FALSE(schemaDocument.HasParseError());
+
+    Schema schema;
+    SchemaParser schemaParser(SchemaParser::kDraft202012);
+    schemaParser.populateSchema(RapidJsonAdapter(schemaDocument), schema);
+
+    rapidjson::Document validDocument;
+    validDocument.Parse(R"(["first"])");
+    ASSERT_FALSE(validDocument.HasParseError());
+
+    rapidjson::Document invalidDocument;
+    invalidDocument.Parse(R"(["first", 2])");
+    ASSERT_FALSE(invalidDocument.HasParseError());
+
+    Validator validator;
+    EXPECT_TRUE(validator.validate(schema, RapidJsonAdapter(validDocument), nullptr));
+    EXPECT_FALSE(validator.validate(schema, RapidJsonAdapter(invalidDocument), nullptr));
+}
+
+TEST_F(TestSchemaParserDialects, Draft202012UnevaluatedItemsUsesAllOfPrefixItemsAnnotations)
+{
+    rapidjson::Document schemaDocument;
+    schemaDocument.Parse(R"({
+        "allOf": [
+            {
+                "prefixItems": [
+                    { "type": "string" }
+                ]
+            }
+        ],
+        "unevaluatedItems": false
+    })");
+    ASSERT_FALSE(schemaDocument.HasParseError());
+
+    Schema schema;
+    SchemaParser schemaParser(SchemaParser::kDraft202012);
+    schemaParser.populateSchema(RapidJsonAdapter(schemaDocument), schema);
+
+    rapidjson::Document validDocument;
+    validDocument.Parse(R"(["first"])");
+    ASSERT_FALSE(validDocument.HasParseError());
+
+    rapidjson::Document invalidDocument;
+    invalidDocument.Parse(R"(["first", 2])");
+    ASSERT_FALSE(invalidDocument.HasParseError());
+
+    Validator validator;
+    EXPECT_TRUE(validator.validate(schema, RapidJsonAdapter(validDocument), nullptr));
+    EXPECT_FALSE(validator.validate(schema, RapidJsonAdapter(invalidDocument), nullptr));
+}
+
+TEST_F(TestSchemaParserDialects, Draft202012IgnoresAdditionalItems)
+{
+    rapidjson::Document schemaDocument;
+    schemaDocument.Parse(R"({
+        "prefixItems": [
+            { "type": "string" }
+        ],
+        "additionalItems": false
+    })");
+    ASSERT_FALSE(schemaDocument.HasParseError());
+
+    Schema schema;
+    SchemaParser schemaParser(SchemaParser::kDraft202012);
+    schemaParser.populateSchema(RapidJsonAdapter(schemaDocument), schema);
+
+    rapidjson::Document document;
+    document.Parse(R"(["first", 2])");
+    ASSERT_FALSE(document.HasParseError());
+
+    Validator validator;
+    EXPECT_TRUE(validator.validate(schema, RapidJsonAdapter(document), nullptr));
+}

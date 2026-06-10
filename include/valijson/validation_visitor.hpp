@@ -85,7 +85,8 @@ public:
         m_results(results),
         m_strictTypes(strictTypes),
         m_strictDateTime(strictDateTime),
-        m_regexesCache(regexesCache) { }
+        m_regexesCache(regexesCache),
+        m_evaluatedArrayItemCount(0) { }
 
     /**
      * @brief  Validate the target against a schema.
@@ -524,6 +525,12 @@ public:
         // Sub-schema to validate against when number of items in array exceeds
         // the number of sub-schemas provided by the 'items' constraint
         const Subschema * const additionalItemsSubschema = constraint.getAdditionalItemsSubschema();
+        const typename LinearItemsConstraint::RemainingItemsMode remainingItemsMode =
+                constraint.getRemainingItemsMode();
+        const char *remainingItemsDescription =
+                remainingItemsMode == LinearItemsConstraint::kItems ? "items" :
+                remainingItemsMode == LinearItemsConstraint::kUnevaluatedItems ? "unevaluated items" :
+                "additional items";
 
         // Track how many items are validated using 'items' constraint
         unsigned int numValidated = 0;
@@ -553,9 +560,18 @@ public:
                             m_strictTypes, m_strictDateTime, m_results, &numValidated,
                             &validated, m_regexesCache));
 
+            if (numValidated > m_evaluatedArrayItemCount) {
+                m_evaluatedArrayItemCount = numValidated;
+            }
+
             if (!m_results && !validated) {
                 return false;
             }
+        }
+
+        if (remainingItemsMode == LinearItemsConstraint::kUnevaluatedItems &&
+                m_evaluatedArrayItemCount > numValidated) {
+            numValidated = m_evaluatedArrayItemCount;
         }
 
         // Validate remaining items using 'additionalItems' sub-schema
@@ -583,7 +599,7 @@ public:
                     if (!validator.validateSchema(*additionalItemsSubschema)) {
                         if (m_results) {
                             m_results->pushError(m_path, "Failed to validate item #" + std::to_string(index) +
-                                    " against additional items schema.");
+                                    std::string(" against ") + remainingItemsDescription + " schema.");
                             validated = false;
                         } else {
                             return false;
@@ -591,6 +607,11 @@ public:
                     }
 
                     index++;
+                }
+
+                if (validated && (remainingItemsMode == LinearItemsConstraint::kItems ||
+                        remainingItemsMode == LinearItemsConstraint::kUnevaluatedItems)) {
+                    m_evaluatedArrayItemCount = arrSize;
                 }
 
             } else if (m_results) {
@@ -2069,6 +2090,9 @@ private:
 
     /// Cached regex objects for pattern constraint
     std::unordered_map<std::string, RegexEngine>& m_regexesCache;
+
+    /// Number of array items evaluated by item applicators on this target.
+    size_t m_evaluatedArrayItemCount;
 };
 
 }  // namespace valijson

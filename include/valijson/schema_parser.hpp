@@ -949,7 +949,25 @@ private:
             const typename AdapterType::Object::const_iterator itemsItr =
                     object.find("items");
 
-            if (object.end() != itemsItr) {
+            if (m_version == kDraft202012) {
+                const typename AdapterType::Object::const_iterator
+                        prefixItemsItr = object.find("prefixItems"),
+                        unevaluatedItemsItr = object.find("unevaluatedItems");
+
+                if (object.end() != prefixItemsItr || object.end() != itemsItr ||
+                        object.end() != unevaluatedItemsItr) {
+                    rootSchema.addConstraintToSubschema(
+                            makeDraft202012ItemsConstraint(rootSchema, rootNode,
+                                    prefixItemsItr != object.end() ? &prefixItemsItr->second : nullptr,
+                                    itemsItr != object.end() ? &itemsItr->second : nullptr,
+                                    unevaluatedItemsItr != object.end() ? &unevaluatedItemsItr->second : nullptr,
+                                    updatedScope, nodePath + "/prefixItems",
+                                    nodePath + "/items",
+                                    nodePath + "/unevaluatedItems", fetchDoc,
+                                    docCache, schemaCache),
+                            &subschema);
+                }
+            } else if (object.end() != itemsItr) {
                 if (!itemsItr->second.isArray()) {
                     rootSchema.addConstraintToSubschema(
                             makeSingularItemsConstraint(rootSchema, rootNode,
@@ -1886,6 +1904,72 @@ private:
             } else {
                 throwRuntimeError("Expected array value for non-singular 'items' constraint.");
             }
+        }
+
+        return constraint;
+    }
+
+    /**
+     * @brief   Make a Draft 2020-12 items constraint.
+     */
+    template<typename AdapterType>
+    constraints::LinearItemsConstraint makeDraft202012ItemsConstraint(
+        Schema &rootSchema,
+        const AdapterType &rootNode,
+        const AdapterType *prefixItems,
+        const AdapterType *items,
+        const AdapterType *unevaluatedItems,
+        const std::optional<std::string> currentScope,
+        const std::string &prefixItemsPath,
+        const std::string &itemsPath,
+        const std::string &unevaluatedItemsPath,
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
+        typename DocumentCache<AdapterType>::Type &docCache,
+        SchemaCache &schemaCache)
+    {
+        constraints::LinearItemsConstraint constraint;
+
+        if (prefixItems) {
+            if (!prefixItems->maybeArray()) {
+                throwRuntimeError("Expected array value for 'prefixItems' constraint.");
+            }
+
+            int index = 0;
+            for (const AdapterType v : prefixItems->asArray()) {
+                if (!v.maybeObject() && !v.maybeBool()) {
+                    throwRuntimeError("Expected array element to be a valid schema in 'prefixItems' constraint.");
+                }
+
+                const std::string childPath = prefixItemsPath + "/" +
+                        std::to_string(index);
+                const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                        rootSchema, rootNode, v, currentScope, childPath,
+                        fetchDoc, nullptr, nullptr, docCache, schemaCache);
+                constraint.addItemSubschema(subschema);
+                index++;
+            }
+        }
+
+        const AdapterType *additionalSchema = items ? items : unevaluatedItems;
+        const std::string &additionalSchemaPath = items ? itemsPath : unevaluatedItemsPath;
+        if (items) {
+            constraint.setRemainingItemsMode(constraints::LinearItemsConstraint::kItems);
+        } else if (unevaluatedItems) {
+            constraint.setRemainingItemsMode(constraints::LinearItemsConstraint::kUnevaluatedItems);
+        }
+
+        if (additionalSchema) {
+            if (additionalSchema->maybeObject() || additionalSchema->maybeBool()) {
+                const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                        rootSchema, rootNode, *additionalSchema, currentScope,
+                        additionalSchemaPath, fetchDoc, nullptr, nullptr,
+                        docCache, schemaCache);
+                constraint.setAdditionalItemsSubschema(subschema);
+            } else {
+                throwRuntimeError("Expected valid schema for Draft 2020-12 'items' or 'unevaluatedItems' constraint.");
+            }
+        } else {
+            constraint.setAdditionalItemsSubschema(rootSchema.emptySubschema());
         }
 
         return constraint;

@@ -472,14 +472,22 @@ private:
 class LinearItemsConstraint: public BasicConstraint<LinearItemsConstraint>
 {
 public:
+    enum RemainingItemsMode {
+        kAdditionalItems,
+        kItems,
+        kUnevaluatedItems
+    };
+
     LinearItemsConstraint()
       : m_itemSubschemas(Allocator::rebind<const Subschema *>::other(m_allocator)),
-        m_additionalItemsSubschema(nullptr) { }
+        m_additionalItemsSubschema(nullptr),
+        m_remainingItemsMode(kAdditionalItems) { }
 
     LinearItemsConstraint(CustomAlloc allocFn, CustomFree freeFn)
       : BasicConstraint(allocFn, freeFn),
         m_itemSubschemas(Allocator::rebind<const Subschema *>::other(m_allocator)),
-        m_additionalItemsSubschema(nullptr) { }
+        m_additionalItemsSubschema(nullptr),
+        m_remainingItemsMode(kAdditionalItems) { }
 
     void addItemSubschema(const Subschema *subschema)
     {
@@ -509,9 +517,19 @@ public:
         return m_itemSubschemas.size();
     }
 
+    RemainingItemsMode getRemainingItemsMode() const
+    {
+        return m_remainingItemsMode;
+    }
+
     void setAdditionalItemsSubschema(const Subschema *subschema)
     {
         m_additionalItemsSubschema = subschema;
+    }
+
+    void setRemainingItemsMode(RemainingItemsMode mode)
+    {
+        m_remainingItemsMode = mode;
     }
 
 private:
@@ -520,6 +538,7 @@ private:
     Subschemas m_itemSubschemas;
 
     const Subschema* m_additionalItemsSubschema;
+    RemainingItemsMode m_remainingItemsMode;
 };
 
 /**
