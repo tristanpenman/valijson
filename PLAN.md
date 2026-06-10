@@ -5,11 +5,11 @@ The road to full draft 2020-12 support.
 ## Prerequisites
 
 * ~~Update to latest version of JSON-Schema-Test-Suite~~
-* Add `kDraft202012` parser mode
+* ~~Add `kDraft202012` parser mode~~
 
 ## Non-annotation keywords
 
-* `$id` parsing (**in progress**)
+* ~~`$id` parsing~~
 * `$defs` alias/support
 * `dependentRequired`
 * `dependentSchemas`
