@@ -96,11 +96,6 @@ file(GLOB yamlcpp_SOURCES "thirdparty/yaml-cpp/src/*.cpp")
 add_library(yamlcpp ${yamlcpp_SOURCES})
 
 target_include_directories(yamlcpp SYSTEM PRIVATE thirdparty/yamlcpp/include)
-if(MSVC)
-    target_compile_options(yamlcpp PRIVATE /FIcstdint)
-else()
-    target_compile_options(yamlcpp PRIVATE -include cstdint)
-endif()
 set_target_properties(yamlcpp PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/thirdparty/yamlcpp)
 
 # Not all of these are required for examples build it doesn't hurt to include them
