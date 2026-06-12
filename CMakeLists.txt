@@ -84,6 +84,11 @@ add_library(json11
 )
 
 target_include_directories(json11 SYSTEM PRIVATE thirdparty/json11)
+if(MSVC)
+    target_compile_options(json11 PRIVATE /FIcstdint)
+else()
+    target_compile_options(json11 PRIVATE -include cstdint)
+endif()
 set_target_properties(json11 PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/thirdparty/json11)
 
 # yaml-cpp library
