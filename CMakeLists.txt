@@ -67,7 +67,15 @@ else()
 endif()
 
 find_package(Poco COMPONENTS Foundation JSON)
-find_package(Qt5Core)
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Core)
+if(QT_FOUND)
+    find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core)
+endif()
+
+set(valijson_QT_CORE_TARGET "")
+if(Qt${QT_VERSION_MAJOR}Core_FOUND)
+    set(valijson_QT_CORE_TARGET Qt${QT_VERSION_MAJOR}::Core)
+endif()
 
 # jsoncpp library
 add_library(jsoncpp
@@ -170,9 +178,8 @@ if(valijson_BUILD_TESTS)
             Poco::JSON)
     endif()
 
-    if(Qt5Core_FOUND)
-        include_directories(${Qt5Core_INCLUDE_DIRS})
-        list(APPEND TEST_LIBS Qt5::Core)
+    if(valijson_QT_CORE_TARGET)
+        list(APPEND TEST_LIBS ${valijson_QT_CORE_TARGET})
         list(APPEND TEST_SOURCES tests/test_qtjson_adapter.cpp)
     endif()
 
@@ -219,7 +226,7 @@ if(valijson_BUILD_TESTS)
         target_compile_definitions(test_suite PRIVATE "VALIJSON_BUILD_POCO_ADAPTER")
     endif()
 
-    if(Qt5Core_FOUND)
+    if(valijson_QT_CORE_TARGET)
         target_compile_definitions(test_suite PRIVATE "VALIJSON_BUILD_QT_ADAPTER")
     endif()
 
