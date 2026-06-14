@@ -70,7 +70,7 @@ else()
     add_compile_definitions(VALIJSON_USE_EXCEPTIONS=0)
 endif()
 
-find_package(Poco COMPONENTS Foundation JSON)
+find_package(Poco QUIET COMPONENTS Foundation JSON)
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Core)
 if(QT_FOUND)
     find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core)
@@ -99,7 +99,10 @@ target_include_directories(json11 SYSTEM PRIVATE thirdparty/json11)
 if(MSVC)
     target_compile_options(json11 PRIVATE /FIcstdint)
 else()
-    target_compile_options(json11 PRIVATE -include cstdint)
+    target_compile_options(json11 PRIVATE
+        -include cstdint
+        $<$<CXX_COMPILER_ID:Clang,AppleClang>:-Wno-unqualified-std-cast-call>
+    )
 endif()
 set_target_properties(json11 PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/thirdparty/json11)
 
@@ -152,7 +155,7 @@ if(valijson_BUILD_TESTS)
         tests/test_utf8_utils.cpp
     )
 
-    set(TEST_LIBS gtest gtest_main jsoncpp json11 yamlcpp)
+    set(TEST_LIBS gtest_main jsoncpp json11 yamlcpp)
 
     if(Boost_FOUND)
         include_directories(${Boost_INCLUDE_DIRS})
