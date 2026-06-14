@@ -214,6 +214,13 @@ protected:
     {
         return processTestFile(testFile, SchemaParser::kDraft7);
     }
+
+    void processDraft202012TestFile(const std::string &testFile,
+                                    const std::set<std::string> &skipCases =
+                                            std::set<std::string>())
+    {
+        return processTestFile(testFile, SchemaParser::kDraft202012, skipCases);
+    }
 };
 
 //
@@ -656,4 +663,193 @@ TEST_F(TestValidator, Draft7_OptionalFormatTime)
 TEST_F(TestValidator, Draft7_OptionalFormatDateTime)
 {
     processDraft7TestFile(TEST_SUITE_DIR "draft7/optional/format/date-time.json");
+}
+
+//
+// draft 2020-12
+// ------------------------------------------------------------------------------------------------
+//
+
+TEST_F(TestValidator, Draft202012_AdditionalProperties)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/additionalProperties.json");
+}
+
+TEST_F(TestValidator, Draft202012_AllOf)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/allOf.json");
+}
+
+TEST_F(TestValidator, Draft202012_AnyOf)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/anyOf.json");
+}
+
+TEST_F(TestValidator, Draft202012_BooleanSchema)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/boolean_schema.json");
+}
+
+TEST_F(TestValidator, Draft202012_Const)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/const.json");
+}
+
+TEST_F(TestValidator, Draft202012_Contains)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/contains.json");
+}
+
+TEST_F(TestValidator, Draft202012_Default)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/default.json");
+}
+
+TEST_F(TestValidator, Draft202012_Enum)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/enum.json");
+}
+
+TEST_F(TestValidator, Draft202012_ExclusiveMaximum)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/exclusiveMaximum.json");
+}
+
+TEST_F(TestValidator, Draft202012_ExclusiveMinimum)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/exclusiveMinimum.json");
+}
+
+TEST_F(TestValidator, Draft202012_IfThenElse)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/if-then-else.json");
+}
+
+TEST_F(TestValidator, Draft202012_Items)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/items.json");
+}
+
+TEST_F(TestValidator, Draft202012_Maximum)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/maximum.json");
+}
+
+TEST_F(TestValidator, Draft202012_MaxItems)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/maxItems.json");
+}
+
+TEST_F(TestValidator, Draft202012_MaxLength)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/maxLength.json");
+}
+
+TEST_F(TestValidator, Draft202012_MaxProperties)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/maxProperties.json");
+}
+
+TEST_F(TestValidator, Draft202012_Minimum)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/minimum.json");
+}
+
+TEST_F(TestValidator, Draft202012_MinItems)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/minItems.json");
+}
+
+TEST_F(TestValidator, Draft202012_MinLength)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/minLength.json");
+}
+
+TEST_F(TestValidator, Draft202012_MinProperties)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/minProperties.json");
+}
+
+TEST_F(TestValidator, Draft202012_MultipleOf)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/multipleOf.json");
+}
+
+TEST_F(TestValidator, Draft202012_Not)
+{
+    const std::set<std::string> skipCases = {
+        "collect annotations inside a 'not', even if collection is disabled"
+    };
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/not.json", skipCases);
+}
+
+TEST_F(TestValidator, Draft202012_OneOf)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/oneOf.json");
+}
+
+TEST_F(TestValidator, Draft202012_Pattern)
+{
+    const std::set<std::string> skipCases = {
+        "pattern with Unicode property escape requires unicode mode"
+    };
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/pattern.json", skipCases);
+}
+
+TEST_F(TestValidator, Draft202012_PatternProperties)
+{
+    const std::set<std::string> skipCases = {
+        "patternProperties with Unicode property escape"
+    };
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/patternProperties.json", skipCases);
+}
+
+TEST_F(TestValidator, Draft202012_PrefixItems)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/prefixItems.json");
+}
+
+TEST_F(TestValidator, Draft202012_Properties)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/properties.json");
+}
+
+TEST_F(TestValidator, Draft202012_PropertyNames)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/propertyNames.json");
+}
+
+TEST_F(TestValidator, Draft202012_Required)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/required.json");
+}
+
+TEST_F(TestValidator, Draft202012_Type)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/type.json");
+}
+
+TEST_F(TestValidator, Draft202012_UnevaluatedItems)
+{
+    const std::set<std::string> skipCases = {
+        "unevaluatedItems with nested items",
+        "unevaluatedItems with anyOf",
+        "unevaluatedItems with oneOf",
+        "unevaluatedItems with if/then/else",
+        "unevaluatedItems with $ref",
+        "unevaluatedItems before $ref",
+        "unevaluatedItems with $dynamicRef",
+        "unevaluatedItems can't see inside cousins",
+        "unevaluatedItems depends on adjacent contains",
+        "unevaluatedItems depends on multiple nested contains",
+        "unevaluatedItems and contains interact to control item dependency relationship",
+        "unevaluatedItems with minContains = 0",
+        "unevaluatedItems can see annotations from if without then and else"
+    };
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/unevaluatedItems.json", skipCases);
+}
+
+TEST_F(TestValidator, Draft202012_UniqueItems)
+{
+    processDraft202012TestFile(TEST_SUITE_DIR "draft2020-12/uniqueItems.json");
 }
