@@ -511,7 +511,9 @@ struct AdapterTraits
 }  // namespace valijson
 #pragma once
 
+#include <cmath>
 #include <cstdint>
+#include <limits>
 #include <optional>
 #include <sstream>
 
@@ -592,6 +594,24 @@ template<
 class BasicAdapter: public Adapter
 {
 protected:
+
+    /// Returns true if @p d is a finite double whose value is exactly an
+    /// integer representable as int64_t. JSON Schema treats numbers with a
+    /// zero fractional part as integers, even if encoded as floats.
+    static bool doubleIsIntegral(double d)
+    {
+        if (!std::isfinite(d)) {
+            return false;
+        }
+        if (d < static_cast<double>(std::numeric_limits<int64_t>::min())) {
+            return false;
+        }
+        if (d > static_cast<double>(std::numeric_limits<int64_t>::max())) {
+            return false;
+        }
+        double intPart = 0.0;
+        return std::modf(d, &intPart) == 0.0;
+    }
 
     /**
      * @brief   Functor for comparing two arrays.
@@ -891,6 +911,12 @@ public:
     {
         if (m_value.isInteger()) {
             return m_value.getInteger(result);
+        } else if (m_value.isDouble()) {
+            double d;
+            if (m_value.getDouble(d) && doubleIsIntegral(d)) {
+                result = static_cast<int64_t>(d);
+                return true;
+            }
         } else if (m_value.isString()) {
             std::string s;
             if (m_value.getString(s)) {
@@ -1294,6 +1320,11 @@ public:
     {
         if (m_value.isInteger()) {
             return true;
+        } else if (m_value.isDouble()) {
+            double d;
+            if (m_value.getDouble(d) && doubleIsIntegral(d)) {
+                return true;
+            }
         } else if (maybeString()) {
             std::string s;
             if (m_value.getString(s)) {
@@ -1684,8 +1715,8 @@ inline std::string extractReferenceToken(std::string::const_iterator begin,
  * This function takes both a string reference and an iterator to the beginning
  * of the substring that is being resolved. This iterator is expected to point
  * to the beginning of a reference token, whose length will be determined by
- * searching for the next delimiter ('/' or '\0'). A reference token must be
- * at least one character in length to be considered valid.
+ * searching for the next delimiter ('/' or '\0'). Empty reference tokens are
+ * valid and identify an empty object member name.
  *
  * Once the next reference token has been identified, it will be used either as
  * an array index or as the name of an object member. The validity of a
@@ -1708,7 +1739,8 @@ template<typename AdapterType>
 inline AdapterType resolveJsonPointer(
         const AdapterType &node,
         const std::string &jsonPointer,
-        const std::string::const_iterator jsonPointerItr)
+        const std::string::const_iterator jsonPointerItr,
+        const bool preserveEmptyTokens = false)
 {
     // TODO: This function will probably need to implement support for
     // fetching documents referenced by JSON Pointers, similar to the
@@ -1737,9 +1769,9 @@ inline AdapterType resolveJsonPointer(
     const std::string referenceToken = extractReferenceToken(
             jsonPointerItr + 1, jsonPointerNext);
 
-    // Empty reference tokens should be ignored
-    if (referenceToken.empty()) {
-        return resolveJsonPointer(node, jsonPointer, jsonPointerNext);
+    if (!preserveEmptyTokens && referenceToken.empty()) {
+        return resolveJsonPointer(node, jsonPointer, jsonPointerNext,
+                preserveEmptyTokens);
 
     } else if (node.isArray()) {
         if (referenceToken == "-") {
@@ -1772,7 +1804,8 @@ inline AdapterType resolveJsonPointer(
             itr.advance(static_cast<std::ptrdiff_t>(index));
 
             // Recursively process the remaining tokens
-            return resolveJsonPointer(*itr, jsonPointer, jsonPointerNext);
+            return resolveJsonPointer(*itr, jsonPointer, jsonPointerNext,
+                    preserveEmptyTokens);
 
 #if VALIJSON_USE_EXCEPTIONS
         } catch (std::invalid_argument &) {
@@ -1796,7 +1829,8 @@ inline AdapterType resolveJsonPointer(
         }
 
         // Recursively process the remaining tokens
-        return resolveJsonPointer(itr->second, jsonPointer, jsonPointerNext);
+        return resolveJsonPointer(itr->second, jsonPointer, jsonPointerNext,
+                preserveEmptyTokens);
     }
 
     throwRuntimeError("Expected end of JSON Pointer, but at least "
@@ -1818,7 +1852,15 @@ inline AdapterType resolveJsonPointer(
         const AdapterType &rootNode,
         const std::string &jsonPointer)
 {
-    return resolveJsonPointer(rootNode, jsonPointer, jsonPointer.begin());
+    return resolveJsonPointer(rootNode, jsonPointer, jsonPointer.begin(), false);
+}
+
+template<typename AdapterType>
+inline AdapterType resolveJsonPointerStrict(
+        const AdapterType &rootNode,
+        const std::string &jsonPointer)
+{
+    return resolveJsonPointer(rootNode, jsonPointer, jsonPointer.begin(), true);
 }
 
 } // namespace json_pointer
@@ -1915,7 +1957,10 @@ using std::smatch;
 #endif
 #pragma once
 
+#include <algorithm>
+#include <optional>
 #include <string>
+#include <vector>
 
 
 namespace valijson {
@@ -1923,21 +1968,33 @@ namespace internal {
 namespace uri {
 
 /**
-  * @brief  Placeholder function to check whether a URI is absolute
-  *
-  * This function just checks for '://'
-  */
-inline bool isUriAbsolute(const std::string &documentUri)
+ * @brief  Check whether a URI is absolute, returns pos just past end if found
+ */
+inline std::optional<size_t> parseScheme(const std::string &uri)
 {
-    static const char * placeholderMarker = "://";
+    constexpr auto marker = "://";
 
-    return documentUri.find(placeholderMarker) != std::string::npos;
+    const auto pos = uri.find(marker);
+
+    return pos == std::string::npos
+        ? std::nullopt
+        : std::make_optional<size_t>(pos + 3);
 }
 
 /**
- * @brief  Placeholder function to check whether a URI is a URN
+  * @brief  Check whether a URI is absolute
+  */
+inline bool isUriAbsolute(const std::string &uri)
+{
+    return parseScheme(uri).has_value();
+}
+
+/**
+ * @brief  Check whether a URI is a URN
  *
- * This function validates that the URI matches the RFC 8141 spec
+ * This function validates that the URI matches the RFC 8141 spec.
+ *
+ * Example: urn:isbn:978-3-16-148410-0
  */
 inline bool isUrn(const std::string &documentUri) {
   static const internal::regex pattern(
@@ -1947,13 +2004,129 @@ inline bool isUrn(const std::string &documentUri) {
 }
 
 /**
- * Placeholder function to resolve a relative URI within a given scope
+ * Resolve a relative URI reference within a given scope.
  */
 inline std::string resolveRelativeUri(
         const std::string &resolutionScope,
         const std::string &relativeUri)
 {
-    return resolutionScope + relativeUri;
+    // Trivial case: There is no relative URI to resolve
+    if (relativeUri.empty()) {
+        return resolutionScope;
+    }
+
+    // Trivial case: The relative URI is actually absolute, or is a URN
+    if (isUriAbsolute(relativeUri) || isUrn(relativeUri)) {
+        return relativeUri;
+    }
+
+    // Trivial case: The resolution scope is _not_ absolute
+    const auto schemeEnd = parseScheme(resolutionScope);
+    if (!schemeEnd.has_value()) {
+        return resolutionScope + relativeUri;
+    }
+
+    // Extract scheme+authority, e.g. http://userinfo@example.com:8080
+    const auto authorityEnd = resolutionScope.find('/', *schemeEnd);
+    const auto schemeAndAuthority = resolutionScope.substr(0, authorityEnd);
+
+    // Assume path starts immediately after scheme+authority
+    const std::string::size_type pathStart = schemeAndAuthority.size();
+
+    // Extract base path from resolution scope, or use '/' as default
+    std::string basePath = pathStart < resolutionScope.size()
+            ? resolutionScope.substr(pathStart)
+            : "/";
+
+    // Strip everything after fragment marker if present
+    const std::string::size_type baseFragmentPos = basePath.find('#');
+    if (baseFragmentPos != std::string::npos) {
+        basePath.erase(baseFragmentPos);
+    }
+
+    // Strip everything after query marker if present (we need both)
+    const std::string::size_type baseQueryPos = basePath.find('?');
+    if (baseQueryPos != std::string::npos) {
+        basePath.erase(baseQueryPos);
+    }
+
+    // Next two cases...
+    if (!relativeUri.empty()) {
+        // Relative URI is just a fragment OR a query
+        if ((relativeUri[0] == '#') || relativeUri[0] == '?') {
+            // Append it to the scheme+authority and clean base path
+            return schemeAndAuthority + basePath + relativeUri;
+        }
+    }
+
+    // Split the relative URI into path and suffix components
+    std::string relativePath = relativeUri;
+    std::string suffix;
+    const std::string::size_type relativeFragmentPos = relativePath.find('#');
+    const std::string::size_type relativeQueryPos = relativePath.find('?');
+    const std::string::size_type suffixPos =
+            relativeFragmentPos == std::string::npos ? relativeQueryPos :
+            relativeQueryPos == std::string::npos ? relativeFragmentPos :
+            std::min(relativeFragmentPos, relativeQueryPos);
+    if (suffixPos != std::string::npos) {
+        suffix = relativePath.substr(suffixPos);
+        relativePath.erase(suffixPos);
+    }
+
+    // Merged path can be constructed in two ways
+    std::string mergedPath;
+    if (!relativePath.empty() && relativePath[0] == '/') {
+        // Case 1: Relative path starts with `/` so we can use it as-is
+        mergedPath = relativePath;
+    } else {
+        // Case 2: We need to join the base path and relative path, which we do by
+        // stripping the base path of any segment after its last slash
+        const std::string::size_type lastSlashPos = basePath.find_last_of('/');
+        mergedPath = lastSlashPos == std::string::npos
+                ? "/" + relativePath
+                : basePath.substr(0, lastSlashPos + 1) + relativePath;
+    }
+
+    // Resolve relative path segments
+    std::vector<std::string> segments;
+    std::string segment;
+    for (const char c : mergedPath) {
+        if (c == '/') {
+            if (segment == "..") {
+                if (!segments.empty()) {
+                    segments.pop_back();
+                }
+            } else if (!segment.empty() && segment != ".") {
+                segments.push_back(segment);
+            }
+            segment.clear();
+        } else {
+            segment += c;
+        }
+    }
+    if (segment == "..") {
+        if (!segments.empty()) {
+            segments.pop_back();
+        }
+    } else if (!segment.empty() && segment != ".") {
+        segments.push_back(segment);
+    }
+
+    // Generate final normalised path
+    std::string normalisedPath = "/";
+    for (auto itr = segments.begin(); itr != segments.end(); ++itr) {
+        if (itr != segments.begin()) {
+            normalisedPath += "/";
+        }
+        normalisedPath += *itr;
+    }
+    if (!mergedPath.empty() && mergedPath[mergedPath.size() - 1] == '/' &&
+            normalisedPath[normalisedPath.size() - 1] != '/') {
+        normalisedPath += "/";
+    }
+
+    // Construct final URI
+    return schemeAndAuthority + normalisedPath + suffix;
 }
 
 } // namespace uri
@@ -2470,7 +2643,7 @@ private:
 
 namespace valijson {
 
-typedef std::map<std::string, const Subschema *> SchemaCache;
+typedef std::map<std::string, const Subschema *> SchemaRegistry;
 
 }  // namespace valijson
 #pragma once
@@ -4524,12 +4697,12 @@ public:
         }
 
         typename DocumentCache<AdapterType>::Type docCache;
-        SchemaCache schemaCache;
+        SchemaRegistry schemaRegistry;
 #if VALIJSON_USE_EXCEPTIONS
         try {
 #endif
             resolveThenPopulateSchema(schema, node, node, schema, std::optional<std::string>(), "", fetchDoc, nullptr,
-                    nullptr, docCache, schemaCache);
+                    nullptr, docCache, schemaRegistry);
 #if VALIJSON_USE_EXCEPTIONS
         } catch (...) {
             freeDocumentCache<AdapterType>(docCache, freeDoc);
@@ -4698,12 +4871,11 @@ private:
     static std::string sanitiseJsonPointer(const std::optional<std::string>& input)
     {
         if (input) {
-            // Trim trailing slash(es)
-            std::string sanitised = *input;
-            sanitised.erase(sanitised.find_last_not_of('/') + 1,
-                    std::string::npos);
+            if (*input == "/") {
+                return "";
+            }
 
-            return sanitised;
+            return *input;
         }
 
         // If the JSON Pointer is not set, assume that the URI points to
@@ -4711,24 +4883,152 @@ private:
         return "";
     }
 
+    static std::string escapeJsonPointerToken(const std::string &token)
+    {
+        std::string result;
+        for (const char c : token) {
+            if (c == '~') {
+                result += "~0";
+            } else if (c == '/') {
+                result += "~1";
+            } else {
+                result += c;
+            }
+        }
+
+        return result;
+    }
+
+    const char *idKeyword() const
+    {
+        return supportsDraft7Keywords() ? "$id" : "id";
+    }
+
+    std::optional<std::string> resolveId(
+            const std::optional<std::string> &currentScope,
+            const std::string &id) const
+    {
+        if (!currentScope || internal::uri::isUriAbsolute(id) ||
+                internal::uri::isUrn(id)) {
+            return id;
+        }
+
+        return internal::uri::resolveRelativeUri(*currentScope, id);
+    }
+
+    template<typename AdapterType>
+    bool findSchemaById(
+            const AdapterType &node,
+            const std::optional<std::string> &currentScope,
+            const std::string &targetUri,
+            const std::string &nodePath,
+            std::string &foundPath,
+            std::optional<std::string> &foundScope) const
+    {
+        std::optional<std::string> updatedScope = currentScope;
+
+        if (node.isObject()) {
+            const typename AdapterType::Object object = node.asObject();
+            const typename AdapterType::Object::const_iterator itr =
+                    object.find(idKeyword());
+            if (itr != object.end() && itr->second.maybeString()) {
+                updatedScope = resolveId(currentScope, itr->second.asString());
+                if (updatedScope && *updatedScope == targetUri) {
+                    foundPath = nodePath;
+                    foundScope = currentScope;
+                    return true;
+                }
+            }
+
+            for (const typename AdapterType::ObjectMember member : object) {
+                const std::string childPath =
+                        nodePath + "/" + escapeJsonPointerToken(member.first);
+                if (findSchemaById(member.second, updatedScope, targetUri,
+                            childPath, foundPath, foundScope)) {
+                    return true;
+                }
+            }
+        } else if (node.maybeArray()) {
+            size_t index = 0;
+            for (const AdapterType item : node.asArray()) {
+                const std::string childPath = nodePath + "/" +
+                        std::to_string(index++);
+                if (findSchemaById(item, updatedScope, targetUri, childPath,
+                            foundPath, foundScope)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    template<typename AdapterType>
+    bool findScopeForPath(
+            const AdapterType &node,
+            const std::optional<std::string> &currentScope,
+            const std::string &targetPath,
+            const std::string &nodePath,
+            std::optional<std::string> &foundScope) const
+    {
+        if (nodePath == targetPath) {
+            foundScope = currentScope;
+            return true;
+        }
+
+        std::optional<std::string> updatedScope = currentScope;
+
+        if (node.isObject()) {
+            const typename AdapterType::Object object = node.asObject();
+            const typename AdapterType::Object::const_iterator itr =
+                    object.find(idKeyword());
+            if (itr != object.end() && itr->second.maybeString()) {
+                updatedScope = resolveId(currentScope, itr->second.asString());
+            }
+
+            for (const typename AdapterType::ObjectMember member : object) {
+                const std::string childPath =
+                        nodePath + "/" + escapeJsonPointerToken(member.first);
+                if (findScopeForPath(member.second, updatedScope, targetPath,
+                            childPath, foundScope)) {
+                    return true;
+                }
+            }
+        } else {
+            if (node.maybeArray()) {
+                size_t index = 0;
+                for (const AdapterType item : node.asArray()) {
+                    const std::string childPath = nodePath + "/" +
+                            std::to_string(index++);
+                    if (findScopeForPath(item, updatedScope, targetPath,
+                                childPath, foundScope)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
     /**
-     * @brief  Search the schema cache for a schema matching a given key
+     * @brief  Search the schema registry for a schema matching a given key
      *
-     * If the key is not present in the query cache, a nullptr will be
-     * returned, and the contents of the cache will remain unchanged. This is
+     * If the key is not present in the schema registry, a nullptr will be
+     * returned, and the contents of the registry will remain unchanged. This is
      * in contrast to the behaviour of the std::map [] operator, which would
-     * add the nullptr to the cache.
+     * add the nullptr to the registry.
      *
-     * @param  schemaCache  schema cache to query
-     * @param  queryKey     key to search for
+     * @param  schemaRegistry  schema registry to query
+     * @param  queryKey        key to search for
      *
      * @return shared pointer to Schema if found, nullptr otherwise
      */
-    static const Subschema * querySchemaCache(SchemaCache &schemaCache,
+    static const Subschema * querySchemaRegistry(SchemaRegistry &schemaRegistry,
             const std::string &queryKey)
     {
-        const SchemaCache::iterator itr = schemaCache.find(queryKey);
-        if (itr == schemaCache.end()) {
+        const SchemaRegistry::iterator itr = schemaRegistry.find(queryKey);
+        if (itr == schemaRegistry.end()) {
             return nullptr;
         }
 
@@ -4736,25 +5036,25 @@ private:
     }
 
     /**
-     * @brief  Add entries to the schema cache for a given list of keys
+     * @brief  Add entries to the schema registry for a given list of keys
      *
-     * @param  schemaCache   schema cache to update
-     * @param  keysToCreate  list of keys to create entries for
-     * @param  schema        shared pointer to schema that keys will map to
+     * @param  schemaRegistry   schema registry to update
+     * @param  keysToRegister   list of keys to register
+     * @param  schema           shared pointer to schema that keys will map to
      *
      * @throws std::logic_error if any of the keys are already present in the
-     *         schema cache. This behaviour is intended to help detect incorrect
-     *         usage of the schema cache during development, and is not expected
+     *         schema registry. This behaviour is intended to help detect incorrect
+     *         usage of the schema registry during development, and is not expected
      *         to occur otherwise, even for malformed schemas.
      */
-    static void updateSchemaCache(SchemaCache &schemaCache,
-            const std::vector<std::string> &keysToCreate,
+    static void updateSchemaRegistry(SchemaRegistry &schemaRegistry,
+            const std::vector<std::string> &keysToRegister,
             const Subschema *schema)
     {
-        for (const std::string &keyToCreate : keysToCreate) {
-            const SchemaCache::value_type value(keyToCreate, schema);
-            if (!schemaCache.insert(value).second) {
-                throwLogicError("Key '" + keyToCreate + "' already in schema cache.");
+        for (const std::string &keyToRegister : keysToRegister) {
+            const SchemaRegistry::value_type value(keyToRegister, schema);
+            if (!schemaRegistry.insert(value).second) {
+                throwLogicError("Key '" + keyToRegister + "' already in schema registry.");
             }
         }
     }
@@ -4768,8 +5068,8 @@ private:
      *
      * This termination condition may be trigged by visiting the concrete node
      * at the end of a series of $ref nodes, or by finding a schema for one of
-     * those $ref nodes in the schema cache. An entry will be added to the
-     * schema cache for each node visited on the path to the concrete node.
+     * those $ref nodes in the schema registry. An entry will be added to the
+     * schema registry for each node visited on the path to the concrete node.
      *
      * @param  rootSchema      The Schema instance, and root subschema, through
      *                         which other subschemas can be created and
@@ -4786,8 +5086,8 @@ private:
      * @param  ownName         Optional pointer to a node name, used to support
      *                         the 'required' keyword in Draft 3
      * @param  docCache        Cache of resolved and fetched remote documents
-     * @param  schemaCache     Cache of populated schemas
-     * @param  newCacheKeys    A list of keys that should be added to the cache
+     * @param  schemaRegistry  Registry of populated schemas
+     * @param  newRegistryKeys A list of keys that should be added to the registry
      *                         when recursion terminates
      */
     template<typename AdapterType>
@@ -4801,35 +5101,38 @@ private:
         const Subschema *parentSubschema,
         const std::string *ownName,
         typename DocumentCache<AdapterType>::Type &docCache,
-        SchemaCache &schemaCache,
-        std::vector<std::string> &newCacheKeys)
+        SchemaRegistry &schemaRegistry,
+        std::vector<std::string> &newRegistryKeys)
     {
         std::string jsonRef;
 
         // Check for the first termination condition (found a non-$ref node)
         if (!extractJsonReference(node, jsonRef)) {
 
-            // Construct a key that we can use to search the schema cache for
+            // Construct a key that we can use to search the schema registry for
             // a schema corresponding to the current node
-            const std::string schemaCacheKey = currentScope ? (*currentScope + nodePath) : nodePath;
+            const std::string schemaRegistryKey = currentScope ? (*currentScope + nodePath) : nodePath;
 
-            // Retrieve an existing schema from the cache if possible
-            const Subschema *cachedPtr = querySchemaCache(schemaCache, schemaCacheKey);
+            // Retrieve an existing schema from the registry if possible
+            const Subschema *registeredPtr = querySchemaRegistry(schemaRegistry, schemaRegistryKey);
 
             // Create a new schema otherwise
-            const Subschema *subschema = cachedPtr ? cachedPtr : rootSchema.createSubschema();
+            const Subschema *subschema = registeredPtr ? registeredPtr : rootSchema.createSubschema();
 
-            // Add cache entries for keys belonging to any $ref nodes that were
+            // Add registry entries for keys belonging to any $ref nodes that were
             // visited before arriving at the current node
-            updateSchemaCache(schemaCache, newCacheKeys, subschema);
+            updateSchemaRegistry(schemaRegistry, newRegistryKeys, subschema);
+            if (!registeredPtr) {
+                schemaRegistry.emplace(schemaRegistryKey, subschema);
+            }
 
-            // Schema cache did not contain a preexisting schema corresponding
+            // Schema registry did not contain a preexisting schema corresponding
             // to the current node, so the schema that was returned will need
             // to be populated
-            if (!cachedPtr) {
+            if (!registeredPtr) {
                 populateSchema(rootSchema, rootNode, node, *subschema,
                         currentScope, nodePath, fetchDoc, parentSubschema,
-                        ownName, docCache, schemaCache);
+                        ownName, docCache, schemaRegistry);
             }
 
             return subschema;
@@ -4840,7 +5143,7 @@ private:
         const std::optional<std::string> documentUri = internal::json_reference::getJsonReferenceUri(jsonRef);
 
         // Extract JSON Pointer from JSON Reference, with any trailing
-        // slashes removed so that keys in the schema cache end
+        // slashes removed so that keys in the schema registry end
         // consistently
         const std::string actualJsonPointer = applyDefinitionsAlias(sanitiseJsonPointer(
                 internal::json_reference::getJsonReferencePointer(jsonRef)));
@@ -4851,18 +5154,78 @@ private:
         // the current resolution scope
         const std::optional<std::string> actualDocumentUri = resolveDocumentUri(currentScope, documentUri);
 
-        // Construct a key to search the schema cache for an existing schema
+        // Construct a key to search the schema registry for an existing schema
         const std::string queryKey = actualDocumentUri ? (*actualDocumentUri + actualJsonPointer) : actualJsonPointer;
 
+        if (!actualJsonPointer.empty() && actualJsonPointer[0] != '/') {
+            const std::string idRef = actualDocumentUri ?
+                    (*actualDocumentUri + "#" + actualJsonPointer) :
+                    ("#" + actualJsonPointer);
+            std::string registeredPath;
+            std::optional<std::string> registeredScope;
+            if (findSchemaById(rootNode, currentScope, idRef,
+                        "", registeredPath, registeredScope)) {
+                const AdapterType registeredRoot =
+                        internal::json_pointer::resolveJsonPointerStrict(
+                                rootNode, registeredPath);
+
+                const Subschema *registeredPtr = querySchemaRegistry(schemaRegistry, idRef);
+                if (registeredPtr) {
+                    updateSchemaRegistry(schemaRegistry, newRegistryKeys, registeredPtr);
+                    return registeredPtr;
+                }
+
+                const Subschema *subschema = rootSchema.createSubschema();
+                newRegistryKeys.push_back(idRef);
+                updateSchemaRegistry(schemaRegistry, newRegistryKeys, subschema);
+
+                populateSchema(rootSchema, registeredRoot, registeredRoot,
+                        *subschema, registeredScope, "", fetchDoc,
+                        parentSubschema, ownName, docCache, schemaRegistry);
+
+                return subschema;
+            }
+        }
+
         // Check for the second termination condition (found a $ref node that
-        // already has an entry in the schema cache)
-        const Subschema *cachedPtr = querySchemaCache(schemaCache, queryKey);
-        if (cachedPtr) {
-            updateSchemaCache(schemaCache, newCacheKeys, cachedPtr);
-            return cachedPtr;
+        // already has an entry in the schema registry)
+        const Subschema *registeredPtr = querySchemaRegistry(schemaRegistry, queryKey);
+        if (registeredPtr) {
+            updateSchemaRegistry(schemaRegistry, newRegistryKeys, registeredPtr);
+            return registeredPtr;
         }
 
         if (actualDocumentUri && (!currentScope || *actualDocumentUri != *currentScope)) {
+            std::string registeredPath;
+            std::optional<std::string> registeredScope;
+            if (findSchemaById(rootNode, currentScope, *actualDocumentUri,
+                        "", registeredPath, registeredScope)) {
+                const AdapterType registeredRoot =
+                        internal::json_pointer::resolveJsonPointerStrict(
+                                rootNode, registeredPath);
+                const AdapterType referencedAdapter = actualJsonPointer.empty()
+                        ? registeredRoot
+                        : internal::json_pointer::resolveJsonPointerStrict(
+                                registeredRoot, actualJsonPointer);
+
+                std::optional<std::string> referencedScope = registeredScope;
+                if (!actualJsonPointer.empty()) {
+                    findScopeForPath(registeredRoot, registeredScope,
+                            actualJsonPointer, "", referencedScope);
+                }
+
+                const Subschema *subschema = rootSchema.createSubschema();
+                newRegistryKeys.push_back(queryKey);
+                updateSchemaRegistry(schemaRegistry, newRegistryKeys, subschema);
+
+                populateSchema(rootSchema, registeredRoot, referencedAdapter,
+                        *subschema, referencedScope, actualJsonPointer,
+                        fetchDoc, parentSubschema, ownName, docCache,
+                        schemaRegistry);
+
+                return subschema;
+            }
+
             const typename FunctionPtrs<AdapterType>::DocumentType *newDoc = nullptr;
 
             // Have we seen this document before?
@@ -4898,47 +5261,51 @@ private:
 
             // Find where we need to be in the document
             const AdapterType &referencedAdapter =
-                    internal::json_pointer::resolveJsonPointer(newRootNode,
+                    internal::json_pointer::resolveJsonPointerStrict(newRootNode,
                             actualJsonPointer);
 
-            newCacheKeys.push_back(queryKey);
+            newRegistryKeys.push_back(queryKey);
 
             // Populate the schema, starting from the referenced node, with
             // nested JSON References resolved relative to the new root node
             return makeOrReuseSchema(rootSchema, newRootNode, referencedAdapter,
-                    currentScope, actualJsonPointer, fetchDoc, parentSubschema,
-                    ownName, docCache, schemaCache, newCacheKeys);
+                    actualDocumentUri, actualJsonPointer, fetchDoc, parentSubschema,
+                    ownName, docCache, schemaRegistry, newRegistryKeys);
 
         }
 
-        if (std::find(newCacheKeys.begin(), newCacheKeys.end(), queryKey) != newCacheKeys.end()) {
+        if (std::find(newRegistryKeys.begin(), newRegistryKeys.end(), queryKey) != newRegistryKeys.end()) {
             throwRuntimeError("found cycle while resolving JSON reference");
         }
 
         // JSON References in nested schema will be resolved relative to the
         // current document
         const AdapterType &referencedAdapter =
-                internal::json_pointer::resolveJsonPointer(
+                internal::json_pointer::resolveJsonPointerStrict(
                         rootNode, actualJsonPointer);
 
-        newCacheKeys.push_back(queryKey);
+        newRegistryKeys.push_back(queryKey);
+
+        std::optional<std::string> referencedScope = currentScope;
+        findScopeForPath(rootNode, currentScope, actualJsonPointer, "",
+                referencedScope);
 
         // Populate the schema, starting from the referenced node, with
         // nested JSON References resolved relative to the new root node
         return makeOrReuseSchema(rootSchema, rootNode, referencedAdapter,
-                currentScope, actualJsonPointer, fetchDoc, parentSubschema,
-                ownName, docCache, schemaCache, newCacheKeys);
+                referencedScope, actualJsonPointer, fetchDoc, parentSubschema,
+                ownName, docCache, schemaRegistry, newRegistryKeys);
     }
 
     /**
      * @brief  Return pointer for the schema corresponding to a given node
      *
-     * This function makes use of a schema cache, so that if the path to the
+     * This function makes use of a schema registry, so that if the path to the
      * current node is the same as one that has already been parsed and
      * populated, a pointer to the existing Subschema will be returned.
      *
      * Should a series of $ref, or reference, nodes be resolved before reaching
-     * a concrete node, an entry will be added to the schema cache for each of
+     * a concrete node, an entry will be added to the schema registry for each of
      * the nodes in that path.
      *
      * @param  rootSchema      The Schema instance, and root subschema, through
@@ -4956,7 +5323,7 @@ private:
      * @param  ownName         Optional pointer to a node name, used to support
      *                         the 'required' keyword in Draft 3
      * @param  docCache        Cache of resolved and fetched remote documents
-     * @param  schemaCache     Cache of populated schemas
+     * @param  schemaRegistry  Registry of populated schemas
      */
     template<typename AdapterType>
     const Subschema * makeOrReuseSchema(
@@ -4969,13 +5336,13 @@ private:
         const Subschema *parentSubschema,
         const std::string *ownName,
         typename DocumentCache<AdapterType>::Type &docCache,
-        SchemaCache &schemaCache)
+        SchemaRegistry &schemaRegistry)
     {
-        std::vector<std::string> schemaCacheKeysToCreate;
+        std::vector<std::string> schemaRegistryKeysToCreate;
 
         return makeOrReuseSchema(rootSchema, rootNode, node, currentScope,
                 nodePath, fetchDoc, parentSubschema, ownName, docCache,
-                schemaCache, schemaCacheKeysToCreate);
+                schemaRegistry, schemaRegistryKeysToCreate);
     }
 
     /**
@@ -5002,7 +5369,7 @@ private:
      * @param  ownName          Optional pointer to a node name, used to support
      *                          the 'required' keyword in Draft 3
      * @param  docCache         Cache of resolved and fetched remote documents
-     * @param  schemaCache      Cache of populated schemas
+     * @param  schemaRegistry   Registry of populated schemas
      */
     template<typename AdapterType>
     void populateSchema(
@@ -5016,7 +5383,7 @@ private:
         const Subschema *parentSubschema,
         const std::string *ownName,
         typename DocumentCache<AdapterType>::Type &docCache,
-        SchemaCache &schemaCache)
+        SchemaRegistry &schemaRegistry)
     {
         static_assert((std::is_convertible<AdapterType,
             const valijson::adapters::Adapter &>::value),
@@ -5047,28 +5414,28 @@ private:
         const typename AdapterType::Object object = node.asObject();
         typename AdapterType::Object::const_iterator itr(object.end());
 
-        // Check for schema identifier attribute and update current scope. Draft
-        // 2020-12 uses '$id'; older modes retain Valijson's existing 'id'
-        // behaviour for compatibility.
-        const char *idKeyword = m_version == kDraft202012 ? "$id" : "id";
+        // Check for schema identifier attribute and update current scope.
         std::optional<std::string> updatedScope;
-        if ((itr = object.find(idKeyword)) != object.end() && itr->second.maybeString()) {
+        const bool foundId =
+                (itr = object.find(idKeyword())) != object.end() &&
+                itr->second.maybeString();
+        if (foundId) {
             const std::string id = itr->second.asString();
             rootSchema.setSubschemaId(&subschema, itr->second.asString());
-            if (!currentScope || internal::uri::isUriAbsolute(id) || internal::uri::isUrn(id)) {
-                updatedScope = id;
-            } else {
-                updatedScope = internal::uri::resolveRelativeUri(*currentScope, id);
-            }
+            updatedScope = resolveId(currentScope, id);
         } else {
             updatedScope = currentScope;
+        }
+
+        if (foundId && updatedScope) {
+            schemaRegistry.emplace(*updatedScope, &subschema);
         }
 
         // Add the type constraint first to be the first one to check because other constraints may rely on it
         if ((itr = object.find("type")) != object.end()) {
             rootSchema.addConstraintToSubschema(
                     makeTypeConstraint(rootSchema, rootNode, itr->second, updatedScope, nodePath + "/type", fetchDoc,
-                            docCache, schemaCache),
+                            docCache, schemaRegistry),
                     &subschema);
         }
 
@@ -5076,7 +5443,7 @@ private:
             rootSchema.addConstraintToSubschema(
                     makeAllOfConstraint(rootSchema, rootNode, itr->second,
                             updatedScope, nodePath + "/allOf", fetchDoc,
-                            docCache, schemaCache),
+                            docCache, schemaRegistry),
                     &subschema);
         }
 
@@ -5084,7 +5451,7 @@ private:
             rootSchema.addConstraintToSubschema(
                     makeAnyOfConstraint(rootSchema, rootNode, itr->second,
                             updatedScope, nodePath + "/anyOf", fetchDoc,
-                            docCache, schemaCache),
+                            docCache, schemaRegistry),
                     &subschema);
         }
 
@@ -5096,7 +5463,7 @@ private:
             rootSchema.addConstraintToSubschema(
                     makeContainsConstraint(rootSchema, rootNode, itr->second,
                             updatedScope, nodePath + "/contains", fetchDoc,
-                            docCache, schemaCache), &subschema);
+                            docCache, schemaRegistry), &subschema);
         }
 
         if ((itr = object.find("dependencies")) != object.end()) {
@@ -5104,7 +5471,7 @@ private:
                     makeDependenciesConstraint(rootSchema, rootNode,
                             itr->second, updatedScope,
                             nodePath + "/dependencies", fetchDoc, docCache,
-                            schemaCache),
+                            schemaRegistry),
                     &subschema);
         }
 
@@ -5142,6 +5509,16 @@ private:
             rootSchema.addConstraintToSubschema(makeEnumConstraint(itr->second), &subschema);
         }
 
+        // Draft 3's 'extends' keyword is equivalent to 'allOf' in later drafts
+        // and accepts either a single schema or an array of schemas.
+        if (m_version == kDraft3 && (itr = object.find("extends")) != object.end()) {
+            rootSchema.addConstraintToSubschema(
+                    makeExtendsConstraint(rootSchema, rootNode, itr->second,
+                            updatedScope, nodePath + "/extends", fetchDoc,
+                            docCache, schemaRegistry),
+                    &subschema);
+        }
+
         if ((itr = object.find("format")) != object.end()) {
             rootSchema.addConstraintToSubschema(makeFormatConstraint(itr->second), &subschema);
         }
@@ -5165,7 +5542,7 @@ private:
                                     updatedScope, nodePath + "/prefixItems",
                                     nodePath + "/items",
                                     nodePath + "/unevaluatedItems", fetchDoc,
-                                    docCache, schemaCache),
+                                    docCache, schemaRegistry),
                             &subschema);
                 }
             } else if (object.end() != itemsItr) {
@@ -5174,7 +5551,7 @@ private:
                             makeSingularItemsConstraint(rootSchema, rootNode,
                                     itemsItr->second, updatedScope,
                                     nodePath + "/items", fetchDoc, docCache,
-                                    schemaCache),
+                                    schemaRegistry),
                             &subschema);
 
                 } else {
@@ -5186,7 +5563,7 @@ private:
                                     additionalItemsItr != object.end() ? &additionalItemsItr->second : nullptr,
                                     updatedScope, nodePath + "/items",
                                     nodePath + "/additionalItems", fetchDoc,
-                                    docCache, schemaCache),
+                                    docCache, schemaRegistry),
                             &subschema);
                 }
             }
@@ -5204,7 +5581,7 @@ private:
                                 ifItr->second,
                                 thenItr == object.end() ? nullptr : &thenItr->second,
                                 elseItr == object.end() ? nullptr : &elseItr->second,
-                                updatedScope, nodePath, fetchDoc, docCache, schemaCache),
+                                updatedScope, nodePath, fetchDoc, docCache, schemaRegistry),
                           &subschema);
                 } else {
                     throwRuntimeError("Not supported");
@@ -5317,14 +5694,14 @@ private:
         if ((itr = object.find("not")) != object.end()) {
             rootSchema.addConstraintToSubschema(
                     makeNotConstraint(rootSchema, rootNode, itr->second, updatedScope, nodePath + "/not", fetchDoc,
-                            docCache, schemaCache),
+                            docCache, schemaRegistry),
                     &subschema);
         }
 
         if ((itr = object.find("oneOf")) != object.end()) {
             rootSchema.addConstraintToSubschema(
                     makeOneOfConstraint(rootSchema, rootNode, itr->second, updatedScope, nodePath + "/oneOf", fetchDoc,
-                            docCache, schemaCache),
+                            docCache, schemaRegistry),
                     &subschema);
         }
 
@@ -5351,7 +5728,7 @@ private:
                                 updatedScope, nodePath + "/properties",
                                 nodePath + "/patternProperties",
                                 nodePath + "/additionalProperties",
-                                fetchDoc, &subschema, docCache, schemaCache),
+                                fetchDoc, &subschema, docCache, schemaRegistry),
                         &subschema);
             }
         }
@@ -5360,7 +5737,7 @@ private:
             if (supportsDraft7Keywords()) {
                 rootSchema.addConstraintToSubschema(
                       makePropertyNamesConstraint(rootSchema, rootNode, itr->second, updatedScope,
-                              nodePath, fetchDoc, docCache, schemaCache),
+                              nodePath, fetchDoc, docCache, schemaRegistry),
                       &subschema);
             } else {
                 throwRuntimeError("Not supported");
@@ -5425,22 +5802,22 @@ private:
      * concrete node, and not a JSON Reference. This function will call itself
      * recursively to resolve references until a concrete node is found.
      *
-     * @param  rootSchema    The Schema instance, and root subschema, through
-     *                       which other subschemas can be created and modified
-     * @param  rootNode      Reference to the node from which JSON References
-     *                       will be resolved when they refer to the current
-     *                       document
-     * @param  node          Reference to node to parse
-     * @param  subschema     Reference to Schema to populate
-     * @param  currentScope  URI for current resolution scope
-     * @param  nodePath      JSON Pointer representing path to current node
-     * @param  fetchDoc      Function to fetch remote JSON documents (optional)
-     * @param  parentSchema  Optional pointer to the parent schema, used to
-     *                       support required keyword in Draft 3
-     * @param  ownName       Optional pointer to a node name, used to support
-     *                       the 'required' keyword in Draft 3
-     * @param  docCache      Cache of resolved and fetched remote documents
-     * @param  schemaCache   Cache of populated schemas
+     * @param  rootSchema     The Schema instance, and root subschema, through
+     *                        which other subschemas can be created and modified
+     * @param  rootNode       Reference to the node from which JSON References
+     *                        will be resolved when they refer to the current
+     *                        document
+     * @param  node           Reference to node to parse
+     * @param  subschema      Reference to Schema to populate
+     * @param  currentScope   URI for current resolution scope
+     * @param  nodePath       JSON Pointer representing path to current node
+     * @param  fetchDoc       Function to fetch remote JSON documents (optional)
+     * @param  parentSchema   Optional pointer to the parent schema, used to
+     *                        support required keyword in Draft 3
+     * @param  ownName        Optional pointer to a node name, used to support
+     *                        the 'required' keyword in Draft 3
+     * @param  docCache       Cache of resolved and fetched remote documents
+     * @param  schemaRegistry Registry of populated schemas
      */
     template<typename AdapterType>
     void resolveThenPopulateSchema(
@@ -5454,12 +5831,12 @@ private:
         const Subschema *parentSchema,
         const std::string *ownName,
         typename DocumentCache<AdapterType>::Type &docCache,
-        SchemaCache &schemaCache)
+        SchemaRegistry &schemaRegistry)
     {
         std::string jsonRef;
         if (!extractJsonReference(node, jsonRef)) {
             populateSchema(rootSchema, rootNode, node, subschema, currentScope, nodePath, fetchDoc, parentSchema,
-                    ownName, docCache, schemaCache);
+                    ownName, docCache, schemaRegistry);
             return;
         }
 
@@ -5471,39 +5848,87 @@ private:
         const std::string actualJsonPointer = applyDefinitionsAlias(sanitiseJsonPointer(
                 internal::json_reference::getJsonReferencePointer(jsonRef)));
 
-        if (documentUri && (internal::uri::isUriAbsolute(*documentUri) || internal::uri::isUrn(*documentUri))) {
+        const std::optional<std::string> actualDocumentUri =
+                resolveDocumentUri(currentScope, documentUri);
+
+        if (!actualJsonPointer.empty() && actualJsonPointer[0] != '/') {
+            const std::string idRef = actualDocumentUri ?
+                    (*actualDocumentUri + "#" + actualJsonPointer) :
+                    ("#" + actualJsonPointer);
+            std::string registeredPath;
+            std::optional<std::string> registeredScope;
+            if (findSchemaById(rootNode, currentScope, idRef,
+                        "", registeredPath, registeredScope)) {
+                const AdapterType registeredRoot =
+                        internal::json_pointer::resolveJsonPointerStrict(
+                                rootNode, registeredPath);
+
+                resolveThenPopulateSchema(rootSchema, registeredRoot,
+                        registeredRoot, subschema, registeredScope,
+                        "", fetchDoc, parentSchema, ownName,
+                        docCache, schemaRegistry);
+                return;
+            }
+        }
+
+        if (actualDocumentUri && (!currentScope || *actualDocumentUri != *currentScope)) {
+            std::string registeredPath;
+            std::optional<std::string> registeredScope;
+            if (findSchemaById(rootNode, currentScope, *actualDocumentUri,
+                        "", registeredPath, registeredScope)) {
+                const AdapterType registeredRoot =
+                        internal::json_pointer::resolveJsonPointerStrict(
+                                rootNode, registeredPath);
+                const AdapterType referencedAdapter = actualJsonPointer.empty()
+                        ? registeredRoot
+                        : internal::json_pointer::resolveJsonPointerStrict(
+                                registeredRoot, actualJsonPointer);
+
+                resolveThenPopulateSchema(rootSchema, registeredRoot,
+                        referencedAdapter, subschema, registeredScope,
+                        actualJsonPointer, fetchDoc,
+                        parentSchema, ownName, docCache, schemaRegistry);
+                return;
+            }
+
             // Resolve reference against remote document
             if (!fetchDoc) {
                 throwRuntimeError("Fetching of remote JSON References not enabled.");
             }
 
-            const typename DocumentCache<AdapterType>::DocumentType *newDoc = fetchDoc(*documentUri);
+            const typename DocumentCache<AdapterType>::DocumentType *newDoc = fetchDoc(*actualDocumentUri);
 
             // Can't proceed without the remote document
             if (!newDoc) {
-                throwRuntimeError("Failed to fetch referenced schema document: " + *documentUri);
+                throwRuntimeError("Failed to fetch referenced schema document: " + *actualDocumentUri);
             }
 
             // Add to document cache
             typedef typename DocumentCache<AdapterType>::Type::value_type DocCacheValueType;
 
-            docCache.insert(DocCacheValueType(*documentUri, newDoc));
+            docCache.insert(DocCacheValueType(*actualDocumentUri, newDoc));
 
             const AdapterType newRootNode(*newDoc);
 
             const AdapterType &referencedAdapter =
-                internal::json_pointer::resolveJsonPointer(newRootNode, actualJsonPointer);
+                internal::json_pointer::resolveJsonPointerStrict(newRootNode, actualJsonPointer);
 
             // TODO: Need to detect degenerate circular references
-            resolveThenPopulateSchema(rootSchema, newRootNode, referencedAdapter, subschema, {}, actualJsonPointer,
-                    fetchDoc, parentSchema, ownName, docCache, schemaCache);
+            resolveThenPopulateSchema(rootSchema, newRootNode, referencedAdapter,
+                    subschema, actualDocumentUri, actualJsonPointer, fetchDoc,
+                    parentSchema, ownName, docCache, schemaRegistry);
 
         } else if (!actualJsonPointer.empty()) {
             const AdapterType &referencedAdapter =
-                    internal::json_pointer::resolveJsonPointer(rootNode, actualJsonPointer);
+                    internal::json_pointer::resolveJsonPointerStrict(rootNode, actualJsonPointer);
 
-            resolveThenPopulateSchema(rootSchema, rootNode, referencedAdapter, subschema, {}, actualJsonPointer,
-                    fetchDoc, parentSchema, ownName, docCache, schemaCache);
+            std::optional<std::string> referencedScope = currentScope;
+            findScopeForPath(rootNode, currentScope, actualJsonPointer, "",
+                    referencedScope);
+
+            resolveThenPopulateSchema(rootSchema, rootNode, referencedAdapter,
+                    subschema, referencedScope, actualJsonPointer, fetchDoc,
+                    parentSchema, ownName, docCache, schemaRegistry);
         } else {
             throwRuntimeError("Cannot resolve reference \"" + jsonRef + "\".");
         }
@@ -5512,17 +5937,17 @@ private:
     /**
      * @brief   Make a new AllOfConstraint object
      *
-     * @param   rootSchema    The Schema instance, and root subschema, through
-     *                        which other subschemas can be created and modified
-     * @param   rootNode      Reference to the node from which JSON References
-     *                        will be resolved when they refer to the current
-     *                        document; used for recursive parsing of schemas
-     * @param   node          JSON node containing an array of child schemas
-     * @param   currentScope  URI for current resolution scope
-     * @param   nodePath      JSON Pointer representing path to current node
-     * @param   fetchDoc      Function to fetch remote JSON documents (optional)
-     * @param   docCache      Cache of resolved and fetched remote documents
-     * @param   schemaCache   Cache of populated schemas
+     * @param   rootSchema     The Schema instance, and root subschema, through
+     *                         which other subschemas can be created and modified
+     * @param   rootNode       Reference to the node from which JSON References
+     *                         will be resolved when they refer to the current
+     *                         document; used for recursive parsing of schemas
+     * @param   node           JSON node containing an array of child schemas
+     * @param   currentScope   URI for current resolution scope
+     * @param   nodePath       JSON Pointer representing path to current node
+     * @param   fetchDoc       Function to fetch remote JSON documents (optional)
+     * @param   docCache       Cache of resolved and fetched remote documents
+     * @param   schemaRegistry Registry of populated schemas
      *
      * @return  pointer to a new AllOfConstraint object that belongs to the
      *          caller
@@ -5536,7 +5961,7 @@ private:
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
-        SchemaCache &schemaCache)
+        SchemaRegistry &schemaRegistry)
     {
         if (!node.maybeArray()) {
             throwRuntimeError("Expected array value for 'allOf' constraint.");
@@ -5550,7 +5975,7 @@ private:
                 const std::string childPath = nodePath + "/" + std::to_string(index);
                 const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                         rootSchema, rootNode, schemaNode, currentScope,
-                        childPath, fetchDoc, nullptr, nullptr, docCache, schemaCache);
+                        childPath, fetchDoc, nullptr, nullptr, docCache, schemaRegistry);
                 constraint.addSubschema(subschema);
                 index++;
             } else {
@@ -5562,19 +5987,68 @@ private:
     }
 
     /**
+     * @brief   Make a new constraint object for Draft 3's 'extends' keyword.
+     *
+     * The value of 'extends' may be either a single schema or an array of
+     * schemas. The instance is required to validate against every schema
+     * listed, so the keyword is modelled as an AllOfConstraint.
+     */
+    template<typename AdapterType>
+    constraints::AllOfConstraint makeExtendsConstraint(
+        Schema &rootSchema,
+        const AdapterType &rootNode,
+        const AdapterType &node,
+        const std::optional<std::string> currentScope,
+        const std::string &nodePath,
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
+        typename DocumentCache<AdapterType>::Type &docCache,
+        SchemaRegistry &schemaRegistry)
+    {
+        constraints::AllOfConstraint constraint;
+
+        if (node.maybeArray()) {
+            int index = 0;
+            for (const AdapterType schemaNode : node.asArray()) {
+                if (!schemaNode.maybeObject()) {
+                    throwRuntimeError("Expected element to be a valid schema "
+                            "in 'extends' constraint.");
+                }
+                const std::string childPath = nodePath + "/"
+                        + std::to_string(index);
+                const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                        rootSchema, rootNode, schemaNode, currentScope,
+                        childPath, fetchDoc, nullptr, nullptr, docCache,
+                        schemaRegistry);
+                constraint.addSubschema(subschema);
+                index++;
+            }
+        } else if (node.maybeObject()) {
+            const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                    rootSchema, rootNode, node, currentScope, nodePath,
+                    fetchDoc, nullptr, nullptr, docCache, schemaRegistry);
+            constraint.addSubschema(subschema);
+        } else {
+            throwRuntimeError("Expected schema or array of schemas for "
+                    "'extends' constraint.");
+        }
+
+        return constraint;
+    }
+
+    /**
      * @brief   Make a new AnyOfConstraint object
      *
-     * @param   rootSchema    The Schema instance, and root subschema, through
-     *                        which other subschemas can be created and modified
-     * @param   rootNode      Reference to the node from which JSON References
-     *                        will be resolved when they refer to the current
-     *                        document; used for recursive parsing of schemas
-     * @param   node          JSON node containing an array of child schemas
-     * @param   currentScope  URI for current resolution scope
-     * @param   nodePath      JSON Pointer representing path to current node
-     * @param   fetchDoc      Function to fetch remote JSON documents (optional)
-     * @param   docCache      Cache of resolved and fetched remote documents
-     * @param   schemaCache   Cache of populated schemas
+     * @param   rootSchema     The Schema instance, and root subschema, through
+     *                         which other subschemas can be created and modified
+     * @param   rootNode       Reference to the node from which JSON References
+     *                         will be resolved when they refer to the current
+     *                         document; used for recursive parsing of schemas
+     * @param   node           JSON node containing an array of child schemas
+     * @param   currentScope   URI for current resolution scope
+     * @param   nodePath       JSON Pointer representing path to current node
+     * @param   fetchDoc       Function to fetch remote JSON documents (optional)
+     * @param   docCache       Cache of resolved and fetched remote documents
+     * @param   schemaRegistry Registry of populated schemas
      *
      * @return  pointer to a new AnyOfConstraint object that belongs to the
      *          caller
@@ -5588,7 +6062,7 @@ private:
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
-        SchemaCache &schemaCache)
+        SchemaRegistry &schemaRegistry)
     {
         if (!node.maybeArray()) {
             throwRuntimeError("Expected array value for 'anyOf' constraint.");
@@ -5602,7 +6076,7 @@ private:
                 const std::string childPath = nodePath + "/" + std::to_string(index);
                 const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                         rootSchema, rootNode, schemaNode, currentScope,
-                        childPath, fetchDoc, nullptr, nullptr, docCache, schemaCache);
+                        childPath, fetchDoc, nullptr, nullptr, docCache, schemaRegistry);
                 constraint.addSubschema(subschema);
                 index++;
             } else {
@@ -5638,7 +6112,7 @@ private:
      *                               (optional)
      * @param   docCache             Cache of resolved and fetched remote
      *                               documents
-     * @param   schemaCache          Cache of populated schemas
+     * @param   schemaRegistry       Registry of populated schemas
      *
      * @return  pointer to a new ContainsConstraint that belongs to the caller
      */
@@ -5653,27 +6127,27 @@ private:
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
-        SchemaCache &schemaCache)
+        SchemaRegistry &schemaRegistry)
     {
         constraints::ConditionalConstraint constraint;
 
         const Subschema *ifSubschema = makeOrReuseSchema<AdapterType>(
                 rootSchema, rootNode, ifNode, currentScope,
                 nodePath + "/if", fetchDoc, nullptr, nullptr, docCache,
-                schemaCache);
+                schemaRegistry);
         constraint.setIfSubschema(ifSubschema);
 
         if (thenNode) {
             const Subschema *thenSubschema = makeOrReuseSchema<AdapterType>(
                     rootSchema, rootNode, *thenNode, currentScope, nodePath + "/then", fetchDoc, nullptr,
-                    nullptr, docCache, schemaCache);
+                    nullptr, docCache, schemaRegistry);
             constraint.setThenSubschema(thenSubschema);
         }
 
         if (elseNode) {
             const Subschema *elseSubschema = makeOrReuseSchema<AdapterType>(
                     rootSchema, rootNode, *elseNode, currentScope, nodePath + "/else", fetchDoc, nullptr,
-                    nullptr, docCache, schemaCache);
+                    nullptr, docCache, schemaRegistry);
             constraint.setElseSubschema(elseSubschema);
         }
 
@@ -5715,7 +6189,7 @@ private:
      *                               (optional)
      * @param   docCache             Cache of resolved and fetched remote
      *                               documents
-     * @param   schemaCache          Cache of populated schemas
+     * @param   schemaRegistry       Registry of populated schemas
      *
      * @return  pointer to a new ContainsConstraint that belongs to the caller
      */
@@ -5728,14 +6202,14 @@ private:
         const std::string &containsPath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
-        SchemaCache &schemaCache)
+        SchemaRegistry &schemaRegistry)
     {
         constraints::ContainsConstraint constraint;
 
         if (contains.isObject() || (supportsBooleanSchemas() && contains.maybeBool())) {
             const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                     rootSchema, rootNode, contains, currentScope, containsPath,
-                    fetchDoc, nullptr, nullptr, docCache, schemaCache);
+                    fetchDoc, nullptr, nullptr, docCache, schemaRegistry);
             constraint.setSubschema(subschema);
 
         } else if (contains.maybeObject()) {
@@ -5771,18 +6245,18 @@ private:
      * If the format of any part of the dependency node does not match one
      * of these formats, an exception will be thrown.
      *
-     * @param   rootSchema    The Schema instance, and root subschema, through
-     *                        which other subschemas can be created and modified
-     * @param   rootNode      Reference to the node from which JSON References
-     *                        will be resolved when they refer to the current
-     *                        document; used for recursive parsing of schemas
-     * @param   node          JSON node containing an object that defines a
-     *                        mapping of properties to their dependencies.
-     * @param   currentScope  URI for current resolution scope
-     * @param   nodePath      JSON Pointer representing path to current node
-     * @param   fetchDoc      Function to fetch remote JSON documents (optional)
-     * @param   docCache      Cache of resolved and fetched remote documents
-     * @param   schemaCache   Cache of populated schemas
+     * @param   rootSchema     The Schema instance, and root subschema, through
+     *                         which other subschemas can be created and modified
+     * @param   rootNode       Reference to the node from which JSON References
+     *                         will be resolved when they refer to the current
+     *                         document; used for recursive parsing of schemas
+     * @param   node           JSON node containing an object that defines a
+     *                         mapping of properties to their dependencies.
+     * @param   currentScope   URI for current resolution scope
+     * @param   nodePath       JSON Pointer representing path to current node
+     * @param   fetchDoc       Function to fetch remote JSON documents (optional)
+     * @param   docCache       Cache of resolved and fetched remote documents
+     * @param   schemaRegistry Registry of populated schemas
      *
      * @return  pointer to a new DependencyConstraint that belongs to the
      *          caller
@@ -5796,7 +6270,7 @@ private:
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
-        SchemaCache &schemaCache)
+        SchemaRegistry &schemaRegistry)
     {
         if (!node.maybeObject()) {
             throwRuntimeError("Expected valid subschema for 'dependencies' constraint.");
@@ -5837,10 +6311,13 @@ private:
             // process it as a dependent schema.
             } else if (member.second.isObject() || (supportsBooleanSchemas() && member.second.maybeBool())) {
                 // Parse dependent subschema
+                const std::string childPath = nodePath + "/" +
+                        escapeJsonPointerToken(member.first);
                 const Subschema *childSubschema =
                         makeOrReuseSchema<AdapterType>(rootSchema, rootNode,
-                                member.second, currentScope, nodePath, fetchDoc,
-                                nullptr, nullptr, docCache, schemaCache);
+                                member.second, currentScope, childPath,
+                                fetchDoc, nullptr, nullptr, docCache,
+                                schemaRegistry);
                 dependenciesConstraint.addSchemaDependency(member.first,
                         childSubschema);
 
@@ -5933,7 +6410,7 @@ private:
      *                               (optional)
      * @param   docCache             Cache of resolved and fetched remote
      *                               documents
-     * @param   schemaCache          Cache of populated schemas
+     * @param   schemaRegistry       Registry of populated schemas
      *
      * @return  pointer to a new ItemsConstraint that belongs to the caller
      */
@@ -5948,7 +6425,7 @@ private:
         const std::string &additionalItemsPath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
-        SchemaCache &schemaCache)
+        SchemaRegistry &schemaRegistry)
     {
         constraints::LinearItemsConstraint constraint;
 
@@ -5969,7 +6446,7 @@ private:
                 const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                         rootSchema, rootNode, *additionalItems, currentScope,
                         additionalItemsPath, fetchDoc, nullptr, nullptr, docCache,
-                        schemaCache);
+                        schemaRegistry);
                 constraint.setAdditionalItemsSubschema(subschema);
             } else {
                 // Any other format for the additionalItems property will result
@@ -5998,7 +6475,7 @@ private:
                             std::to_string(index);
                     const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                             rootSchema, rootNode, v, currentScope, childPath,
-                            fetchDoc, nullptr, nullptr, docCache, schemaCache);
+                            fetchDoc, nullptr, nullptr, docCache, schemaRegistry);
                     constraint.addItemSubschema(subschema);
                     index++;
                 }
@@ -6026,7 +6503,7 @@ private:
         const std::string &unevaluatedItemsPath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
-        SchemaCache &schemaCache)
+        SchemaRegistry &schemaRegistry)
     {
         constraints::LinearItemsConstraint constraint;
 
@@ -6045,7 +6522,7 @@ private:
                         std::to_string(index);
                 const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                         rootSchema, rootNode, v, currentScope, childPath,
-                        fetchDoc, nullptr, nullptr, docCache, schemaCache);
+                        fetchDoc, nullptr, nullptr, docCache, schemaRegistry);
                 constraint.addItemSubschema(subschema);
                 index++;
             }
@@ -6064,7 +6541,7 @@ private:
                 const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                         rootSchema, rootNode, *additionalSchema, currentScope,
                         additionalSchemaPath, fetchDoc, nullptr, nullptr,
-                        docCache, schemaCache);
+                        docCache, schemaRegistry);
                 constraint.setAdditionalItemsSubschema(subschema);
             } else {
                 throwRuntimeError("Expected valid schema for Draft 2020-12 'items' or 'unevaluatedItems' constraint.");
@@ -6096,7 +6573,7 @@ private:
      *                               (optional)
      * @param   docCache             Cache of resolved and fetched remote
      *                               documents
-     * @param   schemaCache          Cache of populated schemas
+     * @param   schemaRegistry       Registry of populated schemas
      *
      * @return  pointer to a new ItemsConstraint that belongs to the caller
      */
@@ -6109,7 +6586,7 @@ private:
         const std::string &itemsPath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
-        SchemaCache &schemaCache)
+        SchemaRegistry &schemaRegistry)
     {
         constraints::SingularItemsConstraint constraint;
 
@@ -6124,7 +6601,7 @@ private:
             // additionalItems constraint will be ignored.
             const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                     rootSchema, rootNode, items, currentScope, itemsPath,
-                    fetchDoc, nullptr, nullptr, docCache, schemaCache);
+                    fetchDoc, nullptr, nullptr, docCache, schemaRegistry);
             constraint.setItemsSubschema(subschema);
 
         } else if (items.maybeObject()) {
@@ -6429,17 +6906,17 @@ private:
     /**
      * @brief   Make a new NotConstraint object
      *
-     * @param   rootSchema    The Schema instance, and root subschema, through
-     *                        which other subschemas can be created and modified
-     * @param   rootNode      Reference to the node from which JSON References
-     *                        will be resolved when they refer to the current
-     *                        document; used for recursive parsing of schemas
-     * @param   node          JSON node containing a schema
-     * @param   currentScope  URI for current resolution scope
-     * @param   nodePath      JSON Pointer representing path to current node
-     * @param   fetchDoc      Function to fetch remote JSON documents (optional)
-     * @param   docCache      Cache of resolved and fetched remote documents
-     * @param   schemaCache   Cache of populated schemas
+     * @param   rootSchema     The Schema instance, and root subschema, through
+     *                         which other subschemas can be created and modified
+     * @param   rootNode       Reference to the node from which JSON References
+     *                         will be resolved when they refer to the current
+     *                         document; used for recursive parsing of schemas
+     * @param   node           JSON node containing a schema
+     * @param   currentScope   URI for current resolution scope
+     * @param   nodePath       JSON Pointer representing path to current node
+     * @param   fetchDoc       Function to fetch remote JSON documents (optional)
+     * @param   docCache       Cache of resolved and fetched remote documents
+     * @param   schemaRegistry Registry of populated schemas
      *
      * @return  pointer to a new NotConstraint object that belongs to the caller
      */
@@ -6452,12 +6929,12 @@ private:
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
-        SchemaCache &schemaCache)
+        SchemaRegistry &schemaRegistry)
     {
         if (node.maybeObject() || (supportsBooleanSchemas() && node.maybeBool())) {
             const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                     rootSchema, rootNode, node, currentScope, nodePath,
-                    fetchDoc, nullptr, nullptr, docCache, schemaCache);
+                    fetchDoc, nullptr, nullptr, docCache, schemaRegistry);
             constraints::NotConstraint constraint;
             constraint.setSubschema(subschema);
             return constraint;
@@ -6469,17 +6946,17 @@ private:
     /**
      * @brief   Make a new OneOfConstraint object
      *
-     * @param   rootSchema    The Schema instance, and root subschema, through
-     *                        which other subschemas can be created and modified
-     * @param   rootNode      Reference to the node from which JSON References
-     *                        will be resolved when they refer to the current
-     *                        document; used for recursive parsing of schemas
-     * @param   node          JSON node containing an array of child schemas
-     * @param   currentScope  URI for current resolution scope
-     * @param   nodePath      JSON Pointer representing path to current node
-     * @param   fetchDoc      Function to fetch remote JSON documents (optional)
-     * @param   docCache      Cache of resolved and fetched remote documents
-     * @param   schemaCache   Cache of populated schemas
+     * @param   rootSchema     The Schema instance, and root subschema, through
+     *                         which other subschemas can be created and modified
+     * @param   rootNode       Reference to the node from which JSON References
+     *                         will be resolved when they refer to the current
+     *                         document; used for recursive parsing of schemas
+     * @param   node           JSON node containing an array of child schemas
+     * @param   currentScope   URI for current resolution scope
+     * @param   nodePath       JSON Pointer representing path to current node
+     * @param   fetchDoc       Function to fetch remote JSON documents (optional)
+     * @param   docCache       Cache of resolved and fetched remote documents
+     * @param   schemaRegistry Registry of populated schemas
      *
      * @return  pointer to a new OneOfConstraint that belongs to the caller
      */
@@ -6492,7 +6969,7 @@ private:
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
-        SchemaCache &schemaCache)
+        SchemaRegistry &schemaRegistry)
     {
         constraints::OneOfConstraint constraint;
 
@@ -6501,7 +6978,7 @@ private:
             const std::string childPath = nodePath + "/" + std::to_string(index);
             const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                 rootSchema, rootNode, schemaNode, currentScope, childPath,
-                fetchDoc, nullptr, nullptr, docCache, schemaCache);
+                fetchDoc, nullptr, nullptr, docCache, schemaRegistry);
             constraint.addSubschema(subschema);
             index++;
         }
@@ -6559,7 +7036,7 @@ private:
      *                                    'required' keyword in Draft 3
      * @param   docCache                  Cache of resolved and fetched remote
      *                                    documents
-     * @param   schemaCache               Cache of populated schemas
+     * @param   schemaRegistry            Registry of populated schemas
      *
      * @return  pointer to a new Properties that belongs to the caller
      */
@@ -6577,7 +7054,7 @@ private:
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         const Subschema *parentSubschema,
         typename DocumentCache<AdapterType>::Type &docCache,
-        SchemaCache &schemaCache)
+        SchemaRegistry &schemaRegistry)
     {
         typedef typename AdapterType::ObjectMember Member;
 
@@ -6591,7 +7068,7 @@ private:
                 const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                         rootSchema, rootNode, m.second, currentScope, childPath,
                         fetchDoc, parentSubschema, &property, docCache,
-                        schemaCache);
+                        schemaRegistry);
                 constraint.addPropertySubschema(property, subschema);
             }
         }
@@ -6604,7 +7081,7 @@ private:
                 const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                         rootSchema, rootNode, m.second, currentScope, childPath,
                         fetchDoc, parentSubschema, &pattern, docCache,
-                        schemaCache);
+                        schemaRegistry);
                 constraint.addPatternPropertySubschema(pattern, subschema);
             }
         }
@@ -6631,7 +7108,7 @@ private:
                 const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                         rootSchema, rootNode, *additionalProperties,
                         currentScope, additionalPropertiesPath, fetchDoc, nullptr,
-                        nullptr, docCache, schemaCache);
+                        nullptr, docCache, schemaRegistry);
                 constraint.setAdditionalPropertiesSubschema(subschema);
             } else {
                 // All other types are invalid
@@ -6655,10 +7132,10 @@ private:
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
-        SchemaCache &schemaCache)
+        SchemaRegistry &schemaRegistry)
     {
         const Subschema *subschema = makeOrReuseSchema<AdapterType>(rootSchema, rootNode, currentNode, currentScope,
-                nodePath, fetchDoc, nullptr, nullptr, docCache, schemaCache);
+                nodePath, fetchDoc, nullptr, nullptr, docCache, schemaRegistry);
         constraints::PropertyNamesConstraint constraint;
         constraint.setSubschema(subschema);
         return constraint;
@@ -6725,17 +7202,17 @@ private:
     /**
      * @brief   Make a new TypeConstraint object
      *
-     * @param   rootSchema    The Schema instance, and root subschema, through
-     *                        which other subschemas can be created and modified
-     * @param   rootNode      Reference to the node from which JSON References
-     *                        will be resolved when they refer to the current
-     *                        document; used for recursive parsing of schemas
-     * @param   node          Node containing the name of a JSON type
-     * @param   currentScope  URI for current resolution scope
-     * @param   nodePath      JSON Pointer representing path to current node
-     * @param   fetchDoc      Function to fetch remote JSON documents (optional)
-     * @param   docCache      Cache of resolved and fetched remote documents
-     * @param   schemaCache   Cache of populated schemas
+     * @param   rootSchema     The Schema instance, and root subschema, through
+     *                         which other subschemas can be created and modified
+     * @param   rootNode       Reference to the node from which JSON References
+     *                         will be resolved when they refer to the current
+     *                         document; used for recursive parsing of schemas
+     * @param   node           Node containing the name of a JSON type
+     * @param   currentScope   URI for current resolution scope
+     * @param   nodePath       JSON Pointer representing path to current node
+     * @param   fetchDoc       Function to fetch remote JSON documents (optional)
+     * @param   docCache       Cache of resolved and fetched remote documents
+     * @param   schemaRegistry Registry of populated schemas
      *
      * @return  pointer to a new TypeConstraint object.
      */
@@ -6748,7 +7225,7 @@ private:
         const std::string &nodePath,
         const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
         typename DocumentCache<AdapterType>::Type &docCache,
-        SchemaCache &schemaCache)
+        SchemaRegistry &schemaRegistry)
     {
         typedef constraints::TypeConstraint TypeConstraint;
 
@@ -6776,7 +7253,7 @@ private:
                 } else if (v.maybeObject() && m_version == kDraft3) {
                     const std::string childPath = nodePath + "/" + std::to_string(index);
                     const Subschema *subschema = makeOrReuseSchema<AdapterType>(rootSchema, rootNode, v, currentScope,
-                            childPath, fetchDoc, nullptr, nullptr, docCache, schemaCache);
+                            childPath, fetchDoc, nullptr, nullptr, docCache, schemaRegistry);
                     constraint.addSchemaType(subschema);
 
                 } else {
@@ -6788,7 +7265,7 @@ private:
 
         } else if (node.maybeObject() && m_version == kDraft3) {
             const Subschema *subschema = makeOrReuseSchema<AdapterType>(rootSchema, rootNode, node, currentScope,
-                    nodePath, fetchDoc, nullptr, nullptr, docCache, schemaCache);
+                    nodePath, fetchDoc, nullptr, nullptr, docCache, schemaRegistry);
             constraint.addSchemaType(subschema);
 
         } else {
@@ -7319,7 +7796,10 @@ inline bool StdStringFrozenValue::equalTo(const Adapter &other, bool strict) con
 }  // namespace valijson
 #pragma once
 
+#include <algorithm>
 #include <cmath>
+#include <cstdint>
+#include <limits>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -7334,6 +7814,30 @@ inline bool StdStringFrozenValue::equalTo(const Adapter &other, bool strict) con
 namespace valijson {
 
 class ValidationResults;
+
+namespace detail {
+
+template<typename AdapterType>
+inline bool isDoubleAnInteger(const AdapterType &target)
+{
+    if (!target.isDouble()) {
+        return false;
+    }
+    const double value = target.asDouble();
+    if (!std::isfinite(value)) {
+        return false;
+    }
+    if (value < static_cast<double>(std::numeric_limits<int64_t>::min())) {
+        return false;
+    }
+    if (value > static_cast<double>(std::numeric_limits<int64_t>::max())) {
+        return false;
+    }
+    double intPart = 0.0;
+    return std::modf(value, &intPart) == 0.0;
+}
+
+}  // namespace detail
 
 /**
  * @brief   Implementation of the ConstraintVisitor interface that validates a
@@ -7689,7 +8193,9 @@ public:
         // Reference:
         // https://json-schema.org/understanding-json-schema/reference/string.html#format
         //
-        if (!m_target.maybeString()) {
+        // Per the JSON Schema specification, the 'format' keyword applies
+        // only to values that are strings. Other types are ignored.
+        if (!m_target.isString()) {
             return true;
         }
 
@@ -7700,9 +8206,10 @@ public:
             static const internal::regex date_regex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$");
             internal::smatch matches;
             if (internal::regex_match(s, matches, date_regex)) {
+                const auto year = std::stoi(matches[1].str());
                 const auto month = std::stoi(matches[2].str());
                 const auto day = std::stoi(matches[3].str());
-                return validate_date_range(month, day);
+                return validate_date_range(year, month, day);
             } else {
                 if (m_results) {
                     m_results->pushError(m_path, "String should be a valid date");
@@ -7711,10 +8218,28 @@ public:
             }
         } else if (format == "time") {
             // Strict mode matches times like: 16:52:45Z, 16:52:45+02:00
-            // Permissive mode also matches date/times like 16:52:45
-            static const internal::regex strictRegex("^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
-            static const internal::regex permissiveRegex("^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])?|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
-            if (internal::regex_match(s, m_strictDateTime ? strictRegex : permissiveRegex)) {
+            // Permissive mode also matches times like 16:52:45
+            static const internal::regex strictRegex("^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])|([\\+\\-])([01][0-9]|2[0-3]):([0-5][0-9]))$");
+            static const internal::regex permissiveRegex("^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])?|([\\+\\-])([01][0-9]|2[0-3]):([0-5][0-9]))$");
+            internal::smatch matches;
+            if (internal::regex_match(s, matches, m_strictDateTime ? strictRegex : permissiveRegex)) {
+                const auto hour = std::stoi(matches[1].str());
+                const auto minute = std::stoi(matches[2].str());
+                const auto second = std::stoi(matches[3].str());
+                if (second == 60) {
+                    int offsetMinutes = 0;
+                    if (matches[7].matched && matches[8].matched && matches[9].matched) {
+                        const int sign = (matches[7].str() == "-") ? -1 : 1;
+                        offsetMinutes = sign * (std::stoi(matches[8].str()) * 60
+                                + std::stoi(matches[9].str()));
+                    }
+                    if (!validate_leap_second(hour, minute, offsetMinutes)) {
+                        if (m_results) {
+                            m_results->pushError(m_path, "String should be a valid time");
+                        }
+                        return false;
+                    }
+                }
                 return true;
             } else {
                 if (m_results) {
@@ -7725,13 +8250,34 @@ public:
         } else if (format == "date-time") {
             // Strict mode matches date/times like: 2022-07-18T16:52:45Z, 2022-07-18T16:52:45+02:00
             // Permissive mode also matches date/times like: 2022-07-18T16:52:45
-            static const internal::regex strictRegex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])[Tt]([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
-            static const internal::regex permissiveRegex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])[Tt]([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])?|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
+            static const internal::regex strictRegex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])[Tt]([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])|([\\+\\-])([01][0-9]|2[0-3]):([0-5][0-9]))$");
+            static const internal::regex permissiveRegex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])[Tt]([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])?|([\\+\\-])([01][0-9]|2[0-3]):([0-5][0-9]))$");
             internal::smatch matches;
             if (internal::regex_match(s, matches, m_strictDateTime ? strictRegex : permissiveRegex)) {
+                const auto year = std::stoi(matches[1].str());
                 const auto month = std::stoi(matches[2].str());
                 const auto day = std::stoi(matches[3].str());
-                return validate_date_range(month, day);
+                if (!validate_date_range(year, month, day)) {
+                    return false;
+                }
+                const auto hour = std::stoi(matches[4].str());
+                const auto minute = std::stoi(matches[5].str());
+                const auto second = std::stoi(matches[6].str());
+                if (second == 60) {
+                    int offsetMinutes = 0;
+                    if (matches[10].matched && matches[11].matched && matches[12].matched) {
+                        const int sign = (matches[10].str() == "-") ? -1 : 1;
+                        offsetMinutes = sign * (std::stoi(matches[11].str()) * 60
+                                + std::stoi(matches[12].str()));
+                    }
+                    if (!validate_leap_second(hour, minute, offsetMinutes)) {
+                        if (m_results) {
+                            m_results->pushError(m_path, "String should be a valid date-time");
+                        }
+                        return false;
+                    }
+                }
+                return true;
             } else {
                 if (m_results) {
                     m_results->pushError(m_path, "String should be a valid date-time");
@@ -8142,9 +8688,30 @@ public:
             return true;
         }
 
-        const double r = remainder(d, divisor);
+        if (divisor == 0) {
+            return false;
+        }
 
-        if (fabs(r) > std::numeric_limits<double>::epsilon()) {
+        // Determine whether 'd' is an exact multiple of 'divisor' using
+        // d / divisor, with a relative tolerance to absorb floating-point
+        // error. This handles edge cases such as a large integer being a
+        // multiple of a very small fraction (e.g. 12391239123 and 1e-8),
+        // while still rejecting values where the precision is exhausted
+        // (e.g. 1e308 divided by 0.123456789 overflows to infinity).
+        const double quotient = d / divisor;
+        if (!std::isfinite(quotient)) {
+            if (m_results) {
+                m_results->pushError(m_path, "Value should be a multiple of " + std::to_string(divisor));
+            }
+            return false;
+        }
+
+        const double rounded = std::round(quotient);
+        const double diff = std::fabs(quotient - rounded);
+        const double tolerance = std::max(std::fabs(quotient), 1.0)
+                * std::numeric_limits<double>::epsilon();
+
+        if (diff > tolerance) {
             if (m_results) {
                 m_results->pushError(m_path, "Value should be a multiple of " + std::to_string(divisor));
             }
@@ -8875,7 +9442,12 @@ private:
                 valid = m_target.isBool() || (!m_strictTypes && m_target.maybeBool());
                 break;
             case TypeConstraint::kInteger:
-                valid = m_target.isInteger() || (!m_strictTypes && m_target.maybeInteger());
+                // JSON Schema considers a JSON number with a zero fractional
+                // part to be an integer regardless of representation, so an
+                // exact-integer double satisfies the integer type even in
+                // strict mode.
+                valid = m_target.isInteger() || detail::isDoubleAnInteger(m_target)
+                        || (!m_strictTypes && m_target.maybeInteger());
                 break;
             case TypeConstraint::kNull:
                 valid = m_target.isNull() || (!m_strictTypes && m_target.maybeNull());
@@ -9224,42 +9796,71 @@ private:
     }
 
     /**
-     * @brief    Helper function to validate if day is valid for given month
+     * @brief    Helper function to validate if day is valid for the given
+     *           year and month, applying the Gregorian leap-year rules.
      *
+     * @param    year    Year (any non-negative value)
      * @param    month   Month, 1-12
      * @param    day     Day, 1-31
      *
-     * @return   \c true if day is valid for given month, \c false otherwise.
+     * @return   \c true if day is valid for given year/month, \c false otherwise.
      */
-    bool validate_date_range(int month, int day)
+    bool validate_date_range(int year, int month, int day)
     {
-        if (month == 2) {
-            if (day < 0 || day > 29) {
-                if (m_results) {
-                    m_results->pushError(m_path, "String should be a valid date-time");
-                }
-                return false;
+        if (day < 1) {
+            if (m_results) {
+                m_results->pushError(m_path, "String should be a valid date-time");
             }
-        } else {
-            int limit = 31;
-            if (month <= 7) {
-                if (month % 2 == 0) {
-                    limit = 30;
-                }
-            } else {
-                if (month % 2 != 0) {
-                    limit = 30;
-                }
-            }
-            if (day < 0 || day > limit) {
-                if (m_results) {
-                    m_results->pushError(m_path, "String should be a valid date-time");
-                }
-                return false;
-            }
-
+            return false;
         }
+
+        int limit;
+        if (month == 2) {
+            const bool leap = (year % 4 == 0)
+                    && ((year % 100 != 0) || (year % 400 == 0));
+            limit = leap ? 29 : 28;
+        } else if (month <= 7) {
+            limit = (month % 2 == 0) ? 30 : 31;
+        } else {
+            limit = (month % 2 != 0) ? 30 : 31;
+        }
+
+        if (day > limit) {
+            if (m_results) {
+                m_results->pushError(m_path, "String should be a valid date-time");
+            }
+            return false;
+        }
+
         return true;
+    }
+
+    /**
+     * @brief    Helper function to validate a leap second value (seconds == 60)
+     *           in a time string.
+     *
+     * Per RFC 3339, a leap second is only valid when the UTC time would be
+     * 23:59:60. For a value '23:59:60Z' that is satisfied directly; for
+     * values with a numeric offset, the local hour and minute must combine
+     * with the offset to equal 23:59 UTC.
+     *
+     * @param    hour          Local hour from the time string
+     * @param    minute        Local minute from the time string
+     * @param    offsetMinutes Offset from UTC in minutes; positive values
+     *                         indicate the local time is ahead of UTC. For
+     *                         Z/z the offset is 0.
+     *
+     * @return   \c true if the leap second is permitted given the offset.
+     */
+    bool validate_leap_second(int hour, int minute, int offsetMinutes)
+    {
+        // Total local time in minutes since 00:00.
+        const int localMinutes = hour * 60 + minute;
+        // Convert to UTC minutes, wrapping into the range [0, 1440).
+        int utcMinutes = localMinutes - offsetMinutes;
+        utcMinutes = ((utcMinutes % 1440) + 1440) % 1440;
+        // 23:59 UTC == 23 * 60 + 59 == 1439 minutes.
+        return utcMinutes == 1439;
     }
 
     /// The JSON value being validated
@@ -9432,6 +10033,7 @@ using Validator = ValidatorT<DefaultRegexEngine>;
 
 #pragma once
 
+#include <cmath>
 #include <optional>
 #include <string>
 #include <nlohmann/json.hpp>
@@ -9917,7 +10519,8 @@ public:
     {
         if (m_value.is_number_float()) {
             result = m_value.get<double>();
-            return true;
+            // NaN and Infinity are always serialized as null
+            return std::isfinite(result);
         }
 
         return false;
@@ -9991,7 +10594,11 @@ public:
 
     bool isDouble() const
     {
-        return m_value.is_number_float();
+        if (!m_value.is_number_float()) {
+            return false;
+        }
+        // NaN and Infinity are always serialized as null
+        return std::isfinite(m_value.get<double>());
     }
 
     bool isInteger() const
@@ -10001,12 +10608,26 @@ public:
 
     bool isNull() const
     {
-        return m_value.is_null();
+        if (m_value.is_null()) {
+            return true;
+        }
+        // NaN and Infinity are always serialized as null
+        if (m_value.is_number_float()) {
+            return !std::isfinite(m_value.get<double>());
+        }
+        return false;
     }
 
     bool isNumber() const
     {
-        return m_value.is_number();
+        if (!m_value.is_number()) {
+            return false;
+        }
+        // NaN and Infinity are always serialized as null
+        if (m_value.is_number_float()) {
+            return std::isfinite(m_value.get<double>());
+        }
+        return true;  // integers are always finite
     }
 
     bool isObject() const
