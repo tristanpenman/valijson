@@ -937,6 +937,19 @@ public:
                 }
                 return false;
             }
+            // Casting a double outside the range of int64_t is undefined
+            // behaviour, so check those values in floating point instead.
+            if (d < static_cast<double>(std::numeric_limits<int64_t>::min()) ||
+                    d > static_cast<double>(std::numeric_limits<int64_t>::max())) {
+                if (fabs(remainder(d, static_cast<double>(divisor))) >
+                        std::numeric_limits<double>::epsilon()) {
+                    if (m_results) {
+                        m_results->pushError(m_path, "Value should be a multiple of " + std::to_string(divisor));
+                    }
+                    return false;
+                }
+                return true;
+            }
             i = static_cast<int64_t>(d);
         } else {
             return true;
