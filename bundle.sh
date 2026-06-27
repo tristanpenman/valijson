@@ -78,7 +78,7 @@ common_headers=(
   include/valijson/utils/utf8_utils.hpp
   include/valijson/constraints/constraint.hpp
   include/valijson/subschema.hpp
-  include/valijson/schema_cache.hpp
+  include/valijson/schema_registry.hpp
   include/valijson/schema.hpp
   include/valijson/validation_results.hpp
   include/valijson/constraints/constraint_visitor.hpp

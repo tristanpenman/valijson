@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.10.0)
 project(valijson)
 
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 OLD)
+endif()
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -66,8 +70,16 @@ else()
     add_compile_definitions(VALIJSON_USE_EXCEPTIONS=0)
 endif()
 
-find_package(Poco COMPONENTS Foundation JSON)
-find_package(Qt5Core)
+find_package(Poco QUIET COMPONENTS Foundation JSON)
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Core)
+if(QT_FOUND)
+    find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core)
+endif()
+
+set(valijson_QT_CORE_TARGET "")
+if(Qt${QT_VERSION_MAJOR}Core_FOUND)
+    set(valijson_QT_CORE_TARGET Qt${QT_VERSION_MAJOR}::Core)
+endif()
 
 # jsoncpp library
 add_library(jsoncpp
@@ -84,6 +96,14 @@ add_library(json11
 )
 
 target_include_directories(json11 SYSTEM PRIVATE thirdparty/json11)
+if(MSVC)
+    target_compile_options(json11 PRIVATE /FIcstdint)
+else()
+    target_compile_options(json11 PRIVATE
+        -include cstdint
+        $<$<CXX_COMPILER_ID:Clang,AppleClang>:-Wno-unqualified-std-cast-call>
+    )
+endif()
 set_target_properties(json11 PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/thirdparty/json11)
 
 # yaml-cpp library
@@ -127,6 +147,7 @@ if(valijson_BUILD_TESTS)
         tests/test_rapidjson_adapter.cpp
         tests/test_picojson_adapter.cpp
         tests/test_poly_constraint.cpp
+        tests/test_uri.cpp
         tests/test_validation_errors.cpp
         tests/test_validator.cpp
         tests/test_validator_with_custom_regular_expression_engine.cpp
@@ -134,7 +155,7 @@ if(valijson_BUILD_TESTS)
         tests/test_utf8_utils.cpp
     )
 
-    set(TEST_LIBS gtest gtest_main jsoncpp json11 yamlcpp)
+    set(TEST_LIBS gtest_main jsoncpp json11 yamlcpp)
 
     if(Boost_FOUND)
         include_directories(${Boost_INCLUDE_DIRS})
@@ -158,19 +179,14 @@ if(valijson_BUILD_TESTS)
     endif()
 
     if(Poco_FOUND)
-        if(COMPILER_SUPPORTS_CXX17)
-            list(APPEND TEST_SOURCES tests/test_poco_json_adapter.cpp)
-            list(APPEND TEST_LIBS
-                Poco::Foundation
-                Poco::JSON)
-        else()
-            message(WARNING "Poco found, but the compiler ${CMAKE_CXX_COMPILER} has no C++17 support. Poco will be disabled in this build.")
-        endif()
+        list(APPEND TEST_SOURCES tests/test_poco_json_adapter.cpp)
+        list(APPEND TEST_LIBS
+            Poco::Foundation
+            Poco::JSON)
     endif()
 
-    if(Qt5Core_FOUND)
-        include_directories(${Qt5Core_INCLUDE_DIRS})
-        list(APPEND TEST_LIBS Qt5::Core)
+    if(valijson_QT_CORE_TARGET)
+        list(APPEND TEST_LIBS ${valijson_QT_CORE_TARGET})
         list(APPEND TEST_SOURCES tests/test_qtjson_adapter.cpp)
     endif()
 
@@ -217,7 +233,7 @@ if(valijson_BUILD_TESTS)
         target_compile_definitions(test_suite PRIVATE "VALIJSON_BUILD_POCO_ADAPTER")
     endif()
 
-    if(Qt5Core_FOUND)
+    if(valijson_QT_CORE_TARGET)
         target_compile_definitions(test_suite PRIVATE "VALIJSON_BUILD_QT_ADAPTER")
     endif()
 

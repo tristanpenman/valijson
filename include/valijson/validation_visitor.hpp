@@ -1,6 +1,9 @@
 #pragma once
 
+#include <algorithm>
 #include <cmath>
+#include <cstdint>
+#include <limits>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -21,6 +24,30 @@
 namespace valijson {
 
 class ValidationResults;
+
+namespace detail {
+
+template<typename AdapterType>
+inline bool isDoubleAnInteger(const AdapterType &target)
+{
+    if (!target.isDouble()) {
+        return false;
+    }
+    const double value = target.asDouble();
+    if (!std::isfinite(value)) {
+        return false;
+    }
+    if (value < static_cast<double>(std::numeric_limits<int64_t>::min())) {
+        return false;
+    }
+    if (value > static_cast<double>(std::numeric_limits<int64_t>::max())) {
+        return false;
+    }
+    double intPart = 0.0;
+    return std::modf(value, &intPart) == 0.0;
+}
+
+}  // namespace detail
 
 /**
  * @brief   Implementation of the ConstraintVisitor interface that validates a
@@ -375,7 +402,9 @@ public:
         // Reference:
         // https://json-schema.org/understanding-json-schema/reference/string.html#format
         //
-        if (!m_target.maybeString()) {
+        // Per the JSON Schema specification, the 'format' keyword applies
+        // only to values that are strings. Other types are ignored.
+        if (!m_target.isString()) {
             return true;
         }
 
@@ -386,9 +415,10 @@ public:
             static const internal::regex date_regex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$");
             internal::smatch matches;
             if (internal::regex_match(s, matches, date_regex)) {
+                const auto year = std::stoi(matches[1].str());
                 const auto month = std::stoi(matches[2].str());
                 const auto day = std::stoi(matches[3].str());
-                return validate_date_range(month, day);
+                return validate_date_range(year, month, day);
             } else {
                 if (m_results) {
                     m_results->pushError(m_path, "String should be a valid date");
@@ -397,10 +427,28 @@ public:
             }
         } else if (format == "time") {
             // Strict mode matches times like: 16:52:45Z, 16:52:45+02:00
-            // Permissive mode also matches date/times like 16:52:45
-            static const internal::regex strictRegex("^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
-            static const internal::regex permissiveRegex("^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])?|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
-            if (internal::regex_match(s, m_strictDateTime ? strictRegex : permissiveRegex)) {
+            // Permissive mode also matches times like 16:52:45
+            static const internal::regex strictRegex("^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])|([\\+\\-])([01][0-9]|2[0-3]):([0-5][0-9]))$");
+            static const internal::regex permissiveRegex("^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])?|([\\+\\-])([01][0-9]|2[0-3]):([0-5][0-9]))$");
+            internal::smatch matches;
+            if (internal::regex_match(s, matches, m_strictDateTime ? strictRegex : permissiveRegex)) {
+                const auto hour = std::stoi(matches[1].str());
+                const auto minute = std::stoi(matches[2].str());
+                const auto second = std::stoi(matches[3].str());
+                if (second == 60) {
+                    int offsetMinutes = 0;
+                    if (matches[7].matched && matches[8].matched && matches[9].matched) {
+                        const int sign = (matches[7].str() == "-") ? -1 : 1;
+                        offsetMinutes = sign * (std::stoi(matches[8].str()) * 60
+                                + std::stoi(matches[9].str()));
+                    }
+                    if (!validate_leap_second(hour, minute, offsetMinutes)) {
+                        if (m_results) {
+                            m_results->pushError(m_path, "String should be a valid time");
+                        }
+                        return false;
+                    }
+                }
                 return true;
             } else {
                 if (m_results) {
@@ -411,13 +459,34 @@ public:
         } else if (format == "date-time") {
             // Strict mode matches date/times like: 2022-07-18T16:52:45Z, 2022-07-18T16:52:45+02:00
             // Permissive mode also matches date/times like: 2022-07-18T16:52:45
-            static const internal::regex strictRegex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])[Tt]([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
-            static const internal::regex permissiveRegex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])[Tt]([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])?|([\\+|\\-]([01][0-9]|2[0-3]):[0-5][0-9]))$");
+            static const internal::regex strictRegex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])[Tt]([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])|([\\+\\-])([01][0-9]|2[0-3]):([0-5][0-9]))$");
+            static const internal::regex permissiveRegex("^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])[Tt]([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\\.[0-9]+)?(([Zz])?|([\\+\\-])([01][0-9]|2[0-3]):([0-5][0-9]))$");
             internal::smatch matches;
             if (internal::regex_match(s, matches, m_strictDateTime ? strictRegex : permissiveRegex)) {
+                const auto year = std::stoi(matches[1].str());
                 const auto month = std::stoi(matches[2].str());
                 const auto day = std::stoi(matches[3].str());
-                return validate_date_range(month, day);
+                if (!validate_date_range(year, month, day)) {
+                    return false;
+                }
+                const auto hour = std::stoi(matches[4].str());
+                const auto minute = std::stoi(matches[5].str());
+                const auto second = std::stoi(matches[6].str());
+                if (second == 60) {
+                    int offsetMinutes = 0;
+                    if (matches[10].matched && matches[11].matched && matches[12].matched) {
+                        const int sign = (matches[10].str() == "-") ? -1 : 1;
+                        offsetMinutes = sign * (std::stoi(matches[11].str()) * 60
+                                + std::stoi(matches[12].str()));
+                    }
+                    if (!validate_leap_second(hour, minute, offsetMinutes)) {
+                        if (m_results) {
+                            m_results->pushError(m_path, "String should be a valid date-time");
+                        }
+                        return false;
+                    }
+                }
+                return true;
             } else {
                 if (m_results) {
                     m_results->pushError(m_path, "String should be a valid date-time");
@@ -808,9 +877,30 @@ public:
             return true;
         }
 
-        const double r = remainder(d, divisor);
+        if (divisor == 0) {
+            return false;
+        }
 
-        if (fabs(r) > std::numeric_limits<double>::epsilon()) {
+        // Determine whether 'd' is an exact multiple of 'divisor' using
+        // d / divisor, with a relative tolerance to absorb floating-point
+        // error. This handles edge cases such as a large integer being a
+        // multiple of a very small fraction (e.g. 12391239123 and 1e-8),
+        // while still rejecting values where the precision is exhausted
+        // (e.g. 1e308 divided by 0.123456789 overflows to infinity).
+        const double quotient = d / divisor;
+        if (!std::isfinite(quotient)) {
+            if (m_results) {
+                m_results->pushError(m_path, "Value should be a multiple of " + std::to_string(divisor));
+            }
+            return false;
+        }
+
+        const double rounded = std::round(quotient);
+        const double diff = std::fabs(quotient - rounded);
+        const double tolerance = std::max(std::fabs(quotient), 1.0)
+                * std::numeric_limits<double>::epsilon();
+
+        if (diff > tolerance) {
             if (m_results) {
                 m_results->pushError(m_path, "Value should be a multiple of " + std::to_string(divisor));
             }
@@ -846,6 +936,19 @@ public:
                     m_results->pushError(m_path, "Value could not be converted to a double for multipleOf check");
                 }
                 return false;
+            }
+            // Casting a double outside the range of int64_t is undefined
+            // behaviour, so check those values in floating point instead.
+            if (d < static_cast<double>(std::numeric_limits<int64_t>::min()) ||
+                    d > static_cast<double>(std::numeric_limits<int64_t>::max())) {
+                if (fabs(remainder(d, static_cast<double>(divisor))) >
+                        std::numeric_limits<double>::epsilon()) {
+                    if (m_results) {
+                        m_results->pushError(m_path, "Value should be a multiple of " + std::to_string(divisor));
+                    }
+                    return false;
+                }
+                return true;
             }
             i = static_cast<int64_t>(d);
         } else {
@@ -1541,7 +1644,12 @@ private:
                 valid = m_target.isBool() || (!m_strictTypes && m_target.maybeBool());
                 break;
             case TypeConstraint::kInteger:
-                valid = m_target.isInteger() || (!m_strictTypes && m_target.maybeInteger());
+                // JSON Schema considers a JSON number with a zero fractional
+                // part to be an integer regardless of representation, so an
+                // exact-integer double satisfies the integer type even in
+                // strict mode.
+                valid = m_target.isInteger() || detail::isDoubleAnInteger(m_target)
+                        || (!m_strictTypes && m_target.maybeInteger());
                 break;
             case TypeConstraint::kNull:
                 valid = m_target.isNull() || (!m_strictTypes && m_target.maybeNull());
@@ -1890,42 +1998,71 @@ private:
     }
 
     /**
-     * @brief    Helper function to validate if day is valid for given month
+     * @brief    Helper function to validate if day is valid for the given
+     *           year and month, applying the Gregorian leap-year rules.
      *
+     * @param    year    Year (any non-negative value)
      * @param    month   Month, 1-12
      * @param    day     Day, 1-31
      *
-     * @return   \c true if day is valid for given month, \c false otherwise.
+     * @return   \c true if day is valid for given year/month, \c false otherwise.
      */
-    bool validate_date_range(int month, int day)
+    bool validate_date_range(int year, int month, int day)
     {
-        if (month == 2) {
-            if (day < 0 || day > 29) {
-                if (m_results) {
-                    m_results->pushError(m_path, "String should be a valid date-time");
-                }
-                return false;
+        if (day < 1) {
+            if (m_results) {
+                m_results->pushError(m_path, "String should be a valid date-time");
             }
-        } else {
-            int limit = 31;
-            if (month <= 7) {
-                if (month % 2 == 0) {
-                    limit = 30;
-                }
-            } else {
-                if (month % 2 != 0) {
-                    limit = 30;
-                }
-            }
-            if (day < 0 || day > limit) {
-                if (m_results) {
-                    m_results->pushError(m_path, "String should be a valid date-time");
-                }
-                return false;
-            }
-
+            return false;
         }
+
+        int limit;
+        if (month == 2) {
+            const bool leap = (year % 4 == 0)
+                    && ((year % 100 != 0) || (year % 400 == 0));
+            limit = leap ? 29 : 28;
+        } else if (month <= 7) {
+            limit = (month % 2 == 0) ? 30 : 31;
+        } else {
+            limit = (month % 2 != 0) ? 30 : 31;
+        }
+
+        if (day > limit) {
+            if (m_results) {
+                m_results->pushError(m_path, "String should be a valid date-time");
+            }
+            return false;
+        }
+
         return true;
+    }
+
+    /**
+     * @brief    Helper function to validate a leap second value (seconds == 60)
+     *           in a time string.
+     *
+     * Per RFC 3339, a leap second is only valid when the UTC time would be
+     * 23:59:60. For a value '23:59:60Z' that is satisfied directly; for
+     * values with a numeric offset, the local hour and minute must combine
+     * with the offset to equal 23:59 UTC.
+     *
+     * @param    hour          Local hour from the time string
+     * @param    minute        Local minute from the time string
+     * @param    offsetMinutes Offset from UTC in minutes; positive values
+     *                         indicate the local time is ahead of UTC. For
+     *                         Z/z the offset is 0.
+     *
+     * @return   \c true if the leap second is permitted given the offset.
+     */
+    bool validate_leap_second(int hour, int minute, int offsetMinutes)
+    {
+        // Total local time in minutes since 00:00.
+        const int localMinutes = hour * 60 + minute;
+        // Convert to UTC minutes, wrapping into the range [0, 1440).
+        int utcMinutes = localMinutes - offsetMinutes;
+        utcMinutes = ((utcMinutes % 1440) + 1440) % 1440;
+        // 23:59 UTC == 23 * 60 + 59 == 1439 minutes.
+        return utcMinutes == 1439;
     }
 
     /// The JSON value being validated
