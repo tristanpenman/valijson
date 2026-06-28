@@ -371,11 +371,19 @@ Documents: 2, Iterations: 1000000 (301487 per second)
 
 ## JSON Schema Support
 
-Valijson supports most of the constraints defined in [Draft 7](https://json-schema.org/draft-07/json-schema-release-notes.html)
+Valijson supports most of the constraints defined in [Draft 7](https://json-schema.org/draft-07/json-schema-release-notes.html).
 
 The main exceptions are
  - default
  - format
+
+### Draft 2020-12
+
+An experimental `SchemaParser::kDraft202012` mode is available as a starting point for JSON Schema Draft 2020-12 support. It currently enables the dialect selection path, boolean schemas, `$id` scope handling, and `$defs` aliases for legacy `definitions` references. Basic Draft 2020-12 array item assertions (`prefixItems`, new `items`, and `unevaluatedItems`) have also been implemented.
+
+Full Draft 2020-12 support still requires vocabulary handling, complete annotation propagation, `unevaluatedProperties`, and `$dynamicRef`/`$dynamicAnchor`.
+
+### JSON References
 
 Support for JSON References is in development. It is mostly working, however some of the test cases added to [JSON Schema Test Suite](https://github.com/json-schema/JSON-Schema-Test-Suite) for v6/v7 are still failing.
 

@@ -5,22 +5,26 @@ The road to full draft 2020-12 support.
 ## Prerequisites
 
 * ~~Update to latest version of JSON-Schema-Test-Suite~~
-* Add `kDraft202012` parser mode
+* ~~Add `kDraft202012` parser mode~~
 
 ## Non-annotation keywords
 
-* `$id` parsing (**in progress**)
-* `$defs` alias/support
+* ~~`$id` parsing~~
+* ~~`$defs` alias/support~~
+* `items` alternative behaviour for 2020 (**in progress**)
 * `dependentRequired`
 * `dependentSchemas`
 * `prefixItems`
-* `items` alternative behaviour for 2020
 * `minContains`/`maxContains`, may be achievable before full annotation support
+
+## General
+
+* common `format` behaviours
+* schema registry and canonical URI handling
 
 ## References
 
 * `$ref` as applicator with siblings
-* schema registry and canonical URI handling
 * `$anchor` support
 * compound schema documents
 * remote reference cache improvements
@@ -38,7 +42,3 @@ The road to full draft 2020-12 support.
 * `$dynamicAnchor`
 * `$dynamicRef`
 * dynamic-scope evaluation
-
-## General
-
-* `format` behaviours

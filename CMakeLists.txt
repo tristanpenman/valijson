@@ -145,6 +145,7 @@ if(valijson_BUILD_TESTS)
         tests/test_jsoncpp_adapter.cpp
         tests/test_nlohmann_json_adapter.cpp
         tests/test_rapidjson_adapter.cpp
+        tests/test_schema_parser_dialects.cpp
         tests/test_picojson_adapter.cpp
         tests/test_poly_constraint.cpp
         tests/test_uri.cpp

@@ -21,8 +21,9 @@ namespace valijson {
 /**
  * @brief  Parser for populating a Schema based on a JSON Schema document.
  *
- * The SchemaParser class supports Drafts 3 and 4 of JSON Schema, however
- * Draft 3 support should be considered deprecated.
+ * The SchemaParser class supports Drafts 3, 4, and 7 of JSON Schema, plus an
+ * experimental Draft 2020-12 dialect mode. Draft 3 support should be
+ * considered deprecated.
  *
  * The functions provided by this class have been templated so that they can
  * be used with different Adapter types.
@@ -34,7 +35,8 @@ public:
     enum Version {
         kDraft3,      ///< @deprecated JSON Schema v3 has been superseded by v4
         kDraft4,
-        kDraft7
+        kDraft7,
+        kDraft202012  ///< Experimental JSON Schema Draft 2020-12 dialect mode
     };
 
     /**
@@ -139,6 +141,34 @@ private:
         ConstraintBuilders;
 
     ConstraintBuilders constraintBuilders;
+
+    bool supportsBooleanSchemas() const
+    {
+        return m_version == kDraft7 || m_version == kDraft202012;
+    }
+
+    bool supportsDraft7Keywords() const
+    {
+        return m_version == kDraft7 || m_version == kDraft202012;
+    }
+
+    /**
+     * @brief  Resolve legacy definitions references against Draft 2020-12 $defs.
+     */
+    std::string applyDefinitionsAlias(const std::string &jsonPointer) const
+    {
+        if (m_version != kDraft202012) {
+            return jsonPointer;
+        }
+
+        static const std::string definitionsToken = "/definitions";
+        if (jsonPointer == definitionsToken ||
+                jsonPointer.find(definitionsToken + "/") == 0) {
+            return "/$defs" + jsonPointer.substr(definitionsToken.size());
+        }
+
+        return jsonPointer;
+    }
 
     template<typename AdapterType>
     struct DocumentCache
@@ -293,7 +323,7 @@ private:
 
     const char *idKeyword() const
     {
-        return m_version == kDraft7 ? "$id" : "id";
+        return supportsDraft7Keywords() ? "$id" : "id";
     }
 
     std::optional<std::string> resolveId(
@@ -537,8 +567,8 @@ private:
         // Extract JSON Pointer from JSON Reference, with any trailing
         // slashes removed so that keys in the schema registry end
         // consistently
-        const std::string actualJsonPointer = sanitiseJsonPointer(
-                internal::json_reference::getJsonReferencePointer(jsonRef));
+        const std::string actualJsonPointer = applyDefinitionsAlias(sanitiseJsonPointer(
+                internal::json_reference::getJsonReferencePointer(jsonRef)));
 
         // Determine the actual document URI based on the resolution
         // scope. An absolute document URI will take precedence when
@@ -783,7 +813,7 @@ private:
             "appropriate Adapter implementation");
 
         if (!node.isObject()) {
-            if (m_version == kDraft7 && node.maybeBool()) {
+            if (supportsBooleanSchemas() && node.maybeBool()) {
                 // Boolean schema
                 if (!node.asBool()) {
                     rootSchema.setAlwaysInvalid(&subschema, true);
@@ -793,7 +823,7 @@ private:
                 std::string s;
                 s += "Expected node at ";
                 s += nodePath;
-                if (m_version == kDraft7) {
+                if (supportsDraft7Keywords()) {
                     s += " to contain schema object or boolean value; actual node type is: ";
                 } else {
                     s += " to contain schema object; actual node type is: ";
@@ -808,9 +838,10 @@ private:
 
         // Check for schema identifier attribute and update current scope.
         std::optional<std::string> updatedScope;
-        bool foundId = false;
-        if ((itr = object.find(idKeyword())) != object.end() && itr->second.maybeString()) {
-            foundId = true;
+        const bool foundId =
+                (itr = object.find(idKeyword())) != object.end() &&
+                itr->second.maybeString();
+        if (foundId) {
             const std::string id = itr->second.asString();
             rootSchema.setSubschemaId(&subschema, itr->second.asString());
             updatedScope = resolveId(currentScope, id);
@@ -918,7 +949,25 @@ private:
             const typename AdapterType::Object::const_iterator itemsItr =
                     object.find("items");
 
-            if (object.end() != itemsItr) {
+            if (m_version == kDraft202012) {
+                const typename AdapterType::Object::const_iterator
+                        prefixItemsItr = object.find("prefixItems"),
+                        unevaluatedItemsItr = object.find("unevaluatedItems");
+
+                if (object.end() != prefixItemsItr || object.end() != itemsItr ||
+                        object.end() != unevaluatedItemsItr) {
+                    rootSchema.addConstraintToSubschema(
+                            makeDraft202012ItemsConstraint(rootSchema, rootNode,
+                                    prefixItemsItr != object.end() ? &prefixItemsItr->second : nullptr,
+                                    itemsItr != object.end() ? &itemsItr->second : nullptr,
+                                    unevaluatedItemsItr != object.end() ? &unevaluatedItemsItr->second : nullptr,
+                                    updatedScope, nodePath + "/prefixItems",
+                                    nodePath + "/items",
+                                    nodePath + "/unevaluatedItems", fetchDoc,
+                                    docCache, schemaRegistry),
+                            &subschema);
+                }
+            } else if (object.end() != itemsItr) {
                 if (!itemsItr->second.isArray()) {
                     rootSchema.addConstraintToSubschema(
                             makeSingularItemsConstraint(rootSchema, rootNode,
@@ -948,7 +997,7 @@ private:
             const typename AdapterType::Object::const_iterator elseItr = object.find("else");
 
             if (object.end() != ifItr) {
-                if (m_version == kDraft7) {
+                if (supportsDraft7Keywords()) {
                     rootSchema.addConstraintToSubschema(
                           makeConditionalConstraint(rootSchema, rootNode,
                                 ifItr->second,
@@ -962,7 +1011,7 @@ private:
             }
         }
 
-        if (m_version == kDraft7) {
+        if (supportsDraft7Keywords()) {
             if ((itr = object.find("exclusiveMaximum")) != object.end()) {
                 rootSchema.addConstraintToSubschema(
                     makeMaximumConstraintExclusive(itr->second),
@@ -1006,7 +1055,7 @@ private:
                     makeMaxPropertiesConstraint(itr->second), &subschema);
         }
 
-        if (m_version == kDraft7) {
+        if (supportsDraft7Keywords()) {
             if ((itr = object.find("exclusiveMinimum")) != object.end()) {
                 rootSchema.addConstraintToSubschema(
                         makeMinimumConstraintExclusive(itr->second), &subschema);
@@ -1107,7 +1156,7 @@ private:
         }
 
         if ((itr = object.find("propertyNames")) != object.end()) {
-            if (m_version == kDraft7) {
+            if (supportsDraft7Keywords()) {
                 rootSchema.addConstraintToSubschema(
                       makePropertyNamesConstraint(rootSchema, rootNode, itr->second, updatedScope,
                               nodePath, fetchDoc, docCache, schemaRegistry),
@@ -1218,8 +1267,8 @@ private:
         const std::optional<std::string> documentUri = internal::json_reference::getJsonReferenceUri(jsonRef);
 
         // Extract JSON Pointer from JSON Reference
-        const std::string actualJsonPointer = sanitiseJsonPointer(
-                internal::json_reference::getJsonReferencePointer(jsonRef));
+        const std::string actualJsonPointer = applyDefinitionsAlias(sanitiseJsonPointer(
+                internal::json_reference::getJsonReferencePointer(jsonRef)));
 
         const std::optional<std::string> actualDocumentUri =
                 resolveDocumentUri(currentScope, documentUri);
@@ -1344,7 +1393,7 @@ private:
 
         int index = 0;
         for (const AdapterType schemaNode : node.asArray()) {
-            if (schemaNode.maybeObject() || (m_version == kDraft7 && schemaNode.isBool())) {
+            if (schemaNode.maybeObject() || (supportsBooleanSchemas() && schemaNode.isBool())) {
                 const std::string childPath = nodePath + "/" + std::to_string(index);
                 const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                         rootSchema, rootNode, schemaNode, currentScope,
@@ -1445,7 +1494,7 @@ private:
 
         int index = 0;
         for (const AdapterType schemaNode : node.asArray()) {
-            if (schemaNode.maybeObject() || (m_version == kDraft7 && schemaNode.isBool())) {
+            if (schemaNode.maybeObject() || (supportsBooleanSchemas() && schemaNode.isBool())) {
                 const std::string childPath = nodePath + "/" + std::to_string(index);
                 const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                         rootSchema, rootNode, schemaNode, currentScope,
@@ -1579,7 +1628,7 @@ private:
     {
         constraints::ContainsConstraint constraint;
 
-        if (contains.isObject() || (m_version == kDraft7 && contains.maybeBool())) {
+        if (contains.isObject() || (supportsBooleanSchemas() && contains.maybeBool())) {
             const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                     rootSchema, rootNode, contains, currentScope, containsPath,
                     fetchDoc, nullptr, nullptr, docCache, schemaRegistry);
@@ -1682,7 +1731,7 @@ private:
             // exercised the flexibility by loosely-typed Adapter types. If the
             // value of the dependency mapping is an object, then we'll try to
             // process it as a dependent schema.
-            } else if (member.second.isObject() || (m_version == kDraft7 && member.second.maybeBool())) {
+            } else if (member.second.isObject() || (supportsBooleanSchemas() && member.second.maybeBool())) {
                 // Parse dependent subschema
                 const std::string childPath = nodePath + "/" +
                         escapeJsonPointerToken(member.first);
@@ -1861,6 +1910,72 @@ private:
     }
 
     /**
+     * @brief   Make a Draft 2020-12 items constraint.
+     */
+    template<typename AdapterType>
+    constraints::LinearItemsConstraint makeDraft202012ItemsConstraint(
+        Schema &rootSchema,
+        const AdapterType &rootNode,
+        const AdapterType *prefixItems,
+        const AdapterType *items,
+        const AdapterType *unevaluatedItems,
+        const std::optional<std::string> currentScope,
+        const std::string &prefixItemsPath,
+        const std::string &itemsPath,
+        const std::string &unevaluatedItemsPath,
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
+        typename DocumentCache<AdapterType>::Type &docCache,
+        SchemaRegistry &schemaRegistry)
+    {
+        constraints::LinearItemsConstraint constraint;
+
+        if (prefixItems) {
+            if (!prefixItems->maybeArray()) {
+                throwRuntimeError("Expected array value for 'prefixItems' constraint.");
+            }
+
+            int index = 0;
+            for (const AdapterType v : prefixItems->asArray()) {
+                if (!v.maybeObject() && !v.maybeBool()) {
+                    throwRuntimeError("Expected array element to be a valid schema in 'prefixItems' constraint.");
+                }
+
+                const std::string childPath = prefixItemsPath + "/" +
+                        std::to_string(index);
+                const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                        rootSchema, rootNode, v, currentScope, childPath,
+                        fetchDoc, nullptr, nullptr, docCache, schemaRegistry);
+                constraint.addItemSubschema(subschema);
+                index++;
+            }
+        }
+
+        const AdapterType *additionalSchema = items ? items : unevaluatedItems;
+        const std::string &additionalSchemaPath = items ? itemsPath : unevaluatedItemsPath;
+        if (items) {
+            constraint.setRemainingItemsMode(constraints::LinearItemsConstraint::kItems);
+        } else if (unevaluatedItems) {
+            constraint.setRemainingItemsMode(constraints::LinearItemsConstraint::kUnevaluatedItems);
+        }
+
+        if (additionalSchema) {
+            if (additionalSchema->maybeObject() || additionalSchema->maybeBool()) {
+                const Subschema *subschema = makeOrReuseSchema<AdapterType>(
+                        rootSchema, rootNode, *additionalSchema, currentScope,
+                        additionalSchemaPath, fetchDoc, nullptr, nullptr,
+                        docCache, schemaRegistry);
+                constraint.setAdditionalItemsSubschema(subschema);
+            } else {
+                throwRuntimeError("Expected valid schema for Draft 2020-12 'items' or 'unevaluatedItems' constraint.");
+            }
+        } else {
+            constraint.setAdditionalItemsSubschema(rootSchema.emptySubschema());
+        }
+
+        return constraint;
+    }
+
+    /**
      * @brief   Make a new ItemsConstraint object.
      *
      * @param   rootSchema           The Schema instance, and root subschema,
@@ -1901,7 +2016,7 @@ private:
         // array is provided, or a single Schema object, in an object value is
         // provided. If the items constraint is not provided, then array items
         // will be validated against the additionalItems schema.
-        if (items.isObject() || (m_version == kDraft7 && items.maybeBool())) {
+        if (items.isObject() || (supportsBooleanSchemas() && items.maybeBool())) {
             // If the items constraint contains an object value, then it
             // should contain a Schema that will be used to validate all
             // items in a target array. Any schema defined by the
@@ -2238,7 +2353,7 @@ private:
         typename DocumentCache<AdapterType>::Type &docCache,
         SchemaRegistry &schemaRegistry)
     {
-        if (node.maybeObject() || (m_version == kDraft7 && node.maybeBool())) {
+        if (node.maybeObject() || (supportsBooleanSchemas() && node.maybeBool())) {
             const Subschema *subschema = makeOrReuseSchema<AdapterType>(
                     rootSchema, rootNode, node, currentScope, nodePath,
                     fetchDoc, nullptr, nullptr, docCache, schemaRegistry);
