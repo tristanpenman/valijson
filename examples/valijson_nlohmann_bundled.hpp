@@ -511,6 +511,7 @@ struct AdapterTraits
 }  // namespace valijson
 #pragma once
 
+#include <charconv>
 #include <cmath>
 #include <cstdint>
 #include <limits>
@@ -883,10 +884,11 @@ public:
         } else if (m_value.isString()) {
             std::string s;
             if (m_value.getString(s)) {
-                const char *b = s.c_str();
-                char *e = nullptr;
-                double x = strtod(b, &e);
-                if (e == b || e != b + s.length()) {
+                const char *b = s.data();
+                const char *end = b + s.length();
+                double x;
+                auto [ptr, ec] = std::from_chars(b, end, x);
+                if (ec != std::errc() || ptr != end) {
                     return false;
                 }
                 result = x;
@@ -1306,10 +1308,11 @@ public:
         } else if (maybeString()) {
             std::string s;
             if (m_value.getString(s)) {
-                const char *b = s.c_str();
-                char *e = nullptr;
-                strtod(b, &e);
-                return e != b && e == b + s.length();
+                const char *b = s.data();
+                const char *end = b + s.length();
+                double x;
+                auto [ptr, ec] = std::from_chars(b, end, x);
+                return ec == std::errc() && ptr == end;
             }
         }
 
@@ -2197,13 +2200,15 @@ inline bool isutf(char c)
     return ((c & 0xC0) != 0x80);
 }
 
-/* number of characters */
-inline uint64_t u8_strlen(const char *s)
+/* number of characters in a buffer of the given byte length; this counts
+   every byte in the buffer and does not stop at an embedded null byte */
+inline uint64_t u8_strlen(const char *s, size_t length)
 {
     uint64_t count = 0;
+    size_t pos = 0;
 
-    while (*s) {
-        unsigned char p = static_cast<unsigned char>(*s);
+    while (pos < length) {
+        unsigned char p = static_cast<unsigned char>(s[pos]);
 
         size_t seqLen = p < 0x80   ? 1  // 0xxxxxxx: 1-byte (ASCII)
                         : p < 0xE0 ? 2  // 110xxxxx: 2-byte sequence
@@ -2211,14 +2216,18 @@ inline uint64_t u8_strlen(const char *s)
                         : p < 0xF8 ? 4  // 11110xxx: 4-byte sequence
                                    : 1; // treat as a single character
 
+        if (seqLen > length - pos) {
+            seqLen = length - pos;
+        }
+
         for (size_t i = 1; i < seqLen; ++i) {
-            if (s[i] == 0 || isutf(s[i])) {
+            if (isutf(s[pos + i])) {
                 seqLen = i;
                 break;
             }
         }
 
-        s += seqLen;
+        pos += seqLen;
         count++;
     }
 
@@ -7189,6 +7198,7 @@ private:
 
 #pragma once
 
+#include <charconv>
 #include <string>
 
 
@@ -7485,10 +7495,11 @@ public:
 
     bool maybeDouble() const override
     {
-        const char *b = m_value.c_str();
-        char *e = nullptr;
-        strtod(b, &e);
-        return e != b && e == b + m_value.length();
+        const char *b = m_value.data();
+        const char *end = b + m_value.length();
+        double x;
+        auto [ptr, ec] = std::from_chars(b, end, x);
+        return ec == std::errc() && ptr == end;
     }
 
     bool maybeInteger() const override
@@ -8338,7 +8349,7 @@ public:
         }
 
         const std::string s = m_target.asString();
-        const uint64_t len = utils::u8_strlen(s.c_str());
+        const uint64_t len = utils::u8_strlen(s.c_str(), s.size());
         const uint64_t maxLength = constraint.getMaxLength();
         if (len <= maxLength) {
             return true;
@@ -8454,7 +8465,7 @@ public:
         }
 
         const std::string s = m_target.asString();
-        const uint64_t len = utils::u8_strlen(s.c_str());
+        const uint64_t len = utils::u8_strlen(s.c_str(), s.size());
         const uint64_t minLength = constraint.getMinLength();
         if (len >= minLength) {
             return true;
@@ -8592,6 +8603,19 @@ public:
                     m_results->pushError(m_path, "Value could not be converted to a double for multipleOf check");
                 }
                 return false;
+            }
+            // Casting a double outside the range of int64_t is undefined
+            // behaviour, so check those values in floating point instead.
+            if (d < static_cast<double>(std::numeric_limits<int64_t>::min()) ||
+                    d > static_cast<double>(std::numeric_limits<int64_t>::max())) {
+                if (fabs(remainder(d, static_cast<double>(divisor))) >
+                        std::numeric_limits<double>::epsilon()) {
+                    if (m_results) {
+                        m_results->pushError(m_path, "Value should be a multiple of " + std::to_string(divisor));
+                    }
+                    return false;
+                }
+                return true;
             }
             i = static_cast<int64_t>(d);
         } else {
