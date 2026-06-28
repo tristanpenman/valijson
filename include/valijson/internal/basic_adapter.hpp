@@ -1,5 +1,6 @@
 #pragma once
 
+#include <charconv>
 #include <cmath>
 #include <cstdint>
 #include <limits>
@@ -374,10 +375,11 @@ public:
         } else if (m_value.isString()) {
             std::string s;
             if (m_value.getString(s)) {
-                const char *b = s.c_str();
-                char *e = nullptr;
-                double x = strtod(b, &e);
-                if (e == b || e != b + s.length()) {
+                const char *b = s.data();
+                const char *end = b + s.length();
+                double x;
+                auto [ptr, ec] = std::from_chars(b, end, x);
+                if (ec != std::errc() || ptr != end) {
                     return false;
                 }
                 result = x;
@@ -797,10 +799,11 @@ public:
         } else if (maybeString()) {
             std::string s;
             if (m_value.getString(s)) {
-                const char *b = s.c_str();
-                char *e = nullptr;
-                strtod(b, &e);
-                return e != b && e == b + s.length();
+                const char *b = s.data();
+                const char *end = b + s.length();
+                double x;
+                auto [ptr, ec] = std::from_chars(b, end, x);
+                return ec == std::errc() && ptr == end;
             }
         }
 

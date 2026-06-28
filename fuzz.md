@@ -1,6 +1,6 @@
 # OSS-Fuzz Issues for Valijson
 
-This list was compiled from the public OSS-Fuzz Issue Tracker search for `valijson` and the corresponding public issue pages on 2026-06-11.
+This list was compiled from the public OSS-Fuzz Issue Tracker search for `valijson` and the corresponding public issue pages on 2026-06-17.
 
 Source listing: <https://issues.oss-fuzz.com/issues?q=valijson>
 
@@ -9,7 +9,7 @@ Some C++ symbols are truncated in the Issue Tracker's displayed title or crash-s
 ## Summary
 
 - Open issues still needing attention: 8
-- Issues verified since the previous snapshot: 6
+- Issues verified since the previous snapshot: 7
 
 ## Open Issues
 
@@ -26,10 +26,11 @@ Some C++ symbols are truncated in the Issue Tracker's displayed title or crash-s
 
 ## Verified Issues
 
-The Issue Tracker currently reports 35 Valijson issues as verified. The issues below were previously listed as unverified in this file and are now verified.
+The Issue Tracker currently reports 36 Valijson issues as verified. The issues below were previously listed as unverified in this file and are now verified.
 
 | Issue                                                     | Status   | Priority | Finding        | Engine / job                         | Crash state                                                                                                                                                             |
 | --------------------------------------------------------- | -------- | -------- | -------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [492643990](https://issues.oss-fuzz.com/issues/492643990) | Verified | P2       | Stack-overflow | libFuzzer / libfuzzer_ubsan_valijson | `std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<ch` / `bool valijson::ValidationVisitor<valijson::adapters::GenericRapidJsonAdapter<rap` |
 | [484281247](https://issues.oss-fuzz.com/issues/484281247) | Verified | P2       | Stack-overflow | libFuzzer / libfuzzer_ubsan_valijson | `HandleDynamicTypeCacheMiss` / `valijson::ValidationVisitor<valijson::adapters::GenericRapidJsonAdapter<rapidjso`                                                       |
 | [473895988](https://issues.oss-fuzz.com/issues/473895988) | Verified | P2       | Stack-overflow | libFuzzer / libfuzzer_ubsan_valijson | `std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<ch` / `rapidjson::GenericMemberIterator<false, rapidjson::UTF8<char>, rapidjson::Memory` |
 | [462677906](https://issues.oss-fuzz.com/issues/462677906) | Verified | P2       | Stack-overflow | libFuzzer / libfuzzer_msan_valijson  | `valijson::adapters::GenericRapidJsonAdapter<rapidjson::GenericValue<rapidjson::U`                                                                                      |

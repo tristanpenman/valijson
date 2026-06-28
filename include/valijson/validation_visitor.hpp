@@ -703,7 +703,7 @@ public:
         }
 
         const std::string s = m_target.asString();
-        const uint64_t len = utils::u8_strlen(s.c_str());
+        const uint64_t len = utils::u8_strlen(s.c_str(), s.size());
         const uint64_t maxLength = constraint.getMaxLength();
         if (len <= maxLength) {
             return true;
@@ -819,7 +819,7 @@ public:
         }
 
         const std::string s = m_target.asString();
-        const uint64_t len = utils::u8_strlen(s.c_str());
+        const uint64_t len = utils::u8_strlen(s.c_str(), s.size());
         const uint64_t minLength = constraint.getMinLength();
         if (len >= minLength) {
             return true;
@@ -957,6 +957,19 @@ public:
                     m_results->pushError(m_path, "Value could not be converted to a double for multipleOf check");
                 }
                 return false;
+            }
+            // Casting a double outside the range of int64_t is undefined
+            // behaviour, so check those values in floating point instead.
+            if (d < static_cast<double>(std::numeric_limits<int64_t>::min()) ||
+                    d > static_cast<double>(std::numeric_limits<int64_t>::max())) {
+                if (fabs(remainder(d, static_cast<double>(divisor))) >
+                        std::numeric_limits<double>::epsilon()) {
+                    if (m_results) {
+                        m_results->pushError(m_path, "Value should be a multiple of " + std::to_string(divisor));
+                    }
+                    return false;
+                }
+                return true;
             }
             i = static_cast<int64_t>(d);
         } else {
