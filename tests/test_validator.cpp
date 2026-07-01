@@ -657,3 +657,8 @@ TEST_F(TestValidator, Draft7_OptionalFormatDateTime)
 {
     processDraft7TestFile(TEST_SUITE_DIR "draft7/optional/format/date-time.json");
 }
+
+TEST_F(TestValidator, Draft7_OptionalFormatIpv4)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/optional/format/ipv4.json");
+}
