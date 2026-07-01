@@ -19,7 +19,7 @@ void populateSchema(
 
 This version of `populateSchema()` is typically invoked using default values (`nullptr`) for the third and fourth arguments. When these arguments are not set, Valijson will not attempt to fetch/resolve external document references. The usage of these arguments is discussed in the [Fetch / Free](#fetch--free) section below.
 
-The initial call to `populateSchema()` doesn't do much, as it is primarily an entry point for a recursive parsing process. The initial call sets up document and schema caches, which are used to minimise unnecessary work and to help resolve cycles. Then it calls `resolveThenPopulateSchema()`, which is where the real work begins.
+The initial call to `populateSchema()` doesn't do much, as it is primarily an entry point for a recursive parsing process. The initial call sets up a document cache and schema registry, which are used to minimise unnecessary work and to help resolve cycles. Then it calls `resolveThenPopulateSchema()`, which is where the real work begins.
 
 ## Resolve Then Populate
 
@@ -38,7 +38,7 @@ void resolveThenPopulateSchema(
     const Subschema *parentSchema,
     const std::string *ownName,
     typename DocumentCache<AdapterType>::Type &docCache,
-    SchemaCache &schemaCache)
+    SchemaRegistry &schemaRegistry)
 ```
 
 The first step is to check for JSON References. These are objects of the form:
@@ -71,7 +71,7 @@ void populateSchema(
     const Subschema *parentSubschema,
     const std::string *ownName,
     typename DocumentCache<AdapterType>::Type &docCache,
-    SchemaCache &schemaCache)
+    SchemaRegistry &schemaRegistry)
 ```
 
 This is a huge function that searches for all of the supported JSON Schema rules (referred to in Valijson as 'constraints'). When a supported rule is found, it is parsed and instantiated as subclass of the `Constraint` class.
@@ -110,7 +110,7 @@ const Subschema * makeOrReuseSchema(
     const Subschema *parentSubschema,
     const std::string *ownName,
     typename DocumentCache<AdapterType>::Type &docCache,
-    SchemaCache &schemaCache)
+    SchemaRegistry &schemaRegistry)
 ```
 
-The return value is a `Subschema *`, which may be retrieved from the schema cache (described below).
+The return value is a `Subschema *`, which may be retrieved from the schema registry (described below).

@@ -17,3 +17,5 @@ A robust test suite is included in the `tests` directory. This includes a range 
 The project is designed to be used with CMake. Configure with `-Dvalijson_BUILD_TESTS=1` to ensure that tests are built.
 
 Configure with `-Dvalijson_BUILD_EXAMPLES=1` when examples are being worked on.
+
+When running `scripts/test.sh` for individual requests, use the script's default `build` directory. It is not necessary to create temporary build directories unless the request specifically requires a separate build tree.

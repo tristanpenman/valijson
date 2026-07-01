@@ -413,7 +413,7 @@ Doxygen documentation can be built by running 'doxygen' from the project root di
 
 Valijson requires a compiler with full C++14 support.
 
-When building the test suite, Boost 1.54, Qt 5 and Poco are optional dependencies.
+When building the test suite, Boost 1.54, Qt 5 or Qt 6, and Poco are optional dependencies.
 
 ## Supported Parsers
 
@@ -427,7 +427,7 @@ Valijson supports JSON documents loaded using various JSON parser libraries. It 
  - [rapidjson (commit 48fbd8c)](https://github.com/Tencent/rapidjson/tree/48fbd8cd202ca54031fe799db2ad44ffa8e77c13)
  - [PicoJSON 1.3.0](https://github.com/kazuho/picojson/archive/v1.3.0.tar.gz)
  - [Poco JSON 1.14.0](https://pocoproject.org/docs/Poco.JSON.html)
- - [Qt 5.8](http://doc.qt.io/qt-5/json.html)
+ - [Qt 5.8](http://doc.qt.io/qt-5/json.html) or [Qt 6](https://doc.qt.io/qt-6/json.html)
 
 Other versions of these libraries may work, but have not been tested. In particular, versions of jsoncpp going back to 0.5.0 should also work correctly.
 
@@ -443,18 +443,18 @@ You can also use [conan](https://conan.io/) as a package manager to handle [vali
 
 Supported versions of these libraries have been included in the 'thirdparty' directory so as to support Valijson's examples and test suite.
 
-The exceptions to this are boost, Poco and Qt5, which due to their size must be installed to a location that CMake can find.
+The exceptions to this are boost, Poco and Qt, which due to their size must be installed to a location that CMake can find.
 
 ## Known Issues
 
 When using PicoJSON, it may be necessary to include the `picojson.h` before other headers to ensure that the appropriate macros have been enabled.
 
-When building Valijson using CMake on macOS, with Qt 5 installed via Homebrew, you may need to set `CMAKE_PREFIX_PATH` so that CMake can find your Qt installation, e.g:
+When building Valijson using CMake on macOS, with Qt installed via Homebrew, you may need to set `CMAKE_PREFIX_PATH` so that CMake can find your Qt installation, e.g:
 
 ```bash
 mkdir build
 cd build
-cmake .. -DCMAKE_PREFIX_PATH=$(brew --prefix qt5)
+cmake .. -DCMAKE_PREFIX_PATH=$(brew --prefix qt@6)
 make
 ```
 
