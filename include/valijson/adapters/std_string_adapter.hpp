@@ -14,12 +14,12 @@
 
 #pragma once
 
-#include <charconv>
 #include <string>
 
 #include <valijson/internal/adapter.hpp>
 #include <valijson/internal/frozen_value.hpp>
 #include <valijson/internal/basic_adapter.hpp>
+#include <valijson/internal/double_parser.hpp>
 #include <valijson/exceptions.hpp>
 
 namespace valijson {
@@ -315,11 +315,8 @@ public:
 
     bool maybeDouble() const override
     {
-        const char *b = m_value.data();
-        const char *end = b + m_value.length();
         double x;
-        auto [ptr, ec] = std::from_chars(b, end, x);
-        return ec == std::errc() && ptr == end;
+        return internal::parseDouble(m_value, x);
     }
 
     bool maybeInteger() const override

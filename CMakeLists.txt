@@ -138,6 +138,7 @@ if(valijson_BUILD_TESTS)
     set(TEST_SOURCES
         tests/test_adapter_comparison.cpp
         tests/test_date_time_format.cpp
+        tests/test_double_parser.cpp
         tests/test_fetch_absolute_uri_document_callback.cpp
         tests/test_fetch_urn_document_callback.cpp
         tests/test_json_pointer.cpp
