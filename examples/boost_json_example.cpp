@@ -6,11 +6,9 @@
 #include <valijson/validation_results.hpp>
 #include <iostream>
 
-using namespace std::string_literals;
-
 namespace json = boost::json;
 
-const auto schemaJson = R"({
+constexpr auto schemaJson = R"({
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Product",
   "description": "A product from Acme's catalog",
@@ -36,12 +34,12 @@ const auto schemaJson = R"({
     }
   },
   "required": ["id", "name", "price" ]
-})"s;
+})";
 
-const auto targetJson = R"({
+constexpr auto targetJson = R"({
   "id": 123,
   "name": "Test"
-})"s;
+})";
 
 int main()
 {
