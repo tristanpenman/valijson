@@ -14,6 +14,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 option(valijson_BUILD_EXAMPLES "Build valijson examples." FALSE)
 option(valijson_BUILD_TESTS "Build valijson test suite." FALSE)
 option(valijson_EXCLUDE_BOOST "Exclude Boost when building test suite." FALSE)
+option(valijson_REQUIRE_ALL_ADAPTER_TESTS "Fail configuration when optional adapter test dependencies are unavailable." FALSE)
+option(valijson_USE_FAST_FLOAT "Use the vendored fast_float library for string-to-double conversions." FALSE)
 option(valijson_USE_EXCEPTIONS "Use exceptions in valijson and included libs." TRUE)
 
 option(valijson_USE_BOOST_REGEX "Use boost::regex instead of std::regex internally." FALSE)
@@ -39,6 +41,14 @@ target_include_directories(valijson INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
+if(valijson_USE_FAST_FLOAT)
+    target_include_directories(valijson INTERFACE
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/fast_float/include>)
+    target_compile_definitions(valijson INTERFACE
+            VALIJSON_HAS_FAST_FLOAT_FROM_CHARS=1
+            VALIJSON_HAS_STD_FROM_CHARS=0)
+endif()
+
 if(valijson_USE_EXCEPTIONS)
     target_compile_definitions(valijson INTERFACE -DVALIJSON_USE_EXCEPTIONS=1)
 endif()
@@ -47,6 +57,10 @@ if (valijson_USE_BOOST_REGEX)
 endif()
 
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+if(valijson_USE_FAST_FLOAT)
+    install(DIRECTORY thirdparty/fast_float/include/
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+endif()
 
 install(TARGETS valijson
     EXPORT valijsonConfig
@@ -59,6 +73,13 @@ install(EXPORT valijsonConfig
 
 if(NOT valijson_BUILD_TESTS AND NOT valijson_BUILD_EXAMPLES)
     return()
+endif()
+
+if(valijson_USE_FAST_FLOAT)
+    include_directories(SYSTEM thirdparty/fast_float/include)
+    add_compile_definitions(
+            VALIJSON_HAS_FAST_FLOAT_FROM_CHARS=1
+            VALIJSON_HAS_STD_FROM_CHARS=0)
 endif()
 
 if(valijson_USE_EXCEPTIONS)
@@ -138,6 +159,7 @@ if(valijson_BUILD_TESTS)
     set(TEST_SOURCES
         tests/test_adapter_comparison.cpp
         tests/test_date_time_format.cpp
+        tests/test_double_parser.cpp
         tests/test_fetch_absolute_uri_document_callback.cpp
         tests/test_fetch_urn_document_callback.cpp
         tests/test_json_pointer.cpp
@@ -170,12 +192,18 @@ if(valijson_BUILD_TESTS)
         check_include_file_cxx("boost/json.hpp" BOOST_JSON_HPP_FOUND)
         if(${BOOST_JSON_HPP_FOUND})
             list(APPEND TEST_SOURCES tests/test_boost_json_adapter.cpp)
+        elseif(valijson_REQUIRE_ALL_ADAPTER_TESTS)
+            message(FATAL_ERROR
+                "Boost.JSON is required when valijson_REQUIRE_ALL_ADAPTER_TESTS is enabled.")
         else()
             message(WARNING
                 "boost/json.hpp not found; tests for boost_json_adapter will not be built. "
                 "If you have recently upgraded Boost to 1.75.0 or later, you may need to clear "
                 "your CMake cache for the header to be found.")
         endif()
+    elseif(valijson_REQUIRE_ALL_ADAPTER_TESTS)
+        message(FATAL_ERROR
+            "Boost is required when valijson_REQUIRE_ALL_ADAPTER_TESTS is enabled.")
     endif()
 
     if(Poco_FOUND)
@@ -183,11 +211,17 @@ if(valijson_BUILD_TESTS)
         list(APPEND TEST_LIBS
             Poco::Foundation
             Poco::JSON)
+    elseif(valijson_REQUIRE_ALL_ADAPTER_TESTS)
+        message(FATAL_ERROR
+            "Poco Foundation and JSON are required when valijson_REQUIRE_ALL_ADAPTER_TESTS is enabled.")
     endif()
 
     if(valijson_QT_CORE_TARGET)
         list(APPEND TEST_LIBS ${valijson_QT_CORE_TARGET})
         list(APPEND TEST_SOURCES tests/test_qtjson_adapter.cpp)
+    elseif(valijson_REQUIRE_ALL_ADAPTER_TESTS)
+        message(FATAL_ERROR
+            "Qt Core is required when valijson_REQUIRE_ALL_ADAPTER_TESTS is enabled.")
     endif()
 
     # Unit tests executable

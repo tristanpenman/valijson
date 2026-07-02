@@ -30,3 +30,6 @@
 	path = thirdparty/JSON-Schema-Test-Suite
 	url = https://github.com/json-schema-org/JSON-Schema-Test-Suite.git
 	shallow = true
+[submodule "thirdparty/fast_float"]
+	path = thirdparty/fast_float
+	url = https://github.com/fastfloat/fast_float.git

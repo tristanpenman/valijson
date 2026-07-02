@@ -12,25 +12,68 @@ env:
 
 jobs:
   build:
-    # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
-    # You can convert this to a matrix build if you need cross-platform coverage.
-    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
-    runs-on: ubuntu-latest
+    name: Build (${{ matrix.compiler.name }})
+    runs-on: ubuntu-24.04
+
+    strategy:
+      matrix:
+        compiler:
+          - name: GCC
+            cc: gcc
+            cxx: g++
+            package: ''
+            repository: ''
+            fast_float: OFF
+          - name: LLVM 19 (fast_float)
+            cc: clang-19
+            cxx: clang++-19
+            package: clang-19
+            repository: ''
+            fast_float: ON
+          - name: LLVM 19 (istringstream)
+            cc: clang-19
+            cxx: clang++-19
+            package: clang-19
+            repository: ''
+            fast_float: OFF
+          - name: LLVM 22
+            cc: clang-22
+            cxx: clang++-22
+            package: clang-22
+            repository: llvm-toolchain-noble-22
+            fast_float: OFF
+
+    env:
+      CC: ${{ matrix.compiler.cc }}
+      CXX: ${{ matrix.compiler.cxx }}
 
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: 'recursive'
 
+    - name: Add LLVM package repository
+      if: matrix.compiler.repository != ''
+      run: |
+        wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+        echo "deb https://apt.llvm.org/noble/ ${{ matrix.compiler.repository }} main" | sudo tee /etc/apt/sources.list.d/apt.llvm.org.list
+
     - name: Install dependencies
       run: |
         sudo apt update --yes
-        sudo apt install --yes libboost-all-dev qtbase5-dev libcurlpp-dev libcurl4-openssl-dev
+        sudo apt install --yes \
+          libboost-all-dev \
+          libboost-json-dev \
+          libpoco-dev \
+          qtbase5-dev \
+          libcurlpp-dev \
+          libcurl4-openssl-dev \
+          ${{ matrix.compiler.package }}
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -Dvalijson_BUILD_TESTS=ON -Dvalijson_BUILD_EXAMPLES=ON
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -Dvalijson_BUILD_TESTS=ON -Dvalijson_BUILD_EXAMPLES=ON -Dvalijson_REQUIRE_ALL_ADAPTER_TESTS=ON -Dvalijson_USE_FAST_FLOAT=${{matrix.compiler.fast_float}}
 
     - name: Build
       # Build your program with the given configuration
