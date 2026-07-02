@@ -10,12 +10,16 @@ namespace {
 const rapidjson::Document * fetchRelativeUriDocument(const std::string &uri)
 {
     rapidjson::Document *document = new rapidjson::Document();
-    document->SetObject();
 
-    if (uri == "json-schemas/schema-B.json") {
-        document->AddMember("$ref", "schema-C.json", document->GetAllocator());
-    } else if (uri == "json-schemas/schema-C.json") {
-        document->AddMember("type", "string", document->GetAllocator());
+    if (uri == "schema-B.json") {
+        document->Parse(R"({
+            "type": "object",
+            "properties": {
+                "testC": { "$ref": "schema-C.json" }
+            }
+        })");
+    } else if (uri == "schema-C.json") {
+        document->Parse(R"({ "type": "object" })");
     } else {
         ADD_FAILURE() << "Unexpected schema URI: " << uri;
         delete document;
@@ -35,9 +39,12 @@ void freeRelativeUriDocument(const rapidjson::Document *document)
 TEST(FetchRelativeUriDocumentCallback, ResolvesNestedSiblingReferences)
 {
     rapidjson::Document schemaDocument;
-    schemaDocument.SetObject();
-    schemaDocument.AddMember("$ref", "json-schemas/schema-B.json",
-            schemaDocument.GetAllocator());
+    schemaDocument.Parse(R"({
+        "type": "object",
+        "properties": {
+            "testB": { "$ref": "schema-B.json" }
+        }
+    })");
 
     valijson::Schema schema;
     valijson::SchemaParser parser;
@@ -45,9 +52,9 @@ TEST(FetchRelativeUriDocumentCallback, ResolvesNestedSiblingReferences)
             schema, fetchRelativeUriDocument, freeRelativeUriDocument);
 
     rapidjson::Document validDocument;
-    validDocument.SetString("valid");
+    validDocument.Parse(R"({ "testB": { "testC": {} } })");
     rapidjson::Document invalidDocument;
-    invalidDocument.SetInt(123);
+    invalidDocument.Parse(R"({ "testB": { "testC": "invalid" } })");
 
     valijson::Validator validator;
     EXPECT_TRUE(validator.validate(schema,
