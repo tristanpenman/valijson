@@ -61,12 +61,19 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt update --yes
-        sudo apt install --yes libboost-all-dev qtbase5-dev libcurlpp-dev libcurl4-openssl-dev ${{ matrix.compiler.package }}
+        sudo apt install --yes \
+          libboost-all-dev \
+          libboost-json-dev \
+          libpoco-dev \
+          qtbase5-dev \
+          libcurlpp-dev \
+          libcurl4-openssl-dev \
+          ${{ matrix.compiler.package }}
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -Dvalijson_BUILD_TESTS=ON -Dvalijson_BUILD_EXAMPLES=ON -Dvalijson_USE_FAST_FLOAT=${{matrix.compiler.fast_float}}
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -Dvalijson_BUILD_TESTS=ON -Dvalijson_BUILD_EXAMPLES=ON -Dvalijson_REQUIRE_ALL_ADAPTER_TESTS=ON -Dvalijson_USE_FAST_FLOAT=${{matrix.compiler.fast_float}}
 
     - name: Build
       # Build your program with the given configuration

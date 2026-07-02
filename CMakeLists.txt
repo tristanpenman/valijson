@@ -14,6 +14,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 option(valijson_BUILD_EXAMPLES "Build valijson examples." FALSE)
 option(valijson_BUILD_TESTS "Build valijson test suite." FALSE)
 option(valijson_EXCLUDE_BOOST "Exclude Boost when building test suite." FALSE)
+option(valijson_REQUIRE_ALL_ADAPTER_TESTS "Fail configuration when optional adapter test dependencies are unavailable." FALSE)
 option(valijson_USE_FAST_FLOAT "Use the vendored fast_float library for string-to-double conversions." FALSE)
 option(valijson_USE_EXCEPTIONS "Use exceptions in valijson and included libs." TRUE)
 
@@ -191,12 +192,18 @@ if(valijson_BUILD_TESTS)
         check_include_file_cxx("boost/json.hpp" BOOST_JSON_HPP_FOUND)
         if(${BOOST_JSON_HPP_FOUND})
             list(APPEND TEST_SOURCES tests/test_boost_json_adapter.cpp)
+        elseif(valijson_REQUIRE_ALL_ADAPTER_TESTS)
+            message(FATAL_ERROR
+                "Boost.JSON is required when valijson_REQUIRE_ALL_ADAPTER_TESTS is enabled.")
         else()
             message(WARNING
                 "boost/json.hpp not found; tests for boost_json_adapter will not be built. "
                 "If you have recently upgraded Boost to 1.75.0 or later, you may need to clear "
                 "your CMake cache for the header to be found.")
         endif()
+    elseif(valijson_REQUIRE_ALL_ADAPTER_TESTS)
+        message(FATAL_ERROR
+            "Boost is required when valijson_REQUIRE_ALL_ADAPTER_TESTS is enabled.")
     endif()
 
     if(Poco_FOUND)
@@ -204,11 +211,17 @@ if(valijson_BUILD_TESTS)
         list(APPEND TEST_LIBS
             Poco::Foundation
             Poco::JSON)
+    elseif(valijson_REQUIRE_ALL_ADAPTER_TESTS)
+        message(FATAL_ERROR
+            "Poco Foundation and JSON are required when valijson_REQUIRE_ALL_ADAPTER_TESTS is enabled.")
     endif()
 
     if(valijson_QT_CORE_TARGET)
         list(APPEND TEST_LIBS ${valijson_QT_CORE_TARGET})
         list(APPEND TEST_SOURCES tests/test_qtjson_adapter.cpp)
+    elseif(valijson_REQUIRE_ALL_ADAPTER_TESTS)
+        message(FATAL_ERROR
+            "Qt Core is required when valijson_REQUIRE_ALL_ADAPTER_TESTS is enabled.")
     endif()
 
     # Unit tests executable
