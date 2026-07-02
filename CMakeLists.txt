@@ -14,6 +14,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 option(valijson_BUILD_EXAMPLES "Build valijson examples." FALSE)
 option(valijson_BUILD_TESTS "Build valijson test suite." FALSE)
 option(valijson_EXCLUDE_BOOST "Exclude Boost when building test suite." FALSE)
+option(valijson_USE_FAST_FLOAT "Use the vendored fast_float library for string-to-double conversions." FALSE)
 option(valijson_USE_EXCEPTIONS "Use exceptions in valijson and included libs." TRUE)
 
 option(valijson_USE_BOOST_REGEX "Use boost::regex instead of std::regex internally." FALSE)
@@ -39,6 +40,14 @@ target_include_directories(valijson INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
+if(valijson_USE_FAST_FLOAT)
+    target_include_directories(valijson INTERFACE
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/fast_float/include>)
+    target_compile_definitions(valijson INTERFACE
+            VALIJSON_HAS_FAST_FLOAT_FROM_CHARS=1
+            VALIJSON_HAS_STD_FROM_CHARS=0)
+endif()
+
 if(valijson_USE_EXCEPTIONS)
     target_compile_definitions(valijson INTERFACE -DVALIJSON_USE_EXCEPTIONS=1)
 endif()
@@ -47,6 +56,10 @@ if (valijson_USE_BOOST_REGEX)
 endif()
 
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+if(valijson_USE_FAST_FLOAT)
+    install(DIRECTORY thirdparty/fast_float/include/
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+endif()
 
 install(TARGETS valijson
     EXPORT valijsonConfig
@@ -59,6 +72,13 @@ install(EXPORT valijsonConfig
 
 if(NOT valijson_BUILD_TESTS AND NOT valijson_BUILD_EXAMPLES)
     return()
+endif()
+
+if(valijson_USE_FAST_FLOAT)
+    include_directories(SYSTEM thirdparty/fast_float/include)
+    add_compile_definitions(
+            VALIJSON_HAS_FAST_FLOAT_FROM_CHARS=1
+            VALIJSON_HAS_STD_FROM_CHARS=0)
 endif()
 
 if(valijson_USE_EXCEPTIONS)

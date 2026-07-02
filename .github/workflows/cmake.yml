@@ -23,16 +23,25 @@ jobs:
             cxx: g++
             package: ''
             repository: ''
-          - name: LLVM 19
+            fast_float: OFF
+          - name: LLVM 19 (fast_float)
             cc: clang-19
             cxx: clang++-19
             package: clang-19
             repository: ''
+            fast_float: ON
+          - name: LLVM 19 (istringstream)
+            cc: clang-19
+            cxx: clang++-19
+            package: clang-19
+            repository: ''
+            fast_float: OFF
           - name: LLVM 22
             cc: clang-22
             cxx: clang++-22
             package: clang-22
             repository: llvm-toolchain-noble-22
+            fast_float: OFF
 
     env:
       CC: ${{ matrix.compiler.cc }}
@@ -57,7 +66,7 @@ jobs:
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -Dvalijson_BUILD_TESTS=ON -Dvalijson_BUILD_EXAMPLES=ON
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -Dvalijson_BUILD_TESTS=ON -Dvalijson_BUILD_EXAMPLES=ON -Dvalijson_USE_FAST_FLOAT=${{matrix.compiler.fast_float}}
 
     - name: Build
       # Build your program with the given configuration
