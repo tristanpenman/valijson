@@ -146,4 +146,12 @@ INSTANTIATE_TEST_SUITE_P(
                 UriResolutionTestCase{
                         "schemas/",
                         "child.json",
-                        "schemas/child.json"}));
+                        "schemas/child.json"},
+                UriResolutionTestCase{
+                        "json-schemas/schema-B.json",
+                        "schema-C.json",
+                        "json-schemas/schema-C.json"},
+                UriResolutionTestCase{
+                        "schema-B.json",
+                        "schema-C.json",
+                        "schema-C.json"}));
