@@ -219,6 +219,7 @@ if(valijson_BUILD_TESTS)
     if(valijson_QT_CORE_TARGET)
         list(APPEND TEST_LIBS ${valijson_QT_CORE_TARGET})
         list(APPEND TEST_SOURCES tests/test_qtjson_adapter.cpp)
+        list(APPEND TEST_SOURCES tests/test_qvariant_adapter.cpp)
     elseif(valijson_REQUIRE_ALL_ADAPTER_TESTS)
         message(FATAL_ERROR
             "Qt Core is required when valijson_REQUIRE_ALL_ADAPTER_TESTS is enabled.")
