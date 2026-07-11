@@ -33,8 +33,13 @@
 #ifdef VALIJSON_BUILD_QT_ADAPTER
 #include <valijson/adapters/qtjson_adapter.hpp>
 #include <valijson/utils/qtjson_utils.hpp>
+
+// Only include QVariant components if running Qt 6 or higher
+#if QT_VERSION_MAJOR >= 6
 #include <valijson/adapters/qvariant_adapter.hpp>
 #include <valijson/utils/qvariant_utils.hpp>
+#endif
+
 #include <utility>
 #endif
 
