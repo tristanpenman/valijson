@@ -2023,23 +2023,27 @@ inline std::string resolveRelativeUri(
         return relativeUri;
     }
 
-    // Trivial case: The resolution scope is _not_ absolute
     const auto schemeEnd = parseScheme(resolutionScope);
-    if (!schemeEnd.has_value()) {
-        return resolutionScope + relativeUri;
+    std::string schemeAndAuthority;
+    std::string basePath;
+    if (schemeEnd.has_value()) {
+        // Extract scheme+authority, e.g. http://userinfo@example.com:8080
+        const auto authorityEnd = resolutionScope.find('/', *schemeEnd);
+        schemeAndAuthority = resolutionScope.substr(0, authorityEnd);
+
+        // Assume path starts immediately after scheme+authority
+        const std::string::size_type pathStart = schemeAndAuthority.size();
+
+        // Extract base path from resolution scope, or use '/' as default
+        basePath = pathStart < resolutionScope.size()
+                ? resolutionScope.substr(pathStart)
+                : "/";
+    } else {
+        // A relative resolution scope still represents a URI path. Relative
+        // references replace its final path segment rather than being appended
+        // directly to the complete filename.
+        basePath = resolutionScope;
     }
-
-    // Extract scheme+authority, e.g. http://userinfo@example.com:8080
-    const auto authorityEnd = resolutionScope.find('/', *schemeEnd);
-    const auto schemeAndAuthority = resolutionScope.substr(0, authorityEnd);
-
-    // Assume path starts immediately after scheme+authority
-    const std::string::size_type pathStart = schemeAndAuthority.size();
-
-    // Extract base path from resolution scope, or use '/' as default
-    std::string basePath = pathStart < resolutionScope.size()
-            ? resolutionScope.substr(pathStart)
-            : "/";
 
     // Strip everything after fragment marker if present
     const std::string::size_type baseFragmentPos = basePath.find('#');
@@ -2086,18 +2090,21 @@ inline std::string resolveRelativeUri(
         // stripping the base path of any segment after its last slash
         const std::string::size_type lastSlashPos = basePath.find_last_of('/');
         mergedPath = lastSlashPos == std::string::npos
-                ? "/" + relativePath
+                ? relativePath
                 : basePath.substr(0, lastSlashPos + 1) + relativePath;
     }
 
     // Resolve relative path segments
+    const bool absolutePath = !mergedPath.empty() && mergedPath[0] == '/';
     std::vector<std::string> segments;
     std::string segment;
     for (const char c : mergedPath) {
         if (c == '/') {
             if (segment == "..") {
-                if (!segments.empty()) {
+                if (!segments.empty() && segments.back() != "..") {
                     segments.pop_back();
+                } else if (!absolutePath) {
+                    segments.push_back(segment);
                 }
             } else if (!segment.empty() && segment != ".") {
                 segments.push_back(segment);
@@ -2108,15 +2115,17 @@ inline std::string resolveRelativeUri(
         }
     }
     if (segment == "..") {
-        if (!segments.empty()) {
+        if (!segments.empty() && segments.back() != "..") {
             segments.pop_back();
+        } else if (!absolutePath) {
+            segments.push_back(segment);
         }
     } else if (!segment.empty() && segment != ".") {
         segments.push_back(segment);
     }
 
     // Generate final normalised path
-    std::string normalisedPath = "/";
+    std::string normalisedPath = absolutePath ? "/" : "";
     for (auto itr = segments.begin(); itr != segments.end(); ++itr) {
         if (itr != segments.begin()) {
             normalisedPath += "/";

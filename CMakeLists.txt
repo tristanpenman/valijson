@@ -161,6 +161,7 @@ if(valijson_BUILD_TESTS)
         tests/test_date_time_format.cpp
         tests/test_double_parser.cpp
         tests/test_fetch_absolute_uri_document_callback.cpp
+        tests/test_fetch_relative_uri_document_callback.cpp
         tests/test_fetch_urn_document_callback.cpp
         tests/test_json_pointer.cpp
         tests/test_json11_adapter.cpp
