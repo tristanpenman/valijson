@@ -38,6 +38,7 @@
 #if QT_VERSION_MAJOR >= 6
 #include <valijson/adapters/qvariant_adapter.hpp>
 #include <valijson/utils/qvariant_utils.hpp>
+#define DOQVARIANTTESTS true
 #endif
 
 #include <utility>
@@ -475,8 +476,7 @@ TEST_F(TestAdapterComparison, NlohmannJsonVsPropertyTree)
 #endif // VALIJSON_BUILD_BOOST_PROPERTY_TREE_ADAPTER
 
 //
-// QtJsonAdapter vs X
-// QtVariantAdapter vs X
+// zAdapter vs X
 // ------------------------------------------------------------------------------------------------
 
 #ifdef VALIJSON_BUILD_QT_ADAPTER
@@ -517,6 +517,11 @@ TEST_F(TestAdapterComparison, QtJsonVsPicoJson)
             valijson::adapters::PicoJsonAdapter>();
 }
 
+// QtVariantAdapter vs X
+// ------------------------------------------------------------------------------------------------
+
+#ifdef DOQVARIANTTESTS
+
 TEST_F(TestAdapterComparison, QtVariantVsQtVariant) {
     testComparison<
         valijson::adapters::QtVariantAdapter,
@@ -552,6 +557,7 @@ TEST_F(TestAdapterComparison, QtVariantVsPicoJson)
             valijson::adapters::QtVariantAdapter,
             valijson::adapters::PicoJsonAdapter>();
 }
+#endif
 
 #ifdef VALIJSON_BUILD_BOOST_JSON_ADAPTER
 
@@ -562,12 +568,14 @@ TEST_F(TestAdapterComparison, QtJsonVsBoostJson)
             valijson::adapters::BoostJsonAdapter>();
 }
 
+#if DOQVARIANTTESTS
 TEST_F(TestAdapterComparison, QtVariantVsBoostJson)
 {
     testComparison<
             valijson::adapters::QtVariantAdapter,
             valijson::adapters::BoostJsonAdapter>();
 }
+#endif
 
 #endif // VALIJSON_BUILD_BOOST_JSON_ADAPTER
 
@@ -580,12 +588,14 @@ TEST_F(TestAdapterComparison, QtJsonVsPropertyTree)
             valijson::adapters::PropertyTreeAdapter>();
 }
 
+#if DOQVARIANTTESTS
 TEST_F(TestAdapterComparison, QtVariantVsPropertyTree)
 {
     testComparison<
             valijson::adapters::QtVariantAdapter,
             valijson::adapters::PropertyTreeAdapter>();
 }
+#endif
 
 #endif // VALIJSON_BUILD_BOOST_PROPERTY_TREE_ADAPTER
 
@@ -603,6 +613,7 @@ TEST_F(TestAdapterComparison, QtJsonVsNlohmannJson)
             valijson::adapters::NlohmannJsonAdapter>();
 }
 
+#if DOQVARIANTTESTS
 TEST_F(TestAdapterComparison, QtVariantVsJson11)
 {
     testComparison<
@@ -616,6 +627,7 @@ TEST_F(TestAdapterComparison, QtVariantVsNlohmannJson)
             valijson::adapters::QtVariantAdapter,
             valijson::adapters::NlohmannJsonAdapter>();
 }
+#endif
 
 #endif // VALIJSON_BUILD_QT_ADAPTER
 
@@ -706,6 +718,17 @@ TEST_F(TestAdapterComparison, PocoJsonVsQtJson)
             valijson::adapters::PocoJsonAdapter,
             valijson::adapters::QtJsonAdapter>();
 }
+
+#ifdef DOQVARIANTTESTS
+
+TEST_F(TestAdapterComparison, PocoJsonVsQtVariant)
+{
+    testComparison<
+            valijson::adapters::PocoJsonAdapter,
+            valijson::adapters::QtVariantAdapter>();
+}
+
+#endif
 
 #endif // VALIJSON_BUILD_QT_ADAPTER
 
