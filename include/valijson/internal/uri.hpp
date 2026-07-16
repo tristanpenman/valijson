@@ -174,7 +174,7 @@ inline std::string resolveRelativeUri(
         normalisedPath += *itr;
     }
     if (!mergedPath.empty() && mergedPath[mergedPath.size() - 1] == '/' &&
-            normalisedPath[normalisedPath.size() - 1] != '/') {
+            (normalisedPath.empty() || normalisedPath[normalisedPath.size() - 1] != '/')) {
         normalisedPath += "/";
     }
 
