@@ -38,7 +38,7 @@
 #if QT_VERSION_MAJOR >= 6
 #include <valijson/adapters/qvariant_adapter.hpp>
 #include <valijson/utils/qvariant_utils.hpp>
-#define DOQVARIANTTESTS true
+#define VALIJSON_BUILD_QVARIANT_ADAPTER
 #endif
 
 #include <utility>
@@ -520,7 +520,7 @@ TEST_F(TestAdapterComparison, QtJsonVsPicoJson)
 // QtVariantAdapter vs X
 // ------------------------------------------------------------------------------------------------
 
-#ifdef DOQVARIANTTESTS
+#ifdef VALIJSON_BUILD_QVARIANT_ADAPTER
 
 TEST_F(TestAdapterComparison, QtVariantVsQtVariant) {
     testComparison<
@@ -568,7 +568,7 @@ TEST_F(TestAdapterComparison, QtJsonVsBoostJson)
             valijson::adapters::BoostJsonAdapter>();
 }
 
-#if DOQVARIANTTESTS
+#ifdef VALIJSON_BUILD_QVARIANT_ADAPTER
 TEST_F(TestAdapterComparison, QtVariantVsBoostJson)
 {
     testComparison<
@@ -588,7 +588,7 @@ TEST_F(TestAdapterComparison, QtJsonVsPropertyTree)
             valijson::adapters::PropertyTreeAdapter>();
 }
 
-#if DOQVARIANTTESTS
+#ifdef VALIJSON_BUILD_QVARIANT_ADAPTER
 TEST_F(TestAdapterComparison, QtVariantVsPropertyTree)
 {
     testComparison<
@@ -613,7 +613,7 @@ TEST_F(TestAdapterComparison, QtJsonVsNlohmannJson)
             valijson::adapters::NlohmannJsonAdapter>();
 }
 
-#if DOQVARIANTTESTS
+#ifdef VALIJSON_BUILD_QVARIANT_ADAPTER
 TEST_F(TestAdapterComparison, QtVariantVsJson11)
 {
     testComparison<
@@ -719,7 +719,7 @@ TEST_F(TestAdapterComparison, PocoJsonVsQtJson)
             valijson::adapters::QtJsonAdapter>();
 }
 
-#ifdef DOQVARIANTTESTS
+#ifdef VALIJSON_BUILD_QVARIANT_ADAPTER
 
 TEST_F(TestAdapterComparison, PocoJsonVsQtVariant)
 {

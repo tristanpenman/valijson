@@ -2,9 +2,9 @@
 
 #include <QFile>
 
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QJsonArray>
 #include <QVariant>
 
 #include <valijson/utils/file_utils.hpp>
@@ -25,13 +25,13 @@ inline bool loadDocument(const std::string &path, QVariant &root)
 
     // Parse schema
     QJsonParseError parseError;
-    QJsonDocument doc = QJsonDocument::fromJson(data);
+    QJsonDocument doc = QJsonDocument::fromJson(data, &parseError);
     if (doc.isNull()) {
         std::cerr << "qt failed to parse the document:" << std::endl
                   << parseError.errorString().toStdString() << std::endl;
         return false;
     } else if (doc.isObject() || doc.isArray()) {
-        root = QVariant(doc.toVariant() );
+        root = doc.toVariant();
     } else if (doc.isEmpty()) {
         root = QVariant();
     }
