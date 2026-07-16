@@ -155,3 +155,12 @@ INSTANTIATE_TEST_SUITE_P(
                         "schema-B.json",
                         "schema-C.json",
                         "schema-C.json"}));
+
+// Regression test for an out-of-bounds read in normalised path handling.
+INSTANTIATE_TEST_SUITE_P(
+        RelativeScopeCollapsingToEmptyPath,
+        TestUriResolution,
+        testing::Values(
+                UriResolutionTestCase{"foo", "./", "/"},
+                UriResolutionTestCase{"a/b", "../", "/"},
+                UriResolutionTestCase{"dir/file.json", "../", "/"}));
