@@ -30,7 +30,7 @@ Clone the repo, including submodules:
 git clone --recurse-submodules git@github.com:tristanpenman/valijson.git
 ```
 
-The following code snippets show how you might implement a simple validator using RapidJson as the underlying JSON Parser.
+The following code snippets show how you might implement a simple validator using RapidJSON as the underlying JSON parser.
 
 Include the necessary headers:
 
@@ -82,17 +82,18 @@ Validate a document:
 ```cpp
 Validator validator;
 RapidJsonAdapter myTargetAdapter(myTargetDoc);
-if (!validator.validate(mySchema, myTargetAdapter, NULL)) {
+if (!validator.validate(mySchema, myTargetAdapter, nullptr)) {
     throw std::runtime_error("Validation failed.");
 }
 ```
 
-Note that Valijson's `SchemaParser` and `Validator` classes expect you to pass in a `RapidJsonAdapter` rather than a `rapidjson::Document`. This is due to the fact that `SchemaParser` and `Validator` are template classes that can be used with any of the JSON parsers supported by Valijson.
+Note that Valijson's schema parsing and validation APIs expect you to pass in a `RapidJsonAdapter` rather than a `rapidjson::Document`. `SchemaParser::populateSchema()` and `Validator::validate()` accept adapter types for any of the JSON representations supported by Valijson.
 
 ### Exceptions
 
-By default, Valijson classes will not throw exceptions (e.g. when failing to parse a schema). To enable exceptions for these cases, `VALIJSON_USE_EXCEPTIONS` must be defined.
-However note that `VALIJSON_USE_EXCEPTIONS` is defined as interface compile definition of the cmake target, and the definition populates all the targets linking Valijson with cmake.
+When Valijson is included in a project as a CMake target, exceptions are enabled by default through the `valijson_USE_EXCEPTIONS` option. Set this option to `OFF` to disable exception throwing in Valijson. The resulting `VALIJSON_USE_EXCEPTIONS` compile definition is propagated to targets that link against Valijson.
+
+When using the headers without the CMake target, define `VALIJSON_USE_EXCEPTIONS=1` before including Valijson headers to enable exceptions. If the macro is not defined, fatal Valijson errors are reported to standard error before the process is aborted.
 
 ### Strong vs Weak Types
 
@@ -120,7 +121,7 @@ This will create a validator that will attempt to cast values to satisfy a schem
 
 ### Strict vs Permissive Date/Time Formats
 
-JSON Schema supports validation of certain types using the `format` keyword. Supported formats include `time`, `date`, and `date-time`. When `date-time` is used, the input is validated according to [RFC 3999](./doc/specifications/rfc3339-timestamps.txt). By default, RFC 3999 requires that all date/time strings are unambiguous - i.e. are defined in terms of a local time zone. This is controlled by the `Z` suffix (for UTC) or a `+01:00` style modifier.
+JSON Schema supports validation of certain types using the `format` keyword. Supported formats include `time`, `date`, and `date-time`. When `date-time` is used, the input is validated according to [RFC 3339](./doc/specifications/rfc3339-timestamps.txt). By default, RFC 3339 requires that all date/time strings are unambiguous - i.e. are defined in terms of a local time zone. This is controlled by the `Z` suffix (for UTC) or a `+01:00` style modifier.
 
 Valijson can be configured to allow ambiguous date/time strings.
 
@@ -158,7 +159,7 @@ struct MyRegexpEngine
 };
 ```
 
-Then to use it, you must define a customer validator type:
+Then to use it, you must define a custom validator type:
 
 ```cpp
     using MyValidator = ValidatorT<MyRegexpEngine>;
@@ -166,7 +167,7 @@ Then to use it, you must define a customer validator type:
 
 Once you've done this, `MyValidator` can be used in place of the default `valijson::Validator` type.
 
-Alternatively the library can be instructed to use `boost::regex` by specifying either `valijson_USE_BOOST_REGEX=TRUE` in CMake or defining `VALIJSON_USE_BOOST_REGEX=1` as a `#define` before including any valijson headers. Note that the library does not source `boost::regex` for you when specifying this option- it is assumed you have it already.
+Alternatively the library can be instructed to use `boost::regex` by specifying either `valijson_USE_BOOST_REGEX=TRUE` in CMake or defining `VALIJSON_USE_BOOST_REGEX=1` before including any Valijson headers. Valijson does not provide Boost.Regex, so it must already be available to the build.
 
 ## Memory Management
 
@@ -220,9 +221,9 @@ Valijson's JSON Reference implementation requires that two callback functions ar
 
 Valijson's test suite currently contains several hand-crafted tests and uses the standard [JSON Schema Test Suite](https://github.com/json-schema/JSON-Schema-Test-Suite) to test support for parts of the JSON Schema feature set that have been implemented.
 
-### cmake
+### CMake
 
-The examples and test suite can be built using cmake:
+The examples and test suite can be built using CMake:
 
 ```bash
 # Build examples and test suite
@@ -235,7 +236,7 @@ make
 ./test_suite
 ```
 
-## How to add this library to your cmake target
+## How to add this library to your CMake target
 
 Valijson can be integrated either as git submodule or with `find_package()`.
 
@@ -251,7 +252,7 @@ include(FetchContent)
 FetchContent_Declare(
   valijson
   GIT_REPOSITORY https://github.com/tristanpenman/valijson.git
-  GIT_TAG v1.0.6
+  GIT_TAG v1.1.2
   GIT_SHALLOW TRUE
   GIT_SUBMODULES ""
 )
@@ -294,7 +295,7 @@ target_link_libraries(your-executable ValiJSON::valijson)
 ```
 ### Install Valijson and import it
 
-It is possible to install headers by running cmake's install command from the build tree. Once Valijson is installed, use it from other CMake projects using `find_package(Valijson)` in your CMakeLists.txt.
+It is possible to install headers by running CMake's install command from the build tree. Once Valijson is installed, use it from other CMake projects using `find_package(valijson)` in your CMakeLists.txt.
 
 ```bash
 # Install Valijson
@@ -334,9 +335,9 @@ An example can be found in [examples/valijson\_nlohmann\_bundled\_test.cpp](exam
 
 ## Examples
 
-Building the Valijson Test Suite, using the instructions above, will also compile two example applications: `custom_schema` and `external_schema`.
+Building with `valijson_BUILD_EXAMPLES=ON` compiles the examples in the [examples](examples) directory, including `custom_schema`, `external_schema`, adapter iteration examples, JSON Pointer and remote-reference examples, and `valijson_benchmark`. The `remote_resolution_url` example is built when curlpp is available.
 
-`custom_schema` shows how you can hard-code a schema definition into an application, while `external_schema` builds on the example code above to show you how to validate and document and report on any validation errors.
+`custom_schema` shows how you can hard-code a schema definition into an application, while `external_schema` builds on the example code above to show you how to validate a document and report any validation errors.
 
 ## Benchmarking
 
@@ -371,13 +372,11 @@ Documents: 2, Iterations: 1000000 (301487 per second)
 
 ## JSON Schema Support
 
-Valijson supports most of the constraints defined in [Draft 7](https://json-schema.org/draft-07/json-schema-release-notes.html)
+Valijson supports the validation keywords defined in [JSON Schema Draft 7](https://json-schema.org/draft-07/json-schema-release-notes.html), as exercised by the standard JSON Schema Test Suite.
 
-The main exceptions are
- - default
- - format
+The `default` keyword is annotation-only and does not affect validation. Valijson validates the `date`, `time`, `date-time`, and `ipv4` formats; other formats are not currently enforced.
 
-Support for JSON References is in development. It is mostly working, however some of the test cases added to [JSON Schema Test Suite](https://github.com/json-schema/JSON-Schema-Test-Suite) for v6/v7 are still failing.
+Local JSON References are supported. Remote references are supported when document-fetch and document-release callbacks are supplied to `SchemaParser::populateSchema()`.
 
 ## JSON Inspector
 
@@ -417,15 +416,16 @@ When building the test suite, Boost 1.54, Qt 5 or Qt 6, and Poco are optional de
 
 ## Supported Parsers
 
-Valijson supports JSON documents loaded using various JSON parser libraries. It has been tested against the following versions of these libraries:
+Valijson supports JSON documents loaded using various JSON parser libraries. The list below gives the bundled version where a dependency is included as a submodule, or a supported baseline for dependencies that must be installed separately:
 
  - [boost::property\_tree 1.54](http://www.boost.org/doc/libs/1_54_0/doc/html/boost_propertytree/synopsis.html)
  - [Boost.JSON 1.75](https://www.boost.org/doc/libs/1_75_0/libs/json/doc/html/index.html)
- - [json11 (commit afcc8d0)](https://github.com/dropbox/json11/tree/afcc8d0d82b1ce2df587a7a0637d05ba493bf5e6)
- - [jsoncpp 1.9.4](https://github.com/open-source-parsers/jsoncpp/archive/1.9.4.tar.gz)
- - [nlohmann/json 1.1.0](https://github.com/nlohmann/json/archive/v1.1.0.tar.gz)
- - [rapidjson (commit 48fbd8c)](https://github.com/Tencent/rapidjson/tree/48fbd8cd202ca54031fe799db2ad44ffa8e77c13)
- - [PicoJSON 1.3.0](https://github.com/kazuho/picojson/archive/v1.3.0.tar.gz)
+ - [json11 (commit 2df9473)](https://github.com/dropbox/json11/tree/2df9473fb3605980db55ecddf34392a2e832ad35)
+ - [jsoncpp 1.9.5](https://github.com/open-source-parsers/jsoncpp/releases/tag/1.9.5)
+ - [nlohmann/json 3.1.2](https://github.com/nlohmann/json/releases/tag/v3.1.2)
+ - [RapidJSON (commit 06d58b9)](https://github.com/Tencent/rapidjson/tree/06d58b9e848c650114556a23294d0b6440078c61)
+ - [PicoJSON (commit 9dfda04)](https://github.com/kazuho/picojson/tree/9dfda04e89c28a9e602ce9ef626dd9b6acbc6e60)
+ - [yaml-cpp (commit 2decf96)](https://github.com/jbeder/yaml-cpp/tree/2decf96e915d2b0c26c68c1659665789dfef2633)
  - [Poco JSON 1.14.0](https://pocoproject.org/docs/Poco.JSON.html)
  - [Qt 5.8](http://doc.qt.io/qt-5/json.html) or [Qt 6](https://doc.qt.io/qt-6/json.html), with the version-specific support described below
 
