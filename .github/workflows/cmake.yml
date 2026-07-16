@@ -18,30 +18,41 @@ jobs:
     strategy:
       matrix:
         compiler:
-          - name: GCC
+          - name: GCC (Qt 5)
             cc: gcc
             cxx: g++
             package: ''
             repository: ''
             fast_float: OFF
+            qt_package: qtbase5-dev
+          - name: GCC (Qt 6)
+            cc: gcc
+            cxx: g++
+            package: ''
+            repository: ''
+            fast_float: OFF
+            qt_package: qt6-base-dev
           - name: LLVM 19 (fast_float)
             cc: clang-19
             cxx: clang++-19
             package: clang-19
             repository: ''
             fast_float: ON
+            qt_package: qtbase5-dev
           - name: LLVM 19 (istringstream)
             cc: clang-19
             cxx: clang++-19
             package: clang-19
             repository: ''
             fast_float: OFF
+            qt_package: qtbase5-dev
           - name: LLVM 22
             cc: clang-22
             cxx: clang++-22
             package: clang-22
             repository: llvm-toolchain-noble-22
             fast_float: OFF
+            qt_package: qtbase5-dev
 
     env:
       CC: ${{ matrix.compiler.cc }}
@@ -65,7 +76,7 @@ jobs:
           libboost-all-dev \
           libboost-json-dev \
           libpoco-dev \
-          qtbase5-dev \
+          ${{ matrix.compiler.qt_package }} \
           libcurlpp-dev \
           libcurl4-openssl-dev \
           ${{ matrix.compiler.package }}
