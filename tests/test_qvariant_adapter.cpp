@@ -13,7 +13,7 @@ TEST_F(TestQtVariantAdapter, BasicArrayIteration)
 {
     const unsigned int numElements = 10;
 
-    // Create a picojson document that consists of an array of numbers
+    // Create a QVariant document that consists of an array of numbers
     QVariantList array;
     for (unsigned int i = 0; i < numElements; i++) {
         QVariant value(static_cast<double>(i));
@@ -49,7 +49,7 @@ TEST_F(TestQtVariantAdapter, BasicObjectIteration)
 {
     const unsigned int numElements = 10;
 
-    // Create a picojson document that consists of an object that maps numeric
+    // Create a QVariant document that consists of an object that maps numeric
     // strings their corresponding numeric values
     QVariantMap object;
     for (unsigned int i = 0; i < numElements; i++) {

@@ -29,9 +29,10 @@
 #include <string>
 #include <utility>
 
-#include <QVariantMap>
+#include <QMetaType>
 #include <QVariant>
 #include <QVariantList>
+#include <QVariantMap>
 
 #include <valijson/internal/adapter.hpp>
 #include <valijson/internal/basic_adapter.hpp>
@@ -83,7 +84,7 @@ public:
     explicit QtVariantArray(const QVariant &value)
       : m_value(value.toList())
     {
-        if ( value.typeId() != QMetaType::QVariantList ) {
+        if (value.typeId() != QMetaType::QVariantList) {
             throwRuntimeError("Value is not an array.");
         }
     }
@@ -130,7 +131,7 @@ private:
  * QtVariant value, assumed to be an object, so there is very little overhead
  * associated with copy construction and passing by value.
  */
-class QtVariantObject 
+class QtVariantObject
 {
 public:
 
@@ -155,7 +156,7 @@ public:
     QtVariantObject(const QVariant &value)
       : m_value(value.toMap())
     {
-        if (value.typeId()!=QMetaType::QVariantMap) {
+        if (value.typeId() != QMetaType::QVariantMap) {
             throwRuntimeError("Value is not an object.");
         }
     }
@@ -327,7 +328,7 @@ public:
 
     bool getDouble(double &result) const
     {
-	if( isDouble() ) {
+        if (isDouble()) {
             result = m_value.toDouble();
             return true;
         }
@@ -337,7 +338,7 @@ public:
 
     bool getInteger(int64_t &result) const
     {
-	if( isInteger() ) {
+        if (isInteger()) {
             result = m_value.toLongLong();
             return true;
         }
@@ -387,7 +388,7 @@ public:
 
     bool getString(std::string &result) const
     {
-	if( isString() ) {
+        if (isString()) {
             result = m_value.toString().toStdString();
             return true;
         }
@@ -412,13 +413,30 @@ public:
 
     bool isDouble() const
     {
-	static QList<int> types{ QMetaType::Double, QMetaType::Float};
+        static const QList<int> types{
+            QMetaType::Double,
+            QMetaType::Float
+        };
         return types.contains(m_value.typeId());
     }
 
     bool isInteger() const
     {
-	static QList<int> types{ QMetaType::Int, QMetaType::UInt, QMetaType::Long, QMetaType::LongLong, QMetaType::Short, QMetaType::UShort, QMetaType::ULongLong, QMetaType::ULong, QMetaType::Char, QMetaType::Char16, QMetaType::Char32, QMetaType::SChar, QMetaType::UChar };
+        static const QList<int> types{
+            QMetaType::Int,
+            QMetaType::UInt,
+            QMetaType::Long,
+            QMetaType::LongLong,
+            QMetaType::Short,
+            QMetaType::UShort,
+            QMetaType::ULongLong,
+            QMetaType::ULong,
+            QMetaType::Char,
+            QMetaType::Char16,
+            QMetaType::Char32,
+            QMetaType::SChar,
+            QMetaType::UChar
+        };
         return types.contains(m_value.typeId());
     }
 
@@ -543,8 +561,8 @@ public:
 
         return *this;
     }
-	
-	QtVariantArrayValueIterator operator++(int)
+
+    QtVariantArrayValueIterator operator++(int)
     {
         QtVariantArrayValueIterator iterator_pre(m_itr);
         ++(*this);
@@ -592,7 +610,8 @@ public:
      *
      * @param   itr  QtVariant iterator to store
      */
-    QtVariantObjectMemberIterator(const QMap<QString,QVariant>::const_iterator &itr)
+    QtVariantObjectMemberIterator(
+        const QMap<QString, QVariant>::const_iterator &itr)
       : m_itr(itr) { }
 
     /**
@@ -644,7 +663,7 @@ public:
         return iterator_pre;
     }
 
-    const QtVariantObjectMemberIterator& operator--(int)
+    const QtVariantObjectMemberIterator& operator--()
     {
         m_itr--;
 
@@ -654,7 +673,7 @@ public:
 private:
 
     /// Internal copy of the original QtVariant iterator
-    QMap<QString,QVariant>::const_iterator m_itr;
+    QMap<QString, QVariant>::const_iterator m_itr;
 };
 
 /// Specialisation of the AdapterTraits template struct for QtVariantAdapter.

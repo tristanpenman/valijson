@@ -476,7 +476,7 @@ TEST_F(TestAdapterComparison, NlohmannJsonVsPropertyTree)
 #endif // VALIJSON_BUILD_BOOST_PROPERTY_TREE_ADAPTER
 
 //
-// zAdapter vs X
+// QtJsonAdapter vs X
 // ------------------------------------------------------------------------------------------------
 
 #ifdef VALIJSON_BUILD_QT_ADAPTER
@@ -522,7 +522,8 @@ TEST_F(TestAdapterComparison, QtJsonVsPicoJson)
 
 #ifdef VALIJSON_BUILD_QVARIANT_ADAPTER
 
-TEST_F(TestAdapterComparison, QtVariantVsQtVariant) {
+TEST_F(TestAdapterComparison, QtVariantVsQtVariant)
+{
     testComparison<
         valijson::adapters::QtVariantAdapter,
         valijson::adapters::QtVariantAdapter>();
