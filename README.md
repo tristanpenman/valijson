@@ -411,7 +411,7 @@ Doxygen documentation can be built by running 'doxygen' from the project root di
 
 ## Dependencies
 
-Valijson requires a compiler with full C++14 support.
+Valijson requires a compiler with full C++17 support.
 
 When building the test suite, Boost 1.54, Qt 5 or Qt 6, and Poco are optional dependencies.
 
@@ -427,11 +427,26 @@ Valijson supports JSON documents loaded using various JSON parser libraries. It 
  - [rapidjson (commit 48fbd8c)](https://github.com/Tencent/rapidjson/tree/48fbd8cd202ca54031fe799db2ad44ffa8e77c13)
  - [PicoJSON 1.3.0](https://github.com/kazuho/picojson/archive/v1.3.0.tar.gz)
  - [Poco JSON 1.14.0](https://pocoproject.org/docs/Poco.JSON.html)
- - [Qt 5.8](http://doc.qt.io/qt-5/json.html) or [Qt 6](https://doc.qt.io/qt-6/json.html)
+ - [Qt 5.8](http://doc.qt.io/qt-5/json.html) or [Qt 6](https://doc.qt.io/qt-6/json.html), with the version-specific support described below
 
 Other versions of these libraries may work, but have not been tested. In particular, versions of jsoncpp going back to 0.5.0 should also work correctly.
 
 When compiling with older versions of Boost (< 1.76.0) you may see compiler warnings from the `boost::property_tree` headers. This has been addressed in version 1.76.0 of Boost.
+
+### Qt Support
+
+Valijson provides two adapters for Qt Core types:
+
+| Qt version | `QtJsonAdapter` (`QJsonValue`) | `QtVariantAdapter` (`QVariant`) |
+|------------|--------------------------------|---------------------------------|
+| Qt 5       | Supported                      | Not supported                   |
+| Qt 6       | Supported                      | Supported                       |
+
+`QtJsonAdapter`, provided by `<valijson/adapters/qtjson_adapter.hpp>`, validates values represented by Qt's JSON classes and is available with both Qt 5 and Qt 6.
+
+`QtVariantAdapter`, provided by `<valijson/adapters/qvariant_adapter.hpp>`, validates JSON-compatible `QVariant` values and is available with Qt 6 only. JSON arrays and objects must be represented by `QVariantList` and `QVariantMap`, respectively. The corresponding `<valijson/utils/qvariant_utils.hpp>` helper loads a JSON document into a `QVariant` using `QJsonDocument::toVariant()`.
+
+When the test suite is configured with Qt 5, only the `QtJsonAdapter` tests are built. With Qt 6, tests for both Qt adapters are built.
 
 ## Package Managers
 
