@@ -230,6 +230,8 @@ if(valijson_BUILD_TESTS)
 
     # Unit tests executable
     add_executable(test_suite ${TEST_SOURCES})
+    add_executable(test_rapidjson_crt_allocator
+        tests/test_rapidjson_crt_allocator.cpp)
     if(NOT valijson_USE_EXCEPTIONS)
         if(MSVC)
             if(CMAKE_CXX_FLAGS MATCHES "/EHsc ")

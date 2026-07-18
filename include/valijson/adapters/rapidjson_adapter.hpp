@@ -43,6 +43,7 @@
 #include <optional>
 #include <string>
 #include <iterator>
+#include <type_traits>
 
 #ifdef VALIJSON_USE_EXCEPTIONS
     #ifdef RAPIDJSON_ASSERT
@@ -882,35 +883,26 @@ typedef GenericRapidJsonObjectMember<> RapidJsonObjectMember;
 typedef GenericRapidJsonObjectMemberIterator<> RapidJsonObjectMemberIterator;
 typedef GenericRapidJsonValue<> RapidJsonValue;
 
-/**
- * @brief  Specialisation of the AdapterTraits template struct for a
- *         RapidJsonAdapter that uses a pool allocator
- */
-template<>
-struct AdapterTraits<valijson::adapters::RapidJsonAdapter>
-{
-    typedef rapidjson::Document DocumentType;
-
-    static std::string adapterName()
-    {
-        return "RapidJsonAdapter";
-    }
-};
-
 typedef rapidjson::GenericValue<rapidjson::UTF8<>, rapidjson::CrtAllocator> RapidJsonCrt;
 
 /**
  * @brief  Specialisation of the AdapterTraits template struct for a
- *         RapidJsonAdapter that uses the default CRT allocator
+ *         RapidJsonAdapter
  */
-template<>
-struct AdapterTraits<valijson::adapters::GenericRapidJsonAdapter<RapidJsonCrt>>
+template<class ValueType>
+struct AdapterTraits<valijson::adapters::GenericRapidJsonAdapter<ValueType>>
 {
-    typedef rapidjson::GenericDocument<rapidjson::UTF8<>, rapidjson::CrtAllocator> DocumentType;
+    typedef rapidjson::GenericDocument<typename ValueType::EncodingType,
+            typename ValueType::AllocatorType> DocumentType;
 
     static std::string adapterName()
     {
-        return "GenericRapidJsonAdapter (using CrtAllocator)";
+        if constexpr (std::is_same_v<typename ValueType::AllocatorType,
+                rapidjson::CrtAllocator>) {
+            return "GenericRapidJsonAdapter (using CrtAllocator)";
+        }
+
+        return "RapidJsonAdapter";
     }
 };
 
