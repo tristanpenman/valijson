@@ -198,6 +198,24 @@ std::vector<std::shared_ptr<JsonPointerTestCase> >
         testCases.push_back(testCase);
     }
 
+    {
+        rapidjson::Value testArray;
+        testArray.SetArray();
+        testArray.PushBack("test0", allocator);
+        testArray.PushBack("test1", allocator);
+        testArray.PushBack("test2", allocator);
+
+        testCase = std::make_shared<JsonPointerTestCase>();
+        testCase->description = "Resolving '/test/99999999999999999999999999999999' in object containing "
+                "one member containing an array with 3 elements should throw an exception, since the "
+                "reference token is a syntactically valid but out-of-range non-negative integer";
+        testCase->value.SetObject();
+        testCase->value.AddMember("test", testArray, allocator);
+        testCase->jsonPointer = "/test/99999999999999999999999999999999";
+        testCase->expectedValue = nullptr;
+        testCases.push_back(testCase);
+    }
+
     //
     // Allow the "-" character is not useful within the context of this library,
     // there is an explicit check for it, so that a custom error message can
