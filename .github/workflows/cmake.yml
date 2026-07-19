@@ -90,6 +90,12 @@ jobs:
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -j$(nproc)
 
+    - name: Configure Inspector
+      run: cmake -S ${{github.workspace}}/inspector -B ${{github.workspace}}/inspector/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+    - name: Build Inspector
+      run: cmake --build ${{github.workspace}}/inspector/build --config ${{env.BUILD_TYPE}} -j$(nproc)
+
     - name: Test
       working-directory: ${{github.workspace}}/build
       run: ./test_suite

@@ -48,6 +48,10 @@ These rules are distilled from real bugs fixed in recent PRs. Follow them when m
 - Compile-time contracts can be tested with a small standalone executable and `static_assert` (see `tests/test_rapidjson_crt_allocator.cpp`, which sets `RAPIDJSON_DEFAULT_ALLOCATOR` before including the adapter). Register new test executables in `CMakeLists.txt`.
 - Changes to core validation logic should be exercised against the JSON-Schema-Test-Suite runner, not just hand-written unit tests.
 
+## Inspector
+
+The [inspector](inspector) directory contains JSON Inspector, a small Qt GUI application for interactively experimenting with JSON Schemas and target documents. It is a self-contained CMake project (not part of the main build) that consumes the library headers via a relative include path and uses the `QtJsonAdapter`. Because it is not built by CI, it can break silently: when changing the public API, the Qt adapter, or header layout under `include/valijson`, check whether the inspector's sources in `inspector/src` are affected and update them so the project still builds (configure and build it separately from the `inspector` directory).
+
 ## Examples
 
 A range of parser-specific examples are included in the [examples](examples) directory.
