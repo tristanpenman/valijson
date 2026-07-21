@@ -87,3 +87,39 @@ TEST_F(TestBoostJsonAdapter, BasicObjectIteration)
     // Ensure that the correct number of elements were iterated over
     EXPECT_EQ( numElements, expectedValue );
 }
+
+TEST_F(TestBoostJsonAdapter, UnsignedIntegersAreIntegers)
+{
+    // Boost.JSON stores integers as either kind::int64 or kind::uint64. A value
+    // constructed from an unsigned integer, or a parsed number greater than
+    // INT64_MAX, has kind::uint64. Previously isInteger() only tested is_int64(),
+    // so these values were incorrectly reported as non-integers (issue #170).
+
+    // Value constructed from an unsigned integer
+    {
+        boost::json::value document(5u);
+        valijson::adapters::BoostJsonAdapter adapter(document);
+        EXPECT_TRUE( adapter.isInteger() );
+        EXPECT_TRUE( adapter.isNumber() );
+        EXPECT_FALSE( adapter.isDouble() );
+
+        EXPECT_TRUE( adapter.maybeInteger() );
+        EXPECT_EQ( int64_t(5), adapter.asInteger() );
+    }
+
+    // Value constructed from a signed integer (unchanged behaviour)
+    {
+        boost::json::value document(5);
+        valijson::adapters::BoostJsonAdapter adapter(document);
+        EXPECT_TRUE( adapter.isInteger() );
+        EXPECT_EQ( int64_t(5), adapter.asInteger() );
+    }
+
+    // Parsed number greater than INT64_MAX is stored as uint64
+    {
+        boost::json::value document = boost::json::parse("9223372036854775808");
+        valijson::adapters::BoostJsonAdapter adapter(document);
+        EXPECT_TRUE( adapter.isInteger() );
+        EXPECT_TRUE( adapter.isNumber() );
+    }
+}

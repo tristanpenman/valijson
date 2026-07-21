@@ -331,8 +331,11 @@ public:
 
     bool getInteger(int64_t &result) const
     {
-        if(m_value.is_int64()) {
+        if (m_value.is_int64()) {
             result = m_value.get_int64();
+            return true;
+        } else if (m_value.is_uint64()) {
+            result = static_cast<int64_t>(m_value.get_uint64());
             return true;
         }
         return false;
@@ -415,7 +418,7 @@ public:
 
     bool isInteger() const
     {
-        return m_value.is_int64();
+        return m_value.is_int64() || m_value.is_uint64();
     }
 
     bool isNull() const
