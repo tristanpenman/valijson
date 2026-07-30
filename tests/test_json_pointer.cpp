@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <memory>
 
 #include <gtest/gtest.h>
@@ -345,3 +346,37 @@ TEST_F(TestJsonPointer, CircularReferences)
     SchemaParser parser;
     EXPECT_THROW(parser.populateSchema(schemaAdapter, schema), std::runtime_error);
 }
+
+#if VALIJSON_USE_EXCEPTIONS
+TEST(TestJsonPointerDeathTest, CircularReferencesFromRootReference)
+{
+    // Regression test for issue #200, comment 2887816751.
+    testing::FLAGS_gtest_death_test_style = "threadsafe";
+
+    // TODO: Replace EXPECT_DEATH with EXPECT_THROW when issue #200 is fixed.
+    EXPECT_DEATH(
+        {
+            rapidjson::Document schemaDocument;
+            schemaDocument.Parse(R"({
+                "$ref": "#/foo",
+                "foo": {"$ref": "#/bar"},
+                "bar": {"$ref": "#/foo"}
+            })");
+            if (schemaDocument.HasParseError()) {
+                std::exit(0);
+            }
+            RapidJsonAdapter schemaAdapter(schemaDocument);
+
+            Schema schema;
+            SchemaParser parser;
+            try {
+                parser.populateSchema(schemaAdapter, schema);
+            } catch (const std::runtime_error &) {
+                std::exit(0);
+            } catch (...) {
+                std::exit(0);
+            }
+            std::exit(0);
+        }, "");
+}
+#endif
