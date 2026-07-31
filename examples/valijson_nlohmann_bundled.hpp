@@ -4840,11 +4840,12 @@ public:
 
         typename DocumentCache<AdapterType>::Type docCache;
         SchemaRegistry schemaRegistry;
+        std::vector<std::string> referencePath;
 #if VALIJSON_USE_EXCEPTIONS
         try {
 #endif
             resolveThenPopulateSchema(schema, node, node, schema, std::optional<std::string>(), "", fetchDoc, nullptr,
-                    nullptr, docCache, schemaRegistry);
+                    nullptr, docCache, schemaRegistry, referencePath);
 #if VALIJSON_USE_EXCEPTIONS
         } catch (...) {
             freeDocumentCache<AdapterType>(docCache, freeDoc);
@@ -5913,6 +5914,7 @@ private:
      *                        the 'required' keyword in Draft 3
      * @param  docCache       Cache of resolved and fetched remote documents
      * @param  schemaRegistry Registry of populated schemas
+     * @param  referencePath  References visited while resolving the root schema
      */
     template<typename AdapterType>
     void resolveThenPopulateSchema(
@@ -5926,7 +5928,8 @@ private:
         const Subschema *parentSchema,
         const std::string *ownName,
         typename DocumentCache<AdapterType>::Type &docCache,
-        SchemaRegistry &schemaRegistry)
+        SchemaRegistry &schemaRegistry,
+        std::vector<std::string> &referencePath)
     {
         std::string jsonRef;
         if (!extractJsonReference(node, jsonRef)) {
@@ -5946,6 +5949,15 @@ private:
         const std::optional<std::string> actualDocumentUri =
                 resolveDocumentUri(currentScope, documentUri);
 
+        const std::string referenceKey = actualDocumentUri ?
+                (*actualDocumentUri + "#" + actualJsonPointer) :
+                ("#" + actualJsonPointer);
+        if (std::find(referencePath.begin(), referencePath.end(),
+                    referenceKey) != referencePath.end()) {
+            throwRuntimeError("found cycle while resolving JSON reference");
+        }
+        referencePath.push_back(referenceKey);
+
         if (!actualJsonPointer.empty() && actualJsonPointer[0] != '/') {
             const std::string idRef = actualDocumentUri ?
                     (*actualDocumentUri + "#" + actualJsonPointer) :
@@ -5961,7 +5973,7 @@ private:
                 resolveThenPopulateSchema(rootSchema, registeredRoot,
                         registeredRoot, subschema, registeredScope,
                         "", fetchDoc, parentSchema, ownName,
-                        docCache, schemaRegistry);
+                        docCache, schemaRegistry, referencePath);
                 return;
             }
         }
@@ -5982,7 +5994,8 @@ private:
                 resolveThenPopulateSchema(rootSchema, registeredRoot,
                         referencedAdapter, subschema, registeredScope,
                         actualJsonPointer, fetchDoc,
-                        parentSchema, ownName, docCache, schemaRegistry);
+                        parentSchema, ownName, docCache, schemaRegistry,
+                        referencePath);
                 return;
             }
 
@@ -6008,10 +6021,10 @@ private:
             const AdapterType &referencedAdapter =
                 internal::json_pointer::resolveJsonPointerStrict(newRootNode, actualJsonPointer);
 
-            // TODO: Need to detect degenerate circular references
             resolveThenPopulateSchema(rootSchema, newRootNode, referencedAdapter,
                     subschema, actualDocumentUri, actualJsonPointer, fetchDoc,
-                    parentSchema, ownName, docCache, schemaRegistry);
+                    parentSchema, ownName, docCache, schemaRegistry,
+                    referencePath);
 
         } else if (!actualJsonPointer.empty()) {
             const AdapterType &referencedAdapter =
@@ -6023,7 +6036,8 @@ private:
 
             resolveThenPopulateSchema(rootSchema, rootNode, referencedAdapter,
                     subschema, referencedScope, actualJsonPointer, fetchDoc,
-                    parentSchema, ownName, docCache, schemaRegistry);
+                    parentSchema, ownName, docCache, schemaRegistry,
+                    referencePath);
         } else {
             throwRuntimeError("Cannot resolve reference \"" + jsonRef + "\".");
         }
