@@ -1686,7 +1686,7 @@ private:
             const int64_t value = node.asInteger();
             if (value >= 0) {
                 constraints::MaxItemsConstraint constraint;
-                constraint.setMaxItems(value);
+                constraint.setMaxItems(static_cast<uint64_t>(value));
                 return constraint;
             }
         }
@@ -1710,7 +1710,7 @@ private:
             const int64_t value = node.asInteger();
             if (value >= 0) {
                 constraints::MaxLengthConstraint constraint;
-                constraint.setMaxLength(value);
+                constraint.setMaxLength(static_cast<uint64_t>(value));
                 return constraint;
             }
         }
@@ -1736,7 +1736,7 @@ private:
             int64_t value = node.asInteger();
             if (value >= 0) {
                 constraints::MaxPropertiesConstraint constraint;
-                constraint.setMaxProperties(value);
+                constraint.setMaxProperties(static_cast<uint64_t>(value));
                 return constraint;
             }
         }
@@ -1814,7 +1814,7 @@ private:
             const int64_t value = node.asInteger();
             if (value >= 0) {
                 constraints::MinItemsConstraint constraint;
-                constraint.setMinItems(value);
+                constraint.setMinItems(static_cast<uint64_t>(value));
                 return constraint;
             }
         }
@@ -1837,7 +1837,7 @@ private:
             const int64_t value = node.asInteger();
             if (value >= 0) {
                 constraints::MinLengthConstraint constraint;
-                constraint.setMinLength(value);
+                constraint.setMinLength(static_cast<uint64_t>(value));
                 return constraint;
             }
         }
@@ -1863,7 +1863,7 @@ private:
             int64_t value = node.asInteger();
             if (value >= 0) {
                 constraints::MinPropertiesConstraint constraint;
-                constraint.setMinProperties(value);
+                constraint.setMinProperties(static_cast<uint64_t>(value));
                 return constraint;
             }
         }
