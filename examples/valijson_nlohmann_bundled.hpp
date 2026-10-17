@@ -5832,7 +5832,7 @@ private:
             if (m_version == kDraft7) {
                 rootSchema.addConstraintToSubschema(
                       makePropertyNamesConstraint(rootSchema, rootNode, itr->second, updatedScope,
-                              nodePath, fetchDoc, docCache, schemaRegistry),
+                              nodePath + "/propertyNames", fetchDoc, docCache, schemaRegistry),
                       &subschema);
             } else {
                 throwRuntimeError("Not supported");
