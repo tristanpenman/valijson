@@ -66,6 +66,7 @@ fi
 common_headers=(
   include/valijson/exceptions.hpp
   include/valijson/internal/adapter.hpp
+  include/valijson/internal/double_parser.hpp
   include/valijson/internal/basic_adapter.hpp
   include/valijson/internal/custom_allocator.hpp
   include/valijson/internal/debug.hpp
