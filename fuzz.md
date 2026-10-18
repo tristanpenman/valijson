@@ -1,6 +1,6 @@
 # OSS-Fuzz Issues for Valijson
 
-This list was compiled from the public OSS-Fuzz Issue Tracker search for `valijson` and the corresponding public issue pages on 2026-06-17.
+This list was compiled from the public OSS-Fuzz Issue Tracker search for `valijson` and the corresponding public issue pages on 2026-07-24.
 
 Source listing: <https://issues.oss-fuzz.com/issues?q=valijson>
 
@@ -8,7 +8,7 @@ Some C++ symbols are truncated in the Issue Tracker's displayed title or crash-s
 
 ## Summary
 
-- Open issues still needing attention: 8
+- Open issues still needing attention: 7
 - Issues verified since the previous snapshot: 7
 
 ## Open Issues
@@ -21,7 +21,6 @@ Some C++ symbols are truncated in the Issue Tracker's displayed title or crash-s
 | [444583510](https://issues.oss-fuzz.com/issues/444583510) | New    | P2       | Stack-overflow                  | libFuzzer / libfuzzer_msan_valijson  | `std::__1::__match_char<char>::~__match_char`                                                                                                                           |
 | [441210575](https://issues.oss-fuzz.com/issues/441210575) | New    | P2       | Stack-overflow                  | libFuzzer / libfuzzer_msan_valijson  | `std::__1::__begin_marked_subexpression<char>::~__begin_marked_subexpression` / `std::__1::__empty_state<char>::~__empty_state`                                         |
 | [428754690](https://issues.oss-fuzz.com/issues/428754690) | New    | P2       | Stack-overflow                  | libFuzzer / libfuzzer_msan_valijson  | `std::__1::__owns_two_states<char>::~__owns_two_states` / `std::__1::__alternate<char>::~__alternate`                                                                   |
-| [427531814](https://issues.oss-fuzz.com/issues/427531814) | New    | P2       | Stack-overflow                  | honggfuzz / honggfuzz_asan_valijson  | `std::__1::__r_anchor_multiline<char>::~__r_anchor_multiline`                                                                                                           |
 | [422513162](https://issues.oss-fuzz.com/issues/422513162) | New    | P2       | Out-of-memory (exceeds 2560 MB) | libFuzzer / libfuzzer_ubsan_valijson | `fuzzer`                                                                                                                                                                |
 
 ## Verified Issues

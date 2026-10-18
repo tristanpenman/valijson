@@ -511,7 +511,88 @@ struct AdapterTraits
 }  // namespace valijson
 #pragma once
 
-#include <charconv>
+#include <locale>
+#include <sstream>
+#include <string>
+
+// This file provides alternative implementations for converting strings to
+// double values. This addresses the fact that std::from_chars is not
+// available in all standard libraries, and that some implementations of
+// std::from_chars do not support floating-point types.
+//
+// We support three different implementations:
+//
+// 1. std::from_chars (C++17) - preferred if available, as indicated by
+//                              the VALIJSON_HAS_STD_FROM_CHARS or compiler-
+//                              specific preprocessor defines
+//
+// 2. fast_float::from_chars  - if VALIJSON_HAS_FAST_FLOAT_FROM_CHARS is
+//                              defined, then we will use the fast_float
+//                              library's implementation of from_chars
+//
+// 3. std::istringstream      - fallback if neither of the above are available
+//
+
+// attempt detection of std::from_chars support
+#ifndef VALIJSON_HAS_STD_FROM_CHARS
+#  if defined(_MSC_VER) && _MSC_VER >= 1915
+#    define VALIJSON_HAS_STD_FROM_CHARS 1
+#  elif defined(_LIBCPP_VERSION) && _LIBCPP_VERSION >= 200000
+#    define VALIJSON_HAS_STD_FROM_CHARS 1
+#  elif defined(_GLIBCXX_RELEASE) && _GLIBCXX_RELEASE >= 11
+#    define VALIJSON_HAS_STD_FROM_CHARS 1
+#  else
+#    define VALIJSON_HAS_STD_FROM_CHARS 0
+#  endif
+#endif
+
+// include the appropriate header for the available implementation
+#if VALIJSON_HAS_STD_FROM_CHARS
+#  include <charconv>
+#elif defined(VALIJSON_HAS_FAST_FLOAT_FROM_CHARS)
+#  include <fast_float/fast_float.h>
+#endif
+
+namespace valijson {
+namespace internal {
+
+inline bool parseDouble(const std::string &input, double &result)
+{
+#if VALIJSON_HAS_STD_FROM_CHARS
+    const char *begin = input.data();
+    const char *end = begin + input.length();
+    double value;
+    const auto conversion = std::from_chars(begin, end, value);
+    if (conversion.ec != std::errc() || conversion.ptr != end) {
+        return false;
+    }
+#elif defined(VALIJSON_HAS_FAST_FLOAT_FROM_CHARS)
+    const char *begin = input.data();
+    const char *end = begin + input.length();
+    double value;
+    const auto conversion = fast_float::from_chars(begin, end, value);
+    if (conversion.ec != std::errc() || conversion.ptr != end) {
+        return false;
+    }
+#else
+    std::istringstream stream(input);
+    stream.imbue(std::locale::classic());
+    stream >> std::noskipws;
+
+    double value;
+    if (!(stream >> value) || stream.peek() != std::char_traits<char>::eof()) {
+        return false;
+    }
+#endif
+
+    result = value;
+    return true;
+}
+
+} // namespace internal
+} // namespace valijson
+#pragma once
+
 #include <cmath>
 #include <cstdint>
 #include <limits>
@@ -884,11 +965,8 @@ public:
         } else if (m_value.isString()) {
             std::string s;
             if (m_value.getString(s)) {
-                const char *b = s.data();
-                const char *end = b + s.length();
                 double x;
-                auto [ptr, ec] = std::from_chars(b, end, x);
-                if (ec != std::errc() || ptr != end) {
+                if (!internal::parseDouble(s, x)) {
                     return false;
                 }
                 result = x;
@@ -1308,11 +1386,8 @@ public:
         } else if (maybeString()) {
             std::string s;
             if (m_value.getString(s)) {
-                const char *b = s.data();
-                const char *end = b + s.length();
                 double x;
-                auto [ptr, ec] = std::from_chars(b, end, x);
-                return ec == std::errc() && ptr == end;
+                return internal::parseDouble(s, x);
             }
         }
 
@@ -1592,6 +1667,71 @@ public:
 }  // namespace valijson
 #pragma once
 
+#include <cstddef>
+#include <string>
+
+namespace valijson {
+namespace internal {
+
+/**
+ * @brief  Check whether a string is an Internet host name, as defined in
+ *         RFC 1123, section 2.1
+ *
+ * A host name consists of labels separated by dots. Each label consists of one
+ * to 63 letters, digits and hyphens, and starts and ends with a letter or a
+ * digit. A host name has at most 255 characters, and does not end with a dot.
+ *
+ * Labels encoded with Punycode (A-labels) are only checked against this
+ * syntax.
+ *
+ * @param  s  string to check, which may contain embedded null bytes
+ *
+ * @return \c true if \p s is a host name
+ */
+inline bool isHostname(const std::string &s)
+{
+    if (s.empty() || s.size() > 255) {
+        return false;
+    }
+
+    size_t labelLength = 0;
+    char previous = '.';
+    for (const char c : s) {
+        if (c == '.') {
+            // Labels must not be empty, or end with a hyphen
+            if (labelLength == 0 || previous == '-') {
+                return false;
+            }
+            labelLength = 0;
+        } else {
+            const bool isLetterOrDigit = (c >= 'a' && c <= 'z') ||
+                    (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
+            if (!isLetterOrDigit && c != '-') {
+                return false;
+            }
+
+            // Labels must start with a letter or digit
+            if (labelLength == 0 && c == '-') {
+                return false;
+            }
+
+            if (++labelLength > 63) {
+                return false;
+            }
+        }
+
+        previous = c;
+    }
+
+    // The last label must not be empty, which rules out a trailing dot, or
+    // end with a hyphen
+    return labelLength > 0 && previous != '-';
+}
+
+}  // namespace internal
+}  // namespace valijson
+#pragma once
+
 #include <algorithm>
 #include <cerrno>
 #include <cstddef>
@@ -1815,6 +1955,11 @@ inline AdapterType resolveJsonPointer(
             throwRuntimeError("Expected reference token to contain a "
                     "non-negative integer to identify an element in the "
                     "current array; actual token: " + referenceToken);
+        } catch (std::out_of_range &) {
+            throwRuntimeError("Expected reference token to contain a "
+                    "non-negative integer to identify an element in the "
+                    "current array, but the numeric token is too large; "
+                    "actual token: " + referenceToken);
         }
 #endif
     } else if (node.maybeObject()) {
@@ -2023,23 +2168,27 @@ inline std::string resolveRelativeUri(
         return relativeUri;
     }
 
-    // Trivial case: The resolution scope is _not_ absolute
     const auto schemeEnd = parseScheme(resolutionScope);
-    if (!schemeEnd.has_value()) {
-        return resolutionScope + relativeUri;
+    std::string schemeAndAuthority;
+    std::string basePath;
+    if (schemeEnd.has_value()) {
+        // Extract scheme+authority, e.g. http://userinfo@example.com:8080
+        const auto authorityEnd = resolutionScope.find('/', *schemeEnd);
+        schemeAndAuthority = resolutionScope.substr(0, authorityEnd);
+
+        // Assume path starts immediately after scheme+authority
+        const std::string::size_type pathStart = schemeAndAuthority.size();
+
+        // Extract base path from resolution scope, or use '/' as default
+        basePath = pathStart < resolutionScope.size()
+                ? resolutionScope.substr(pathStart)
+                : "/";
+    } else {
+        // A relative resolution scope still represents a URI path. Relative
+        // references replace its final path segment rather than being appended
+        // directly to the complete filename.
+        basePath = resolutionScope;
     }
-
-    // Extract scheme+authority, e.g. http://userinfo@example.com:8080
-    const auto authorityEnd = resolutionScope.find('/', *schemeEnd);
-    const auto schemeAndAuthority = resolutionScope.substr(0, authorityEnd);
-
-    // Assume path starts immediately after scheme+authority
-    const std::string::size_type pathStart = schemeAndAuthority.size();
-
-    // Extract base path from resolution scope, or use '/' as default
-    std::string basePath = pathStart < resolutionScope.size()
-            ? resolutionScope.substr(pathStart)
-            : "/";
 
     // Strip everything after fragment marker if present
     const std::string::size_type baseFragmentPos = basePath.find('#');
@@ -2086,18 +2235,21 @@ inline std::string resolveRelativeUri(
         // stripping the base path of any segment after its last slash
         const std::string::size_type lastSlashPos = basePath.find_last_of('/');
         mergedPath = lastSlashPos == std::string::npos
-                ? "/" + relativePath
+                ? relativePath
                 : basePath.substr(0, lastSlashPos + 1) + relativePath;
     }
 
     // Resolve relative path segments
+    const bool absolutePath = !mergedPath.empty() && mergedPath[0] == '/';
     std::vector<std::string> segments;
     std::string segment;
     for (const char c : mergedPath) {
         if (c == '/') {
             if (segment == "..") {
-                if (!segments.empty()) {
+                if (!segments.empty() && segments.back() != "..") {
                     segments.pop_back();
+                } else if (!absolutePath) {
+                    segments.push_back(segment);
                 }
             } else if (!segment.empty() && segment != ".") {
                 segments.push_back(segment);
@@ -2108,15 +2260,17 @@ inline std::string resolveRelativeUri(
         }
     }
     if (segment == "..") {
-        if (!segments.empty()) {
+        if (!segments.empty() && segments.back() != "..") {
             segments.pop_back();
+        } else if (!absolutePath) {
+            segments.push_back(segment);
         }
     } else if (!segment.empty() && segment != ".") {
         segments.push_back(segment);
     }
 
     // Generate final normalised path
-    std::string normalisedPath = "/";
+    std::string normalisedPath = absolutePath ? "/" : "";
     for (auto itr = segments.begin(); itr != segments.end(); ++itr) {
         if (itr != segments.begin()) {
             normalisedPath += "/";
@@ -2124,7 +2278,7 @@ inline std::string resolveRelativeUri(
         normalisedPath += *itr;
     }
     if (!mergedPath.empty() && mergedPath[mergedPath.size() - 1] == '/' &&
-            normalisedPath[normalisedPath.size() - 1] != '/') {
+            (normalisedPath.empty() || normalisedPath[normalisedPath.size() - 1] != '/')) {
         normalisedPath += "/";
     }
 
@@ -7198,7 +7352,6 @@ private:
 
 #pragma once
 
-#include <charconv>
 #include <string>
 
 
@@ -7495,11 +7648,8 @@ public:
 
     bool maybeDouble() const override
     {
-        const char *b = m_value.data();
-        const char *end = b + m_value.length();
         double x;
-        auto [ptr, ec] = std::from_chars(b, end, x);
-        return ec == std::errc() && ptr == end;
+        return internal::parseDouble(m_value, x);
     }
 
     bool maybeInteger() const override
@@ -8172,6 +8322,17 @@ public:
             if (m_results) {
                 m_results->pushError(m_path,
                         "String should be a valid IPv4 address");
+            }
+            return false;
+        } else if (format == "hostname") {
+            // Matches host names like: www.example.com
+            if (internal::isHostname(s)) {
+                return true;
+            }
+
+            if (m_results) {
+                m_results->pushError(m_path,
+                        "String should be a valid host name");
             }
             return false;
         }

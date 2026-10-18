@@ -463,6 +463,11 @@ TEST_F(TestValidator, Draft4_UniqueItems)
     processDraft4TestFile(TEST_SUITE_DIR "draft4/uniqueItems.json");
 }
 
+TEST_F(TestValidator, Draft4_OptionalFormatHostname)
+{
+    processDraft4TestFile(TEST_SUITE_DIR "draft4/optional/format/hostname.json");
+}
+
 //
 // draft 7
 // ------------------------------------------------------------------------------------------------
@@ -661,4 +666,14 @@ TEST_F(TestValidator, Draft7_OptionalFormatDateTime)
 TEST_F(TestValidator, Draft7_OptionalFormatIpv4)
 {
     processDraft7TestFile(TEST_SUITE_DIR "draft7/optional/format/ipv4.json");
+}
+
+TEST_F(TestValidator, Draft7_OptionalFormatHostname)
+{
+    // A-labels are only checked against the syntax of RFC 1123, and are not
+    // decoded to check them against the rules of IDNA2008
+    const std::set<std::string> skipCases = {
+        "validation of A-label (punycode) host names"
+    };
+    processTestFile(TEST_SUITE_DIR "draft7/optional/format/hostname.json", SchemaParser::kDraft7, skipCases);
 }

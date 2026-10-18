@@ -225,6 +225,11 @@ inline AdapterType resolveJsonPointer(
             throwRuntimeError("Expected reference token to contain a "
                     "non-negative integer to identify an element in the "
                     "current array; actual token: " + referenceToken);
+        } catch (std::out_of_range &) {
+            throwRuntimeError("Expected reference token to contain a "
+                    "non-negative integer to identify an element in the "
+                    "current array, but the numeric token is too large; "
+                    "actual token: " + referenceToken);
         }
 #endif
     } else if (node.maybeObject()) {

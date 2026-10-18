@@ -178,7 +178,10 @@ void Window::showOpenDocumentDialog()
     const QString fileName = QFileDialog::getOpenFileName(this, "Open Document", QString(), QString("*.json"));
     if (!fileName.isEmpty()) {
         QFile file(fileName);
-        file.open(QFile::ReadOnly | QFile::Text);
+        if (!file.open(QFile::ReadOnly | QFile::Text)) {
+            m_errors->setText(QString("Document error: ") + file.errorString());
+            return;
+        }
         m_documentEditor->setText(file.readAll());
     }
 }
@@ -188,7 +191,10 @@ void Window::showOpenSchemaDialog()
     const QString fileName = QFileDialog::getOpenFileName(this, "Open Schema", QString(), QString("*.json"));
     if (!fileName.isEmpty()) {
         QFile file(fileName);
-        file.open(QFile::ReadOnly | QFile::Text);
+        if (!file.open(QFile::ReadOnly | QFile::Text)) {
+            m_errors->setText(QString("Schema error: ") + file.errorString());
+            return;
+        }
         m_schemaEditor->setText(file.readAll());
     }
 }

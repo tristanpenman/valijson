@@ -34,3 +34,6 @@
 	path = thirdparty/glaze
 	url = https://github.com/stephenberry/glaze.git
 	shallow = true
+[submodule "thirdparty/fast_float"]
+	path = thirdparty/fast_float
+	url = https://github.com/fastfloat/fast_float.git

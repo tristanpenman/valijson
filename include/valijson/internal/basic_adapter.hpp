@@ -1,6 +1,5 @@
 #pragma once
 
-#include <charconv>
 #include <cmath>
 #include <cstdint>
 #include <limits>
@@ -8,6 +7,7 @@
 #include <sstream>
 
 #include <valijson/internal/adapter.hpp>
+#include <valijson/internal/double_parser.hpp>
 #include <valijson/exceptions.hpp>
 
 namespace valijson {
@@ -375,11 +375,8 @@ public:
         } else if (m_value.isString()) {
             std::string s;
             if (m_value.getString(s)) {
-                const char *b = s.data();
-                const char *end = b + s.length();
                 double x;
-                auto [ptr, ec] = std::from_chars(b, end, x);
-                if (ec != std::errc() || ptr != end) {
+                if (!internal::parseDouble(s, x)) {
                     return false;
                 }
                 result = x;
@@ -799,11 +796,8 @@ public:
         } else if (maybeString()) {
             std::string s;
             if (m_value.getString(s)) {
-                const char *b = s.data();
-                const char *end = b + s.length();
                 double x;
-                auto [ptr, ec] = std::from_chars(b, end, x);
-                return ec == std::errc() && ptr == end;
+                return internal::parseDouble(s, x);
             }
         }
 

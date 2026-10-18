@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <memory>
 
 #include <gtest/gtest.h>
@@ -198,6 +199,24 @@ std::vector<std::shared_ptr<JsonPointerTestCase> >
         testCases.push_back(testCase);
     }
 
+    {
+        rapidjson::Value testArray;
+        testArray.SetArray();
+        testArray.PushBack("test0", allocator);
+        testArray.PushBack("test1", allocator);
+        testArray.PushBack("test2", allocator);
+
+        testCase = std::make_shared<JsonPointerTestCase>();
+        testCase->description = "Resolving '/test/99999999999999999999999999999999' in object containing "
+                "one member containing an array with 3 elements should throw an exception, since the "
+                "reference token is a syntactically valid but out-of-range non-negative integer";
+        testCase->value.SetObject();
+        testCase->value.AddMember("test", testArray, allocator);
+        testCase->jsonPointer = "/test/99999999999999999999999999999999";
+        testCase->expectedValue = nullptr;
+        testCases.push_back(testCase);
+    }
+
     //
     // Allow the "-" character is not useful within the context of this library,
     // there is an explicit check for it, so that a custom error message can
@@ -327,3 +346,37 @@ TEST_F(TestJsonPointer, CircularReferences)
     SchemaParser parser;
     EXPECT_THROW(parser.populateSchema(schemaAdapter, schema), std::runtime_error);
 }
+
+#if VALIJSON_USE_EXCEPTIONS
+TEST(TestJsonPointerDeathTest, CircularReferencesFromRootReference)
+{
+    // Regression test for issue #200, comment 2887816751.
+    testing::FLAGS_gtest_death_test_style = "threadsafe";
+
+    // TODO: Replace EXPECT_DEATH with EXPECT_THROW when issue #200 is fixed.
+    EXPECT_DEATH(
+        {
+            rapidjson::Document schemaDocument;
+            schemaDocument.Parse(R"({
+                "$ref": "#/foo",
+                "foo": {"$ref": "#/bar"},
+                "bar": {"$ref": "#/foo"}
+            })");
+            if (schemaDocument.HasParseError()) {
+                std::exit(0);
+            }
+            RapidJsonAdapter schemaAdapter(schemaDocument);
+
+            Schema schema;
+            SchemaParser parser;
+            try {
+                parser.populateSchema(schemaAdapter, schema);
+            } catch (const std::runtime_error &) {
+                std::exit(0);
+            } catch (...) {
+                std::exit(0);
+            }
+            std::exit(0);
+        }, "");
+}
+#endif

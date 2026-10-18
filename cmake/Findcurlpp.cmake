@@ -1,4 +1,4 @@
-include(FindPkgConfig)
+find_package(PkgConfig REQUIRED)
 include(FindPackageHandleStandardArgs)
 
 pkg_check_modules(curlpp_PKGCONF REQUIRED curlpp)
