@@ -497,10 +497,7 @@ public:
             }
         } else if (format == "ipv4") {
             // Matches IPv4 addresses between 0.0.0.0 and 255.255.255.255.
-            static const internal::regex ipv4Regex(
-                    "^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}"
-                    "(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$");
-            if (internal::regex_match(s, ipv4Regex)) {
+            if (internal::isIpv4DottedQuad(s, 0, s.size())) {
                 return true;
             }
 

@@ -8,10 +8,12 @@ namespace internal {
 
 /**
  * @brief  Check whether part of a string is an IPv4 address in dotted decimal
- *         notation, as used in the mixed form of IPv6 addresses
+ *         notation
  *
- * Each of the four parts consists of one to three decimal digits, with a
- * value of at most 255, as in RFC 2373, appendix B.
+ * This is used for the 'ipv4' format, and for the mixed form of IPv6
+ * addresses. Each of the four parts consists of one to three decimal digits,
+ * with a value of at most 255, as in the dotted-quad syntax of RFC 2673,
+ * section 3.2.
  *
  * @param  s      string to check, which may contain embedded null bytes
  * @param  begin  index of the first character to check
