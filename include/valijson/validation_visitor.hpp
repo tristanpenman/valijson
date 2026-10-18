@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <utility>
 
+#include <valijson/internal/hostname.hpp>
 #include <valijson/internal/regex.hpp>
 #include <valijson/adapters/std_string_adapter.hpp>
 #include <valijson/constraints/concrete_constraints.hpp>
@@ -505,6 +506,17 @@ public:
             if (m_results) {
                 m_results->pushError(m_path,
                         "String should be a valid IPv4 address");
+            }
+            return false;
+        } else if (format == "hostname") {
+            // Matches host names like: www.example.com
+            if (internal::isHostname(s)) {
+                return true;
+            }
+
+            if (m_results) {
+                m_results->pushError(m_path,
+                        "String should be a valid host name");
             }
             return false;
         }

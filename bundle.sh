@@ -71,6 +71,7 @@ common_headers=(
   include/valijson/internal/custom_allocator.hpp
   include/valijson/internal/debug.hpp
   include/valijson/internal/frozen_value.hpp
+  include/valijson/internal/hostname.hpp
   include/valijson/internal/json_pointer.hpp
   include/valijson/internal/json_reference.hpp
   include/valijson/internal/regex.hpp
