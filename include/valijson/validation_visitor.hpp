@@ -9,6 +9,7 @@
 #include <utility>
 
 #include <valijson/internal/hostname.hpp>
+#include <valijson/internal/ip_address.hpp>
 #include <valijson/internal/regex.hpp>
 #include <valijson/adapters/std_string_adapter.hpp>
 #include <valijson/constraints/concrete_constraints.hpp>
@@ -517,6 +518,17 @@ public:
             if (m_results) {
                 m_results->pushError(m_path,
                         "String should be a valid host name");
+            }
+            return false;
+        } else if (format == "ipv6") {
+            // Matches IPv6 addresses like: 1:d6::42, ::ffff:192.168.0.1
+            if (internal::isIpv6Address(s)) {
+                return true;
+            }
+
+            if (m_results) {
+                m_results->pushError(m_path,
+                        "String should be a valid IPv6 address");
             }
             return false;
         }
