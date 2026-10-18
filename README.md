@@ -235,6 +235,22 @@ make
 ./test_suite
 ```
 
+### Glaze
+
+Tests for the Glaze adapter are not built by default, because Glaze requires a newer C++ standard than the rest of the test suite:
+
+```bash
+cmake .. -Dvalijson_BUILD_TESTS=ON -Dvalijson_BUILD_GLAZE_ADAPTER=ON
+```
+
+When this option is enabled, the whole test suite is compiled as C++20, and Glaze is taken from the `thirdparty/glaze` submodule. If that submodule has not been checked out, `find_package(glaze)` is used to locate an installation of Glaze instead.
+
+Glaze v2.x requires C++20, whereas Glaze v6.0.0 and later require C++23. If you are building against a newer version of Glaze, raise the standard used for the test suite accordingly:
+
+```bash
+cmake .. -Dvalijson_BUILD_TESTS=ON -Dvalijson_BUILD_GLAZE_ADAPTER=ON -Dvalijson_GLAZE_CXX_STANDARD=23
+```
+
 ## How to add this library to your cmake target
 
 Valijson can be integrated either as git submodule or with `find_package()`.
@@ -421,6 +437,7 @@ Valijson supports JSON documents loaded using various JSON parser libraries. It 
 
  - [boost::property\_tree 1.54](http://www.boost.org/doc/libs/1_54_0/doc/html/boost_propertytree/synopsis.html)
  - [Boost.JSON 1.75](https://www.boost.org/doc/libs/1_75_0/libs/json/doc/html/index.html)
+ - [Glaze 2.9.5](https://github.com/stephenberry/glaze/tree/v2.9.5)
  - [json11 (commit afcc8d0)](https://github.com/dropbox/json11/tree/afcc8d0d82b1ce2df587a7a0637d05ba493bf5e6)
  - [jsoncpp 1.9.4](https://github.com/open-source-parsers/jsoncpp/archive/1.9.4.tar.gz)
  - [nlohmann/json 1.1.0](https://github.com/nlohmann/json/archive/v1.1.0.tar.gz)
@@ -430,6 +447,8 @@ Valijson supports JSON documents loaded using various JSON parser libraries. It 
  - [Qt 5.8](http://doc.qt.io/qt-5/json.html) or [Qt 6](https://doc.qt.io/qt-6/json.html)
 
 Other versions of these libraries may work, but have not been tested. In particular, versions of jsoncpp going back to 0.5.0 should also work correctly.
+
+The Glaze adapter works with Glaze's generic JSON DOM type, which is named `glz::json_t` prior to Glaze v6.0.0, and `glz::generic` from v6.0.0 onwards. The adapter detects which of the two is available, so it can be used with either. Note that Glaze itself requires C++20 (v2.x) or C++23 (v6.0.0 and later), which is a higher requirement than Valijson.
 
 When compiling with older versions of Boost (< 1.76.0) you may see compiler warnings from the `boost::property_tree` headers. This has been addressed in version 1.76.0 of Boost.
 

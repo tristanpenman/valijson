@@ -30,3 +30,7 @@
 	path = thirdparty/JSON-Schema-Test-Suite
 	url = https://github.com/json-schema-org/JSON-Schema-Test-Suite.git
 	shallow = true
+[submodule "thirdparty/glaze"]
+	path = thirdparty/glaze
+	url = https://github.com/stephenberry/glaze.git
+	shallow = true

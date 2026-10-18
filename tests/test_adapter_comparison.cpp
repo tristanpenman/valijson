@@ -25,6 +25,11 @@
 #include <valijson/utils/boost_json_utils.hpp>
 #endif
 
+#ifdef VALIJSON_BUILD_GLAZE_ADAPTER
+#include <valijson/adapters/glaze_adapter.hpp>
+#include <valijson/utils/glaze_utils.hpp>
+#endif
+
 #ifdef VALIJSON_BUILD_BOOST_PROPERTY_TREE_ADAPTER
 #include <valijson/adapters/property_tree_adapter.hpp>
 #include <valijson/utils/property_tree_utils.hpp>
@@ -468,6 +473,87 @@ TEST_F(TestAdapterComparison, NlohmannJsonVsPropertyTree)
 #endif // VALIJSON_BUILD_BOOST_PROPERTY_TREE_ADAPTER
 
 //
+// GlazeAdapter vs X
+// ------------------------------------------------------------------------------------------------
+
+#ifdef VALIJSON_BUILD_GLAZE_ADAPTER
+
+TEST_F(TestAdapterComparison, GlazeVsGlaze)
+{
+    testComparison<
+            valijson::adapters::GlazeAdapter,
+            valijson::adapters::GlazeAdapter>();
+}
+
+TEST_F(TestAdapterComparison, GlazeVsJson11)
+{
+    testComparison<
+            valijson::adapters::GlazeAdapter,
+            valijson::adapters::Json11Adapter>();
+}
+
+TEST_F(TestAdapterComparison, GlazeVsJsonCpp)
+{
+    testComparison<
+            valijson::adapters::GlazeAdapter,
+            valijson::adapters::JsonCppAdapter>();
+}
+
+TEST_F(TestAdapterComparison, GlazeVsNlohmannJson)
+{
+    testComparison<
+            valijson::adapters::GlazeAdapter,
+            valijson::adapters::NlohmannJsonAdapter>();
+}
+
+TEST_F(TestAdapterComparison, GlazeVsRapidJson)
+{
+    testComparison<
+            valijson::adapters::GlazeAdapter,
+            valijson::adapters::RapidJsonAdapter>();
+}
+
+TEST_F(TestAdapterComparison, GlazeVsRapidJsonCrtAlloc)
+{
+    testComparison<
+            valijson::adapters::GlazeAdapter,
+            valijson::adapters::GenericRapidJsonAdapter<
+                    rapidjson::GenericValue<rapidjson::UTF8<>,
+                            rapidjson::CrtAllocator> > >();
+}
+
+TEST_F(TestAdapterComparison, GlazeVsPicoJson)
+{
+    testComparison<
+            valijson::adapters::GlazeAdapter,
+            valijson::adapters::PicoJsonAdapter>();
+}
+
+#ifdef VALIJSON_BUILD_BOOST_JSON_ADAPTER
+
+TEST_F(TestAdapterComparison, GlazeVsBoostJson)
+{
+    testComparison<
+            valijson::adapters::GlazeAdapter,
+            valijson::adapters::BoostJsonAdapter>();
+}
+
+#endif // VALIJSON_BUILD_BOOST_JSON_ADAPTER
+
+#ifdef VALIJSON_BUILD_BOOST_PROPERTY_TREE_ADAPTER
+
+TEST_F(TestAdapterComparison, GlazeVsPropertyTree)
+{
+    testComparison<
+            valijson::adapters::GlazeAdapter,
+            valijson::adapters::PropertyTreeAdapter>();
+}
+
+#endif // VALIJSON_BUILD_BOOST_PROPERTY_TREE_ADAPTER
+
+#endif // VALIJSON_BUILD_GLAZE_ADAPTER
+
+//
 // QtJsonAdapter vs X
 // ------------------------------------------------------------------------------------------------
 
@@ -544,6 +630,17 @@ TEST_F(TestAdapterComparison, QtJsonVsNlohmannJson)
             valijson::adapters::QtJsonAdapter,
             valijson::adapters::NlohmannJsonAdapter>();
 }
+
+#ifdef VALIJSON_BUILD_GLAZE_ADAPTER
+
+TEST_F(TestAdapterComparison, QtJsonVsGlaze)
+{
+    testComparison<
+            valijson::adapters::QtJsonAdapter,
+            valijson::adapters::GlazeAdapter>();
+}
+
+#endif // VALIJSON_BUILD_GLAZE_ADAPTER
 
 #endif // VALIJSON_BUILD_QT_ADAPTER
 
@@ -625,6 +722,17 @@ TEST_F(TestAdapterComparison, PocoJsonVsNlohmannJsonAdapter)
             valijson::adapters::PocoJsonAdapter,
             valijson::adapters::NlohmannJsonAdapter>();
 }
+
+#ifdef VALIJSON_BUILD_GLAZE_ADAPTER
+
+TEST_F(TestAdapterComparison, PocoJsonVsGlaze)
+{
+    testComparison<
+            valijson::adapters::PocoJsonAdapter,
+            valijson::adapters::GlazeAdapter>();
+}
+
+#endif // VALIJSON_BUILD_GLAZE_ADAPTER
 
 #ifdef VALIJSON_BUILD_QT_ADAPTER
 

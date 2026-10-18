@@ -4,6 +4,7 @@ This document explains the design decisions that motivated Valijson's adapter ar
 
 * Boost JSON
 * Boost Property Trees
+* Glaze
 * JSON11
 * JsonCpp
 * NlohmannJSON

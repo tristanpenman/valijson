@@ -16,6 +16,13 @@ option(valijson_BUILD_TESTS "Build valijson test suite." FALSE)
 option(valijson_EXCLUDE_BOOST "Exclude Boost when building test suite." FALSE)
 option(valijson_USE_EXCEPTIONS "Use exceptions in valijson and included libs." TRUE)
 
+# Glaze requires C++20 (v2.x) or C++23 (v6.0.0 and later), so the tests for the
+# Glaze adapter are opt-in, and building them raises the C++ standard used for
+# the whole test suite.
+option(valijson_BUILD_GLAZE_ADAPTER "Build test suite with support for the Glaze adapter." FALSE)
+set(valijson_GLAZE_CXX_STANDARD "20" CACHE STRING
+    "C++ standard used to build the test suite when the Glaze adapter is enabled (Glaze >= 6.0.0 requires 23).")
+
 option(valijson_USE_BOOST_REGEX "Use boost::regex instead of std::regex internally." FALSE)
 mark_as_advanced(valijson_USE_BOOST_REGEX)
 
@@ -157,6 +164,27 @@ if(valijson_BUILD_TESTS)
 
     set(TEST_LIBS gtest_main jsoncpp json11 yamlcpp)
 
+    # The test suite is built as C++17, unless an optional dependency requires
+    # something newer
+    set(valijson_TEST_CXX_STANDARD 17)
+
+    if(valijson_BUILD_GLAZE_ADAPTER)
+        if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glaze/CMakeLists.txt")
+            if(CMAKE_VERSION VERSION_LESS 3.21)
+                message(FATAL_ERROR
+                    "Building the Glaze adapter tests from thirdparty/glaze requires CMake 3.21 or later. "
+                    "Install Glaze separately so that find_package(glaze) can find it, or upgrade CMake.")
+            endif()
+            add_subdirectory(thirdparty/glaze EXCLUDE_FROM_ALL)
+        else()
+            find_package(glaze REQUIRED CONFIG)
+        endif()
+
+        list(APPEND TEST_SOURCES tests/test_glaze_adapter.cpp)
+        list(APPEND TEST_LIBS glaze::glaze)
+        set(valijson_TEST_CXX_STANDARD ${valijson_GLAZE_CXX_STANDARD})
+    endif()
+
     if(Boost_FOUND)
         include_directories(${Boost_INCLUDE_DIRS})
 
@@ -204,10 +232,14 @@ if(valijson_BUILD_TESTS)
         endif()
     endif()
 
+    set_target_properties(test_suite PROPERTIES
+        CXX_STANDARD ${valijson_TEST_CXX_STANDARD}
+        CXX_STANDARD_REQUIRED ON
+    )
+
     if(NOT MSVC)
         set_target_properties(test_suite PROPERTIES
             COMPILE_FLAGS " -pedantic -Werror -Wshadow -Wunused"
-            CXX_STANDARD 17
         )
     endif()
 
@@ -231,6 +263,10 @@ if(valijson_BUILD_TESTS)
 
     if(Poco_FOUND)
         target_compile_definitions(test_suite PRIVATE "VALIJSON_BUILD_POCO_ADAPTER")
+    endif()
+
+    if(valijson_BUILD_GLAZE_ADAPTER)
+        target_compile_definitions(test_suite PRIVATE "VALIJSON_BUILD_GLAZE_ADAPTER")
     endif()
 
     if(valijson_QT_CORE_TARGET)
