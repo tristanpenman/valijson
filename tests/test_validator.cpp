@@ -623,6 +623,48 @@ TEST_F(TestValidator, Draft7_PropertyNames)
     processDraft7TestFile(TEST_SUITE_DIR "draft7/propertyNames.json");
 }
 
+TEST_F(TestValidator, Draft7_PropertyNamesInNestedSubschema)
+{
+    // Regression test: propertyNames in a nested subschema must validate
+    // property names against its own subschema, not the enclosing one
+    struct TestCase
+    {
+        const char *schema;
+        const char *document;
+        bool expected;
+    };
+
+    const TestCase testCases[] = {
+        { R"({"allOf": [{"type": "object", "propertyNames": {}}]})", R"({})", true },
+        { R"({"allOf": [{"type": "object", "propertyNames": {}}]})", R"({"a": "x"})", true },
+        { R"({"allOf": [{"type": "object", "propertyNames": {"type": "string"}}]})", R"({"a": 1})", true },
+        { R"({"anyOf": [{"type": "object", "propertyNames": {}}]})", R"({"a": 1})", true },
+        { R"({"oneOf": [{"type": "object", "propertyNames": {}}]})", R"({"a": 1})", true },
+        { R"({"properties": {"p": {"type": "object", "propertyNames": {}}}})", R"({"p": {"a": 1}})", true },
+        { R"({"$ref": "#/definitions/d", "definitions": {"d": {"type": "object", "propertyNames": {}}}})",
+          R"({"a": 1})", true },
+        { R"({"allOf": [{"type": "object", "propertyNames": {"maxLength": 0}}]})", R"({"a": "x"})", false },
+    };
+
+    for (const TestCase &testCase : testCases) {
+        rapidjson::Document schemaDocument;
+        schemaDocument.Parse(testCase.schema);
+        ASSERT_FALSE(schemaDocument.HasParseError());
+
+        Schema schema;
+        SchemaParser parser(SchemaParser::kDraft7);
+        parser.populateSchema(RapidJsonAdapter(schemaDocument), schema);
+
+        rapidjson::Document document;
+        document.Parse(testCase.document);
+        ASSERT_FALSE(document.HasParseError());
+
+        Validator validator;
+        EXPECT_EQ(testCase.expected, validator.validate(schema, RapidJsonAdapter(document), nullptr))
+                << "schema: " << testCase.schema << ", document: " << testCase.document;
+    }
+}
+
 TEST_F(TestValidator, Draft7_Ref)
 {
     processDraft7TestFile(TEST_SUITE_DIR "draft7/ref.json");
