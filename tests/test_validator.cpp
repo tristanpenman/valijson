@@ -468,6 +468,11 @@ TEST_F(TestValidator, Draft4_OptionalFormatHostname)
     processDraft4TestFile(TEST_SUITE_DIR "draft4/optional/format/hostname.json");
 }
 
+TEST_F(TestValidator, Draft4_OptionalFormatIpv6)
+{
+    processDraft4TestFile(TEST_SUITE_DIR "draft4/optional/format/ipv6.json");
+}
+
 //
 // draft 7
 // ------------------------------------------------------------------------------------------------
@@ -676,4 +681,9 @@ TEST_F(TestValidator, Draft7_OptionalFormatHostname)
         "validation of A-label (punycode) host names"
     };
     processTestFile(TEST_SUITE_DIR "draft7/optional/format/hostname.json", SchemaParser::kDraft7, skipCases);
+}
+
+TEST_F(TestValidator, Draft7_OptionalFormatIpv6)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/optional/format/ipv6.json");
 }
