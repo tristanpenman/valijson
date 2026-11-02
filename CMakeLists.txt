@@ -14,6 +14,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 option(valijson_BUILD_EXAMPLES "Build valijson examples." FALSE)
 option(valijson_BUILD_TESTS "Build valijson test suite." FALSE)
 option(valijson_EXCLUDE_BOOST "Exclude Boost when building test suite." FALSE)
+option(valijson_EXCLUDE_JSON11 "Exclude json11 when building test suite (json11 is archived upstream)." FALSE)
 option(valijson_REQUIRE_ALL_ADAPTER_TESTS "Fail configuration when optional adapter test dependencies are unavailable." FALSE)
 option(valijson_USE_FAST_FLOAT "Use the vendored fast_float library for string-to-double conversions." FALSE)
 option(valijson_USE_EXCEPTIONS "Use exceptions in valijson and included libs." TRUE)
@@ -112,20 +113,22 @@ add_library(jsoncpp
 target_include_directories(jsoncpp SYSTEM PRIVATE thirdparty/jsoncpp/include)
 set_target_properties(jsoncpp PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/thirdparty/jsoncpp)
 
-add_library(json11
-    thirdparty/json11/json11.cpp
-)
-
-target_include_directories(json11 SYSTEM PRIVATE thirdparty/json11)
-if(MSVC)
-    target_compile_options(json11 PRIVATE /FIcstdint)
-else()
-    target_compile_options(json11 PRIVATE
-        -include cstdint
-        $<$<CXX_COMPILER_ID:Clang,AppleClang>:-Wno-unqualified-std-cast-call>
+if(NOT valijson_EXCLUDE_JSON11)
+    add_library(json11
+        thirdparty/json11/json11.cpp
     )
+
+    target_include_directories(json11 SYSTEM PRIVATE thirdparty/json11)
+    if(MSVC)
+        target_compile_options(json11 PRIVATE /FIcstdint)
+    else()
+        target_compile_options(json11 PRIVATE
+            -include cstdint
+            $<$<CXX_COMPILER_ID:Clang,AppleClang>:-Wno-unqualified-std-cast-call>
+        )
+    endif()
+    set_target_properties(json11 PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/thirdparty/json11)
 endif()
-set_target_properties(json11 PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/thirdparty/json11)
 
 # yaml-cpp library
 file(GLOB yamlcpp_SOURCES "thirdparty/yaml-cpp/src/*.cpp")
@@ -165,7 +168,6 @@ if(valijson_BUILD_TESTS)
         tests/test_fetch_urn_document_callback.cpp
         tests/test_hostname.cpp
         tests/test_json_pointer.cpp
-        tests/test_json11_adapter.cpp
         tests/test_jsoncpp_adapter.cpp
         tests/test_nlohmann_json_adapter.cpp
         tests/test_rapidjson_adapter.cpp
@@ -179,7 +181,15 @@ if(valijson_BUILD_TESTS)
         tests/test_utf8_utils.cpp
     )
 
-    set(TEST_LIBS gtest_main jsoncpp json11 yamlcpp)
+    set(TEST_LIBS gtest_main jsoncpp yamlcpp)
+
+    if(NOT valijson_EXCLUDE_JSON11)
+        list(APPEND TEST_SOURCES tests/test_json11_adapter.cpp)
+        list(APPEND TEST_LIBS json11)
+    elseif(valijson_REQUIRE_ALL_ADAPTER_TESTS)
+        message(FATAL_ERROR
+            "json11 is required when valijson_REQUIRE_ALL_ADAPTER_TESTS is enabled.")
+    endif()
 
     if(Boost_FOUND)
         include_directories(${Boost_INCLUDE_DIRS})
@@ -276,6 +286,10 @@ if(valijson_BUILD_TESTS)
 
     if(valijson_QT_CORE_TARGET)
         target_compile_definitions(test_suite PRIVATE "VALIJSON_BUILD_QT_ADAPTER")
+    endif()
+
+    if(NOT valijson_EXCLUDE_JSON11)
+        target_compile_definitions(test_suite PRIVATE "VALIJSON_BUILD_JSON11_ADAPTER")
     endif()
 
     target_link_libraries(test_suite ${TEST_LIBS} ${Boost_LIBRARIES})
