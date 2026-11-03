@@ -425,6 +425,7 @@ public:
 
         // Casting a double outside int64_t's range is undefined behaviour,
         // so range-check in floating point first.
+        // TODO: Replace this with toInteger() when deprecating Qt 5 support
         const double value = m_value.toDouble();
         return std::isfinite(value) &&
                 value >= static_cast<double>(std::numeric_limits<int64_t>::min()) &&
