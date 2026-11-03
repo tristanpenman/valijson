@@ -82,3 +82,41 @@ TEST_F(TestQtJsonAdapter, BasicObjectIteration)
     // Ensure that the correct number of elements were iterated over
     EXPECT_EQ( numElements, expectedValue );
 }
+
+TEST_F(TestQtJsonAdapter, LargeIntegersAreIntegers)
+{
+    // QJsonValue stores all numbers as double; toInt() is 32-bit, so values
+    // outside the int32 range (e.g. a uint32 CRC) were truncated or
+    // misreported as non-integers.
+
+    // Value within int32 range (unchanged behaviour)
+    {
+        QJsonValue document(5);
+        valijson::adapters::QtJsonAdapter adapter(document);
+        EXPECT_TRUE( adapter.isInteger() );
+        EXPECT_EQ( int64_t(5), adapter.asInteger() );
+    }
+
+    // Value outside int32 range
+    {
+        QJsonValue document(4000000000.0);
+        valijson::adapters::QtJsonAdapter adapter(document);
+        EXPECT_TRUE( adapter.isInteger() );
+        EXPECT_EQ( int64_t(4000000000), adapter.asInteger() );
+    }
+
+    // Non-integer value (unchanged behaviour)
+    {
+        QJsonValue document(5.5);
+        valijson::adapters::QtJsonAdapter adapter(document);
+        EXPECT_FALSE( adapter.isInteger() );
+    }
+
+    // Value outside int64_t's range: casting it would be undefined
+    // behaviour, so it must be reported as a non-integer instead.
+    {
+        QJsonValue document(1e20);
+        valijson::adapters::QtJsonAdapter adapter(document);
+        EXPECT_FALSE( adapter.isInteger() );
+    }
+}
