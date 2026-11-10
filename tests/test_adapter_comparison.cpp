@@ -8,13 +8,15 @@
 
 #include <gtest/gtest.h>
 
+#ifdef VALIJSON_BUILD_JSON11_ADAPTER
 #include <valijson/adapters/json11_adapter.hpp>
+#include <valijson/utils/json11_utils.hpp>
+#endif
 #include <valijson/adapters/jsoncpp_adapter.hpp>
 #include <valijson/adapters/nlohmann_json_adapter.hpp>
 #include <valijson/adapters/picojson_adapter.hpp>
 #include <valijson/adapters/rapidjson_adapter.hpp>
 
-#include <valijson/utils/json11_utils.hpp>
 #include <valijson/utils/jsoncpp_utils.hpp>
 #include <valijson/utils/nlohmann_json_utils.hpp>
 #include <valijson/utils/picojson_utils.hpp>
@@ -350,6 +352,8 @@ TEST_F(TestAdapterComparison, RapidJsonCrtAllocVsRapidJsonCrtAlloc)
 // Json11Adapter vs X
 // ------------------------------------------------------------------------------------------------
 
+#ifdef VALIJSON_BUILD_JSON11_ADAPTER
+
 TEST_F(TestAdapterComparison, Json11VsJson11)
 {
     testComparison<
@@ -410,6 +414,8 @@ TEST_F(TestAdapterComparison, Json11VsPropertyTree)
 
 #endif // VALIJSON_BUILD_BOOST_PROPERTY_TREE_ADAPTER
 
+#endif // VALIJSON_BUILD_JSON11_ADAPTER
+
 //
 // NlohmannJsonAdapter vs X
 // ------------------------------------------------------------------------------------------------
@@ -420,12 +426,14 @@ TEST_F(TestAdapterComparison, NlohmannJsonVsNlohmannJson) {
         valijson::adapters::NlohmannJsonAdapter>();
 }
 
+#ifdef VALIJSON_BUILD_JSON11_ADAPTER
 TEST_F(TestAdapterComparison, NlohmannJsonVsJson11)
 {
     testComparison<
             valijson::adapters::NlohmannJsonAdapter,
             valijson::adapters::Json11Adapter>();
 }
+#endif // VALIJSON_BUILD_JSON11_ADAPTER
 
 TEST_F(TestAdapterComparison, NlohmannJsonVsJsonCpp)
 {
@@ -686,12 +694,14 @@ TEST_F(TestAdapterComparison, QtVariantVsPropertyTree)
 
 #endif // VALIJSON_BUILD_BOOST_PROPERTY_TREE_ADAPTER
 
+#ifdef VALIJSON_BUILD_JSON11_ADAPTER
 TEST_F(TestAdapterComparison, QtJsonVsJson11)
 {
     testComparison<
             valijson::adapters::QtJsonAdapter,
             valijson::adapters::Json11Adapter>();
 }
+#endif // VALIJSON_BUILD_JSON11_ADAPTER
 
 TEST_F(TestAdapterComparison, QtJsonVsNlohmannJson)
 {
@@ -712,12 +722,14 @@ TEST_F(TestAdapterComparison, QtJsonVsGlaze)
 #endif // VALIJSON_BUILD_GLAZE_ADAPTER
 
 #ifdef VALIJSON_BUILD_QVARIANT_ADAPTER
+#ifdef VALIJSON_BUILD_JSON11_ADAPTER
 TEST_F(TestAdapterComparison, QtVariantVsJson11)
 {
     testComparison<
             valijson::adapters::QtVariantAdapter,
             valijson::adapters::Json11Adapter>();
 }
+#endif // VALIJSON_BUILD_JSON11_ADAPTER
 
 TEST_F(TestAdapterComparison, QtVariantVsNlohmannJson)
 {
@@ -794,12 +806,14 @@ TEST_F(TestAdapterComparison, PocoJsonVsPropertyTree)
 
 #endif // VALIJSON_BUILD_BOOST_PROPERTY_TREE_ADAPTER
 
+#ifdef VALIJSON_BUILD_JSON11_ADAPTER
 TEST_F(TestAdapterComparison, PocoJsonVsJson11)
 {
     testComparison<
             valijson::adapters::PocoJsonAdapter,
             valijson::adapters::Json11Adapter>();
 }
+#endif // VALIJSON_BUILD_JSON11_ADAPTER
 
 TEST_F(TestAdapterComparison, PocoJsonVsNlohmannJsonAdapter)
 {

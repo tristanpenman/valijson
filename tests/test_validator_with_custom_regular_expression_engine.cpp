@@ -10,12 +10,14 @@
 
 #include <gtest/gtest.h>
 
+#ifdef VALIJSON_BUILD_JSON11_ADAPTER
 #include <valijson/adapters/json11_adapter.hpp>
+#include <valijson/utils/json11_utils.hpp>
+#endif
 #include <valijson/adapters/jsoncpp_adapter.hpp>
 #include <valijson/adapters/rapidjson_adapter.hpp>
 #include <valijson/adapters/picojson_adapter.hpp>
 #include <valijson/adapters/nlohmann_json_adapter.hpp>
-#include <valijson/utils/json11_utils.hpp>
 #include <valijson/utils/jsoncpp_utils.hpp>
 #include <valijson/utils/picojson_utils.hpp>
 #include <valijson/utils/rapidjson_utils.hpp>
