@@ -65,11 +65,11 @@ endif()
 
 install(TARGETS valijson
     EXPORT valijsonConfig
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    DESTINATION ${CMAKE_INSTALL_DATADIR}
 )
 
 install(EXPORT valijsonConfig
-    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/valijson"
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/cmake/valijson"
 )
 
 if(NOT valijson_BUILD_TESTS AND NOT valijson_BUILD_EXAMPLES)
