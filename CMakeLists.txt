@@ -65,7 +65,6 @@ endif()
 
 install(TARGETS valijson
     EXPORT valijsonConfig
-    DESTINATION ${CMAKE_INSTALL_DATADIR}
 )
 
 install(EXPORT valijsonConfig
