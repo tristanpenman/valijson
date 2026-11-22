@@ -172,6 +172,15 @@ protected:
                         << currentTest << "' of test case '"
                         << currentTestCase << "' with adapter '"
                         << AdapterTraits<AdapterType>::adapterName() << "'";
+
+                    // Validation that collects all errors must reach the same
+                    // result as validation that stops at the first error
+                    valijson::ValidationResults results;
+                    EXPECT_EQ( shouldValidate, validator.validate(schema, testItr->second, &results) )
+                        << "Failed while testing validate() function with results in '"
+                        << currentTest << "' of test case '"
+                        << currentTestCase << "' with adapter '"
+                        << AdapterTraits<AdapterType>::adapterName() << "'";
                 }
             }
 #if VALIJSON_USE_EXCEPTIONS
