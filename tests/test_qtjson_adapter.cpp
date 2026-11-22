@@ -1,3 +1,5 @@
+#include <cstdint>
+#include <limits>
 #include <string>
 
 #include <gtest/gtest.h>
@@ -85,9 +87,8 @@ TEST_F(TestQtJsonAdapter, BasicObjectIteration)
 
 TEST_F(TestQtJsonAdapter, LargeIntegersAreIntegers)
 {
-    // QJsonValue stores all numbers as double; toInt() is 32-bit, so values
-    // outside the int32 range (e.g. a uint32 CRC) were truncated or
-    // misreported as non-integers.
+    // toInt() is 32-bit, so values outside the int32 range (e.g. a uint32
+    // CRC) were truncated or misreported as non-integers.
 
     // Value within int32 range (unchanged behaviour)
     {
@@ -104,6 +105,26 @@ TEST_F(TestQtJsonAdapter, LargeIntegersAreIntegers)
         EXPECT_TRUE( adapter.isInteger() );
         EXPECT_EQ( int64_t(4000000000), adapter.asInteger() );
     }
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    // Qt 6 stores qint64 values exactly, including values beyond double's
+    // exact integer range.
+    {
+        const qint64 expected = INT64_C(9007199254740993);
+        QJsonValue document(expected);
+        valijson::adapters::QtJsonAdapter adapter(document);
+        EXPECT_TRUE( adapter.isInteger() );
+        EXPECT_EQ( expected, adapter.asInteger() );
+    }
+
+    {
+        const qint64 expected = std::numeric_limits<qint64>::max();
+        QJsonValue document(expected);
+        valijson::adapters::QtJsonAdapter adapter(document);
+        EXPECT_TRUE( adapter.isInteger() );
+        EXPECT_EQ( expected, adapter.asInteger() );
+    }
+#endif
 
     // INT64_MAX rounds to 2^63 as a double, which must remain out of range.
     {
