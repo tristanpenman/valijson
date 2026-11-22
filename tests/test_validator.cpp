@@ -534,7 +534,7 @@ TEST_F(TestValidator, Draft7_Dependencies)
 
 TEST_F(TestValidator, Draft7_Enum)
 {
-    processDraft4TestFile(TEST_SUITE_DIR "draft7/enum.json");
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/enum.json");
 }
 
 TEST_F(TestValidator, Draft7_ExclusiveMaximum)
@@ -547,9 +547,19 @@ TEST_F(TestValidator, Draft7_ExclusiveMinimum)
     processDraft7TestFile(TEST_SUITE_DIR "draft7/exclusiveMinimum.json");
 }
 
+TEST_F(TestValidator, Draft7_Format)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/format.json");
+}
+
 TEST_F(TestValidator, Draft7_IfThenElse)
 {
     processDraft7TestFile(TEST_SUITE_DIR "draft7/if-then-else.json");
+}
+
+TEST_F(TestValidator, Draft7_InfiniteLoopDetection)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/infinite-loop-detection.json");
 }
 
 TEST_F(TestValidator, Draft7_Items)
@@ -732,4 +742,9 @@ TEST_F(TestValidator, Draft7_OptionalFormatHostname)
 TEST_F(TestValidator, Draft7_OptionalFormatIpv6)
 {
     processDraft7TestFile(TEST_SUITE_DIR "draft7/optional/format/ipv6.json");
+}
+
+TEST_F(TestValidator, Draft7_OptionalFormatUnknown)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/optional/format/unknown.json");
 }
