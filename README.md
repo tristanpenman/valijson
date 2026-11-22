@@ -427,7 +427,8 @@ Valijson supports JSON documents loaded using various JSON parser libraries. The
  - [PicoJSON (commit 9dfda04)](https://github.com/kazuho/picojson/tree/9dfda04e89c28a9e602ce9ef626dd9b6acbc6e60)
  - [yaml-cpp (commit 2decf96)](https://github.com/jbeder/yaml-cpp/tree/2decf96e915d2b0c26c68c1659665789dfef2633)
  - [Poco JSON 1.14.0](https://pocoproject.org/docs/Poco.JSON.html)
- - [Qt 5.8](http://doc.qt.io/qt-5/json.html) or [Qt 6](https://doc.qt.io/qt-6/json.html), with the version-specific support described below
+ - [Qt 5.8](http://doc.qt.io/qt-5/json.html) (deprecated)
+ - [Qt 6.x](https://doc.qt.io/qt-6/json.html) (see version-specific support described below)
 
 Other versions of these libraries may work, but have not been tested. In particular, versions of jsoncpp going back to 0.5.0 should also work correctly.
 
@@ -441,6 +442,8 @@ Valijson provides two adapters for Qt Core types:
 |------------|--------------------------------|---------------------------------|
 | Qt 5       | Supported                      | Not supported                   |
 | Qt 6       | Supported                      | Supported                       |
+
+Note: Support for Qt 5 is deprecated will be removed in a future release.
 
 `QtJsonAdapter`, provided by `<valijson/adapters/qtjson_adapter.hpp>`, validates values represented by Qt's JSON classes and is available with both Qt 5 and Qt 6.
 
