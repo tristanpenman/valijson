@@ -21,7 +21,8 @@ TEST_F(TestNlohmannJsonAdapter, FloatingPointIntegerRange)
     const double upperBound = -static_cast<double>(std::numeric_limits<int64_t>::min());
     const double largestInRange = std::nextafter(upperBound, 0.0);
     {
-        NlohmannJsonAdapter adapter{nlohmann::json(largestInRange)};
+        const nlohmann::json value = largestInRange;
+        NlohmannJsonAdapter adapter(value);
         int64_t result = 0;
         EXPECT_TRUE(adapter.asInteger(result));
         EXPECT_EQ(static_cast<int64_t>(largestInRange), result);
@@ -29,7 +30,8 @@ TEST_F(TestNlohmannJsonAdapter, FloatingPointIntegerRange)
 
     // -2^63 is exactly representable and is the inclusive lower bound.
     {
-        NlohmannJsonAdapter adapter{nlohmann::json(static_cast<double>(std::numeric_limits<int64_t>::min()))};
+        const nlohmann::json value = static_cast<double>(std::numeric_limits<int64_t>::min());
+        NlohmannJsonAdapter adapter(value);
         int64_t result = 0;
         EXPECT_TRUE(adapter.asInteger(result));
         EXPECT_EQ(std::numeric_limits<int64_t>::min(), result);
@@ -37,7 +39,8 @@ TEST_F(TestNlohmannJsonAdapter, FloatingPointIntegerRange)
 
     // INT64_MAX rounds up to 2^63 as a double, so this value must be rejected.
     {
-        NlohmannJsonAdapter adapter{nlohmann::json(upperBound)};
+        const nlohmann::json value = upperBound;
+        NlohmannJsonAdapter adapter(value);
         int64_t result = 123;
         EXPECT_FALSE(adapter.asInteger(result));
         EXPECT_EQ(123, result);
