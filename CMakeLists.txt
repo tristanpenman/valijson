@@ -57,7 +57,13 @@ if (valijson_USE_BOOST_REGEX)
     target_compile_definitions(valijson INTERFACE -DVALIJSON_USE_BOOST_REGEX=1)
 endif()
 
-install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+if(valijson_EXCLUDE_JSON11)
+    install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+            PATTERN "json11_adapter.hpp" EXCLUDE
+            PATTERN "json11_utils.hpp" EXCLUDE)
+else()
+    install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+endif()
 if(valijson_USE_FAST_FLOAT)
     install(DIRECTORY thirdparty/fast_float/include/
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
