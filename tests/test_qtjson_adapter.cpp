@@ -105,6 +105,13 @@ TEST_F(TestQtJsonAdapter, LargeIntegersAreIntegers)
         EXPECT_EQ( int64_t(4000000000), adapter.asInteger() );
     }
 
+    // INT64_MAX rounds to 2^63 as a double, which must remain out of range.
+    {
+        QJsonValue document(9223372036854775808.0);
+        valijson::adapters::QtJsonAdapter adapter(document);
+        EXPECT_FALSE( adapter.isInteger() );
+    }
+
     // Non-integer value (unchanged behaviour)
     {
         QJsonValue document(5.5);

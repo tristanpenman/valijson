@@ -427,9 +427,12 @@ public:
         // so range-check in floating point first.
         // TODO: Replace this with toInteger() when deprecating Qt 5 support
         const double value = m_value.toDouble();
+        // INT64_MAX rounds up to 2^63 when converted to double, so use an
+        // exclusive upper bound instead of comparing against that rounded value.
+        const double int64UpperBound = -static_cast<double>(std::numeric_limits<int64_t>::min());
         return std::isfinite(value) &&
                 value >= static_cast<double>(std::numeric_limits<int64_t>::min()) &&
-                value <= static_cast<double>(std::numeric_limits<int64_t>::max()) &&
+                value < int64UpperBound &&
                 std::floor(value) == value;
     }
 
