@@ -753,6 +753,21 @@ TEST_F(TestValidator, Draft7_OptionalFormatIpv6)
     processDraft7TestFile(TEST_SUITE_DIR "draft7/optional/format/ipv6.json");
 }
 
+TEST_F(TestValidator, Draft7_OptionalFormatJsonPointer)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/optional/format/json-pointer.json");
+}
+
+TEST_F(TestValidator, Draft7_OptionalFormatRegex)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/optional/format/regex.json");
+}
+
+TEST_F(TestValidator, Draft7_OptionalFormatRelativeJsonPointer)
+{
+    processDraft7TestFile(TEST_SUITE_DIR "draft7/optional/format/relative-json-pointer.json");
+}
+
 TEST_F(TestValidator, Draft7_OptionalFormatUnknown)
 {
     processDraft7TestFile(TEST_SUITE_DIR "draft7/optional/format/unknown.json");

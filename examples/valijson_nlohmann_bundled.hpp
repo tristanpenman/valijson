@@ -1868,7 +1868,9 @@ inline bool isIpv6Address(const std::string &s)
 #include <algorithm>
 #include <cerrno>
 #include <cstddef>
+#include <cstdint>
 #include <cstring>
+#include <limits>
 #include <stdexcept>
 #include <string>
 
@@ -2142,6 +2144,64 @@ inline AdapterType resolveJsonPointerStrict(
         const std::string &jsonPointer)
 {
     return resolveJsonPointer(rootNode, jsonPointer, jsonPointer.begin(), true);
+}
+
+/**
+ * @brief   Check whether a string is a JSON Pointer in its JSON String
+ *          representation, as defined in RFC 6901, section 3
+ *
+ * A JSON Pointer is either empty, or a sequence of reference tokens, each of
+ * which is prefixed by '/'. Within a reference token, '~' must be followed by
+ * '0' or '1'. Any other character, including an embedded null byte, may
+ * appear in a reference token.
+ *
+ * @param   s  string to check
+ *
+ * @return  \c true if \p s is a JSON Pointer
+ */
+inline bool isJsonPointer(const std::string &s)
+{
+    if (!s.empty() && s[0] != '/') {
+        return false;
+    }
+
+    for (size_t i = 0; i < s.size(); ++i) {
+        if (s[i] == '~') {
+            if (i + 1 >= s.size() || (s[i + 1] != '0' && s[i + 1] != '1')) {
+                return false;
+            }
+            ++i;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * @brief   Check whether a string is a Relative JSON Pointer, as defined in
+ *          draft-handrews-relative-json-pointer-01, section 3
+ *
+ * A Relative JSON Pointer is a non-negative integer without leading zeros,
+ * followed either by '#' or by a JSON Pointer.
+ *
+ * @param   s  string to check
+ *
+ * @return  \c true if \p s is a Relative JSON Pointer
+ */
+inline bool isRelativeJsonPointer(const std::string &s)
+{
+    size_t digits = 0;
+    while (digits < s.size() && s[digits] >= '0' && s[digits] <= '9') {
+        ++digits;
+    }
+
+    // The prefix must be a non-negative integer without leading zeros
+    if (digits == 0 || (digits > 1 && s[0] == '0')) {
+        return false;
+    }
+
+    const std::string remainder = s.substr(digits);
+    return remainder == "#" || isJsonPointer(remainder);
 }
 
 } // namespace json_pointer
@@ -8476,6 +8536,45 @@ public:
                         "String should be a valid IPv6 address");
             }
             return false;
+        } else if (format == "json-pointer") {
+            // Matches JSON Pointers like: /foo/bar~0/baz~1
+            if (internal::json_pointer::isJsonPointer(s)) {
+                return true;
+            }
+
+            if (m_results) {
+                m_results->pushError(m_path,
+                                     "String should be a valid JSON Pointer");
+            }
+            return false;
+        } else if (format == "relative-json-pointer") {
+            // Matches Relative JSON Pointers like: 0#, 1/foo/bar
+            if (internal::json_pointer::isRelativeJsonPointer(s)) {
+                return true;
+            }
+
+            if (m_results) {
+                m_results->pushError(
+                    m_path, "String should be a valid Relative JSON Pointer");
+            }
+            return false;
+        } else if (format == "regex") {
+            // Matches regular expressions that the regular expression engine
+            // can compile. Compilation errors can only be detected when
+            // exceptions are enabled; otherwise the format is not enforced.
+#if VALIJSON_USE_EXCEPTIONS
+            try {
+                RegexEngine regexEngine(s);
+                (void)regexEngine;
+            } catch (...) {
+                if (m_results) {
+                    m_results->pushError(
+                        m_path, "String should be a valid regular expression");
+                }
+                return false;
+            }
+#endif
+            return true;
         }
 
         return true;

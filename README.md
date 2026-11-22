@@ -374,7 +374,7 @@ Documents: 2, Iterations: 1000000 (301487 per second)
 
 Valijson supports the validation keywords defined in [JSON Schema Draft 7](https://json-schema.org/draft-07/json-schema-release-notes.html), as exercised by the standard JSON Schema Test Suite.
 
-The `default` keyword is annotation-only and does not affect validation. Valijson validates the `date`, `time`, `date-time`, `hostname`, `ipv4`, and `ipv6` formats; other formats are not currently enforced.
+The `default` keyword is annotation-only and does not affect validation. Valijson validates the `date`, `time`, `date-time`, `hostname`, `ipv4`, `ipv6`, `json-pointer`, `relative-json-pointer`, and `regex` formats; other formats are not currently enforced. The `regex` format checks that the configured regular expression engine can compile the string, and is only enforced when exceptions are enabled.
 
 Local JSON References are supported. Remote references are supported when document-fetch and document-release callbacks are supplied to `SchemaParser::populateSchema()`.
 
