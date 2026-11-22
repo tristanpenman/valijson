@@ -688,7 +688,11 @@ protected:
         if (d < static_cast<double>(std::numeric_limits<int64_t>::min())) {
             return false;
         }
-        if (d > static_cast<double>(std::numeric_limits<int64_t>::max())) {
+        // INT64_MAX rounds up to 2^63 when converted to double. Use the
+        // exactly representable exclusive upper bound to avoid accepting an
+        // out-of-range value and casting it to int64_t.
+        const double int64UpperBound = -static_cast<double>(std::numeric_limits<int64_t>::min());
+        if (d >= int64UpperBound) {
             return false;
         }
         double intPart = 0.0;
@@ -6844,7 +6848,7 @@ private:
             const int64_t value = node.asInteger();
             if (value >= 0) {
                 constraints::MaxItemsConstraint constraint;
-                constraint.setMaxItems(value);
+                constraint.setMaxItems(static_cast<uint64_t>(value));
                 return constraint;
             }
         }
@@ -6868,7 +6872,7 @@ private:
             const int64_t value = node.asInteger();
             if (value >= 0) {
                 constraints::MaxLengthConstraint constraint;
-                constraint.setMaxLength(value);
+                constraint.setMaxLength(static_cast<uint64_t>(value));
                 return constraint;
             }
         }
@@ -6894,7 +6898,7 @@ private:
             int64_t value = node.asInteger();
             if (value >= 0) {
                 constraints::MaxPropertiesConstraint constraint;
-                constraint.setMaxProperties(value);
+                constraint.setMaxProperties(static_cast<uint64_t>(value));
                 return constraint;
             }
         }
@@ -6972,7 +6976,7 @@ private:
             const int64_t value = node.asInteger();
             if (value >= 0) {
                 constraints::MinItemsConstraint constraint;
-                constraint.setMinItems(value);
+                constraint.setMinItems(static_cast<uint64_t>(value));
                 return constraint;
             }
         }
@@ -6995,7 +6999,7 @@ private:
             const int64_t value = node.asInteger();
             if (value >= 0) {
                 constraints::MinLengthConstraint constraint;
-                constraint.setMinLength(value);
+                constraint.setMinLength(static_cast<uint64_t>(value));
                 return constraint;
             }
         }
@@ -7021,7 +7025,7 @@ private:
             int64_t value = node.asInteger();
             if (value >= 0) {
                 constraints::MinPropertiesConstraint constraint;
-                constraint.setMinProperties(value);
+                constraint.setMinProperties(static_cast<uint64_t>(value));
                 return constraint;
             }
         }

@@ -13,6 +13,37 @@ class TestNlohmannJsonAdapter : public testing::Test
 
 };
 
+TEST_F(TestNlohmannJsonAdapter, FloatingPointIntegerRange)
+{
+    using valijson::adapters::NlohmannJsonAdapter;
+
+    // The double immediately below 2^63 is representable as an int64_t.
+    const double upperBound = -static_cast<double>(std::numeric_limits<int64_t>::min());
+    const double largestInRange = std::nextafter(upperBound, 0.0);
+    {
+        NlohmannJsonAdapter adapter{nlohmann::json(largestInRange)};
+        int64_t result = 0;
+        EXPECT_TRUE(adapter.asInteger(result));
+        EXPECT_EQ(static_cast<int64_t>(largestInRange), result);
+    }
+
+    // -2^63 is exactly representable and is the inclusive lower bound.
+    {
+        NlohmannJsonAdapter adapter{nlohmann::json(static_cast<double>(std::numeric_limits<int64_t>::min()))};
+        int64_t result = 0;
+        EXPECT_TRUE(adapter.asInteger(result));
+        EXPECT_EQ(std::numeric_limits<int64_t>::min(), result);
+    }
+
+    // INT64_MAX rounds up to 2^63 as a double, so this value must be rejected.
+    {
+        NlohmannJsonAdapter adapter{nlohmann::json(upperBound)};
+        int64_t result = 123;
+        EXPECT_FALSE(adapter.asInteger(result));
+        EXPECT_EQ(123, result);
+    }
+}
+
 TEST_F(TestNlohmannJsonAdapter, BasicArrayIteration)
 {
     const unsigned int numElements = 10;
