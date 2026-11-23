@@ -1,6 +1,6 @@
 # OSS-Fuzz Issues for Valijson
 
-This list was compiled from the public OSS-Fuzz Issue Tracker search for `valijson` and the corresponding public issue pages on 2026-07-24.
+This list was compiled from the public OSS-Fuzz Issue Tracker search for `valijson` and the corresponding public issue pages on 2026-11-24.
 
 Source listing: <https://issues.oss-fuzz.com/issues?q=valijson>
 
@@ -8,24 +8,27 @@ Some C++ symbols are truncated in the Issue Tracker's displayed title or crash-s
 
 ## Summary
 
-- Open issues still needing attention: 7
-- Issues verified since the previous snapshot: 7
+- Open issues still needing attention: 9 (up from 7 in the 2026-07-24 snapshot)
+- Issues verified since the previous snapshot: 0
+- Issues closed as not reproducible since the previous snapshot: 1 ([427531814](https://issues.oss-fuzz.com/issues/427531814))
 
 ## Open Issues
 
 | Issue                                                     | Status | Priority | Finding                         | Engine / job                         | Crash state                                                                                                                                                             |
 | --------------------------------------------------------- | ------ | -------- | ------------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [541577186](https://issues.oss-fuzz.com/issues/541577186) | New    | P2       | Stack-overflow                  | libFuzzer / libfuzzer_asan_valijson  | `std::__1::__wrap_iter<char const*> std::__1::basic_regex<char, std::__1::regex_t` (x3)                                                                                 |
+| [524158373](https://issues.oss-fuzz.com/issues/524158373) | New    | P2       | Stack-overflow                  | libFuzzer / libfuzzer_ubsan_valijson | `valijson::Subschema const* valijson::SchemaParser::makeOrReuseSchema<valijson::a`                                                                                      |
 | [490886677](https://issues.oss-fuzz.com/issues/490886677) | New    | P2       | Stack-overflow                  | honggfuzz / honggfuzz_asan_valijson  | `fuzzer`                                                                                                                                                                |
-| [444637784](https://issues.oss-fuzz.com/issues/444637784) | New    | P2       | Timeout (exceeds 60 secs)       | libFuzzer / libfuzzer_ubsan_valijson | `fuzzer`                                                                                                                                                                |
+| [444637784](https://issues.oss-fuzz.com/issues/444637784) | New    | P2       | Timeout (exceeds 60 secs)       | libFuzzer / libfuzzer_ubsan_valijson | `fuzzer` (flagged flaky / Unreproducible 2026-11-15)                                                                                                                    |
 | [444619048](https://issues.oss-fuzz.com/issues/444619048) | New    | P2       | Stack-overflow                  | honggfuzz / honggfuzz_asan_valijson  | `std::__1::__wrap_iter<char const*> std::__1::basic_regex<char, std::__1::regex_t` / `std::__1::__wrap_iter<char const*> std::__1::basic_regex<char, std::__1::regex_t` |
 | [444583510](https://issues.oss-fuzz.com/issues/444583510) | New    | P2       | Stack-overflow                  | libFuzzer / libfuzzer_msan_valijson  | `std::__1::__match_char<char>::~__match_char`                                                                                                                           |
 | [441210575](https://issues.oss-fuzz.com/issues/441210575) | New    | P2       | Stack-overflow                  | libFuzzer / libfuzzer_msan_valijson  | `std::__1::__begin_marked_subexpression<char>::~__begin_marked_subexpression` / `std::__1::__empty_state<char>::~__empty_state`                                         |
 | [428754690](https://issues.oss-fuzz.com/issues/428754690) | New    | P2       | Stack-overflow                  | libFuzzer / libfuzzer_msan_valijson  | `std::__1::__owns_two_states<char>::~__owns_two_states` / `std::__1::__alternate<char>::~__alternate`                                                                   |
 | [422513162](https://issues.oss-fuzz.com/issues/422513162) | New    | P2       | Out-of-memory (exceeds 2560 MB) | libFuzzer / libfuzzer_ubsan_valijson | `fuzzer`                                                                                                                                                                |
 
-## Verified Issues
+## Recently Verified Issues
 
-The Issue Tracker currently reports 36 Valijson issues as verified. The issues below were previously listed as unverified in this file and are now verified.
+The Issue Tracker currently reports 36 Valijson issues as verified, unchanged since the 2026-07-24 snapshot. The issues below were verified in June 2026.
 
 | Issue                                                     | Status   | Priority | Finding        | Engine / job                         | Crash state                                                                                                                                                             |
 | --------------------------------------------------------- | -------- | -------- | -------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
