@@ -629,6 +629,15 @@ private:
                             actualJsonPointer, "", referencedScope);
                 }
 
+                // A chain of JSON References that leads back to a reference
+                // that has already been followed would never reach a
+                // concrete schema
+                if (std::find(newRegistryKeys.begin(), newRegistryKeys.end(),
+                              queryKey) != newRegistryKeys.end()) {
+                    throwRuntimeError(
+                            "found cycle while resolving JSON reference");
+                }
+
                 newRegistryKeys.push_back(queryKey);
 
                 // The referenced node may itself be a JSON Reference, which

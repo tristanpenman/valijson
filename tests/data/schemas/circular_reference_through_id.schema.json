@@ -1,0 +1,18 @@
+{
+  "description": "Circular reference through the identifier of an enclosing schema",
+  "$id": "http://example.com/root.json",
+  "allOf": [{"$ref": "b.json#/definitions/c/definitions/x"}],
+  "definitions": {
+    "b": {
+      "$id": "http://example.com/b.json",
+      "definitions": {
+        "c": {
+          "$id": "http://example.com/c.json",
+          "definitions": {
+            "x": {"$ref": "b.json#/definitions/c/definitions/x"}
+          }
+        }
+      }
+    }
+  }
+}
