@@ -41,6 +41,7 @@
 #pragma once
 
 #include <optional>
+#include <cstring>
 #include <string>
 #include <iterator>
 #include <type_traits>
@@ -845,33 +846,18 @@ template<class ValueType>
 inline typename GenericRapidJsonObject<ValueType>::iterator
         GenericRapidJsonObject<ValueType>::find(const std::string &propertyName) const
 {
-    // Hack to support older versions of rapidjson where pointers are used as
-    // the built in iterator type. In those versions, the FindMember function
-    // would return a null pointer when the requested member could not be
-    // found. After calling FindMember on an empty object, we compare the
-    // result against what we would expect if a non-null-pointer iterator was
-    // returned.
-    const ValueType empty(rapidjson::kObjectType);
-    const typename ValueType::ConstMemberIterator maybeEnd = empty.FindMember("");
-    if (maybeEnd != empty.MemberBegin() + 1) {
-        // In addition to the pointer-based iterator issue, RapidJson's internal
-        // string comparison code seemed to rely on the query string being
-        // initialised to a length greater than or equal to that of the
-        // properties being compared. We get around this by implementing our
-        // own linear scan.
-        const size_t propertyNameLength = propertyName.length();
-        for (typename ValueType::ConstMemberIterator itr = m_value.MemberBegin(); itr != m_value.MemberEnd(); ++itr) {
-            const size_t memberNameLength = itr->name.GetStringLength();
-            if (memberNameLength == propertyNameLength &&
-                    strncmp(itr->name.GetString(), propertyName.c_str(), itr->name.GetStringLength()) == 0) {
-                return itr;
-            }
+    // Property names are compared using their lengths, rather than with
+    // FindMember(), which treats the query string as null-terminated, so that
+    // names containing embedded null bytes are matched correctly
+    const size_t propertyNameLength = propertyName.length();
+    for (typename ValueType::ConstMemberIterator itr = m_value.MemberBegin(); itr != m_value.MemberEnd(); ++itr) {
+        if (itr->name.GetStringLength() == propertyNameLength &&
+                std::memcmp(itr->name.GetString(), propertyName.data(), propertyNameLength) == 0) {
+            return itr;
         }
-
-        return m_value.MemberEnd();
     }
 
-    return m_value.FindMember(propertyName.c_str());      // Times are good.
+    return m_value.MemberEnd();
 }
 
 typedef GenericRapidJsonAdapter<> RapidJsonAdapter;

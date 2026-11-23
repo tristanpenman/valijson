@@ -149,3 +149,31 @@ TEST_F(TestRapidJsonAdapter, LoadDocumentWithErrorNearStart)
     EXPECT_FALSE(valijson::utils::loadDocument(
             TEST_DATA_DIR "/documents/invalid_near_start.json", document));
 }
+
+TEST_F(TestRapidJsonAdapter, FindProperty)
+{
+    rapidjson::Document document;
+    document.Parse(R"({"a": 1, "a\u0000b": 2})");
+    ASSERT_FALSE(document.HasParseError());
+    const valijson::adapters::RapidJsonAdapter adapter(document);
+    const valijson::adapters::RapidJsonObject object = adapter.asObject();
+
+    auto itr = object.find("a");
+    ASSERT_NE(object.end(), itr);
+    EXPECT_EQ(1.0, itr->second.asDouble());
+
+    // Property names that contain null bytes are compared in full
+    itr = object.find(std::string("a\0b", 3));
+    ASSERT_NE(object.end(), itr);
+    EXPECT_EQ(2.0, itr->second.asDouble());
+    EXPECT_EQ(object.end(), object.find(std::string("a\0c", 3)));
+
+    EXPECT_EQ(object.end(), object.find("b"));
+
+    // Looking up a property of an empty object
+    rapidjson::Document emptyDocument;
+    emptyDocument.Parse("{}");
+    const valijson::adapters::RapidJsonAdapter emptyAdapter(emptyDocument);
+    const valijson::adapters::RapidJsonObject emptyObject = emptyAdapter.asObject();
+    EXPECT_EQ(emptyObject.end(), emptyObject.find("a"));
+}
