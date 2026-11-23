@@ -5461,27 +5461,163 @@ private:
         return internal::uri::resolveRelativeUri(*currentScope, id);
     }
 
-    template<typename AdapterType>
-    bool findSchemaById(
-            const AdapterType &node,
-            const std::optional<std::string> &currentScope,
-            const std::string &targetUri,
-            const std::string &nodePath,
-            std::string &foundPath,
-            std::optional<std::string> &foundScope) const
+    /**
+     * @brief  Kind of location within a schema document
+     *
+     * Only identifiers that appear in schema locations are taken into account
+     * when resolving references. Identifiers that appear elsewhere, such as in
+     * the value of an 'enum' or 'const' keyword, or beneath an unknown keyword,
+     * are not schema identifiers.
+     */
+    enum class SchemaLocation
     {
+        kSchema,      ///< A schema
+        kSchemaArray, ///< An array of schemas
+        kSchemaMap,   ///< An object whose member values are schemas
+        kOther        ///< Not a schema location
+    };
+
+    /**
+     * @brief  Determine the kind of location for the value of a keyword that
+     *         appears in a schema
+     *
+     * @param  keyword  name of the keyword
+     * @param  value    value of the keyword
+     *
+     * @return location kind for the keyword value
+     */
+    template <typename AdapterType>
+    SchemaLocation keywordLocation(const std::string &keyword,
+                                   const AdapterType &value) const
+    {
+        if (keyword == "additionalItems" || keyword == "additionalProperties" ||
+            keyword == "contains" || keyword == "not") {
+            return SchemaLocation::kSchema;
+        }
+
+        if (keyword == "allOf" || keyword == "anyOf" || keyword == "oneOf") {
+            return SchemaLocation::kSchemaArray;
+        }
+
+        if (keyword == "definitions" || keyword == "dependencies" ||
+            keyword == "patternProperties" || keyword == "properties") {
+            return SchemaLocation::kSchemaMap;
+        }
+
+        if (keyword == "items") {
+            return value.isArray() ? SchemaLocation::kSchemaArray
+                                   : SchemaLocation::kSchema;
+        }
+
+        if (isDraft6OrLater() && keyword == "propertyNames") {
+            return SchemaLocation::kSchema;
+        }
+
+        if (m_version == kDraft7) {
+            if (keyword == "if" || keyword == "then" || keyword == "else") {
+                return SchemaLocation::kSchema;
+            }
+        } else if (m_version == kDraft3) {
+            if (keyword == "extends" || keyword == "type") {
+                return value.isArray() ? SchemaLocation::kSchemaArray
+                                       : SchemaLocation::kSchema;
+            }
+        }
+
+        return SchemaLocation::kOther;
+    }
+
+    /**
+     * @brief  Determine the kind of location for a member of an object or an
+     *         item in an array
+     *
+     * @param  parentLocation  location kind of the containing object or array
+     * @param  key             name of the object member, ignored for arrays
+     * @param  value           value of the object member or array item
+     * @param  parentHasRef    whether the containing object has a '$ref'
+     *                         property, in which case its other properties are
+     *                         ignored
+     *
+     * @return location kind for the member or item
+     */
+    template <typename AdapterType>
+    SchemaLocation
+    childLocation(SchemaLocation parentLocation, const std::string &key,
+                  const AdapterType &value, bool parentHasRef) const
+    {
+        switch (parentLocation) {
+        case SchemaLocation::kSchema:
+            return parentHasRef ? SchemaLocation::kOther
+                                : keywordLocation(key, value);
+        case SchemaLocation::kSchemaArray:
+        case SchemaLocation::kSchemaMap:
+            return SchemaLocation::kSchema;
+        case SchemaLocation::kOther:
+            break;
+        }
+
+        return SchemaLocation::kOther;
+    }
+
+    /**
+     * @brief  Determine whether a node is a schema object containing a '$ref'
+     *         property
+     */
+    template <typename AdapterType>
+    static bool hasJsonReference(const AdapterType &node)
+    {
+        return node.isObject() &&
+               node.asObject().find("$ref") != node.asObject().end();
+    }
+
+    /**
+     * @brief  Find the schema with a given identifier
+     *
+     * Only schema locations are searched, so identifiers that appear in other
+     * locations, such as in 'enum' values or beneath unknown keywords, are
+     * ignored. The identifier of a schema containing a '$ref' property is also
+     * ignored, as all other properties of such a schema are ignored.
+     *
+     * @param  node        node to search
+     * @param  currentScope  resolution scope for the node
+     * @param  targetUri   identifier to search for, resolved to a full URI
+     * @param  nodePath    JSON Pointer to the node
+     * @param  foundPath   set to the JSON Pointer of the schema, if found
+     * @param  foundScope  set to the resolution scope of the schema, excluding
+     *                     the schema's own identifier, if found
+     * @param  location    location kind of the node
+     *
+     * @return \c true if a schema with the identifier was found
+     */
+    template <typename AdapterType>
+    bool findSchemaById(const AdapterType &node,
+                        const std::optional<std::string> &currentScope,
+                        const std::string &targetUri,
+                        const std::string &nodePath, std::string &foundPath,
+                        std::optional<std::string> &foundScope,
+                        SchemaLocation location = SchemaLocation::kSchema) const
+    {
+        if (location == SchemaLocation::kOther) {
+            return false;
+        }
+
         std::optional<std::string> updatedScope = currentScope;
 
         if (node.isObject()) {
             const typename AdapterType::Object object = node.asObject();
-            const typename AdapterType::Object::const_iterator itr =
+            const bool hasRef =
+                location == SchemaLocation::kSchema && hasJsonReference(node);
+            if (location == SchemaLocation::kSchema && !hasRef) {
+                const typename AdapterType::Object::const_iterator itr =
                     object.find(idKeyword());
-            if (itr != object.end() && itr->second.maybeString()) {
-                updatedScope = resolveId(currentScope, itr->second.asString());
-                if (updatedScope && *updatedScope == targetUri) {
-                    foundPath = nodePath;
-                    foundScope = currentScope;
-                    return true;
+                if (itr != object.end() && itr->second.maybeString()) {
+                    updatedScope =
+                        resolveId(currentScope, itr->second.asString());
+                    if (updatedScope && *updatedScope == targetUri) {
+                        foundPath = nodePath;
+                        foundScope = currentScope;
+                        return true;
+                    }
                 }
             }
 
@@ -5489,17 +5625,21 @@ private:
                 const std::string childPath =
                         nodePath + "/" + escapeJsonPointerToken(member.first);
                 if (findSchemaById(member.second, updatedScope, targetUri,
-                            childPath, foundPath, foundScope)) {
+                                   childPath, foundPath, foundScope,
+                                   childLocation(location, member.first,
+                                                 member.second, hasRef))) {
                     return true;
                 }
             }
-        } else if (node.maybeArray()) {
+        } else if (location == SchemaLocation::kSchemaArray &&
+                   node.maybeArray()) {
             size_t index = 0;
             for (const AdapterType item : node.asArray()) {
                 const std::string childPath = nodePath + "/" +
                         std::to_string(index++);
                 if (findSchemaById(item, updatedScope, targetUri, childPath,
-                            foundPath, foundScope)) {
+                                   foundPath, foundScope,
+                                   SchemaLocation::kSchema)) {
                     return true;
                 }
             }
@@ -5508,13 +5648,30 @@ private:
         return false;
     }
 
-    template<typename AdapterType>
-    bool findScopeForPath(
-            const AdapterType &node,
-            const std::optional<std::string> &currentScope,
-            const std::string &targetPath,
-            const std::string &nodePath,
-            std::optional<std::string> &foundScope) const
+    /**
+     * @brief  Find the resolution scope for the node at a given path
+     *
+     * The returned scope takes into account the identifiers of the schemas
+     * that contain the node, but not the identifier of the node itself. As
+     * with findSchemaById(), identifiers are only taken into account when
+     * they appear in schema locations.
+     *
+     * @param  node          node to search
+     * @param  currentScope  resolution scope for the node
+     * @param  targetPath    JSON Pointer to the node to find
+     * @param  nodePath      JSON Pointer to the current node
+     * @param  foundScope    set to the resolution scope, if found
+     * @param  location      location kind of the node
+     *
+     * @return \c true if a node with the given path was found
+     */
+    template <typename AdapterType>
+    bool
+    findScopeForPath(const AdapterType &node,
+                     const std::optional<std::string> &currentScope,
+                     const std::string &targetPath, const std::string &nodePath,
+                     std::optional<std::string> &foundScope,
+                     SchemaLocation location = SchemaLocation::kSchema) const
     {
         if (nodePath == targetPath) {
             foundScope = currentScope;
@@ -5525,35 +5682,57 @@ private:
 
         if (node.isObject()) {
             const typename AdapterType::Object object = node.asObject();
-            const typename AdapterType::Object::const_iterator itr =
+            const bool hasRef =
+                location == SchemaLocation::kSchema && hasJsonReference(node);
+            if (location == SchemaLocation::kSchema && !hasRef) {
+                const typename AdapterType::Object::const_iterator itr =
                     object.find(idKeyword());
-            if (itr != object.end() && itr->second.maybeString()) {
-                updatedScope = resolveId(currentScope, itr->second.asString());
+                if (itr != object.end() && itr->second.maybeString()) {
+                    updatedScope =
+                        resolveId(currentScope, itr->second.asString());
+                }
             }
 
             for (const typename AdapterType::ObjectMember member : object) {
                 const std::string childPath =
                         nodePath + "/" + escapeJsonPointerToken(member.first);
-                if (findScopeForPath(member.second, updatedScope, targetPath,
-                            childPath, foundScope)) {
+                if (isJsonPointerPrefix(childPath, targetPath) &&
+                    findScopeForPath(member.second, updatedScope, targetPath,
+                                     childPath, foundScope,
+                                     childLocation(location, member.first,
+                                                   member.second, hasRef))) {
                     return true;
                 }
             }
-        } else {
-            if (node.maybeArray()) {
-                size_t index = 0;
-                for (const AdapterType item : node.asArray()) {
-                    const std::string childPath = nodePath + "/" +
-                            std::to_string(index++);
-                    if (findScopeForPath(item, updatedScope, targetPath,
-                                childPath, foundScope)) {
-                        return true;
-                    }
+        } else if (node.maybeArray()) {
+            const SchemaLocation itemLocation =
+                location == SchemaLocation::kSchemaArray
+                    ? SchemaLocation::kSchema
+                    : SchemaLocation::kOther;
+            size_t index = 0;
+            for (const AdapterType item : node.asArray()) {
+                const std::string childPath =
+                    nodePath + "/" + std::to_string(index++);
+                if (isJsonPointerPrefix(childPath, targetPath) &&
+                    findScopeForPath(item, updatedScope, targetPath, childPath,
+                                     foundScope, itemLocation)) {
+                    return true;
                 }
             }
         }
 
         return false;
+    }
+
+    /**
+     * @brief  Determine whether a JSON Pointer refers to a node at or beneath
+     *         the node referred to by another JSON Pointer
+     */
+    static bool isJsonPointerPrefix(const std::string &prefix,
+                                    const std::string &path)
+    {
+        return path.compare(0, prefix.size(), prefix) == 0 &&
+               (path.size() == prefix.size() || path[prefix.size()] == '/');
     }
 
     /**

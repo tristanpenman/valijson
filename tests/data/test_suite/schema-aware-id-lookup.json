@@ -1,0 +1,35 @@
+{
+    "tests": [
+        {
+            "description": "an identifier inside propertyNames is a real identifier",
+            "compatibility": "6",
+            "schema": {
+                "propertyNames": {
+                    "$id": "#short",
+                    "maxLength": 3
+                },
+                "properties": {
+                    "id": {
+                        "$ref": "#short"
+                    }
+                }
+            },
+            "tests": [
+                {
+                    "description": "a short string is valid",
+                    "data": {
+                        "id": "abc"
+                    },
+                    "valid": true
+                },
+                {
+                    "description": "a long string is invalid",
+                    "data": {
+                        "id": "abcd"
+                    },
+                    "valid": false
+                }
+            ]
+        }
+    ]
+}

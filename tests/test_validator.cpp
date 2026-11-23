@@ -216,6 +216,7 @@ constexpr const char *kTestSuiteFiles[] = {
 
 const std::vector<const char *> kLocalTestFiles = {
     "draft6-draft7-features.json",
+    "schema-aware-id-lookup.json",
 };
 
 //
@@ -285,16 +286,6 @@ constexpr KnownFailure kKnownFailures[] = {
     { 4, "anchor-legacy.json", "anchor within remote ref (id)", nullptr },
     { 6, "anchor-legacy.json", "anchor within remote ref", nullptr },
     { 7, "anchor-legacy.json", "anchor within remote ref", nullptr },
-
-    // Identifiers in non-schema locations are treated as schema identifiers
-    { 4, "optional/non-schemas.json", "$id inside an enum is not a real identifier (id/definitions)", nullptr },
-    { 4, "optional/non-schemas.json", "anchor inside an enum is not a real identifier (id)", nullptr },
-    { 6, "optional/non-schemas.json", "$id inside an enum is not a real identifier ($id/definitions)", nullptr },
-    { 7, "optional/non-schemas.json", "$id inside an enum is not a real identifier ($id/definitions)", nullptr },
-    { 6, "optional/non-schemas.json", "$id inside an unknown keyword is not a real identifier", nullptr },
-    { 7, "optional/non-schemas.json", "$id inside an unknown keyword is not a real identifier", nullptr },
-    { 6, "optional/non-schemas.json", "anchor inside an enum is not a real identifier ($id)", nullptr },
-    { 7, "optional/non-schemas.json", "anchor inside an enum is not a real identifier ($id)", nullptr },
 
     // Regular expressions are evaluated by std::regex, which does not
     // implement ECMA 262 with Unicode semantics
