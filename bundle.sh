@@ -69,6 +69,7 @@ common_headers=(
   include/valijson/internal/double_parser.hpp
   include/valijson/internal/basic_adapter.hpp
   include/valijson/internal/custom_allocator.hpp
+  include/valijson/internal/date_time.hpp
   include/valijson/internal/debug.hpp
   include/valijson/internal/frozen_value.hpp
   include/valijson/internal/hostname.hpp
