@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <memory>
+#include <string>
 
 #include <gtest/gtest.h>
 
@@ -12,6 +13,8 @@
 #define TEST_DATA_DIR "../tests/data"
 
 using valijson::adapters::RapidJsonAdapter;
+using valijson::internal::json_pointer::isJsonPointer;
+using valijson::internal::json_pointer::isRelativeJsonPointer;
 using valijson::internal::json_pointer::resolveJsonPointer;
 using valijson::utils::loadDocument;
 using valijson::Schema;
@@ -380,3 +383,52 @@ TEST(TestJsonPointerDeathTest, CircularReferencesFromRootReference)
         }, "");
 }
 #endif
+
+TEST(TestJsonPointerSyntax, AcceptsJsonPointers)
+{
+    EXPECT_TRUE(isJsonPointer(""));
+    EXPECT_TRUE(isJsonPointer("/"));
+    EXPECT_TRUE(isJsonPointer("/foo/bar"));
+    EXPECT_TRUE(isJsonPointer("/foo//bar"));
+    EXPECT_TRUE(isJsonPointer("/foo/bar/"));
+    EXPECT_TRUE(isJsonPointer("/a~1b/m~0n"));
+    EXPECT_TRUE(isJsonPointer("/~1~0~0~1~1"));
+    EXPECT_TRUE(isJsonPointer("/c%d/e^f/ "));
+    EXPECT_TRUE(isJsonPointer(std::string("/foo\0bar", 8)));
+}
+
+TEST(TestJsonPointerSyntax, RejectsInvalidJsonPointers)
+{
+    EXPECT_FALSE(isJsonPointer("a"));
+    EXPECT_FALSE(isJsonPointer("0"));
+    EXPECT_FALSE(isJsonPointer("#"));
+    EXPECT_FALSE(isJsonPointer("#/"));
+    EXPECT_FALSE(isJsonPointer("/foo/bar~"));
+    EXPECT_FALSE(isJsonPointer("/~2"));
+    EXPECT_FALSE(isJsonPointer("/~-1"));
+    EXPECT_FALSE(isJsonPointer("/~~"));
+    EXPECT_FALSE(isJsonPointer(std::string("/~\0", 3)));
+}
+
+TEST(TestJsonPointerSyntax, AcceptsRelativeJsonPointers)
+{
+    EXPECT_TRUE(isRelativeJsonPointer("0"));
+    EXPECT_TRUE(isRelativeJsonPointer("1"));
+    EXPECT_TRUE(isRelativeJsonPointer("0#"));
+    EXPECT_TRUE(isRelativeJsonPointer("0/foo/bar"));
+    EXPECT_TRUE(isRelativeJsonPointer("120/foo/bar"));
+    EXPECT_TRUE(isRelativeJsonPointer("2/0/baz/1/zip"));
+}
+
+TEST(TestJsonPointerSyntax, RejectsInvalidRelativeJsonPointers)
+{
+    EXPECT_FALSE(isRelativeJsonPointer(""));
+    EXPECT_FALSE(isRelativeJsonPointer("#"));
+    EXPECT_FALSE(isRelativeJsonPointer("/foo/bar"));
+    EXPECT_FALSE(isRelativeJsonPointer("-1/foo/bar"));
+    EXPECT_FALSE(isRelativeJsonPointer("+1/foo/bar"));
+    EXPECT_FALSE(isRelativeJsonPointer("01/a"));
+    EXPECT_FALSE(isRelativeJsonPointer("01#"));
+    EXPECT_FALSE(isRelativeJsonPointer("0##"));
+    EXPECT_FALSE(isRelativeJsonPointer("0/foo~"));
+}

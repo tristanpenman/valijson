@@ -10,6 +10,7 @@
 
 #include <valijson/internal/hostname.hpp>
 #include <valijson/internal/ip_address.hpp>
+#include <valijson/internal/json_pointer.hpp>
 #include <valijson/internal/regex.hpp>
 #include <valijson/adapters/std_string_adapter.hpp>
 #include <valijson/constraints/concrete_constraints.hpp>
@@ -528,6 +529,45 @@ public:
                         "String should be a valid IPv6 address");
             }
             return false;
+        } else if (format == "json-pointer") {
+            // Matches JSON Pointers like: /foo/bar~0/baz~1
+            if (internal::json_pointer::isJsonPointer(s)) {
+                return true;
+            }
+
+            if (m_results) {
+                m_results->pushError(m_path,
+                                     "String should be a valid JSON Pointer");
+            }
+            return false;
+        } else if (format == "relative-json-pointer") {
+            // Matches Relative JSON Pointers like: 0#, 1/foo/bar
+            if (internal::json_pointer::isRelativeJsonPointer(s)) {
+                return true;
+            }
+
+            if (m_results) {
+                m_results->pushError(
+                    m_path, "String should be a valid Relative JSON Pointer");
+            }
+            return false;
+        } else if (format == "regex") {
+            // Matches regular expressions that the regular expression engine
+            // can compile. Compilation errors can only be detected when
+            // exceptions are enabled; otherwise the format is not enforced.
+#if VALIJSON_USE_EXCEPTIONS
+            try {
+                RegexEngine regexEngine(s);
+                (void)regexEngine;
+            } catch (...) {
+                if (m_results) {
+                    m_results->pushError(
+                        m_path, "String should be a valid regular expression");
+                }
+                return false;
+            }
+#endif
+            return true;
         }
 
         return true;
