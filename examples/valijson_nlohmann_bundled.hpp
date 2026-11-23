@@ -1107,11 +1107,17 @@ public:
         } else if (isBool() || (!strict && maybeBool())) {
             return (other.isBool() || (!strict && other.maybeBool())) && other.asBool() == asBool();
         } else if (isNumber() && strict) {
-            return other.isNumber() && other.getNumber() == getNumber();
+            double thisNumber, otherNumber;
+            return other.isNumber() && getNumber(thisNumber) && other.getNumber(otherNumber) &&
+                thisNumber == otherNumber;
         } else if (!strict && maybeDouble()) {
-            return (other.maybeDouble() && other.asDouble() == asDouble());
+            double thisDouble, otherDouble;
+            return other.maybeDouble() && asDouble(thisDouble) && other.asDouble(otherDouble) &&
+                thisDouble == otherDouble;
         } else if (!strict && maybeInteger()) {
-            return (other.maybeInteger() && other.asInteger() == asInteger());
+            int64_t thisInteger, otherInteger;
+            return other.maybeInteger() && asInteger(thisInteger) && other.asInteger(otherInteger) &&
+                thisInteger == otherInteger;
         } else if (isString() || (!strict && maybeString())) {
             return (other.isString() || (!strict && other.maybeString())) &&
                 other.asString() == asString();
@@ -5134,9 +5140,11 @@ public:
 }  // namespace valijson
 #pragma once
 
+#include <algorithm>
 #include <functional>
 #include <iostream>
 #include <optional>
+#include <utility>
 #include <vector>
 
 
@@ -5242,11 +5250,12 @@ public:
 
         typename DocumentCache<AdapterType>::Type docCache;
         SchemaRegistry schemaRegistry;
+        FollowedReferences followedReferences;
 #if VALIJSON_USE_EXCEPTIONS
         try {
 #endif
             resolveThenPopulateSchema(schema, node, node, schema, std::optional<std::string>(), "", fetchDoc, nullptr,
-                    nullptr, docCache, schemaRegistry);
+                    nullptr, docCache, schemaRegistry, followedReferences);
 #if VALIJSON_USE_EXCEPTIONS
         } catch (...) {
             freeDocumentCache<AdapterType>(docCache, freeDoc);
@@ -5271,6 +5280,11 @@ private:
 
         typedef std::map<std::string, const DocumentType*> Type;
     };
+
+    /// JSON References that have been followed while resolving a chain of
+    /// JSON References, each with the resolution scope it was found in
+    typedef std::vector<std::pair<std::optional<std::string>, std::string>>
+        FollowedReferences;
 
     /**
      * @brief  Free memory used by fetched documents
@@ -5711,6 +5725,14 @@ private:
             return registeredPtr;
         }
 
+        // A chain of JSON References, whether within the current document or
+        // across remote documents, that leads back to a reference that has
+        // already been followed would never reach a concrete schema
+        if (std::find(newRegistryKeys.begin(), newRegistryKeys.end(),
+                      queryKey) != newRegistryKeys.end()) {
+            throwRuntimeError("found cycle while resolving JSON reference");
+        }
+
         if (actualDocumentUri && (!currentScope || *actualDocumentUri != *currentScope)) {
             std::string registeredPath;
             std::optional<std::string> registeredScope;
@@ -5788,10 +5810,6 @@ private:
                     actualDocumentUri, actualJsonPointer, fetchDoc, parentSubschema,
                     ownName, docCache, schemaRegistry, newRegistryKeys);
 
-        }
-
-        if (std::find(newRegistryKeys.begin(), newRegistryKeys.end(), queryKey) != newRegistryKeys.end()) {
-            throwRuntimeError("found cycle while resolving JSON reference");
         }
 
         // JSON References in nested schema will be resolved relative to the
@@ -6315,6 +6333,8 @@ private:
      *                        the 'required' keyword in Draft 3
      * @param  docCache       Cache of resolved and fetched remote documents
      * @param  schemaRegistry Registry of populated schemas
+     * @param  followedReferences  JSON References followed so far in the
+     *                        current chain, used to detect cycles
      */
     template<typename AdapterType>
     void resolveThenPopulateSchema(
@@ -6328,7 +6348,8 @@ private:
         const Subschema *parentSchema,
         const std::string *ownName,
         typename DocumentCache<AdapterType>::Type &docCache,
-        SchemaRegistry &schemaRegistry)
+        SchemaRegistry &schemaRegistry,
+        FollowedReferences &followedReferences)
     {
         std::string jsonRef;
         if (!extractJsonReference(node, jsonRef)) {
@@ -6336,6 +6357,16 @@ private:
                     ownName, docCache, schemaRegistry);
             return;
         }
+
+        // A chain of JSON References that leads back to a reference that has
+        // already been followed would never reach a concrete schema
+        auto followedReference = std::make_pair(currentScope, jsonRef);
+        if (std::find(followedReferences.begin(), followedReferences.end(),
+                      followedReference) != followedReferences.end()) {
+            throwRuntimeError("found cycle while resolving JSON reference \"" +
+                              jsonRef + "\"");
+        }
+        followedReferences.push_back(std::move(followedReference));
 
         // Returns a document URI if the reference points somewhere
         // other than the current document
@@ -6363,7 +6394,7 @@ private:
                 resolveThenPopulateSchema(rootSchema, registeredRoot,
                         registeredRoot, subschema, registeredScope,
                         "", fetchDoc, parentSchema, ownName,
-                        docCache, schemaRegistry);
+                        docCache, schemaRegistry, followedReferences);
                 return;
             }
         }
@@ -6384,7 +6415,8 @@ private:
                 resolveThenPopulateSchema(rootSchema, registeredRoot,
                         referencedAdapter, subschema, registeredScope,
                         actualJsonPointer, fetchDoc,
-                        parentSchema, ownName, docCache, schemaRegistry);
+                        parentSchema, ownName, docCache, schemaRegistry,
+                        followedReferences);
                 return;
             }
 
@@ -6410,10 +6442,10 @@ private:
             const AdapterType &referencedAdapter =
                 internal::json_pointer::resolveJsonPointerStrict(newRootNode, actualJsonPointer);
 
-            // TODO: Need to detect degenerate circular references
             resolveThenPopulateSchema(rootSchema, newRootNode, referencedAdapter,
                     subschema, actualDocumentUri, actualJsonPointer, fetchDoc,
-                    parentSchema, ownName, docCache, schemaRegistry);
+                    parentSchema, ownName, docCache, schemaRegistry,
+                    followedReferences);
 
         } else if (!actualJsonPointer.empty()) {
             const AdapterType &referencedAdapter =
@@ -6425,7 +6457,8 @@ private:
 
             resolveThenPopulateSchema(rootSchema, rootNode, referencedAdapter,
                     subschema, referencedScope, actualJsonPointer, fetchDoc,
-                    parentSchema, ownName, docCache, schemaRegistry);
+                    parentSchema, ownName, docCache, schemaRegistry,
+                    followedReferences);
         } else {
             throwRuntimeError("Cannot resolve reference \"" + jsonRef + "\".");
         }
@@ -7063,12 +7096,14 @@ private:
         const AdapterType &node,
         const AdapterType *exclusiveMaximum)
     {
-        if (!node.maybeDouble()) {
-            throwRuntimeError("Expected numeric value for maximum constraint.");
-        }
-
         constraints::MaximumConstraint constraint;
-        constraint.setMaximum(node.asDouble());
+        {
+            double maximum = 0;
+            if (!node.asDouble(maximum)) {
+                throwRuntimeError("Expected numeric value for maximum constraint.");
+            }
+            constraint.setMaximum(maximum);
+        }
 
         if (exclusiveMaximum) {
             if (!exclusiveMaximum->maybeBool()) {
@@ -7091,12 +7126,12 @@ private:
     template<typename AdapterType>
     constraints::MaximumConstraint makeMaximumConstraintExclusive(const AdapterType &node)
     {
-        if (!node.maybeDouble()) {
+        constraints::MaximumConstraint constraint;
+        double maximum = 0;
+        if (!node.asDouble(maximum)) {
             throwRuntimeError("Expected numeric value for exclusiveMaximum constraint.");
         }
-
-        constraints::MaximumConstraint constraint;
-        constraint.setMaximum(node.asDouble());
+        constraint.setMaximum(maximum);
         constraint.setExclusiveMaximum(true);
         return constraint;
     }
@@ -7113,8 +7148,8 @@ private:
     constraints::MaxItemsConstraint makeMaxItemsConstraint(
         const AdapterType &node)
     {
-        if (node.maybeInteger()) {
-            const int64_t value = node.asInteger();
+        int64_t value = 0;
+        if (node.asInteger(value)) {
             if (value >= 0) {
                 constraints::MaxItemsConstraint constraint;
                 constraint.setMaxItems(static_cast<uint64_t>(value));
@@ -7137,8 +7172,8 @@ private:
     constraints::MaxLengthConstraint makeMaxLengthConstraint(
         const AdapterType &node)
     {
-        if (node.maybeInteger()) {
-            const int64_t value = node.asInteger();
+        int64_t value = 0;
+        if (node.asInteger(value)) {
             if (value >= 0) {
                 constraints::MaxLengthConstraint constraint;
                 constraint.setMaxLength(static_cast<uint64_t>(value));
@@ -7163,8 +7198,8 @@ private:
     constraints::MaxPropertiesConstraint makeMaxPropertiesConstraint(
         const AdapterType &node)
     {
-        if (node.maybeInteger()) {
-            int64_t value = node.asInteger();
+        int64_t value = 0;
+        if (node.asInteger(value)) {
             if (value >= 0) {
                 constraints::MaxPropertiesConstraint constraint;
                 constraint.setMaxProperties(static_cast<uint64_t>(value));
@@ -7192,12 +7227,14 @@ private:
         const AdapterType &node,
         const AdapterType *exclusiveMinimum)
     {
-        if (!node.maybeDouble()) {
-            throwRuntimeError("Expected numeric value for minimum constraint.");
-        }
-
         constraints::MinimumConstraint constraint;
-        constraint.setMinimum(node.asDouble());
+        {
+            double minimum = 0;
+            if (!node.asDouble(minimum)) {
+                throwRuntimeError("Expected numeric value for minimum constraint.");
+            }
+            constraint.setMinimum(minimum);
+        }
 
         if (exclusiveMinimum) {
             if (!exclusiveMinimum->maybeBool()) {
@@ -7220,12 +7257,12 @@ private:
     template<typename AdapterType>
     constraints::MinimumConstraint makeMinimumConstraintExclusive(const AdapterType &node)
     {
-        if (!node.maybeDouble()) {
+        constraints::MinimumConstraint constraint;
+        double minimum = 0;
+        if (!node.asDouble(minimum)) {
             throwRuntimeError("Expected numeric value for exclusiveMinimum constraint.");
         }
-
-        constraints::MinimumConstraint constraint;
-        constraint.setMinimum(node.asDouble());
+        constraint.setMinimum(minimum);
         constraint.setExclusiveMinimum(true);
         return constraint;
     }
@@ -7241,8 +7278,8 @@ private:
     template<typename AdapterType>
     constraints::MinItemsConstraint makeMinItemsConstraint(const AdapterType &node)
     {
-        if (node.maybeInteger()) {
-            const int64_t value = node.asInteger();
+        int64_t value = 0;
+        if (node.asInteger(value)) {
             if (value >= 0) {
                 constraints::MinItemsConstraint constraint;
                 constraint.setMinItems(static_cast<uint64_t>(value));
@@ -7264,8 +7301,8 @@ private:
     template<typename AdapterType>
     constraints::MinLengthConstraint makeMinLengthConstraint(const AdapterType &node)
     {
-        if (node.maybeInteger()) {
-            const int64_t value = node.asInteger();
+        int64_t value = 0;
+        if (node.asInteger(value)) {
             if (value >= 0) {
                 constraints::MinLengthConstraint constraint;
                 constraint.setMinLength(static_cast<uint64_t>(value));
@@ -7290,8 +7327,8 @@ private:
     template<typename AdapterType>
     constraints::MinPropertiesConstraint makeMinPropertiesConstraint(const AdapterType &node)
     {
-        if (node.maybeInteger()) {
-            int64_t value = node.asInteger();
+        int64_t value = 0;
+        if (node.asInteger(value)) {
             if (value >= 0) {
                 constraints::MinPropertiesConstraint constraint;
                 constraint.setMinProperties(static_cast<uint64_t>(value));
@@ -7314,7 +7351,11 @@ private:
     constraints::MultipleOfDoubleConstraint makeMultipleOfDoubleConstraint(const AdapterType &node)
     {
         constraints::MultipleOfDoubleConstraint constraint;
-        constraint.setDivisor(node.asDouble());
+        double divisor = 0;
+        if (!node.asDouble(divisor)) {
+            throwRuntimeError("Expected a numeric value for 'multipleOf' constraint.");
+        }
+        constraint.setDivisor(divisor);
         return constraint;
     }
 
@@ -7330,7 +7371,11 @@ private:
     constraints::MultipleOfIntConstraint makeMultipleOfIntConstraint(const AdapterType &node)
     {
         constraints::MultipleOfIntConstraint constraint;
-        constraint.setDivisor(node.asInteger());
+        int64_t divisor = 0;
+        if (!node.asInteger(divisor)) {
+            throwRuntimeError("Expected a numeric value for 'multipleOf' constraint.");
+        }
+        constraint.setDivisor(divisor);
         return constraint;
     }
 
@@ -8862,10 +8907,18 @@ public:
             return true;
         }
 
+        double value = 0.;
+        if (!m_target.asDouble(value)) {
+            if (m_results) {
+                m_results->pushError(m_path, "Value could not be converted to a number to check the maximum constraint");
+            }
+            return false;
+        }
+
         const double maximum = constraint.getMaximum();
 
         if (constraint.getExclusiveMaximum()) {
-            if (m_target.asDouble() >= maximum) {
+            if (value >= maximum) {
                 if (m_results) {
                     m_results->pushError(m_path, "Expected number less than " + std::to_string(maximum));
                 }
@@ -8873,7 +8926,7 @@ public:
                 return false;
             }
 
-        } else if (m_target.asDouble() > maximum) {
+        } else if (value > maximum) {
             if (m_results) {
                 m_results->pushError(m_path, "Expected number less than or equal to " + std::to_string(maximum));
             }
@@ -8979,17 +9032,25 @@ public:
             return true;
         }
 
+        double value = 0.;
+        if (!m_target.asDouble(value)) {
+            if (m_results) {
+                m_results->pushError(m_path, "Value could not be converted to a number to check the minimum constraint");
+            }
+            return false;
+        }
+
         const double minimum = constraint.getMinimum();
 
         if (constraint.getExclusiveMinimum()) {
-            if (m_target.asDouble() <= minimum) {
+            if (value <= minimum) {
                 if (m_results) {
                     m_results->pushError(m_path, "Expected number greater than " + std::to_string(minimum));
                 }
 
                 return false;
             }
-        } else if (m_target.asDouble() < minimum) {
+        } else if (value < minimum) {
             if (m_results) {
                 m_results->pushError(m_path, "Expected number greater than or equal to " + std::to_string(minimum));
             }
