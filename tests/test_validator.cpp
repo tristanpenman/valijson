@@ -392,6 +392,30 @@ constexpr CrashingTestCase kCrashingTestCases[] = {
 // clang-format on
 
 //
+// Unparseable files
+// ------------------------------------------------------------------------------------------------
+//
+// Test suite files that the parser behind an adapter cannot parse, so that the
+// file is not run with that adapter. Loading these files must still fail, so
+// that entries are removed once the parser supports them.
+//
+
+struct UnparseableFile
+{
+    /// Name of the adapter, as returned by AdapterTraits::adapterName()
+    const char *adapter;
+    const char *file;
+};
+
+// clang-format off
+constexpr UnparseableFile kUnparseableFiles[] = {
+    // Poco::JSON rejects some integers that do not fit in a 64-bit integer,
+    // such as -18446744073709551616, with "Not a valid unsigned integer"
+    { "PocoJsonAdapter", "optional/bignum.json" },
+};
+// clang-format on
+
+//
 // Helpers
 // ------------------------------------------------------------------------------------------------
 //
@@ -494,6 +518,15 @@ bool isCrashingTestCase(int draft, const std::string &file,
                                   file == crashing.file &&
                                   testCase == crashing.testCase;
                        });
+}
+
+bool isUnparseableFile(const std::string &adapter, const std::string &file)
+{
+    return std::any_of(
+        std::begin(kUnparseableFiles), std::end(kUnparseableFiles),
+        [&](const UnparseableFile &unparseable) {
+            return adapter == unparseable.adapter && file == unparseable.file;
+        });
 }
 
 /**
@@ -747,6 +780,14 @@ class TestValidator : public testing::TestWithParam<TestSuiteFile>
         typedef typename AdapterTraits<AdapterType>::DocumentType DocumentType;
 
         DocumentType document;
+        const std::string adapter = AdapterTraits<AdapterType>::adapterName();
+        if (isUnparseableFile(adapter, file)) {
+            EXPECT_FALSE(valijson::utils::loadDocument(path, document))
+                << "'" << file << "' can be parsed for adapter '" << adapter
+                << "'; remove it from the list of unparseable files";
+            return;
+        }
+
         ASSERT_TRUE(valijson::utils::loadDocument(path, document));
         const AdapterType root(document);
         ASSERT_TRUE(root.isObject());
