@@ -26,6 +26,15 @@ TEST(IpAddress, AcceptsDottedQuads)
     EXPECT_TRUE(isDottedQuad("010.001.000.001"));
 }
 
+TEST(IpAddress, RejectsLeadingZerosOnlyWhenRequested)
+{
+    EXPECT_TRUE(isIpv4DottedQuad("0.0.0.0", 0, 7, false));
+    EXPECT_TRUE(isIpv4DottedQuad("10.1.100.255", 0, 12, false));
+    EXPECT_FALSE(isIpv4DottedQuad("010.1.1.1", 0, 9, false));
+    EXPECT_FALSE(isIpv4DottedQuad("1.1.1.01", 0, 8, false));
+    EXPECT_FALSE(isIpv4DottedQuad("1.00.1.1", 0, 8, false));
+}
+
 TEST(IpAddress, RejectsInvalidDottedQuads)
 {
     EXPECT_FALSE(isDottedQuad(""));
@@ -80,7 +89,14 @@ TEST(IpAddress, AcceptsIpv6AddressesWithIpv4Suffix)
     EXPECT_TRUE(isIpv6Address("0:0:0:0:0:0:13.1.68.3"));
     EXPECT_TRUE(isIpv6Address("::13.1.68.3"));
     EXPECT_TRUE(isIpv6Address("::FFFF:129.144.52.38"));
-    EXPECT_TRUE(isIpv6Address("::ffff:010.001.000.001"));
+    EXPECT_TRUE(isIpv6Address("::ffff:0.0.0.0"));
+    EXPECT_TRUE(isIpv6Address("::ffff:10.1.100.255"));
+
+    // Unlike the 'ipv4' format, the parts of an embedded IPv4 address must not
+    // have leading zeros, as in the dec-octet syntax of RFC 3986
+    EXPECT_FALSE(isIpv6Address("::ffff:010.001.000.001"));
+    EXPECT_FALSE(isIpv6Address("::ffff:192.168.0.01"));
+    EXPECT_FALSE(isIpv6Address("::ffff:192.168.00.1"));
 
     // The IPv4 address takes the place of two groups, and must come last
     EXPECT_FALSE(isIpv6Address("1:2:3:4:5:6:7:1.2.3.4"));
