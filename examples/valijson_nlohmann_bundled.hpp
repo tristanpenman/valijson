@@ -1822,6 +1822,145 @@ std::string nodeTypeAsString(const AdapterType &node) {
 } // end namespace valijson
 #pragma once
 
+#include <cstddef>
+#include <cstring>
+#include <string>
+
+namespace valijson {
+namespace internal {
+
+namespace detail {
+
+/// VCHAR / WSP, as defined in RFC 5234, appendix B.1
+inline bool isEmailVisibleOrWhitespace(const char c)
+{
+    return (c >= 33 && c <= 126) || c == ' ' || c == '\t';
+}
+
+/// atext, as defined in RFC 5322, section 3.2.3
+inline bool isEmailAtext(const char c)
+{
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+           (c >= '0' && c <= '9') ||
+           (c != '\0' && std::strchr("!#$%&'*+-/=?^_`{|}~", c) != nullptr);
+}
+
+/**
+ * @brief  Check that the range [begin, end) is a dot-atom-text, as defined in
+ *         RFC 5322, section 3.2.3
+ *
+ * A dot-atom-text consists of one or more atoms separated by single dots, and
+ * does not start or end with a dot.
+ */
+inline bool isEmailDotAtom(const std::string &s, size_t begin, size_t end)
+{
+    if (begin >= end || s[begin] == '.' || s[end - 1] == '.') {
+        return false;
+    }
+
+    for (size_t i = begin; i < end; ++i) {
+        if (s[i] == '.') {
+            if (s[i - 1] == '.') {
+                return false;
+            }
+        } else if (!isEmailAtext(s[i])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * @brief  Check that the range [begin, end) is a quoted-string, as defined in
+ *         RFC 5322, section 3.2.4
+ *
+ * The content of a quoted-string consists of printable US-ASCII characters
+ * other than '"' and '\', whitespace, and quoted pairs.
+ */
+inline bool isEmailQuotedString(const std::string &s, const size_t begin,
+                                const size_t end)
+{
+    if (end - begin < 2 || s[begin] != '"' || s[end - 1] != '"') {
+        return false;
+    }
+
+    for (size_t i = begin + 1; i < end - 1; ++i) {
+        const char c = s[i];
+        if (c == '\\') {
+            // quoted-pair = "\" ( VCHAR / WSP )
+            if (++i >= end - 1) {
+                return false;
+            }
+            if (!isEmailVisibleOrWhitespace(s[i])) {
+                return false;
+            }
+        } else if (c == '"' || !isEmailVisibleOrWhitespace(c)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * @brief  Check that the range [begin, end) is a domain-literal, as defined in
+ *         RFC 5322, section 3.4.1
+ *
+ * A domain-literal is enclosed in square brackets and consists of printable
+ * US-ASCII characters other than '[', ']' and '\'.
+ */
+inline bool isEmailDomainLiteral(const std::string &s, size_t begin, size_t end)
+{
+    if (end - begin < 2 || s[begin] != '[' || s[end - 1] != ']') {
+        return false;
+    }
+
+    for (size_t i = begin + 1; i < end - 1; ++i) {
+        const char c = s[i];
+        if (c < 33 || c > 126 || c == '[' || c == ']' || c == '\\') {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+} // namespace detail
+
+/**
+ * @brief  Check whether a string is an e-mail address, as defined by the
+ *         addr-spec production in RFC 5322, section 3.4.1
+ *
+ * The local part is either a dot-atom or a quoted string, and the domain is
+ * either a dot-atom or a domain literal. Comments and folding whitespace are
+ * not permitted. Characters outside of US-ASCII are not permitted.
+ *
+ * @param  s  string to check, which may contain embedded null bytes
+ *
+ * @return \c true if \p s is an e-mail address
+ */
+inline bool isEmail(const std::string &s)
+{
+    // The domain cannot contain '@', so the last '@' separates the local part
+    // from the domain
+    const size_t at = s.rfind('@');
+    if (at == std::string::npos || at == 0 || at + 1 >= s.size()) {
+        return false;
+    }
+
+    const bool localPartValid = detail::isEmailDotAtom(s, 0, at) ||
+                                detail::isEmailQuotedString(s, 0, at);
+    const bool domainValid = detail::isEmailDotAtom(s, at + 1, s.size()) ||
+                             detail::isEmailDomainLiteral(s, at + 1, s.size());
+
+    return localPartValid && domainValid;
+}
+
+} // namespace internal
+} // namespace valijson
+#pragma once
+
 
 namespace valijson {
 namespace adapters {
@@ -2514,6 +2653,8 @@ using std::smatch;
 #pragma once
 
 #include <algorithm>
+#include <cstddef>
+#include <cstring>
 #include <optional>
 #include <string>
 #include <vector>
@@ -2692,6 +2833,250 @@ inline std::string resolveRelativeUri(
 
     // Construct final URI
     return schemeAndAuthority + normalisedPath + suffix;
+}
+
+namespace detail {
+
+inline bool isAlpha(char c)
+{
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+
+inline bool isDigit(char c)
+{
+    return c >= '0' && c <= '9';
+}
+
+inline bool isHexDigit(char c)
+{
+    return isDigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+}
+
+/// unreserved = ALPHA / DIGIT / "-" / "." / "_" / "~"
+inline bool isUnreserved(char c)
+{
+    return isAlpha(c) || isDigit(c) || c == '-' || c == '.' || c == '_' ||
+           c == '~';
+}
+
+/// sub-delims = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="
+inline bool isSubDelim(char c)
+{
+    switch (c) {
+    case '!':
+    case '$':
+    case '&':
+    case '\'':
+    case '(':
+    case ')':
+    case '*':
+    case '+':
+    case ',':
+    case ';':
+    case '=':
+        return true;
+    default:
+        return false;
+    }
+}
+
+/**
+ * @brief  Check that the range [begin, end) consists only of unreserved
+ *         characters, sub-delims, percent-encoded octets and the characters
+ *         in \p extra
+ */
+inline bool isEncodedRange(const std::string &s, size_t begin, size_t end,
+                           const char *extra)
+{
+    for (size_t i = begin; i < end; ++i) {
+        const char c = s[i];
+        if (c == '%') {
+            if (end - i < 3 || !isHexDigit(s[i + 1]) || !isHexDigit(s[i + 2])) {
+                return false;
+            }
+            i += 2;
+        } else if (!isUnreserved(c) && !isSubDelim(c) &&
+                   (c == '\0' || std::strchr(extra, c) == nullptr)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/// IPvFuture = "v" 1*HEXDIG "." 1*( unreserved / sub-delims / ":" )
+inline bool isIpvFuture(const std::string &s)
+{
+    if (s.size() < 4 || (s[0] != 'v' && s[0] != 'V')) {
+        return false;
+    }
+
+    size_t i = 1;
+    while (i < s.size() && isHexDigit(s[i])) {
+        ++i;
+    }
+
+    if (i == 1 || i >= s.size() - 1 || s[i] != '.') {
+        return false;
+    }
+
+    for (++i; i < s.size(); ++i) {
+        if (!isUnreserved(s[i]) && !isSubDelim(s[i]) && s[i] != ':') {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/// authority = [ userinfo "@" ] host [ ":" port ]
+inline bool isAuthority(const std::string &s, size_t begin, size_t end)
+{
+    // userinfo = *( unreserved / pct-encoded / sub-delims / ":" )
+    const size_t at = s.find('@', begin);
+    if (at != std::string::npos && at < end) {
+        if (!isEncodedRange(s, begin, at, ":")) {
+            return false;
+        }
+        begin = at + 1;
+    }
+
+    size_t hostEnd = end;
+    if (begin < end && s[begin] == '[') {
+        // IP-literal = "[" ( IPv6address / IPvFuture ) "]"
+        const size_t close = s.find(']', begin);
+        if (close == std::string::npos || close >= end) {
+            return false;
+        }
+
+        const std::string literal = s.substr(begin + 1, close - begin - 1);
+        if (!isIpv6Address(literal) && !isIpvFuture(literal)) {
+            return false;
+        }
+
+        hostEnd = close + 1;
+        if (hostEnd < end && s[hostEnd] != ':') {
+            return false;
+        }
+    } else {
+        // reg-name = *( unreserved / pct-encoded / sub-delims ), which also
+        // covers IPv4address
+        const size_t colon = s.find(':', begin);
+        if (colon != std::string::npos && colon < end) {
+            hostEnd = colon;
+        }
+
+        if (!isEncodedRange(s, begin, hostEnd, "")) {
+            return false;
+        }
+    }
+
+    // port = *DIGIT
+    return hostEnd == end ||
+           std::all_of(s.begin() + static_cast<std::ptrdiff_t>(hostEnd + 1),
+                       s.begin() + static_cast<std::ptrdiff_t>(end), isDigit);
+}
+
+/**
+ * @brief  Check the part of a URI or relative reference that follows the
+ *         scheme
+ *
+ * Covers hier-part or relative-part, followed by optional query and fragment
+ * components. For relative references, the first path segment must not
+ * contain a colon (path-noscheme).
+ */
+inline bool isHierPartQueryFragment(const std::string &s, size_t begin,
+                                    bool relative)
+{
+    const size_t fragmentStart = s.find('#', begin);
+    const size_t end =
+        fragmentStart == std::string::npos ? s.size() : fragmentStart;
+
+    const size_t queryStart = s.find('?', begin);
+    const size_t pathEnd = (queryStart == std::string::npos || queryStart > end)
+                               ? end
+                               : queryStart;
+
+    // query = *( pchar / "/" / "?" )
+    if (pathEnd < end && !isEncodedRange(s, pathEnd + 1, end, ":@/?")) {
+        return false;
+    }
+
+    // fragment = *( pchar / "/" / "?" )
+    if (end < s.size() && !isEncodedRange(s, end + 1, s.size(), ":@/?")) {
+        return false;
+    }
+
+    size_t pathBegin = begin;
+    if (pathEnd - begin >= 2 && s[begin] == '/' && s[begin + 1] == '/') {
+        const size_t slash = s.find('/', begin + 2);
+        const size_t authorityEnd =
+            (slash == std::string::npos || slash > pathEnd) ? pathEnd : slash;
+        if (!isAuthority(s, begin + 2, authorityEnd)) {
+            return false;
+        }
+        pathBegin = authorityEnd;
+    } else if (relative && pathBegin < pathEnd && s[pathBegin] != '/') {
+        // path-noscheme: the first segment must not contain a colon
+        const size_t slash = s.find('/', pathBegin);
+        const size_t firstSegmentEnd =
+            (slash == std::string::npos || slash > pathEnd) ? pathEnd : slash;
+        const size_t colon = s.find(':', pathBegin);
+        if (colon != std::string::npos && colon < firstSegmentEnd) {
+            return false;
+        }
+    }
+
+    // path segments consist of pchar = unreserved / pct-encoded / sub-delims
+    // / ":" / "@", separated by "/"
+    return isEncodedRange(s, pathBegin, pathEnd, ":@/");
+}
+
+} // namespace detail
+
+/**
+ * @brief  Check whether a string is a URI, as defined in RFC 3986, section 3
+ *
+ * A URI must have a scheme. Characters outside of US-ASCII are not permitted
+ * and must be percent-encoded.
+ *
+ * @param  s  string to check
+ *
+ * @return \c true if \p s is a URI
+ */
+inline bool isUri(const std::string &s)
+{
+    // scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
+    if (s.empty() || !detail::isAlpha(s[0])) {
+        return false;
+    }
+
+    size_t i = 1;
+    while (i < s.size() && (detail::isAlpha(s[i]) || detail::isDigit(s[i]) ||
+                            s[i] == '+' || s[i] == '-' || s[i] == '.')) {
+        ++i;
+    }
+
+    if (i >= s.size() || s[i] != ':') {
+        return false;
+    }
+
+    return detail::isHierPartQueryFragment(s, i + 1, false);
+}
+
+/**
+ * @brief  Check whether a string is a URI reference, as defined in RFC 3986,
+ *         section 4.1
+ *
+ * A URI reference is either a URI or a relative reference.
+ *
+ * @param  s  string to check
+ *
+ * @return \c true if \p s is a URI reference
+ */
+inline bool isUriReference(const std::string &s)
+{
+    return isUri(s) || detail::isHierPartQueryFragment(s, 0, true);
 }
 
 } // namespace uri
@@ -8786,6 +9171,38 @@ public:
             }
 #endif
             return true;
+        } else if (format == "uri") {
+            // Matches URIs like: http://example.com/path?query#fragment
+            if (internal::uri::isUri(s)) {
+                return true;
+            }
+
+            if (m_results) {
+                m_results->pushError(m_path, "String should be a valid URI");
+            }
+            return false;
+        } else if (format == "uri-reference") {
+            // Matches URIs and relative references like: ../path?query#fragment
+            if (internal::uri::isUriReference(s)) {
+                return true;
+            }
+
+            if (m_results) {
+                m_results->pushError(m_path,
+                                     "String should be a valid URI reference");
+            }
+            return false;
+        } else if (format == "email") {
+            // Matches e-mail addresses like: joe.bloggs@example.com
+            if (internal::isEmail(s)) {
+                return true;
+            }
+
+            if (m_results) {
+                m_results->pushError(m_path,
+                                     "String should be a valid e-mail address");
+            }
+            return false;
         }
 
         return true;

@@ -71,6 +71,7 @@ common_headers=(
   include/valijson/internal/custom_allocator.hpp
   include/valijson/internal/date_time.hpp
   include/valijson/internal/debug.hpp
+  include/valijson/internal/email.hpp
   include/valijson/internal/frozen_value.hpp
   include/valijson/internal/hostname.hpp
   include/valijson/internal/ip_address.hpp

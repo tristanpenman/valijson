@@ -9,10 +9,12 @@
 #include <utility>
 
 #include <valijson/internal/date_time.hpp>
+#include <valijson/internal/email.hpp>
 #include <valijson/internal/hostname.hpp>
 #include <valijson/internal/ip_address.hpp>
 #include <valijson/internal/json_pointer.hpp>
 #include <valijson/internal/regex.hpp>
+#include <valijson/internal/uri.hpp>
 #include <valijson/adapters/std_string_adapter.hpp>
 #include <valijson/constraints/concrete_constraints.hpp>
 #include <valijson/constraints/constraint_visitor.hpp>
@@ -520,6 +522,38 @@ public:
             }
 #endif
             return true;
+        } else if (format == "uri") {
+            // Matches URIs like: http://example.com/path?query#fragment
+            if (internal::uri::isUri(s)) {
+                return true;
+            }
+
+            if (m_results) {
+                m_results->pushError(m_path, "String should be a valid URI");
+            }
+            return false;
+        } else if (format == "uri-reference") {
+            // Matches URIs and relative references like: ../path?query#fragment
+            if (internal::uri::isUriReference(s)) {
+                return true;
+            }
+
+            if (m_results) {
+                m_results->pushError(m_path,
+                                     "String should be a valid URI reference");
+            }
+            return false;
+        } else if (format == "email") {
+            // Matches e-mail addresses like: joe.bloggs@example.com
+            if (internal::isEmail(s)) {
+                return true;
+            }
+
+            if (m_results) {
+                m_results->pushError(m_path,
+                                     "String should be a valid e-mail address");
+            }
+            return false;
         }
 
         return true;
