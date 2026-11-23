@@ -24,7 +24,7 @@ cd ../tests/fuzzing
 
 mkdir seed_corpus
 
-find "${SRC}/valijson/thirdparty/JSON-Schema-Test-Suite/tests" -name "*.json" | while read file; do
+find "${SRC}/valijson/thirdparty/JSON-Schema-Test-Suite/validation/tests" -name "*.json" | while read file; do
     sha1=$(sha1sum "$file" | awk '{print $1}')
     cp "$file" seed_corpus/"${sha1}"
 done
