@@ -280,12 +280,6 @@ constexpr KnownFailure kKnownFailures[] = {
     // decoded to check them against the rules of IDNA2008
     { 7, "format-hostname.json", "validation of A-label (punycode) host names", nullptr },
 
-    // Plain-name fragments are not resolved in remote documents
-    { 3, "anchor-legacy.json", "anchor within remote ref (id)", nullptr },
-    { 4, "anchor-legacy.json", "anchor within remote ref (id)", nullptr },
-    { 6, "anchor-legacy.json", "anchor within remote ref", nullptr },
-    { 7, "anchor-legacy.json", "anchor within remote ref", nullptr },
-
     // Identifiers in non-schema locations are treated as schema identifiers
     { 4, "optional/non-schemas.json", "$id inside an enum is not a real identifier (id/definitions)", nullptr },
     { 4, "optional/non-schemas.json", "anchor inside an enum is not a real identifier (id)", nullptr },
