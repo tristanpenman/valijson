@@ -1,15 +1,21 @@
 #ifdef _MSC_VER
-#pragma warning(disable: 4706)
+#pragma warning(disable : 4706)
 #include <picojson.h>
-#pragma warning(default: 4706)
+#pragma warning(default : 4706)
 #else
 #include <picojson.h>
 #endif
 
-#include <iostream>
+#include <algorithm>
+#include <cctype>
+#include <iterator>
 #include <map>
+#include <memory>
+#include <ostream>
 #include <set>
+#include <sstream>
 #include <string>
+#include <vector>
 
 #include <gtest/gtest.h>
 
@@ -18,757 +24,912 @@
 #include <valijson/utils/json11_utils.hpp>
 #endif
 #include <valijson/adapters/jsoncpp_adapter.hpp>
-#include <valijson/adapters/rapidjson_adapter.hpp>
-#include <valijson/adapters/picojson_adapter.hpp>
 #include <valijson/adapters/nlohmann_json_adapter.hpp>
-#include <valijson/utils/jsoncpp_utils.hpp>
-#include <valijson/utils/picojson_utils.hpp>
-#include <valijson/utils/rapidjson_utils.hpp>
-#include <valijson/utils/nlohmann_json_utils.hpp>
+#include <valijson/adapters/picojson_adapter.hpp>
+#include <valijson/adapters/rapidjson_adapter.hpp>
+#include <valijson/exceptions.hpp>
 #include <valijson/schema.hpp>
 #include <valijson/schema_parser.hpp>
+#include <valijson/utils/jsoncpp_utils.hpp>
+#include <valijson/utils/nlohmann_json_utils.hpp>
+#include <valijson/utils/picojson_utils.hpp>
+#include <valijson/utils/rapidjson_utils.hpp>
 #include <valijson/validation_results.hpp>
 #include <valijson/validator.hpp>
-#include <valijson/exceptions.hpp>
 
 #ifdef VALIJSON_BUILD_POCO_ADAPTER
 #include <valijson/adapters/poco_json_adapter.hpp>
 #include <valijson/utils/poco_json_utils.hpp>
 #endif
 
-#define REMOTES_DIR "../thirdparty/JSON-Schema-Test-Suite/remotes/"
+#define TEST_SUITE_DIR "../thirdparty/JSON-Schema-Test-Suite/validation/tests/"
 
-#define TEST_SUITE_DIR "../thirdparty/JSON-Schema-Test-Suite/tests/"
-
-using valijson::adapters::AdapterTraits;
-using valijson::adapters::RapidJsonAdapter;
 using valijson::Schema;
 using valijson::SchemaParser;
 using valijson::Validator;
+using valijson::adapters::AdapterTraits;
 
-std::string getRelativePath(const std::string &uri)
+namespace {
+
+//
+// Dialects
+// ------------------------------------------------------------------------------------------------
+//
+// Dialects are identified by the numbers used in the 'compatibility' property
+// of test cases: 3, 4, 6 and 7 for drafts 3 to 7, and the year for date-based
+// releases, such as 2019 for draft 2019-09 and 2020 for draft 2020-12.
+//
+// To run the test suite for another dialect, add an entry for it here, along
+// with any meta-schemas it needs (see below) and known failures.
+//
+
+struct Dialect
 {
-   const std::string dummyUri = "http://localhost:1234/";
-   if (uri.find(dummyUri) != std::string::npos) {
-       return REMOTES_DIR + uri.substr(dummyUri.size());
-   }
+    /// Number used in the 'compatibility' property of test cases
+    int version;
 
-   static const std::map<std::string, std::string> schemaMap = {
-       { "http://json-schema.org/draft-03/schema", "../doc/schema/draft-03.json" },
-       { "http://json-schema.org/draft-04/schema", "../doc/schema/draft-04.json" },
-       { "http://json-schema.org/draft-07/schema", "../doc/schema/draft-07.json" }
-   };
+    /// Prefix for test names
+    const char *name;
 
-   const auto itr = schemaMap.find(uri);
-   if (itr != schemaMap.end()) {
-       return itr->second;
-   }
+    /// Parser version used for schemas of the dialect
+    SchemaParser::Version parserVersion;
 
-   valijson::throwRuntimeError("Attempt fetchDoc of " + uri);
-}
+    /// Whether 'format' is treated as an assertion. Up to draft 7, test cases
+    /// tagged 'format-assertion' apply when it is, and test cases tagged
+    /// 'format-annotation' apply when it is not.
+    bool formatAssertion;
+};
 
-template<typename AdapterType>
-const typename AdapterTraits<AdapterType>::DocumentType * fetchDocument(
-       const std::string &uri)
+// clang-format off
+constexpr Dialect kDialects[] = {
+    { 3, "Draft3", SchemaParser::kDraft3, true },
+    { 4, "Draft4", SchemaParser::kDraft4, true },
+    { 7, "Draft7", SchemaParser::kDraft7, true },
+};
+// clang-format on
+
+//
+// Meta-schemas
+// ------------------------------------------------------------------------------------------------
+//
+// Test cases provide the schemas they reference through the 'externalSchemas'
+// property, with the exception of meta-schemas, which are loaded from files.
+//
+
+// clang-format off
+const std::map<std::string, std::string> kMetaSchemas = {
+    { "http://json-schema.org/draft-03/schema", "../doc/schema/draft-03.json" },
+    { "http://json-schema.org/draft-04/schema", "../doc/schema/draft-04.json" },
+    { "http://json-schema.org/draft-07/schema", "../doc/schema/draft-07.json" },
+};
+// clang-format on
+
+//
+// Test suite files
+// ------------------------------------------------------------------------------------------------
+//
+// Each file contains test cases for multiple dialects. The 'compatibility'
+// property of each test case determines which dialects it applies to, so every
+// file is run for every supported dialect. Files without any test cases for a
+// dialect are reported as skipped.
+//
+
+// clang-format off
+constexpr const char *kTestSuiteFiles[] = {
+    "additionalProperties.json",
+    "allOf.json",
+    "anchor-legacy.json",
+    "anchor.json",
+    "anyOf.json",
+    "boolean_schema.json",
+    "const.json",
+    "contains.json",
+    "content.json",
+    "default.json",
+    "dependentRequired.json",
+    "dependentSchemas.json",
+    "disallow.json",
+    "dynamicRef.json",
+    "enum.json",
+    "extends.json",
+    "format-color.json",
+    "format-date-time.json",
+    "format-date.json",
+    "format-duration.json",
+    "format-email.json",
+    "format-host-name.json",
+    "format-hostname.json",
+    "format-idn-email.json",
+    "format-idn-hostname.json",
+    "format-ip-address.json",
+    "format-ipv4.json",
+    "format-ipv6.json",
+    "format-iri-reference.json",
+    "format-iri.json",
+    "format-json-pointer.json",
+    "format-regex.json",
+    "format-relative-json-pointer.json",
+    "format-time.json",
+    "format-unknown.json",
+    "format-uri-reference.json",
+    "format-uri-template.json",
+    "format-uri.json",
+    "format-uuid.json",
+    "id-legacy.json",
+    "id.json",
+    "if-then-else.json",
+    "infinite-loop-detection-legacy.json",
+    "infinite-loop-detection.json",
+    "items.json",
+    "maxItems.json",
+    "maxLength.json",
+    "maxProperties.json",
+    "maximum.json",
+    "minItems.json",
+    "minLength.json",
+    "minProperties.json",
+    "minimum.json",
+    "multipleOf.json",
+    "not.json",
+    "oneOf.json",
+    "pattern.json",
+    "patternProperties.json",
+    "properties.json",
+    "propertyNames.json",
+    "recursiveRef.json",
+    "ref-legacy.json",
+    "ref.json",
+    "required.json",
+    "type.json",
+    "unevaluatedItems.json",
+    "unevaluatedProperties.json",
+    "uniqueItems.json",
+    "vocabulary.json",
+    "optional/bignum.json",
+    "optional/content.json",
+    "optional/cross-draft.json",
+    "optional/dependencies-compatibility.json",
+    "optional/dynamicRef.json",
+    "optional/ecmascript-regex.json",
+    "optional/float-overflow.json",
+    "optional/format-assertion.json",
+    "optional/format-regex.json",
+    "optional/format-time.json",
+    "optional/non-bmp-regex.json",
+    "optional/non-schemas.json",
+    "optional/zero-terminated-floats.json",
+};
+// clang-format on
+
+//
+// Known failures
+// ------------------------------------------------------------------------------------------------
+//
+// Test cases that exercise features which have not been implemented yet. A null
+// test case refers to the whole file, and a null test to the whole test case.
+//
+// Known failures are still run, and must fail for at least one adapter, so that
+// entries are removed once the features they describe are implemented. Test
+// cases that would crash the test runner are not run at all.
+//
+// Every entry must refer to a file, test case and test that apply to the
+// dialect, so that entries do not outlive the test cases they describe.
+//
+
+struct KnownFailure
 {
-   const std::string relativePath = getRelativePath(uri);
+    int draft;
+    const char *file;
+    const char *testCase;
+    const char *test;
+};
 
-   typename AdapterTraits<AdapterType>::DocumentType *document =
-           new typename AdapterTraits<AdapterType>::DocumentType();
+// clang-format off
+constexpr KnownFailure kKnownFailures[] = {
+    // Draft 3 keywords and formats that are not supported. Only the tests of
+    // 'disallow' that require a value to be rejected fail.
+    { 3, "format-color.json", nullptr, nullptr },
+    { 3, "format-host-name.json", nullptr, nullptr },
+    { 3, "format-ip-address.json", nullptr, nullptr },
+    { 3, "disallow.json", "disallow", "disallowed" },
+    { 3, "disallow.json", "multiple disallow", "mismatch" },
+    { 3, "disallow.json", "multiple disallow", "other mismatch" },
+    { 3, "disallow.json", "multiple disallow subschema", "mismatch" },
+    { 3, "disallow.json", "multiple disallow subschema", "other mismatch" },
 
-   if (!valijson::utils::loadDocument(relativePath, *document)) {
-       delete document;
-       valijson::throwRuntimeError("Failed fetchDoc of " + uri);
-   }
+    // The Draft 3 'time' format does not have a time offset, but validation
+    // requires one by default
+    { 3, "format-time.json", "validation of time strings (hh:mm:ss)", "a valid time string" },
 
-   return document;
-}
+    // Formats that are not supported
+    { 3, "format-email.json", nullptr, nullptr },
+    { 4, "format-email.json", nullptr, nullptr },
+    { 7, "format-email.json", nullptr, nullptr },
+    { 7, "format-idn-email.json", nullptr, nullptr },
+    { 7, "format-idn-hostname.json", nullptr, nullptr },
+    { 7, "format-iri-reference.json", nullptr, nullptr },
+    { 7, "format-iri.json", nullptr, nullptr },
+    { 3, "format-uri.json", nullptr, nullptr },
+    { 4, "format-uri.json", nullptr, nullptr },
+    { 7, "format-uri.json", nullptr, nullptr },
+    { 7, "format-uri-reference.json", nullptr, nullptr },
+    { 7, "format-uri-template.json", nullptr, nullptr },
 
-template<typename AdapterType>
-void freeDocument(const typename AdapterTraits<AdapterType>::DocumentType *ptr)
+    // A-labels are only checked against the syntax of RFC 1123, and are not
+    // decoded to check them against the rules of IDNA2008
+    { 7, "format-hostname.json", "validation of A-label (punycode) host names", nullptr },
+
+    // Plain-name fragments are not resolved in remote documents
+    { 3, "anchor-legacy.json", "anchor within remote ref (id)", nullptr },
+    { 4, "anchor-legacy.json", "anchor within remote ref (id)", nullptr },
+    { 7, "anchor-legacy.json", "anchor within remote ref", nullptr },
+
+    // Identifiers in non-schema locations are treated as schema identifiers
+    { 4, "optional/non-schemas.json", "$id inside an enum is not a real identifier (id/definitions)", nullptr },
+    { 4, "optional/non-schemas.json", "anchor inside an enum is not a real identifier (id)", nullptr },
+    { 7, "optional/non-schemas.json", "$id inside an enum is not a real identifier ($id/definitions)", nullptr },
+    { 7, "optional/non-schemas.json", "$id inside an unknown keyword is not a real identifier", nullptr },
+    { 7, "optional/non-schemas.json", "anchor inside an enum is not a real identifier ($id)", nullptr },
+
+    // Regular expressions are evaluated by std::regex, which does not
+    // implement ECMA 262 with Unicode semantics
+    { 3, "optional/ecmascript-regex.json", "ECMA 262 \\D matches everything but ascii digits", "NKO DIGIT ZERO (as \\u escape) matches" },
+    { 3, "optional/ecmascript-regex.json", "ECMA 262 \\D matches everything but ascii digits", "NKO DIGIT ZERO matches (unlike e.g. Python)" },
+    { 3, "optional/ecmascript-regex.json", "ECMA 262 \\S matches everything but whitespace", "Non-whitespace matches" },
+    { 3, "optional/ecmascript-regex.json", "ECMA 262 \\W matches everything but ascii letters", "latin-1 e-acute matches (unlike e.g. Python)" },
+    { 3, "optional/ecmascript-regex.json", "ECMA 262 \\s matches whitespace", "EM SPACE matches (Space_Separator)" },
+    { 3, "optional/ecmascript-regex.json", "ECMA 262 \\s matches whitespace", "latin-1 non-breaking-space matches" },
+    { 3, "optional/ecmascript-regex.json", "ECMA 262 \\s matches whitespace", "paragraph separator matches (line terminator)" },
+    { 3, "optional/ecmascript-regex.json", "ECMA 262 \\s matches whitespace", "zero-width whitespace matches" },
+    { 3, "optional/ecmascript-regex.json", "ECMA 262 regex escapes control codes with \\c and lower letter", "matches" },
+    { 3, "optional/ecmascript-regex.json", "ECMA 262 regex escapes control codes with \\c and upper letter", "matches" },
+    { 4, "optional/ecmascript-regex.json", "ECMA 262 \\D matches everything but ascii digits", "NKO DIGIT ZERO (as \\u escape) matches" },
+    { 4, "optional/ecmascript-regex.json", "ECMA 262 \\D matches everything but ascii digits", "NKO DIGIT ZERO matches (unlike e.g. Python)" },
+    { 4, "optional/ecmascript-regex.json", "ECMA 262 \\S matches everything but whitespace", "Non-whitespace matches" },
+    { 4, "optional/ecmascript-regex.json", "ECMA 262 \\W matches everything but ascii letters", "latin-1 e-acute matches (unlike e.g. Python)" },
+    { 4, "optional/ecmascript-regex.json", "ECMA 262 \\s matches whitespace", "EM SPACE matches (Space_Separator)" },
+    { 4, "optional/ecmascript-regex.json", "ECMA 262 \\s matches whitespace", "latin-1 non-breaking-space matches" },
+    { 4, "optional/ecmascript-regex.json", "ECMA 262 \\s matches whitespace", "paragraph separator matches (line terminator)" },
+    { 4, "optional/ecmascript-regex.json", "ECMA 262 \\s matches whitespace", "zero-width whitespace matches" },
+    { 4, "optional/ecmascript-regex.json", "ECMA 262 regex escapes control codes with \\c and lower letter", "matches" },
+    { 4, "optional/ecmascript-regex.json", "ECMA 262 regex escapes control codes with \\c and upper letter", "matches" },
+    { 7, "optional/ecmascript-regex.json", "ECMA 262 \\D matches everything but ascii digits", "NKO DIGIT ZERO (as \\u escape) matches" },
+    { 7, "optional/ecmascript-regex.json", "ECMA 262 \\D matches everything but ascii digits", "NKO DIGIT ZERO matches (unlike e.g. Python)" },
+    { 7, "optional/ecmascript-regex.json", "ECMA 262 \\S matches everything but whitespace", "Non-whitespace matches" },
+    { 7, "optional/ecmascript-regex.json", "ECMA 262 \\W matches everything but ascii letters", "latin-1 e-acute matches (unlike e.g. Python)" },
+    { 7, "optional/ecmascript-regex.json", "ECMA 262 \\s matches whitespace", "EM SPACE matches (Space_Separator)" },
+    { 7, "optional/ecmascript-regex.json", "ECMA 262 \\s matches whitespace", "latin-1 non-breaking-space matches" },
+    { 7, "optional/ecmascript-regex.json", "ECMA 262 \\s matches whitespace", "paragraph separator matches (line terminator)" },
+    { 7, "optional/ecmascript-regex.json", "ECMA 262 \\s matches whitespace", "zero-width whitespace matches" },
+    { 7, "optional/ecmascript-regex.json", "ECMA 262 regex escapes control codes with \\c and lower letter", "matches" },
+    { 7, "optional/ecmascript-regex.json", "ECMA 262 regex escapes control codes with \\c and upper letter", "matches" },
+    { 3, "optional/format-regex.json", "\\a is not an ECMA 262 control escape", nullptr },
+    { 3, "optional/format-regex.json", "ECMA 262 lookbehind is valid, including variable width", nullptr },
+    { 3, "optional/format-regex.json", "ECMA 262 named groups and backreferences are valid", nullptr },
+    { 7, "optional/format-regex.json", "\\a is not an ECMA 262 control escape", nullptr },
+    { 7, "optional/format-regex.json", "ECMA 262 lookbehind is valid, including variable width", nullptr },
+    { 7, "optional/format-regex.json", "ECMA 262 named groups and backreferences are valid", nullptr },
+    { 3, "optional/non-bmp-regex.json", "Proper UTF-16 surrogate pair handling: pattern", "matches empty" },
+    { 3, "optional/non-bmp-regex.json", "Proper UTF-16 surrogate pair handling: pattern", "matches two" },
+    { 3, "optional/non-bmp-regex.json", "Proper UTF-16 surrogate pair handling: patternProperties", "doesn't match two" },
+    { 4, "optional/non-bmp-regex.json", "Proper UTF-16 surrogate pair handling: pattern", "matches empty" },
+    { 4, "optional/non-bmp-regex.json", "Proper UTF-16 surrogate pair handling: pattern", "matches two" },
+    { 4, "optional/non-bmp-regex.json", "Proper UTF-16 surrogate pair handling: patternProperties", "doesn't match two" },
+    { 7, "optional/non-bmp-regex.json", "Proper UTF-16 surrogate pair handling: pattern", "matches empty" },
+    { 7, "optional/non-bmp-regex.json", "Proper UTF-16 surrogate pair handling: pattern", "matches two" },
+    { 7, "optional/non-bmp-regex.json", "Proper UTF-16 surrogate pair handling: patternProperties", "doesn't match two" },
+
+    // Numbers are represented as doubles
+    { 3, "optional/bignum.json", "enum comparison with high precision", "a slightly larger decimal is invalid" },
+    { 3, "optional/bignum.json", "enum comparison with high precision", "a slightly smaller decimal is invalid" },
+    { 3, "optional/bignum.json", "float comparison with high precision (boolean)", "below the exclusive maximum is valid" },
+    { 3, "optional/bignum.json", "float comparison with high precision on negative numbers (boolean)", "above the exclusive minimum is valid" },
+    { 3, "optional/bignum.json", "integer", nullptr },
+    { 3, "optional/bignum.json", "maximum integer comparison", "just above the maximum is invalid" },
+    { 3, "optional/bignum.json", "minimum integer comparison", "just below the minimum is invalid" },
+    { 3, "optional/bignum.json", "uniqueItems comparison with high precision", "arrays containing distinct decimals are unique" },
+    { 3, "optional/bignum.json", "uniqueItems comparison with high precision", "distinct high-precision decimals are unique" },
+    { 3, "optional/bignum.json", "uniqueItems comparison with high precision", "objects containing distinct decimals are unique" },
+    { 4, "optional/bignum.json", "all integers are multiples of 0.5, if overflow is handled", nullptr },
+    { 4, "optional/bignum.json", "enum comparison with high precision", "a slightly larger decimal is invalid" },
+    { 4, "optional/bignum.json", "enum comparison with high precision", "a slightly smaller decimal is invalid" },
+    { 4, "optional/bignum.json", "float comparison with high precision (boolean)", "below the exclusive maximum is valid" },
+    { 4, "optional/bignum.json", "float comparison with high precision on negative numbers (boolean)", "above the exclusive minimum is valid" },
+    { 4, "optional/bignum.json", "integer", nullptr },
+    { 4, "optional/bignum.json", "maximum integer comparison", "just above the maximum is invalid" },
+    { 4, "optional/bignum.json", "minimum integer comparison", "just below the minimum is invalid" },
+    { 4, "optional/bignum.json", "uniqueItems comparison with high precision", "arrays containing distinct decimals are unique" },
+    { 4, "optional/bignum.json", "uniqueItems comparison with high precision", "distinct high-precision decimals are unique" },
+    { 4, "optional/bignum.json", "uniqueItems comparison with high precision", "objects containing distinct decimals are unique" },
+    { 7, "optional/bignum.json", "all integers are multiples of 0.5, if overflow is handled", nullptr },
+    { 7, "optional/bignum.json", "const comparison with high precision", "a slightly larger decimal is invalid" },
+    { 7, "optional/bignum.json", "const comparison with high precision", "a slightly smaller decimal is invalid" },
+    { 7, "optional/bignum.json", "enum comparison with high precision", "a slightly larger decimal is invalid" },
+    { 7, "optional/bignum.json", "enum comparison with high precision", "a slightly smaller decimal is invalid" },
+    { 7, "optional/bignum.json", "float comparison with high precision", "below the exclusive maximum is valid" },
+    { 7, "optional/bignum.json", "float comparison with high precision on negative numbers", "above the exclusive minimum is valid" },
+    { 7, "optional/bignum.json", "integer", nullptr },
+    { 7, "optional/bignum.json", "maximum integer comparison", "just above the maximum is invalid" },
+    { 7, "optional/bignum.json", "minimum integer comparison", "just below the minimum is invalid" },
+    { 7, "optional/bignum.json", "uniqueItems comparison with high precision", "arrays containing distinct decimals are unique" },
+    { 7, "optional/bignum.json", "uniqueItems comparison with high precision", "distinct high-precision decimals are unique" },
+    { 7, "optional/bignum.json", "uniqueItems comparison with high precision", "objects containing distinct decimals are unique" },
+    { 4, "optional/float-overflow.json", nullptr, nullptr },
+    { 7, "optional/float-overflow.json", nullptr, nullptr },
+    { 3, "optional/zero-terminated-floats.json", nullptr, nullptr },
+    { 4, "optional/zero-terminated-floats.json", nullptr, nullptr },
+
+    // 'contentEncoding' and 'contentMediaType' are not validated
+    { 7, "optional/content.json", "validation of binary string-encoding", "an invalid base64 string (% is not a valid character)" },
+    { 7, "optional/content.json", "validation of binary-encoded media type documents", "a validly-encoded invalid JSON document" },
+    { 7, "optional/content.json", "validation of binary-encoded media type documents", "an invalid base64 string that is valid JSON" },
+    { 7, "optional/content.json", "validation of string-encoded content based on media type", "an invalid JSON document" },
+
+    // Embedded schemas are always processed using the dialect of the parser
+    { 7, "optional/cross-draft.json", "refs to future drafts are processed as future drafts (2019)", "missing bar is invalid" },
+    { 7, "optional/cross-draft.json", "refs to future drafts are processed as future drafts (2020)", "first item not a string is invalid" },
+};
+// clang-format on
+
+struct CrashingTestCase
 {
-   delete ptr;
-}
+    int draft;
+    const char *file;
+    const char *testCase;
+};
 
-class TestValidator : public ::testing::TestWithParam<const char *>
+// clang-format off
+constexpr CrashingTestCase kCrashingTestCases[] = {
+    // Identifiers using URI schemes without an authority component are
+    // resolved as relative references, resulting in unbounded recursion
+    { 3, "id-legacy.json", "simple tag URI base URI with $ref via the tag URI (id)" },
+    { 3, "id-legacy.json", "simple base URI using an arbitrary URI scheme with $ref to that URI (id)" },
+    { 4, "id-legacy.json", "simple tag URI base URI with $ref via the tag URI (id)" },
+    { 4, "id-legacy.json", "simple base URI using an arbitrary URI scheme with $ref to that URI (id)" },
+    { 7, "id.json", "simple tag URI base URI with $ref via the tag URI" },
+    { 7, "id.json", "simple base URI using an arbitrary URI scheme with $ref to that URI" },
+};
+// clang-format on
+
+//
+// Helpers
+// ------------------------------------------------------------------------------------------------
+//
+
+/**
+ * Determine whether a test case applies to a dialect, using the algorithm
+ * described in the README of the test suite
+ */
+bool isCompatible(const std::string &compatibility, int draft)
 {
-protected:
+    bool compatible = true;
 
-    template<typename AdapterType>
-    static void processTestFile(const std::string &testFile,
-                                const SchemaParser::Version version,
-                                const std::set<std::string> &skipCases =
-                                        std::set<std::string>())
-    {
-        std::string currentTestCase;
-        std::string currentTest;
-
-#if VALIJSON_USE_EXCEPTIONS
-        try {
-#endif
-            // Load test document
-            typename AdapterTraits<AdapterType>::DocumentType document;
-            ASSERT_TRUE( valijson::utils::loadDocument(testFile, document) );
-            AdapterType testCases(document);
-            ASSERT_TRUE( testCases.isArray() );
-
-            // Process each test case in the file
-            for (const AdapterType testCase : testCases.getArray()) {
-                currentTestCase.clear();
-                currentTest.clear();
-
-                // Ensure that testCase is an object
-                ASSERT_TRUE( testCase.isObject() );
-                const typename AdapterType::Object object = testCase.getObject();
-
-                // Get test case description
-                typename AdapterType::Object::const_iterator itr = object.find("description");
-                ASSERT_NE( object.end(), itr );
-                currentTestCase = itr->second.getString();
-
-                // Skip test cases that exercise features which have not yet
-                // been implemented (e.g. schema registry and canonical URI
-                // handling required for sibling-id $ref resolution).
-                if (skipCases.find(currentTestCase) != skipCases.end()) {
-                    continue;
-                }
-
-                // Ensure that 'schema' property is present
-                itr = object.find("schema");
-                ASSERT_NE( object.end(), itr );
-
-                // Parse schema
-                Schema schema;
-                SchemaParser parser(version);
-                parser.populateSchema(itr->second, schema,
-                        fetchDocument<AdapterType>, freeDocument<AdapterType>);
-
-                // For each test in the 'tests' array
-                itr = object.find("tests");
-                ASSERT_NE( object.end(), itr );
-                ASSERT_TRUE( itr->second.isArray() );
-                for (const AdapterType test : itr->second.getArray()) {
-                    const bool strict = itr->second.hasStrictTypes();
-
-                    ASSERT_TRUE( test.isObject() );
-                    const typename AdapterType::Object testObject = test.getObject();
-
-                    typename AdapterType::Object::const_iterator testItr = testObject.find("valid");
-                    ASSERT_NE( testObject.end(), testItr );
-                    ASSERT_TRUE( testItr->second.maybeBool() );
-                    const bool shouldValidate = testItr->second.getBool();
-
-                    testItr = testObject.find("description");
-                    ASSERT_NE( testObject.end(), testItr );
-                    currentTest = testItr->second.getString();
-
-                    testItr = testObject.find("data");
-                    ASSERT_NE( testObject.end(), testItr );
-                    Validator validator(strict ?
-                            Validator::kStrongTypes : Validator::kWeakTypes);
-
-                    EXPECT_EQ( shouldValidate, validator.validate(schema, testItr->second, NULL) )
-                        << "Failed while testing validate() function in '"
-                        << currentTest << "' of test case '"
-                        << currentTestCase << "' with adapter '"
-                        << AdapterTraits<AdapterType>::adapterName() << "'";
-
-                    // Validation that collects all errors must reach the same
-                    // result as validation that stops at the first error
-                    valijson::ValidationResults results;
-                    EXPECT_EQ( shouldValidate, validator.validate(schema, testItr->second, &results) )
-                        << "Failed while testing validate() function with results in '"
-                        << currentTest << "' of test case '"
-                        << currentTestCase << "' with adapter '"
-                        << AdapterTraits<AdapterType>::adapterName() << "'";
-                }
-            }
-#if VALIJSON_USE_EXCEPTIONS
-        } catch (const std::exception &e) {
-            FAIL() << "Exception thrown with message '" << e.what()
-                   << "' in '" << currentTest << "' of test case '"
-                   << currentTestCase << "' with adapter '"
-                   << AdapterTraits<AdapterType>::adapterName() << "'";
+    std::stringstream ss(compatibility);
+    std::string constraint;
+    while (std::getline(ss, constraint, ',')) {
+        std::string op;
+        size_t pos = 0;
+        while (pos < constraint.size() &&
+               (constraint[pos] == '<' || constraint[pos] == '=')) {
+            op += constraint[pos++];
         }
-#endif
+        const int version = std::stoi(constraint.substr(pos));
+
+        if (op.empty()) {
+            compatible = draft >= version;
+        } else if (op == "<=") {
+            compatible = draft <= version;
+        } else if (op == "=") {
+            compatible = draft == version;
+        } else {
+            ADD_FAILURE() << "Unknown compatibility operator '" << op << "'";
+            return false;
+        }
+
+        if (draft <= version) {
+            break;
+        }
     }
 
-    void processTestFile(const std::string &testFile,
-                         const SchemaParser::Version version,
-                         const std::set<std::string> &skipCases =
-                                 std::set<std::string>())
-    {
-#ifdef VALIJSON_BUILD_JSON11_ADAPTER
-        processTestFile<valijson::adapters::Json11Adapter>(testFile, version, skipCases);
-#endif // VALIJSON_BUILD_JSON11_ADAPTER
-        processTestFile<valijson::adapters::JsonCppAdapter>(testFile, version, skipCases);
-        processTestFile<valijson::adapters::RapidJsonAdapter>(testFile, version, skipCases);
-        processTestFile<valijson::adapters::PicoJsonAdapter>(testFile, version, skipCases);
-        processTestFile<valijson::adapters::NlohmannJsonAdapter>(testFile, version, skipCases);
+    return compatible;
+}
 
-#ifdef VALIJSON_BUILD_POCO_ADAPTER
-        processTestFile<valijson::adapters::PocoJsonAdapter>(testFile, version, skipCases);
-#endif // VALIJSON_BUILD_POCO_ADAPTER
+/**
+ * Determine whether the behaviour described by the tags of a test case is
+ * provided for a dialect
+ */
+bool supportsTags(const nlohmann::json &testCase, const Dialect &dialect)
+{
+    const auto tags = testCase.find("tags");
+    if (tags == testCase.end()) {
+        return true;
     }
 
-    void processDraft3TestFile(const std::string &testFile,
-                               const std::set<std::string> &skipCases =
-                                       std::set<std::string>())
-    {
-        return processTestFile(testFile, SchemaParser::kDraft3, skipCases);
+    return std::all_of(tags->begin(), tags->end(),
+                       [&dialect](const nlohmann::json &tag) {
+                           if (tag == "format-assertion") {
+                               return dialect.formatAssertion;
+                           }
+                           if (tag == "format-annotation") {
+                               return !dialect.formatAssertion;
+                           }
+                           return false;
+                       });
+}
+
+/**
+ * Find the known failure for a test, or for a whole test case if the test is
+ * null
+ */
+const KnownFailure *findKnownFailure(int draft, const std::string &file,
+                                     const std::string &testCase,
+                                     const std::string *test)
+{
+    for (const KnownFailure &knownFailure : kKnownFailures) {
+        if (knownFailure.draft != draft || file != knownFailure.file) {
+            continue;
+        }
+        if (knownFailure.testCase == nullptr) {
+            return &knownFailure;
+        }
+        if (testCase != knownFailure.testCase) {
+            continue;
+        }
+        if (knownFailure.test == nullptr ||
+            (test != nullptr && *test == knownFailure.test)) {
+            return &knownFailure;
+        }
     }
 
-    void processDraft4TestFile(const std::string &testFile)
-    {
-        return processTestFile(testFile, SchemaParser::kDraft4);
-    }
+    return nullptr;
+}
 
-    void processDraft7TestFile(const std::string &testFile)
-    {
-        return processTestFile(testFile, SchemaParser::kDraft7);
-    }
+bool isCrashingTestCase(int draft, const std::string &file,
+                        const std::string &testCase)
+{
+    return std::any_of(std::begin(kCrashingTestCases),
+                       std::end(kCrashingTestCases),
+                       [&](const CrashingTestCase &crashing) {
+                           return crashing.draft == draft &&
+                                  file == crashing.file &&
+                                  testCase == crashing.testCase;
+                       });
+}
+
+/**
+ * Information about a test case that applies to the dialect being tested
+ */
+struct TestCaseInfo
+{
+    /// Index of the test case in the file
+    size_t index = 0;
+
+    std::string description;
+
+    /// Descriptions of the tests in the test case
+    std::set<std::string> tests;
+
+    /// External schemas, as JSON text, keyed by retrieval URI
+    std::map<std::string, std::string> externalSchemas;
 };
 
 //
-// draft 3
+// Parsing of external schemas
 // ------------------------------------------------------------------------------------------------
 //
 
-TEST_F(TestValidator, Draft3_AdditionalItems)
+#ifdef VALIJSON_BUILD_JSON11_ADAPTER
+bool parseJson(const std::string &text, json11::Json &document)
 {
-    processDraft3TestFile(TEST_SUITE_DIR "draft3/additionalItems.json");
+    std::string err;
+    document = json11::Json::parse(text, err);
+    return err.empty();
+}
+#endif
+
+bool parseJson(const std::string &text, Json::Value &document)
+{
+    Json::CharReaderBuilder builder;
+    const std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
+    std::string err;
+    return reader->parse(text.data(), text.data() + text.size(), &document,
+                         &err);
 }
 
-TEST_F(TestValidator, Draft3_AdditionalProperties)
+template <typename Encoding, typename Allocator>
+bool parseJson(const std::string &text,
+               rapidjson::GenericDocument<Encoding, Allocator> &document)
 {
-    processDraft3TestFile(TEST_SUITE_DIR "draft3/additionalProperties.json");
+    document.template Parse<rapidjson::kParseIterativeFlag>(text.c_str());
+    return !document.HasParseError();
 }
 
-TEST_F(TestValidator, Draft3_Dependencies)
+bool parseJson(const std::string &text, picojson::value &document)
 {
-    processDraft3TestFile(TEST_SUITE_DIR "draft3/dependencies.json");
+    return picojson::parse(document, text).empty();
 }
 
-TEST_F(TestValidator, Draft3_DivisibleBy)
+bool parseJson(const std::string &text, nlohmann::json &document)
 {
-    processDraft3TestFile(TEST_SUITE_DIR "draft3/divisibleBy.json");
+    document = nlohmann::json::parse(text, nullptr, false);
+    return !document.is_discarded();
 }
 
-TEST_F(TestValidator, Draft3_Enum)
+#ifdef VALIJSON_BUILD_POCO_ADAPTER
+bool parseJson(const std::string &text, Poco::Dynamic::Var &document)
 {
-    processDraft3TestFile(TEST_SUITE_DIR "draft3/enum.json");
+    document = Poco::JSON::Parser().parse(text);
+    return true;
 }
-
-TEST_F(TestValidator, Draft3_Items)
-{
-    processDraft3TestFile(TEST_SUITE_DIR "draft3/items.json");
-}
-
-TEST_F(TestValidator, Draft3_Maximum)
-{
-    processDraft3TestFile(TEST_SUITE_DIR "draft3/maximum.json");
-}
-
-TEST_F(TestValidator, Draft3_MaxItems)
-{
-    processDraft3TestFile(TEST_SUITE_DIR "draft3/maxItems.json");
-}
-
-TEST_F(TestValidator, Draft3_MaxLength)
-{
-    processDraft3TestFile(TEST_SUITE_DIR "draft3/maxLength.json");
-}
-
-TEST_F(TestValidator, Draft3_Minimum)
-{
-    processDraft3TestFile(TEST_SUITE_DIR "draft3/minimum.json");
-}
-
-TEST_F(TestValidator, Draft3_MinItems)
-{
-    processDraft3TestFile(TEST_SUITE_DIR "draft3/minItems.json");
-}
-
-TEST_F(TestValidator, Draft3_MinLength)
-{
-    processDraft3TestFile(TEST_SUITE_DIR "draft3/minLength.json");
-}
-
-TEST_F(TestValidator, Draft3_Pattern)
-{
-    processDraft3TestFile(TEST_SUITE_DIR "draft3/pattern.json");
-}
-
-TEST_F(TestValidator, Draft3_PatternProperties)
-{
-    processDraft3TestFile(TEST_SUITE_DIR "draft3/patternProperties.json");
-}
-
-TEST_F(TestValidator, Draft3_Properties)
-{
-    processDraft3TestFile(TEST_SUITE_DIR "draft3/properties.json");
-}
-
-TEST_F(TestValidator, Draft3_Ref)
-{
-    // The "$ref prevents a sibling id from changing the base uri" test case
-    // requires a schema registry that maps canonical URIs (computed from id
-    // resolution) to subschemas defined elsewhere in the same document.
-    // Implementing that is tracked in PLAN.md; skip the case for now.
-    const std::set<std::string> skipCases = {
-        "$ref prevents a sibling id from changing the base uri"
-    };
-    processDraft3TestFile(TEST_SUITE_DIR "draft3/ref.json", skipCases);
-}
-
-TEST_F(TestValidator, Draft3_RefRemote)
-{
-    processDraft3TestFile(TEST_SUITE_DIR "draft3/refRemote.json");
-}
-
-TEST_F(TestValidator, Draft3_Required)
-{
-    processDraft3TestFile(TEST_SUITE_DIR "draft3/required.json");
-}
-
-TEST_F(TestValidator, Draft3_Type)
-{
-    processDraft3TestFile(TEST_SUITE_DIR "draft3/type.json");
-}
-
-TEST_F(TestValidator, Draft3_UniqueItems)
-{
-    processDraft3TestFile(TEST_SUITE_DIR "draft3/uniqueItems.json");
-}
+#endif
 
 //
-// draft 4
+// Test runner
 // ------------------------------------------------------------------------------------------------
 //
 
-TEST_F(TestValidator, Draft4_AdditionalItems)
+struct TestSuiteFile
 {
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/additionalItems.json");
+    const Dialect *dialect;
+    const char *file;
+};
+
+void PrintTo(const TestSuiteFile &testSuiteFile, std::ostream *os)
+{
+    *os << testSuiteFile.dialect->name << ", " << testSuiteFile.file;
 }
 
-TEST_F(TestValidator, Draft4_AdditionalProperties)
+std::vector<TestSuiteFile> allTestSuiteFiles()
 {
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/additionalProperties.json");
+    std::vector<TestSuiteFile> result;
+    for (const Dialect &dialect : kDialects) {
+        std::transform(std::begin(kTestSuiteFiles), std::end(kTestSuiteFiles),
+                       std::back_inserter(result),
+                       [&dialect](const char *file) {
+                           return TestSuiteFile{&dialect, file};
+                       });
+    }
+
+    return result;
 }
 
-TEST_F(TestValidator, Draft4_AllOf)
+std::string testSuiteFileName(const testing::TestParamInfo<TestSuiteFile> &info)
 {
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/allOf.json");
+    // Remove the '.json' extension, and replace characters that are not
+    // permitted in test names
+    const std::string file(info.param.file);
+    std::string name = std::string(info.param.dialect->name) + "_";
+    std::transform(
+        file.begin(), file.end() - 5, std::back_inserter(name), [](char c) {
+            return std::isalnum(static_cast<unsigned char>(c)) ? c : '_';
+        });
+
+    return name;
 }
 
-TEST_F(TestValidator, Draft4_AnyOf)
+class TestValidator : public testing::TestWithParam<TestSuiteFile>
 {
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/anyOf.json");
-}
-
-TEST_F(TestValidator, Draft4_Dependencies)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/dependencies.json");
-}
-
-TEST_F(TestValidator, Draft4_Enum)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/enum.json");
-}
-
-TEST_F(TestValidator, Draft4_Items)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/items.json");
-}
-
-TEST_F(TestValidator, Draft4_Maximum)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/maximum.json");
-}
-
-TEST_F(TestValidator, Draft4_MaxItems)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/maxItems.json");
-}
-
-TEST_F(TestValidator, Draft4_MaxLength)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/maxLength.json");
-}
-
-TEST_F(TestValidator, Draft4_MaxProperties)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/maxProperties.json");
-}
-
-TEST_F(TestValidator, Draft4_Minimum)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/minimum.json");
-}
-
-TEST_F(TestValidator, Draft4_MinItems)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/minItems.json");
-}
-
-TEST_F(TestValidator, Draft4_MinLength)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/minLength.json");
-}
-
-TEST_F(TestValidator, Draft4_MinProperties)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/minProperties.json");
-}
-
-TEST_F(TestValidator, Draft4_MultipleOf)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/multipleOf.json");
-}
-
-TEST_F(TestValidator, Draft4_Not)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/not.json");
-}
-
-TEST_F(TestValidator, Draft4_OneOf)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/oneOf.json");
-}
-
-TEST_F(TestValidator, Draft4_Pattern)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/pattern.json");
-}
-
-TEST_F(TestValidator, Draft4_PatternProperties)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/patternProperties.json");
-}
-
-TEST_F(TestValidator, Draft4_Properties)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/properties.json");
-}
-
-TEST_F(TestValidator, Draft4_Ref)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/ref.json");
-}
-
-TEST_F(TestValidator, Draft4_RefRemote)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/refRemote.json");
-}
-
-TEST_F(TestValidator, Draft4_Required)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/required.json");
-}
-
-TEST_F(TestValidator, Draft4_Type)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/type.json");
-}
-
-TEST_F(TestValidator, Draft4_UniqueItems)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/uniqueItems.json");
-}
-
-TEST_F(TestValidator, Draft4_OptionalFormatHostname)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/optional/format/hostname.json");
-}
-
-TEST_F(TestValidator, Draft4_OptionalFormatIpv6)
-{
-    processDraft4TestFile(TEST_SUITE_DIR "draft4/optional/format/ipv6.json");
-}
-
-//
-// draft 7
-// ------------------------------------------------------------------------------------------------
-//
-
-TEST_F(TestValidator, Draft7_AdditionalItems)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/additionalItems.json");
-}
-
-TEST_F(TestValidator, Draft7_AdditionalProperties)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/additionalProperties.json");
-}
-
-TEST_F(TestValidator, Draft7_AllOf)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/allOf.json");
-}
-
-TEST_F(TestValidator, Draft7_AnyOf)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/anyOf.json");
-}
-
-TEST_F(TestValidator, Draft7_BooleanSchema)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/boolean_schema.json");
-}
-
-TEST_F(TestValidator, Draft7_Const)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/const.json");
-}
-
-TEST_F(TestValidator, Draft7_Contains)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/contains.json");
-}
-
-TEST_F(TestValidator, Draft7_Default)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/default.json");
-}
-
-TEST_F(TestValidator, Draft7_Definitions)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/definitions.json");
-}
-
-TEST_F(TestValidator, Draft7_Dependencies)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/dependencies.json");
-}
-
-TEST_F(TestValidator, Draft7_Enum)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/enum.json");
-}
-
-TEST_F(TestValidator, Draft7_ExclusiveMaximum)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/exclusiveMaximum.json");
-}
-
-TEST_F(TestValidator, Draft7_ExclusiveMinimum)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/exclusiveMinimum.json");
-}
-
-TEST_F(TestValidator, Draft7_Format)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/format.json");
-}
-
-TEST_F(TestValidator, Draft7_IfThenElse)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/if-then-else.json");
-}
-
-TEST_F(TestValidator, Draft7_InfiniteLoopDetection)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/infinite-loop-detection.json");
-}
-
-TEST_F(TestValidator, Draft7_Items)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/items.json");
-}
-
-TEST_F(TestValidator, Draft7_Maximum)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/maximum.json");
-}
-
-TEST_F(TestValidator, Draft7_MaxItems)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/maxItems.json");
-}
-
-TEST_F(TestValidator, Draft7_MaxLength)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/maxLength.json");
-}
-
-TEST_F(TestValidator, Draft7_MaxProperties)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/maxProperties.json");
-}
-
-TEST_F(TestValidator, Draft7_Minimum)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/minimum.json");
-}
-
-TEST_F(TestValidator, Draft7_MinItems)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/minItems.json");
-}
-
-TEST_F(TestValidator, Draft7_MinLength)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/minLength.json");
-}
-
-TEST_F(TestValidator, Draft7_MinProperties)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/minProperties.json");
-}
-
-TEST_F(TestValidator, Draft7_MultipleOf)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/multipleOf.json");
-}
-
-TEST_F(TestValidator, Draft7_Not)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/not.json");
-}
-
-TEST_F(TestValidator, Draft7_OneOf)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/oneOf.json");
-}
-
-TEST_F(TestValidator, Draft7_Pattern)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/pattern.json");
-}
-
-TEST_F(TestValidator, Draft7_PatternProperties)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/patternProperties.json");
-}
-
-TEST_F(TestValidator, Draft7_Properties)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/properties.json");
-}
-
-TEST_F(TestValidator, Draft7_PropertyNames)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/propertyNames.json");
-}
-
-TEST_F(TestValidator, Draft7_PropertyNamesInNestedSubschema)
-{
-    // Regression test: propertyNames in a nested subschema must validate
-    // property names against its own subschema, not the enclosing one
-    struct TestCase
+  protected:
+    /**
+     * Collect information about the test cases in a file that apply to a
+     * dialect
+     */
+    static std::vector<TestCaseInfo> loadTestCases(const std::string &path,
+                                                   const Dialect &dialect)
     {
-        const char *schema;
-        const char *document;
-        bool expected;
-    };
+        std::vector<TestCaseInfo> result;
 
-    const TestCase testCases[] = {
-        { R"({"allOf": [{"type": "object", "propertyNames": {}}]})", R"({})", true },
-        { R"({"allOf": [{"type": "object", "propertyNames": {}}]})", R"({"a": "x"})", true },
-        { R"({"allOf": [{"type": "object", "propertyNames": {"type": "string"}}]})", R"({"a": 1})", true },
-        { R"({"anyOf": [{"type": "object", "propertyNames": {}}]})", R"({"a": 1})", true },
-        { R"({"oneOf": [{"type": "object", "propertyNames": {}}]})", R"({"a": 1})", true },
-        { R"({"properties": {"p": {"type": "object", "propertyNames": {}}}})", R"({"p": {"a": 1}})", true },
-        { R"({"$ref": "#/definitions/d", "definitions": {"d": {"type": "object", "propertyNames": {}}}})",
-          R"({"a": 1})", true },
-        { R"({"allOf": [{"type": "object", "propertyNames": {"maxLength": 0}}]})", R"({"a": "x"})", false },
-    };
+        nlohmann::json document;
+        if (!valijson::utils::loadDocument(path, document)) {
+            ADD_FAILURE() << "Failed to load test suite file '" << path << "'";
+            return result;
+        }
 
-    for (const TestCase &testCase : testCases) {
-        rapidjson::Document schemaDocument;
-        schemaDocument.Parse(testCase.schema);
-        ASSERT_FALSE(schemaDocument.HasParseError());
+        const nlohmann::json &testCases = document["tests"];
+        for (size_t index = 0; index < testCases.size(); index++) {
+            const nlohmann::json &testCase = testCases[index];
+
+            const auto compatibility = testCase.find("compatibility");
+            if (compatibility != testCase.end() &&
+                !isCompatible(compatibility->get<std::string>(),
+                              dialect.version)) {
+                continue;
+            }
+
+            if (!supportsTags(testCase, dialect)) {
+                continue;
+            }
+
+            TestCaseInfo info;
+            info.index = index;
+            info.description = testCase["description"].get<std::string>();
+            for (const auto &test : testCase["tests"]) {
+                info.tests.insert(test["description"].get<std::string>());
+            }
+
+            const auto externalSchemas = testCase.find("externalSchemas");
+            if (externalSchemas != testCase.end()) {
+                for (auto itr = externalSchemas->begin();
+                     itr != externalSchemas->end(); ++itr) {
+                    info.externalSchemas[itr.key()] = itr.value().dump();
+                }
+            }
+
+            result.push_back(info);
+        }
+
+        return result;
+    }
+
+    /**
+     * Ensure that every known failure and crashing test case refers to a test
+     * case and test that apply to the dialect
+     */
+    static void checkKnownFailures(const Dialect &dialect,
+                                   const std::string &file,
+                                   const std::vector<TestCaseInfo> &testCases)
+    {
+        const auto applies = [&testCases](const char *testCase,
+                                          const char *test) {
+            return std::any_of(testCases.begin(), testCases.end(),
+                               [testCase, test](const TestCaseInfo &info) {
+                                   return info.description == testCase &&
+                                          (test == nullptr ||
+                                           info.tests.count(test) > 0);
+                               });
+        };
+
+        for (const KnownFailure &knownFailure : kKnownFailures) {
+            if (knownFailure.draft == dialect.version &&
+                file == knownFailure.file) {
+                if (testCases.empty()) {
+                    ADD_FAILURE() << "Known failure for '" << file
+                                  << "' does not apply to " << dialect.name;
+                } else if (knownFailure.testCase != nullptr) {
+                    EXPECT_TRUE(
+                        applies(knownFailure.testCase, knownFailure.test))
+                        << "Known failure for test case '"
+                        << knownFailure.testCase << "'"
+                        << (knownFailure.test != nullptr
+                                ? std::string(" and test '") +
+                                      knownFailure.test + "'"
+                                : std::string())
+                        << " does not apply to " << dialect.name << " in '"
+                        << file << "'";
+                }
+            }
+        }
+
+        for (const CrashingTestCase &crashing : kCrashingTestCases) {
+            if (crashing.draft == dialect.version && file == crashing.file) {
+                EXPECT_TRUE(applies(crashing.testCase, nullptr))
+                    << "Crashing test case '" << crashing.testCase
+                    << "' does not apply to " << dialect.name << " in '" << file
+                    << "'";
+            }
+        }
+    }
+
+    /**
+     * Ensure that every known failure for a file failed for at least one
+     * adapter, so that entries are removed once they no longer fail
+     */
+    static void
+    checkKnownFailuresFailed(const Dialect &dialect, const std::string &file,
+                             const std::set<const KnownFailure *> &failed)
+    {
+        for (const KnownFailure &knownFailure : kKnownFailures) {
+            if (knownFailure.draft == dialect.version &&
+                file == knownFailure.file && failed.count(&knownFailure) == 0) {
+                ADD_FAILURE()
+                    << "Known failure for "
+                    << (knownFailure.testCase != nullptr
+                            ? std::string("test case '") +
+                                  knownFailure.testCase + "'"
+                            : "the whole file")
+                    << (knownFailure.test != nullptr
+                            ? std::string(" and test '") + knownFailure.test +
+                                  "'"
+                            : std::string())
+                    << " in '" << file << "' passes for " << dialect.name
+                    << "; remove it from the list of known failures";
+            }
+        }
+    }
+
+    template <typename AdapterType>
+    static void processTestCases(const std::string &path,
+                                 const Dialect &dialect,
+                                 const std::string &file,
+                                 const std::vector<TestCaseInfo> &testCases,
+                                 std::set<const KnownFailure *> &failed)
+    {
+        typedef typename AdapterTraits<AdapterType>::DocumentType DocumentType;
+
+        DocumentType document;
+        ASSERT_TRUE(valijson::utils::loadDocument(path, document));
+        const AdapterType root(document);
+        ASSERT_TRUE(root.isObject());
+        const typename AdapterType::Object rootObject = root.getObject();
+        const auto testCasesItr = rootObject.find("tests");
+        ASSERT_NE(rootObject.end(), testCasesItr);
+
+        size_t index = 0;
+        auto info = testCases.begin();
+        for (const AdapterType testCase : testCasesItr->second.getArray()) {
+            if (info == testCases.end()) {
+                break;
+            }
+            if (index++ == info->index) {
+                processTestCase<AdapterType>(testCase, dialect, file, *info++,
+                                             failed);
+            }
+        }
+    }
+
+    template <typename AdapterType>
+    static void processTestCase(const AdapterType &testCase,
+                                const Dialect &dialect, const std::string &file,
+                                const TestCaseInfo &info,
+                                std::set<const KnownFailure *> &failed)
+    {
+        typedef typename AdapterTraits<AdapterType>::DocumentType DocumentType;
+
+        if (isCrashingTestCase(dialect.version, file, info.description)) {
+            return;
+        }
+
+        const std::string context =
+            "' of test case '" + info.description + "' in '" + file + "' for " +
+            dialect.name + " with adapter '" +
+            AdapterTraits<AdapterType>::adapterName() + "'";
+
+        const std::map<std::string, std::string> &externalSchemas =
+            info.externalSchemas;
+        const auto fetchDocument =
+            [&externalSchemas](const std::string &uri) -> const DocumentType * {
+            auto *document = new DocumentType();
+
+            const auto external = externalSchemas.find(uri);
+            const auto metaSchema = kMetaSchemas.find(uri);
+            bool loaded = false;
+            if (external != externalSchemas.end()) {
+                loaded = parseJson(external->second, *document);
+            } else if (metaSchema != kMetaSchemas.end()) {
+                loaded = valijson::utils::loadDocument(metaSchema->second,
+                                                       *document);
+            } else {
+                delete document;
+                valijson::throwRuntimeError("Attempt fetchDoc of " + uri);
+            }
+
+            if (!loaded) {
+                delete document;
+                valijson::throwRuntimeError("Failed fetchDoc of " + uri);
+            }
+
+            return document;
+        };
+        const auto freeDocument = [](const DocumentType *document) {
+            delete document;
+        };
+
+        const typename AdapterType::Object object = testCase.getObject();
 
         Schema schema;
-        SchemaParser parser(SchemaParser::kDraft7);
-        parser.populateSchema(RapidJsonAdapter(schemaDocument), schema);
+        SchemaParser parser(dialect.parserVersion);
+#if VALIJSON_USE_EXCEPTIONS
+        try {
+#endif
+            parser.populateSchema(object.find("schema")->second, schema,
+                                  fetchDocument, freeDocument);
+#if VALIJSON_USE_EXCEPTIONS
+        } catch (const std::exception &e) {
+            const KnownFailure *knownFailure = findKnownFailure(
+                dialect.version, file, info.description, nullptr);
+            if (knownFailure) {
+                failed.insert(knownFailure);
+            } else {
+                ADD_FAILURE()
+                    << "Exception thrown while parsing schema with message '"
+                    << e.what() << context;
+            }
+            return;
+        }
+#endif
 
-        rapidjson::Document document;
-        document.Parse(testCase.document);
-        ASSERT_FALSE(document.HasParseError());
+        const AdapterType tests = object.find("tests")->second;
+        Validator validator(tests.hasStrictTypes() ? Validator::kStrongTypes
+                                                   : Validator::kWeakTypes);
 
-        Validator validator;
-        EXPECT_EQ(testCase.expected, validator.validate(schema, RapidJsonAdapter(document), nullptr))
-                << "schema: " << testCase.schema << ", document: " << testCase.document;
+        for (const AdapterType test : tests.getArray()) {
+            const typename AdapterType::Object testObject = test.getObject();
+            const std::string description =
+                testObject.find("description")->second.getString();
+            const bool shouldValidate =
+                testObject.find("valid")->second.getBool();
+            const AdapterType data = testObject.find("data")->second;
+
+            const KnownFailure *knownFailure = findKnownFailure(
+                dialect.version, file, info.description, &description);
+
+            bool valid = !shouldValidate;
+            bool validWithResults = !shouldValidate;
+#if VALIJSON_USE_EXCEPTIONS
+            try {
+#endif
+                valid = validator.validate(schema, data, nullptr);
+
+                // Validation that collects all errors must reach the same
+                // result as validation that stops at the first error
+                valijson::ValidationResults results;
+                validWithResults = validator.validate(schema, data, &results);
+#if VALIJSON_USE_EXCEPTIONS
+            } catch (const std::exception &e) {
+                if (knownFailure) {
+                    failed.insert(knownFailure);
+                } else {
+                    ADD_FAILURE()
+                        << "Exception thrown with message '" << e.what()
+                        << "' in '" << description << context;
+                }
+                continue;
+            }
+#endif
+
+            if (knownFailure) {
+                if (valid != shouldValidate ||
+                    validWithResults != shouldValidate) {
+                    failed.insert(knownFailure);
+                }
+                continue;
+            }
+
+            EXPECT_EQ(shouldValidate, valid)
+                << "Failed while testing validate() function in '"
+                << description << context;
+            EXPECT_EQ(shouldValidate, validWithResults)
+                << "Failed while testing validate() function with results in '"
+                << description << context;
+        }
     }
+};
+
+} // namespace
+
+TEST_P(TestValidator, TestSuiteFile)
+{
+    const Dialect &dialect = *GetParam().dialect;
+    const std::string file = GetParam().file;
+    const std::string path = TEST_SUITE_DIR + file;
+
+    const std::vector<TestCaseInfo> testCases = loadTestCases(path, dialect);
+    checkKnownFailures(dialect, file, testCases);
+    if (testCases.empty()) {
+        GTEST_SKIP() << "No test cases for " << dialect.name;
+    }
+
+    std::set<const KnownFailure *> failed;
+#ifdef VALIJSON_BUILD_JSON11_ADAPTER
+    processTestCases<valijson::adapters::Json11Adapter>(path, dialect, file,
+                                                        testCases, failed);
+#endif
+    processTestCases<valijson::adapters::JsonCppAdapter>(path, dialect, file,
+                                                         testCases, failed);
+    processTestCases<valijson::adapters::RapidJsonAdapter>(path, dialect, file,
+                                                           testCases, failed);
+    processTestCases<valijson::adapters::PicoJsonAdapter>(path, dialect, file,
+                                                          testCases, failed);
+    processTestCases<valijson::adapters::NlohmannJsonAdapter>(
+        path, dialect, file, testCases, failed);
+#ifdef VALIJSON_BUILD_POCO_ADAPTER
+    processTestCases<valijson::adapters::PocoJsonAdapter>(path, dialect, file,
+                                                          testCases, failed);
+#endif
+
+    checkKnownFailuresFailed(dialect, file, failed);
 }
 
-TEST_F(TestValidator, Draft7_Ref)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/ref.json");
-}
-
-TEST_F(TestValidator, Draft7_RefRemote)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/refRemote.json");
-}
-
-TEST_F(TestValidator, Draft7_Required)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/required.json");
-}
-
-TEST_F(TestValidator, Draft7_Type)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/type.json");
-}
-
-TEST_F(TestValidator, Draft7_UniqueItems)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/uniqueItems.json");
-}
-
-TEST_F(TestValidator, Draft7_OptionalFormatDate)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/optional/format/date.json");
-}
-
-TEST_F(TestValidator, Draft7_OptionalFormatTime)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/optional/format/time.json");
-}
-
-TEST_F(TestValidator, Draft7_OptionalFormatDateTime)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/optional/format/date-time.json");
-}
-
-TEST_F(TestValidator, Draft7_OptionalFormatIpv4)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/optional/format/ipv4.json");
-}
-
-TEST_F(TestValidator, Draft7_OptionalFormatHostname)
-{
-    // A-labels are only checked against the syntax of RFC 1123, and are not
-    // decoded to check them against the rules of IDNA2008
-    const std::set<std::string> skipCases = {
-        "validation of A-label (punycode) host names"
-    };
-    processTestFile(TEST_SUITE_DIR "draft7/optional/format/hostname.json", SchemaParser::kDraft7, skipCases);
-}
-
-TEST_F(TestValidator, Draft7_OptionalFormatIpv6)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/optional/format/ipv6.json");
-}
-
-TEST_F(TestValidator, Draft7_OptionalFormatJsonPointer)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/optional/format/json-pointer.json");
-}
-
-TEST_F(TestValidator, Draft7_OptionalFormatRegex)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/optional/format/regex.json");
-}
-
-TEST_F(TestValidator, Draft7_OptionalFormatRelativeJsonPointer)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/optional/format/relative-json-pointer.json");
-}
-
-TEST_F(TestValidator, Draft7_OptionalFormatUnknown)
-{
-    processDraft7TestFile(TEST_SUITE_DIR "draft7/optional/format/unknown.json");
-}
+INSTANTIATE_TEST_SUITE_P(JsonSchemaTestSuite, TestValidator,
+                         testing::ValuesIn(allTestSuiteFiles()),
+                         testSuiteFileName);
