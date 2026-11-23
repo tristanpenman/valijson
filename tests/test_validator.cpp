@@ -216,6 +216,7 @@ constexpr const char *kTestSuiteFiles[] = {
 
 const std::vector<const char *> kLocalTestFiles = {
     "draft6-draft7-features.json",
+    "ref-to-ref-via-id.json",
 };
 
 //

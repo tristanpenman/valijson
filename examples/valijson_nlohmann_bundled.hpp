@@ -5759,8 +5759,21 @@ private:
                             actualJsonPointer, "", referencedScope);
                 }
 
-                const Subschema *subschema = rootSchema.createSubschema();
                 newRegistryKeys.push_back(queryKey);
+
+                // The referenced node may itself be a JSON Reference, which
+                // needs to be resolved before a schema can be populated
+                std::string referencedJsonRef;
+                if (extractJsonReference(referencedAdapter,
+                            referencedJsonRef)) {
+                    return makeOrReuseSchema(rootSchema, registeredRoot,
+                            referencedAdapter, referencedScope,
+                            actualJsonPointer, fetchDoc, parentSubschema,
+                            ownName, docCache, schemaRegistry,
+                            newRegistryKeys);
+                }
+
+                const Subschema *subschema = rootSchema.createSubschema();
                 updateSchemaRegistry(schemaRegistry, newRegistryKeys, subschema);
 
                 populateSchema(rootSchema, registeredRoot, referencedAdapter,
