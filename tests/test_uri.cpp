@@ -1,9 +1,11 @@
+#include <ostream>
 #include <string>
 
 #include <gtest/gtest.h>
 
 #include <valijson/internal/uri.hpp>
 
+using valijson::internal::uri::isUriAbsolute;
 using valijson::internal::uri::resolveRelativeUri;
 
 namespace {
@@ -14,6 +16,12 @@ struct UriResolutionTestCase
     std::string relativeUri;
     std::string expectedUri;
 };
+
+void PrintTo(const UriResolutionTestCase &testCase, std::ostream *os)
+{
+    *os << "'" << testCase.relativeUri << "' against '" << testCase.baseUri
+        << "'";
+}
 
 class TestUriResolution
     : public testing::TestWithParam<UriResolutionTestCase>
@@ -164,3 +172,58 @@ INSTANTIATE_TEST_SUITE_P(
                 UriResolutionTestCase{"foo", "./", "/"},
                 UriResolutionTestCase{"a/b", "../", "/"},
                 UriResolutionTestCase{"dir/file.json", "../", "/"}));
+
+// URIs without an authority, such as tag URIs, must keep their scheme when
+// relative references are resolved against them. Previously, they were treated
+// as relative, and resolving a $ref against a matching $id produced a
+// different URI each time, which resulted in unbounded recursion.
+INSTANTIATE_TEST_SUITE_P(
+        UrisWithoutAuthority,
+        TestUriResolution,
+        testing::Values(
+                UriResolutionTestCase{
+                        "tag:foo.example,2025:bar/baz",
+                        "tag:foo.example,2025:bar/baz",
+                        "tag:foo.example,2025:bar/baz"},
+                UriResolutionTestCase{
+                        "tag:foo.example,2025:bar/baz",
+                        "#foo",
+                        "tag:foo.example,2025:bar/baz#foo"},
+                UriResolutionTestCase{
+                        "tag:foo.example,2025:bar/baz",
+                        "qux",
+                        "tag:foo.example,2025:bar/qux"},
+                UriResolutionTestCase{
+                        "foo:bar/baz", "foo:bar/baz", "foo:bar/baz"},
+                UriResolutionTestCase{
+                        "foo:bar/baz", "qux", "foo:bar/qux"},
+                UriResolutionTestCase{
+                        "http://a/b/c/d;p?q", "g:h", "g:h"}));
+
+TEST(UriAbsolute, AcceptsUrisWithScheme)
+{
+    EXPECT_TRUE(isUriAbsolute("http://example.com/schema"));
+    EXPECT_TRUE(isUriAbsolute("file:///etc/schema.json"));
+    EXPECT_TRUE(isUriAbsolute("tag:foo.example,2025:bar/baz"));
+    EXPECT_TRUE(isUriAbsolute("foo:bar/baz"));
+    EXPECT_TRUE(isUriAbsolute("urn:example:schema"));
+    EXPECT_TRUE(isUriAbsolute("mailto:joe@example.com"));
+    EXPECT_TRUE(isUriAbsolute("a+b-c.d:x"));
+    EXPECT_TRUE(isUriAbsolute("g:"));
+}
+
+TEST(UriAbsolute, RejectsRelativeReferences)
+{
+    EXPECT_FALSE(isUriAbsolute(""));
+    EXPECT_FALSE(isUriAbsolute("abc"));
+    EXPECT_FALSE(isUriAbsolute("/abc"));
+    EXPECT_FALSE(isUriAbsolute("//example.com/schema"));
+    EXPECT_FALSE(isUriAbsolute("#foo"));
+    EXPECT_FALSE(isUriAbsolute("./a:b"));
+    EXPECT_FALSE(isUriAbsolute("a/b:c"));
+    EXPECT_FALSE(isUriAbsolute("?a:b"));
+    EXPECT_FALSE(isUriAbsolute(":abc"));
+    EXPECT_FALSE(isUriAbsolute("1http://example.com"));
+    EXPECT_FALSE(isUriAbsolute("ht_tp://example.com"));
+    EXPECT_FALSE(isUriAbsolute(std::string("ht\0tp://example.com", 19)));
+}

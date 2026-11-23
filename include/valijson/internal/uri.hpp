@@ -12,25 +12,69 @@ namespace internal {
 namespace uri {
 
 /**
- * @brief  Check whether a URI is absolute, returns pos just past end if found
+ * @brief  Find the end of the scheme of a URI, as defined in RFC 3986,
+ *         section 3.1
+ *
+ * A scheme consists of a letter followed by any number of letters, digits,
+ * '+', '-' and '.' characters, and is terminated by ':'.
+ *
+ * @param  uri  URI to check
+ *
+ * @return position of the ':' that terminates the scheme, if \p uri starts
+ *         with a scheme
  */
-inline std::optional<size_t> parseScheme(const std::string &uri)
+inline std::optional<size_t> findSchemeEnd(const std::string &uri)
 {
-    constexpr auto marker = "://";
+    const auto isAlpha = [](char c) {
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+    };
 
-    const auto pos = uri.find(marker);
+    if (uri.empty() || !isAlpha(uri[0])) {
+        return std::nullopt;
+    }
 
-    return pos == std::string::npos
-        ? std::nullopt
-        : std::make_optional<size_t>(pos + 3);
+    for (size_t i = 1; i < uri.size(); ++i) {
+        const char c = uri[i];
+        if (c == ':') {
+            return i;
+        }
+        if (!isAlpha(c) && (c < '0' || c > '9') && c != '+' && c != '-' &&
+            c != '.') {
+            return std::nullopt;
+        }
+    }
+
+    return std::nullopt;
 }
 
 /**
-  * @brief  Check whether a URI is absolute
-  */
+ * @brief  Find the start of the authority of a URI
+ *
+ * @param  uri  URI to check
+ *
+ * @return position just past the '://' that follows the scheme, if \p uri
+ *         starts with a scheme followed by an authority
+ */
+inline std::optional<size_t> parseScheme(const std::string &uri)
+{
+    const auto schemeEnd = findSchemeEnd(uri);
+    if (!schemeEnd || uri.compare(*schemeEnd + 1, 2, "//") != 0) {
+        return std::nullopt;
+    }
+
+    return *schemeEnd + 3;
+}
+
+/**
+ * @brief  Check whether a URI is absolute, i.e. whether it starts with a
+ *         scheme
+ *
+ * URIs do not need an authority to be absolute, so this includes URIs such as
+ * 'tag:example.com,2025:schema' and 'urn:example:schema'.
+ */
 inline bool isUriAbsolute(const std::string &uri)
 {
-    return parseScheme(uri).has_value();
+    return findSchemeEnd(uri).has_value();
 }
 
 /**
@@ -41,10 +85,10 @@ inline bool isUriAbsolute(const std::string &uri)
  * Example: urn:isbn:978-3-16-148410-0
  */
 inline bool isUrn(const std::string &documentUri) {
-  static const internal::regex pattern(
-      "^((urn)|(URN)):(?!urn:)([a-zA-Z0-9][a-zA-Z0-9-]{1,31})(:[-a-zA-Z0-9\\\\._~%!$&'()\\/*+,;=]+)+(\\?[-a-zA-Z0-9\\\\._~%!$&'()\\/*+,;:=]+){0,1}(#[-a-zA-Z0-9\\\\._~%!$&'()\\/*+,;:=]+){0,1}$");
+    static const internal::regex pattern(
+        R"(^((urn)|(URN)):(?!urn:)([a-zA-Z0-9][a-zA-Z0-9-]{1,31})(:[-a-zA-Z0-9\\._~%!$&'()\/*+,;=]+)+(\?[-a-zA-Z0-9\\._~%!$&'()\/*+,;:=]+){0,1}(#[-a-zA-Z0-9\\._~%!$&'()\/*+,;:=]+){0,1}$)");
 
-  return internal::regex_match(documentUri, pattern);
+    return internal::regex_match(documentUri, pattern);
 }
 
 /**
@@ -64,12 +108,12 @@ inline std::string resolveRelativeUri(
         return relativeUri;
     }
 
-    const auto schemeEnd = parseScheme(resolutionScope);
+    const auto authorityStart = parseScheme(resolutionScope);
     std::string schemeAndAuthority;
     std::string basePath;
-    if (schemeEnd.has_value()) {
+    if (authorityStart.has_value()) {
         // Extract scheme+authority, e.g. http://userinfo@example.com:8080
-        const auto authorityEnd = resolutionScope.find('/', *schemeEnd);
+        const auto authorityEnd = resolutionScope.find('/', *authorityStart);
         schemeAndAuthority = resolutionScope.substr(0, authorityEnd);
 
         // Assume path starts immediately after scheme+authority
@@ -79,6 +123,11 @@ inline std::string resolveRelativeUri(
         basePath = pathStart < resolutionScope.size()
                 ? resolutionScope.substr(pathStart)
                 : "/";
+    } else if (const auto schemeEnd = findSchemeEnd(resolutionScope)) {
+        // A URI without an authority, such as 'tag:example.com,2025:a/b'. The
+        // path follows the scheme directly, and must not be merged with it.
+        schemeAndAuthority = resolutionScope.substr(0, *schemeEnd + 1);
+        basePath = resolutionScope.substr(*schemeEnd + 1);
     } else {
         // A relative resolution scope still represents a URI path. Relative
         // references replace its final path segment rather than being appended
@@ -169,13 +218,13 @@ inline std::string resolveRelativeUri(
     std::string normalisedPath = absolutePath ? "/" : "";
     for (auto itr = segments.begin(); itr != segments.end(); ++itr) {
         if (itr != segments.begin()) {
-            normalisedPath += "/";
+            normalisedPath += '/';
         }
         normalisedPath += *itr;
     }
     if (!mergedPath.empty() && mergedPath[mergedPath.size() - 1] == '/' &&
             (normalisedPath.empty() || normalisedPath[normalisedPath.size() - 1] != '/')) {
-        normalisedPath += "/";
+        normalisedPath += '/';
     }
 
     // Construct final URI
