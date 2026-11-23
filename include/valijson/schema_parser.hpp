@@ -8,6 +8,7 @@
 #include <valijson/constraints/concrete_constraints.hpp>
 #include <valijson/internal/adapter.hpp>
 #include <valijson/internal/debug.hpp>
+#include <valijson/internal/infinite_loop.hpp>
 #include <valijson/internal/json_pointer.hpp>
 #include <valijson/internal/json_reference.hpp>
 #include <valijson/internal/uri.hpp>
@@ -131,6 +132,12 @@ public:
 #endif
 
         freeDocumentCache<AdapterType>(docCache, freeDoc);
+
+        if (internal::containsInfiniteLoop(schema)) {
+            throwRuntimeError("Schema applies a subschema to a value that it "
+                    "is already being applied to, so validation would never "
+                    "terminate.");
+        }
     }
 
 private:
