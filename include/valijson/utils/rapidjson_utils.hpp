@@ -28,7 +28,11 @@ inline bool loadDocument(const std::string &path, rapidjson::GenericDocument<Enc
         if (document.HasParseError()) {
             std::cerr << "RapidJson failed to parse the document:" << std::endl;
             std::cerr << "Parse error: " << document.GetParseError() << std::endl;
-            std::cerr << "Near: " << file.substr((std::max)(size_t(0), document.GetErrorOffset() - 20), 40) << std::endl;
+            // Show up to 20 characters either side of the error, taking care
+            // not to underflow when the error is near the start of the file
+            const size_t errorOffset = document.GetErrorOffset();
+            const size_t contextStart = errorOffset > 20 ? errorOffset - 20 : 0;
+            std::cerr << "Near: " << file.substr(contextStart, 40) << std::endl;
             return false;
         }
 #if VALIJSON_USE_EXCEPTIONS

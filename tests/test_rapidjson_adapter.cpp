@@ -3,6 +3,9 @@
 #include <gtest/gtest.h>
 
 #include <valijson/adapters/rapidjson_adapter.hpp>
+#include <valijson/utils/rapidjson_utils.hpp>
+
+#define TEST_DATA_DIR "../tests/data"
 
 class TestRapidJsonAdapter : public testing::Test
 {
@@ -136,4 +139,13 @@ TEST_F(TestRapidJsonAdapter, BasicObjectIteration)
     // Test using value type based on CrtAllocator
     testBasicObjectIteration<rapidjson::GenericValue<rapidjson::UTF8<>,
             rapidjson::CrtAllocator> >();
+}
+
+TEST_F(TestRapidJsonAdapter, LoadDocumentWithErrorNearStart)
+{
+    // The context printed for a parse error used to underflow when the error
+    // was within the first 20 characters, and std::string::substr() threw
+    rapidjson::Document document;
+    EXPECT_FALSE(valijson::utils::loadDocument(
+            TEST_DATA_DIR "/documents/invalid_near_start.json", document));
 }
