@@ -82,3 +82,25 @@ TEST_F(TestJson11Adapter, BasicObjectIteration)
     // Ensure that the correct number of elements were iterated over
     EXPECT_EQ( numElements, expectedValue );
 }
+
+TEST_F(TestJson11Adapter, Integers)
+{
+    std::string error;
+    const json11::Json document = json11::Json::parse("[1, 1.5, 5000000000, -5000000000]", error);
+    ASSERT_TRUE(error.empty());
+
+    const valijson::adapters::Json11Adapter one(document[0]);
+    EXPECT_TRUE(one.isInteger());
+    EXPECT_FALSE(valijson::adapters::Json11Adapter(document[1]).isInteger());
+
+    // Integers that do not fit in an int are integers, and are not truncated
+    int64_t value = 0;
+    const valijson::adapters::Json11Adapter large(document[2]);
+    EXPECT_TRUE(large.isInteger());
+    ASSERT_TRUE(large.getInteger(value));
+    EXPECT_EQ(5000000000, value);
+
+    const valijson::adapters::Json11Adapter largeNegative(document[3]);
+    ASSERT_TRUE(largeNegative.getInteger(value));
+    EXPECT_EQ(-5000000000, value);
+}
