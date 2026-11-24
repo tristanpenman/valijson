@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include <limits>
 #include <optional>
 #include <string>
 #include <utility>
@@ -338,12 +339,26 @@ public:
 
     bool getInteger(int64_t &result) const
     {
-        if (isInteger()) {
-            result = m_value.toLongLong();
-            return true;
+        if (!isInteger()) {
+            return false;
         }
 
-        return false;
+        switch (m_value.typeId()) {
+            case QMetaType::UInt:
+            case QMetaType::UShort:
+            case QMetaType::ULong:
+            case QMetaType::ULongLong: {
+                const qulonglong u = m_value.toULongLong();
+                if (u > static_cast<qulonglong>(std::numeric_limits<qlonglong>::max())) {
+                    return false;
+                }
+                result = static_cast<int64_t>(u);
+                return true;
+            }
+            default:
+                result = m_value.toLongLong();
+                return true;
+        }
     }
 
     /**

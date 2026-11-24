@@ -3,6 +3,9 @@
 #include <gtest/gtest.h>
 
 #include <valijson/adapters/qvariant_adapter.hpp>
+#include <valijson/schema.hpp>
+#include <valijson/schema_parser.hpp>
+#include <valijson/validator.hpp>
 
 class TestQtVariantAdapter : public testing::Test
 {
@@ -81,4 +84,37 @@ TEST_F(TestQtVariantAdapter, BasicObjectIteration)
 
     // Ensure that the correct number of elements were iterated over
     EXPECT_EQ( numElements, expectedValue );
+}
+
+TEST_F(TestQtVariantAdapter, GetIntegerFailsForUnsignedValuesOutsideInt64Range)
+{
+    QVariant document(static_cast<qulonglong>(10000000000000000000ULL));
+    valijson::adapters::QtVariantAdapter adapter(document);
+
+    ASSERT_TRUE(adapter.isInteger());
+
+    int64_t result = 0;
+    EXPECT_FALSE(adapter.getInteger(result));
+}
+
+TEST_F(TestQtVariantAdapter, OutOfRangeNumbersFailMaximumValidationCleanly)
+{
+    using namespace valijson;
+
+    QVariantMap schemaMap;
+    schemaMap["maximum"] = 10;
+    QVariant schemaJson(schemaMap);
+    Schema schema;
+    SchemaParser parser;
+    adapters::QtVariantAdapter schemaAdapter(schemaJson);
+    parser.populateSchema(schemaAdapter, schema);
+
+    QVariant document(static_cast<qulonglong>(10000000000000000000ULL));
+    adapters::QtVariantAdapter adapter(document);
+
+    Validator strictValidator(Validator::kStrongTypes);
+    EXPECT_FALSE(strictValidator.validate(schema, adapter, nullptr));
+
+    Validator weakValidator(Validator::kWeakTypes);
+    EXPECT_FALSE(weakValidator.validate(schema, adapter, nullptr));
 }

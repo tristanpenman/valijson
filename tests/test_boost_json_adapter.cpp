@@ -3,6 +3,9 @@
 #include <boost/json/src.hpp> // Needs to be included exactly once in the code to use header-only version of Boost.JSON
 
 #include <valijson/adapters/boost_json_adapter.hpp>
+#include <valijson/schema.hpp>
+#include <valijson/schema_parser.hpp>
+#include <valijson/validator.hpp>
 
 class TestBoostJsonAdapter : public testing::Test
 {
@@ -122,4 +125,58 @@ TEST_F(TestBoostJsonAdapter, UnsignedIntegersAreIntegers)
         EXPECT_TRUE( adapter.isInteger() );
         EXPECT_TRUE( adapter.isNumber() );
     }
+}
+
+TEST_F(TestBoostJsonAdapter, GetIntegerFailsForValuesOutsideInt64Range)
+{
+    boost::json::value document = boost::json::parse("9223372036854775808");
+    valijson::adapters::BoostJsonAdapter adapter(document);
+
+    ASSERT_TRUE(adapter.isInteger());
+
+    int64_t result = 0;
+    EXPECT_FALSE(adapter.getInteger(result));
+}
+
+TEST_F(TestBoostJsonAdapter, OutOfRangeNumbersFailMaximumValidationCleanly)
+{
+    using namespace valijson;
+
+    boost::json::value schemaJson = boost::json::parse(R"({"maximum": 10})");
+    Schema schema;
+    SchemaParser parser;
+    adapters::BoostJsonAdapter schemaAdapter(schemaJson);
+    parser.populateSchema(schemaAdapter, schema);
+
+    boost::json::value document = boost::json::parse("9223372036854775808");
+    adapters::BoostJsonAdapter adapter(document);
+
+    Validator strictValidator(Validator::kStrongTypes);
+    EXPECT_FALSE(strictValidator.validate(schema, adapter, nullptr));
+
+    Validator weakValidator(Validator::kWeakTypes);
+    EXPECT_FALSE(weakValidator.validate(schema, adapter, nullptr));
+}
+
+TEST_F(TestBoostJsonAdapter, SchemaParserReportsOutOfRangeMaximumCleanly)
+{
+    using namespace valijson;
+
+    boost::json::value schemaJson = boost::json::parse(R"({"maximum": 18446744073709551615})");
+    adapters::BoostJsonAdapter schemaAdapter(schemaJson);
+    Schema schema;
+    SchemaParser parser;
+
+#if VALIJSON_USE_EXCEPTIONS
+    try {
+        parser.populateSchema(schemaAdapter, schema);
+        FAIL() << "Expected populateSchema() to throw";
+    } catch (const std::runtime_error &e) {
+        EXPECT_STREQ("Expected numeric value for maximum constraint.", e.what());
+    }
+#else
+    // In exception-disabled builds this path terminates through the project's
+    // configured error handler, so it cannot be asserted in-process.
+    SUCCEED();
+#endif
 }

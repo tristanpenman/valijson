@@ -1939,12 +1939,14 @@ private:
         const AdapterType &node,
         const AdapterType *exclusiveMaximum)
     {
-        if (!node.maybeDouble()) {
-            throwRuntimeError("Expected numeric value for maximum constraint.");
-        }
-
         constraints::MaximumConstraint constraint;
-        constraint.setMaximum(node.asDouble());
+        {
+            double maximum = 0;
+            if (!node.asDouble(maximum)) {
+                throwRuntimeError("Expected numeric value for maximum constraint.");
+            }
+            constraint.setMaximum(maximum);
+        }
 
         if (exclusiveMaximum) {
             if (!exclusiveMaximum->maybeBool()) {
@@ -1967,12 +1969,12 @@ private:
     template<typename AdapterType>
     constraints::MaximumConstraint makeMaximumConstraintExclusive(const AdapterType &node)
     {
-        if (!node.maybeDouble()) {
+        constraints::MaximumConstraint constraint;
+        double maximum = 0;
+        if (!node.asDouble(maximum)) {
             throwRuntimeError("Expected numeric value for exclusiveMaximum constraint.");
         }
-
-        constraints::MaximumConstraint constraint;
-        constraint.setMaximum(node.asDouble());
+        constraint.setMaximum(maximum);
         constraint.setExclusiveMaximum(true);
         return constraint;
     }
@@ -1989,8 +1991,8 @@ private:
     constraints::MaxItemsConstraint makeMaxItemsConstraint(
         const AdapterType &node)
     {
-        if (node.maybeInteger()) {
-            const int64_t value = node.asInteger();
+        int64_t value = 0;
+        if (node.asInteger(value)) {
             if (value >= 0) {
                 constraints::MaxItemsConstraint constraint;
                 constraint.setMaxItems(static_cast<uint64_t>(value));
@@ -2013,8 +2015,8 @@ private:
     constraints::MaxLengthConstraint makeMaxLengthConstraint(
         const AdapterType &node)
     {
-        if (node.maybeInteger()) {
-            const int64_t value = node.asInteger();
+        int64_t value = 0;
+        if (node.asInteger(value)) {
             if (value >= 0) {
                 constraints::MaxLengthConstraint constraint;
                 constraint.setMaxLength(static_cast<uint64_t>(value));
@@ -2039,8 +2041,8 @@ private:
     constraints::MaxPropertiesConstraint makeMaxPropertiesConstraint(
         const AdapterType &node)
     {
-        if (node.maybeInteger()) {
-            int64_t value = node.asInteger();
+        int64_t value = 0;
+        if (node.asInteger(value)) {
             if (value >= 0) {
                 constraints::MaxPropertiesConstraint constraint;
                 constraint.setMaxProperties(static_cast<uint64_t>(value));
@@ -2068,12 +2070,14 @@ private:
         const AdapterType &node,
         const AdapterType *exclusiveMinimum)
     {
-        if (!node.maybeDouble()) {
-            throwRuntimeError("Expected numeric value for minimum constraint.");
-        }
-
         constraints::MinimumConstraint constraint;
-        constraint.setMinimum(node.asDouble());
+        {
+            double minimum = 0;
+            if (!node.asDouble(minimum)) {
+                throwRuntimeError("Expected numeric value for minimum constraint.");
+            }
+            constraint.setMinimum(minimum);
+        }
 
         if (exclusiveMinimum) {
             if (!exclusiveMinimum->maybeBool()) {
@@ -2096,12 +2100,12 @@ private:
     template<typename AdapterType>
     constraints::MinimumConstraint makeMinimumConstraintExclusive(const AdapterType &node)
     {
-        if (!node.maybeDouble()) {
+        constraints::MinimumConstraint constraint;
+        double minimum = 0;
+        if (!node.asDouble(minimum)) {
             throwRuntimeError("Expected numeric value for exclusiveMinimum constraint.");
         }
-
-        constraints::MinimumConstraint constraint;
-        constraint.setMinimum(node.asDouble());
+        constraint.setMinimum(minimum);
         constraint.setExclusiveMinimum(true);
         return constraint;
     }
@@ -2117,8 +2121,8 @@ private:
     template<typename AdapterType>
     constraints::MinItemsConstraint makeMinItemsConstraint(const AdapterType &node)
     {
-        if (node.maybeInteger()) {
-            const int64_t value = node.asInteger();
+        int64_t value = 0;
+        if (node.asInteger(value)) {
             if (value >= 0) {
                 constraints::MinItemsConstraint constraint;
                 constraint.setMinItems(static_cast<uint64_t>(value));
@@ -2140,8 +2144,8 @@ private:
     template<typename AdapterType>
     constraints::MinLengthConstraint makeMinLengthConstraint(const AdapterType &node)
     {
-        if (node.maybeInteger()) {
-            const int64_t value = node.asInteger();
+        int64_t value = 0;
+        if (node.asInteger(value)) {
             if (value >= 0) {
                 constraints::MinLengthConstraint constraint;
                 constraint.setMinLength(static_cast<uint64_t>(value));
@@ -2166,8 +2170,8 @@ private:
     template<typename AdapterType>
     constraints::MinPropertiesConstraint makeMinPropertiesConstraint(const AdapterType &node)
     {
-        if (node.maybeInteger()) {
-            int64_t value = node.asInteger();
+        int64_t value = 0;
+        if (node.asInteger(value)) {
             if (value >= 0) {
                 constraints::MinPropertiesConstraint constraint;
                 constraint.setMinProperties(static_cast<uint64_t>(value));
@@ -2190,7 +2194,11 @@ private:
     constraints::MultipleOfDoubleConstraint makeMultipleOfDoubleConstraint(const AdapterType &node)
     {
         constraints::MultipleOfDoubleConstraint constraint;
-        constraint.setDivisor(node.asDouble());
+        double divisor = 0;
+        if (!node.asDouble(divisor)) {
+            throwRuntimeError("Expected a numeric value for 'multipleOf' constraint.");
+        }
+        constraint.setDivisor(divisor);
         return constraint;
     }
 
@@ -2206,7 +2214,11 @@ private:
     constraints::MultipleOfIntConstraint makeMultipleOfIntConstraint(const AdapterType &node)
     {
         constraints::MultipleOfIntConstraint constraint;
-        constraint.setDivisor(node.asInteger());
+        int64_t divisor = 0;
+        if (!node.asInteger(divisor)) {
+            throwRuntimeError("Expected a numeric value for 'multipleOf' constraint.");
+        }
+        constraint.setDivisor(divisor);
         return constraint;
     }
 
