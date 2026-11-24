@@ -517,11 +517,17 @@ public:
         } else if (isBool() || (!strict && maybeBool())) {
             return (other.isBool() || (!strict && other.maybeBool())) && other.asBool() == asBool();
         } else if (isNumber() && strict) {
-            return other.isNumber() && other.getNumber() == getNumber();
+            double thisNumber, otherNumber;
+            return other.isNumber() && getNumber(thisNumber) && other.getNumber(otherNumber) &&
+                thisNumber == otherNumber;
         } else if (!strict && maybeDouble()) {
-            return (other.maybeDouble() && other.asDouble() == asDouble());
+            double thisDouble, otherDouble;
+            return other.maybeDouble() && asDouble(thisDouble) && other.asDouble(otherDouble) &&
+                thisDouble == otherDouble;
         } else if (!strict && maybeInteger()) {
-            return (other.maybeInteger() && other.asInteger() == asInteger());
+            int64_t thisInteger, otherInteger;
+            return other.maybeInteger() && asInteger(thisInteger) && other.asInteger(otherInteger) &&
+                thisInteger == otherInteger;
         } else if (isString() || (!strict && maybeString())) {
             return (other.isString() || (!strict && other.maybeString())) &&
                 other.asString() == asString();
