@@ -108,8 +108,12 @@ struct DefaultRegexEngine
      *
      * @throws std::runtime_error if the regular expression is too complex to
      *         be compiled by std::regex without risking a stack overflow, as
-     *         determined by internal::isRegexTooComplex(). The limits do not
-     *         apply to Boost.Regex, which does not parse recursively.
+     *         determined by internal::isRegexTooComplex(), or if it has a
+     *         quantifier that follows another quantifier (see
+     *         internal::hasRepeatedQuantifier()), for which matching with
+     *         libstdc++ takes exponential time. These checks do not apply to
+     *         Boost.Regex, which has limits of its own, and for which
+     *         quantifiers such as "a++" are valid possessive quantifiers.
      */
     DefaultRegexEngine(const std::string& pattern)
       : regex(checkComplexity(pattern)) { }
@@ -126,6 +130,11 @@ private:
         if (internal::isRegexTooComplex(pattern)) {
             throwRuntimeError("Regular expression is too complex to be "
                     "compiled safely");
+        }
+
+        if (internal::hasRepeatedQuantifier(pattern)) {
+            throwRuntimeError("Regular expression has a quantifier that "
+                    "follows another quantifier");
         }
 #endif
 

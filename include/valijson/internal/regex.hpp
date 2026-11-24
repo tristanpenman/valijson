@@ -130,5 +130,107 @@ inline bool isRegexTooComplex(const std::string &pattern)
     return false;
 }
 
+/**
+ * @brief  Find the end of a quantifier in braces, such as {2}, {2,} or {2,4}
+ *
+ * @return index just past the closing brace, or 0 if the brace at the given
+ *         index does not start a quantifier, in which case it is a literal
+ *         character
+ */
+inline std::size_t findBraceQuantifierEnd(const std::string &pattern,
+                                          std::size_t brace)
+{
+    std::size_t i = brace + 1;
+    const std::size_t digitsStart = i;
+    while (i < pattern.size() && pattern[i] >= '0' && pattern[i] <= '9') {
+        i++;
+    }
+    if (i == digitsStart) {
+        return 0;
+    }
+    if (i < pattern.size() && pattern[i] == ',') {
+        i++;
+        while (i < pattern.size() && pattern[i] >= '0' && pattern[i] <= '9') {
+            i++;
+        }
+    }
+
+    return i < pattern.size() && pattern[i] == '}' ? i + 1 : 0;
+}
+
+/**
+ * @brief  Determine whether a regular expression has a quantifier that
+ *         follows another quantifier, such as "a++" or "a{2}*"
+ *
+ * In ECMA 262, a quantifier may only be followed by a single '?', which makes
+ * it non-greedy. libstdc++ nevertheless accepts repeated quantifiers, and
+ * treats them as nested quantifiers, for which matching takes time that is
+ * exponential in the length of the string.
+ *
+ * @param  pattern  regular expression to check
+ *
+ * @return \c true if a quantifier follows another quantifier
+ */
+inline bool hasRepeatedQuantifier(const std::string &pattern)
+{
+    enum class Previous { kOther, kQuantifier, kNonGreedyQuantifier };
+    Previous previous = Previous::kOther;
+
+    const std::size_t length = pattern.size();
+    for (std::size_t i = 0; i < length; i++) {
+        const char c = pattern[i];
+
+        std::size_t quantifierEnd = 0;
+        if (c == '*' || c == '+') {
+            quantifierEnd = i + 1;
+        } else if (c == '?') {
+            if (previous == Previous::kQuantifier) {
+                previous = Previous::kNonGreedyQuantifier;
+                continue;
+            }
+            quantifierEnd = i + 1;
+        } else if (c == '{') {
+            quantifierEnd = findBraceQuantifierEnd(pattern, i);
+        }
+
+        if (quantifierEnd != 0) {
+            // A quantifier at the start of the expression, or of a group or
+            // an alternative, is left for the regex engine to reject
+            if (previous != Previous::kOther) {
+                return true;
+            }
+            previous = Previous::kQuantifier;
+            i = quantifierEnd - 1;
+            continue;
+        }
+
+        if (c == '\\') {
+            // Skip the escaped character
+            i++;
+        } else if (c == '[') {
+            // Skip to the end of the character class, which may start with
+            // '^' and a literal ']'
+            std::size_t j = i + 1;
+            if (j < length && pattern[j] == '^') {
+                j++;
+            }
+            if (j < length && pattern[j] == ']') {
+                j++;
+            }
+            while (j < length && pattern[j] != ']') {
+                if (pattern[j] == '\\') {
+                    j++;
+                }
+                j++;
+            }
+            i = j;
+        }
+
+        previous = Previous::kOther;
+    }
+
+    return false;
+}
+
 } // namespace internal
 } // namespace valijson
