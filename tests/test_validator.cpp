@@ -230,7 +230,8 @@ const std::vector<const char *> kLocalTestFiles = {
 // cases that would crash the test runner are not run at all.
 //
 // Every entry must refer to a file, test case and test that apply to the
-// dialect, so that entries do not outlive the test cases they describe.
+// dialect, so that entries do not outlive the test cases they describe. An
+// entry can be limited to one adapter, when only that adapter fails.
 //
 
 struct KnownFailure
@@ -239,6 +240,7 @@ struct KnownFailure
     const char *file;
     const char *testCase;
     const char *test;
+    const char *adapter = nullptr;
 };
 
 // clang-format off
@@ -402,8 +404,9 @@ constexpr KnownFailure kKnownFailures[] = {
     { 7, "optional/bignum.json", "uniqueItems comparison with high precision", "distinct high-precision decimals are unique" },
     { 6, "optional/bignum.json", "uniqueItems comparison with high precision", "objects containing distinct decimals are unique" },
     { 7, "optional/bignum.json", "uniqueItems comparison with high precision", "objects containing distinct decimals are unique" },
-    { 3, "optional/zero-terminated-floats.json", nullptr, nullptr },
-    { 4, "optional/zero-terminated-floats.json", nullptr, nullptr },
+    // json11 does not distinguish a number such as 1.0 from the integer 1
+    { 3, "optional/zero-terminated-floats.json", nullptr, nullptr, "Json11Adapter" },
+    { 4, "optional/zero-terminated-floats.json", nullptr, nullptr, "Json11Adapter" },
 
     // 'contentEncoding' and 'contentMediaType' are not validated
     { 7, "optional/content.json", "validation of binary string-encoding", "an invalid base64 string (% is not a valid character)" },
@@ -535,10 +538,14 @@ bool supportsTags(const nlohmann::json &testCase, const Dialect &dialect)
  */
 const KnownFailure *findKnownFailure(int draft, const std::string &file,
                                      const std::string &testCase,
-                                     const std::string *test)
+                                     const std::string *test,
+                                     const std::string &adapter)
 {
     for (const KnownFailure &knownFailure : kKnownFailures) {
         if (knownFailure.draft != draft || file != knownFailure.file) {
+            continue;
+        }
+        if (knownFailure.adapter != nullptr && adapter != knownFailure.adapter) {
             continue;
         }
         if (knownFailure.testCase == nullptr) {
@@ -926,7 +933,8 @@ class TestValidator : public testing::TestWithParam<TestSuiteFile>
 #if VALIJSON_USE_EXCEPTIONS
         } catch (const std::exception &e) {
             const KnownFailure *knownFailure = findKnownFailure(
-                dialect.version, file, info.description, nullptr);
+                dialect.version, file, info.description, nullptr,
+                AdapterTraits<AdapterType>::adapterName());
             if (knownFailure) {
                 failed.insert(knownFailure);
             } else {
@@ -951,7 +959,8 @@ class TestValidator : public testing::TestWithParam<TestSuiteFile>
             const AdapterType data = testObject.find("data")->second;
 
             const KnownFailure *knownFailure = findKnownFailure(
-                dialect.version, file, info.description, &description);
+                dialect.version, file, info.description, &description,
+                AdapterTraits<AdapterType>::adapterName());
 
             bool valid = !shouldValidate;
             bool validWithResults = !shouldValidate;

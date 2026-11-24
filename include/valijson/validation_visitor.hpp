@@ -1361,7 +1361,8 @@ public:
         {
             // ValidateNamedTypes functor assumes target is invalid
             bool validated = false;
-            constraint.applyToNamedTypes(ValidateNamedTypes(m_target, false, true, m_strictTypes, &validated));
+            constraint.applyToNamedTypes(ValidateNamedTypes(m_target, false, true, m_strictTypes,
+                    constraint.getIntegralNumbersAreIntegers(), &validated));
             if (validated) {
                 return true;
             }
@@ -1668,11 +1669,13 @@ private:
                 bool continueOnSuccess,
                 bool continueOnFailure,
                 bool strictTypes,
+                bool integralNumbersAreIntegers,
                 bool *validated)
           : m_target(target),
             m_continueOnSuccess(continueOnSuccess),
             m_continueOnFailure(continueOnFailure),
             m_strictTypes(strictTypes),
+            m_integralNumbersAreIntegers(integralNumbersAreIntegers),
             m_validated(validated) { }
 
         bool operator()(constraints::TypeConstraint::JsonType jsonType) const
@@ -1692,12 +1695,13 @@ private:
                 valid = m_target.isBool() || (!m_strictTypes && m_target.maybeBool());
                 break;
             case TypeConstraint::kInteger:
-                // JSON Schema considers a JSON number with a zero fractional
-                // part to be an integer regardless of representation, so an
-                // exact-integer double satisfies the integer type even in
-                // strict mode.
-                valid = m_target.isInteger() || detail::isDoubleAnInteger(m_target)
-                        || (!m_strictTypes && m_target.maybeInteger());
+                // JSON Schema Draft 6 and later consider a JSON number with
+                // a zero fractional part to be an integer regardless of
+                // representation, so an exact-integer double satisfies the
+                // integer type even in strict mode. Drafts 3 and 4 do not.
+                valid = m_target.isInteger() ||
+                        (m_integralNumbersAreIntegers && detail::isDoubleAnInteger(m_target)) ||
+                        (!m_strictTypes && m_target.maybeInteger());
                 break;
             case TypeConstraint::kNull:
                 valid = m_target.isNull() || (!m_strictTypes && m_target.maybeNull());
@@ -1727,6 +1731,7 @@ private:
         const bool m_continueOnSuccess;
         const bool m_continueOnFailure;
         const bool m_strictTypes;
+        const bool m_integralNumbersAreIntegers;
         bool * const m_validated;
     };
 

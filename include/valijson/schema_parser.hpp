@@ -2583,6 +2583,11 @@ private:
 
         TypeConstraint constraint;
 
+        // Drafts 3 and 4 only consider a number without a fraction or exponent
+        // part to be an integer, so 1.0 is not an integer
+        constraint.setIntegralNumbersAreIntegers(
+                m_version != kDraft3 && m_version != kDraft4);
+
         if (node.maybeString()) {
             const TypeConstraint::JsonType type = TypeConstraint::jsonTypeFromString(node.getString());
             if (type == TypeConstraint::kAny && m_version == kDraft4) {
