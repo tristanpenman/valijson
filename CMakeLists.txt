@@ -180,6 +180,7 @@ if(valijson_BUILD_TESTS)
         tests/test_rapidjson_adapter.cpp
         tests/test_picojson_adapter.cpp
         tests/test_poly_constraint.cpp
+        tests/test_regex.cpp
         tests/test_uri.cpp
         tests/test_validation_errors.cpp
         tests/test_validator.cpp
