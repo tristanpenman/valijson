@@ -1,3 +1,4 @@
+#include <sstream>
 
 #include <gtest/gtest.h>
 
@@ -80,4 +81,36 @@ TEST_F(TestJsonCppAdapter, BasicObjectIteration)
 
     // Ensure that the correct number of elements were iterated over
     EXPECT_EQ( numElements, expectedValue );
+}
+
+TEST_F(TestJsonCppAdapter, Integers)
+{
+    Json::Value document;
+    Json::CharReaderBuilder builder;
+    std::string errors;
+    std::istringstream stream(R"([1, 1.0, 5000000000, -5000000000])");
+    ASSERT_TRUE(Json::parseFromStream(builder, stream, &document, &errors));
+
+    // A number written with a fractional part is not an integer, even if the
+    // fractional part is zero
+    const valijson::adapters::JsonCppAdapter one(document[0]);
+    const valijson::adapters::JsonCppAdapter oneWithFraction(document[1]);
+    EXPECT_TRUE(one.isInteger());
+    EXPECT_FALSE(oneWithFraction.isInteger());
+    EXPECT_TRUE(oneWithFraction.isNumber());
+
+    int64_t value = 0;
+    EXPECT_TRUE(one.getInteger(value));
+    EXPECT_EQ(1, value);
+    EXPECT_FALSE(oneWithFraction.getInteger(value));
+
+    // Integers that do not fit in an int are not truncated
+    const valijson::adapters::JsonCppAdapter large(document[2]);
+    EXPECT_TRUE(large.isInteger());
+    ASSERT_TRUE(large.getInteger(value));
+    EXPECT_EQ(5000000000, value);
+
+    const valijson::adapters::JsonCppAdapter largeNegative(document[3]);
+    ASSERT_TRUE(largeNegative.getInteger(value));
+    EXPECT_EQ(-5000000000, value);
 }
