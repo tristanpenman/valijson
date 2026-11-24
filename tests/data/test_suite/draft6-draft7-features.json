@@ -1,0 +1,101 @@
+{
+    "tests": [
+        {
+            "description": "if, then and else are not keywords in Draft 6",
+            "compatibility": "6,<=6",
+            "schema": {
+                "if": {
+                    "type": "integer"
+                },
+                "then": {
+                    "minimum": 10
+                },
+                "else": {
+                    "type": "string"
+                }
+            },
+            "tests": [
+                {
+                    "description": "an integer that would fail 'then' is valid",
+                    "data": 1,
+                    "valid": true
+                },
+                {
+                    "description": "a value that would fail 'else' is valid",
+                    "data": true,
+                    "valid": true
+                }
+            ]
+        },
+        {
+            "description": "formats introduced in Draft 7 are unknown formats in Draft 6",
+            "compatibility": "6,<=6",
+            "schema": {
+                "properties": {
+                    "date": {
+                        "format": "date"
+                    },
+                    "time": {
+                        "format": "time"
+                    },
+                    "regex": {
+                        "format": "regex"
+                    },
+                    "relative-json-pointer": {
+                        "format": "relative-json-pointer"
+                    }
+                }
+            },
+            "tests": [
+                {
+                    "description": "values that are invalid in Draft 7 are valid",
+                    "data": {
+                        "date": "not a date",
+                        "time": "not a time",
+                        "regex": "^(abc",
+                        "relative-json-pointer": "not a relative JSON Pointer"
+                    },
+                    "valid": true
+                }
+            ]
+        },
+        {
+            "description": "formats defined in Draft 6 are validated",
+            "compatibility": "6,<=6",
+            "schema": {
+                "properties": {
+                    "date-time": {
+                        "format": "date-time"
+                    },
+                    "json-pointer": {
+                        "format": "json-pointer"
+                    }
+                }
+            },
+            "tests": [
+                {
+                    "description": "valid values are valid",
+                    "data": {
+                        "date-time": "1963-06-19T08:30:06.283185Z",
+                        "json-pointer": "/foo"
+                    },
+                    "valid": true
+                },
+                {
+                    "description": "an invalid date-time is invalid",
+                    "data": {
+                        "date-time": "not a date-time"
+                    },
+                    "valid": false
+                },
+                {
+                    "description": "an invalid JSON Pointer is invalid",
+                    "data": {
+                        "json-pointer": "foo"
+                    },
+                    "valid": false
+                }
+            ]
+        }
+    ]
+}

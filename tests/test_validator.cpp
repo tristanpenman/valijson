@@ -86,6 +86,7 @@ struct Dialect
 constexpr Dialect kDialects[] = {
     { 3, "Draft3", SchemaParser::kDraft3, true },
     { 4, "Draft4", SchemaParser::kDraft4, true },
+    { 6, "Draft6", SchemaParser::kDraft6, true },
     { 7, "Draft7", SchemaParser::kDraft7, true },
 };
 // clang-format on
@@ -102,6 +103,7 @@ constexpr Dialect kDialects[] = {
 const std::map<std::string, std::string> kMetaSchemas = {
     { "http://json-schema.org/draft-03/schema", "../doc/schema/draft-03.json" },
     { "http://json-schema.org/draft-04/schema", "../doc/schema/draft-04.json" },
+    { "http://json-schema.org/draft-06/schema", "../doc/schema/draft-06.json" },
     { "http://json-schema.org/draft-07/schema", "../doc/schema/draft-07.json" },
 };
 // clang-format on
@@ -213,6 +215,7 @@ constexpr const char *kTestSuiteFiles[] = {
 //
 
 const std::vector<const char *> kLocalTestFiles = {
+    "draft6-draft7-features.json",
 };
 
 //
@@ -258,6 +261,7 @@ constexpr KnownFailure kKnownFailures[] = {
     // Formats that are not supported
     { 3, "format-email.json", nullptr, nullptr },
     { 4, "format-email.json", nullptr, nullptr },
+    { 6, "format-email.json", nullptr, nullptr },
     { 7, "format-email.json", nullptr, nullptr },
     { 7, "format-idn-email.json", nullptr, nullptr },
     { 7, "format-idn-hostname.json", nullptr, nullptr },
@@ -265,8 +269,11 @@ constexpr KnownFailure kKnownFailures[] = {
     { 7, "format-iri.json", nullptr, nullptr },
     { 3, "format-uri.json", nullptr, nullptr },
     { 4, "format-uri.json", nullptr, nullptr },
+    { 6, "format-uri.json", nullptr, nullptr },
     { 7, "format-uri.json", nullptr, nullptr },
+    { 6, "format-uri-reference.json", nullptr, nullptr },
     { 7, "format-uri-reference.json", nullptr, nullptr },
+    { 6, "format-uri-template.json", nullptr, nullptr },
     { 7, "format-uri-template.json", nullptr, nullptr },
 
     // A-labels are only checked against the syntax of RFC 1123, and are not
@@ -276,13 +283,17 @@ constexpr KnownFailure kKnownFailures[] = {
     // Plain-name fragments are not resolved in remote documents
     { 3, "anchor-legacy.json", "anchor within remote ref (id)", nullptr },
     { 4, "anchor-legacy.json", "anchor within remote ref (id)", nullptr },
+    { 6, "anchor-legacy.json", "anchor within remote ref", nullptr },
     { 7, "anchor-legacy.json", "anchor within remote ref", nullptr },
 
     // Identifiers in non-schema locations are treated as schema identifiers
     { 4, "optional/non-schemas.json", "$id inside an enum is not a real identifier (id/definitions)", nullptr },
     { 4, "optional/non-schemas.json", "anchor inside an enum is not a real identifier (id)", nullptr },
+    { 6, "optional/non-schemas.json", "$id inside an enum is not a real identifier ($id/definitions)", nullptr },
     { 7, "optional/non-schemas.json", "$id inside an enum is not a real identifier ($id/definitions)", nullptr },
+    { 6, "optional/non-schemas.json", "$id inside an unknown keyword is not a real identifier", nullptr },
     { 7, "optional/non-schemas.json", "$id inside an unknown keyword is not a real identifier", nullptr },
+    { 6, "optional/non-schemas.json", "anchor inside an enum is not a real identifier ($id)", nullptr },
     { 7, "optional/non-schemas.json", "anchor inside an enum is not a real identifier ($id)", nullptr },
 
     // Regular expressions are evaluated by std::regex, which does not
@@ -307,15 +318,25 @@ constexpr KnownFailure kKnownFailures[] = {
     { 4, "optional/ecmascript-regex.json", "ECMA 262 \\s matches whitespace", "zero-width whitespace matches" },
     { 4, "optional/ecmascript-regex.json", "ECMA 262 regex escapes control codes with \\c and lower letter", "matches" },
     { 4, "optional/ecmascript-regex.json", "ECMA 262 regex escapes control codes with \\c and upper letter", "matches" },
+    { 6, "optional/ecmascript-regex.json", "ECMA 262 \\D matches everything but ascii digits", "NKO DIGIT ZERO (as \\u escape) matches" },
     { 7, "optional/ecmascript-regex.json", "ECMA 262 \\D matches everything but ascii digits", "NKO DIGIT ZERO (as \\u escape) matches" },
+    { 6, "optional/ecmascript-regex.json", "ECMA 262 \\D matches everything but ascii digits", "NKO DIGIT ZERO matches (unlike e.g. Python)" },
     { 7, "optional/ecmascript-regex.json", "ECMA 262 \\D matches everything but ascii digits", "NKO DIGIT ZERO matches (unlike e.g. Python)" },
+    { 6, "optional/ecmascript-regex.json", "ECMA 262 \\S matches everything but whitespace", "Non-whitespace matches" },
     { 7, "optional/ecmascript-regex.json", "ECMA 262 \\S matches everything but whitespace", "Non-whitespace matches" },
+    { 6, "optional/ecmascript-regex.json", "ECMA 262 \\W matches everything but ascii letters", "latin-1 e-acute matches (unlike e.g. Python)" },
     { 7, "optional/ecmascript-regex.json", "ECMA 262 \\W matches everything but ascii letters", "latin-1 e-acute matches (unlike e.g. Python)" },
+    { 6, "optional/ecmascript-regex.json", "ECMA 262 \\s matches whitespace", "EM SPACE matches (Space_Separator)" },
     { 7, "optional/ecmascript-regex.json", "ECMA 262 \\s matches whitespace", "EM SPACE matches (Space_Separator)" },
+    { 6, "optional/ecmascript-regex.json", "ECMA 262 \\s matches whitespace", "latin-1 non-breaking-space matches" },
     { 7, "optional/ecmascript-regex.json", "ECMA 262 \\s matches whitespace", "latin-1 non-breaking-space matches" },
+    { 6, "optional/ecmascript-regex.json", "ECMA 262 \\s matches whitespace", "paragraph separator matches (line terminator)" },
     { 7, "optional/ecmascript-regex.json", "ECMA 262 \\s matches whitespace", "paragraph separator matches (line terminator)" },
+    { 6, "optional/ecmascript-regex.json", "ECMA 262 \\s matches whitespace", "zero-width whitespace matches" },
     { 7, "optional/ecmascript-regex.json", "ECMA 262 \\s matches whitespace", "zero-width whitespace matches" },
+    { 6, "optional/ecmascript-regex.json", "ECMA 262 regex escapes control codes with \\c and lower letter", "matches" },
     { 7, "optional/ecmascript-regex.json", "ECMA 262 regex escapes control codes with \\c and lower letter", "matches" },
+    { 6, "optional/ecmascript-regex.json", "ECMA 262 regex escapes control codes with \\c and upper letter", "matches" },
     { 7, "optional/ecmascript-regex.json", "ECMA 262 regex escapes control codes with \\c and upper letter", "matches" },
     { 3, "optional/format-regex.json", "\\a is not an ECMA 262 control escape", nullptr },
     { 3, "optional/format-regex.json", "ECMA 262 lookbehind is valid, including variable width", nullptr },
@@ -329,8 +350,11 @@ constexpr KnownFailure kKnownFailures[] = {
     { 4, "optional/non-bmp-regex.json", "Proper UTF-16 surrogate pair handling: pattern", "matches empty" },
     { 4, "optional/non-bmp-regex.json", "Proper UTF-16 surrogate pair handling: pattern", "matches two" },
     { 4, "optional/non-bmp-regex.json", "Proper UTF-16 surrogate pair handling: patternProperties", "doesn't match two" },
+    { 6, "optional/non-bmp-regex.json", "Proper UTF-16 surrogate pair handling: pattern", "matches empty" },
     { 7, "optional/non-bmp-regex.json", "Proper UTF-16 surrogate pair handling: pattern", "matches empty" },
+    { 6, "optional/non-bmp-regex.json", "Proper UTF-16 surrogate pair handling: pattern", "matches two" },
     { 7, "optional/non-bmp-regex.json", "Proper UTF-16 surrogate pair handling: pattern", "matches two" },
+    { 6, "optional/non-bmp-regex.json", "Proper UTF-16 surrogate pair handling: patternProperties", "doesn't match two" },
     { 7, "optional/non-bmp-regex.json", "Proper UTF-16 surrogate pair handling: patternProperties", "doesn't match two" },
 
     // Numbers are represented as doubles
@@ -354,17 +378,29 @@ constexpr KnownFailure kKnownFailures[] = {
     { 4, "optional/bignum.json", "uniqueItems comparison with high precision", "arrays containing distinct decimals are unique" },
     { 4, "optional/bignum.json", "uniqueItems comparison with high precision", "distinct high-precision decimals are unique" },
     { 4, "optional/bignum.json", "uniqueItems comparison with high precision", "objects containing distinct decimals are unique" },
+    { 6, "optional/bignum.json", "const comparison with high precision", "a slightly larger decimal is invalid" },
     { 7, "optional/bignum.json", "const comparison with high precision", "a slightly larger decimal is invalid" },
+    { 6, "optional/bignum.json", "const comparison with high precision", "a slightly smaller decimal is invalid" },
     { 7, "optional/bignum.json", "const comparison with high precision", "a slightly smaller decimal is invalid" },
+    { 6, "optional/bignum.json", "enum comparison with high precision", "a slightly larger decimal is invalid" },
     { 7, "optional/bignum.json", "enum comparison with high precision", "a slightly larger decimal is invalid" },
+    { 6, "optional/bignum.json", "enum comparison with high precision", "a slightly smaller decimal is invalid" },
     { 7, "optional/bignum.json", "enum comparison with high precision", "a slightly smaller decimal is invalid" },
+    { 6, "optional/bignum.json", "float comparison with high precision", "below the exclusive maximum is valid" },
     { 7, "optional/bignum.json", "float comparison with high precision", "below the exclusive maximum is valid" },
+    { 6, "optional/bignum.json", "float comparison with high precision on negative numbers", "above the exclusive minimum is valid" },
     { 7, "optional/bignum.json", "float comparison with high precision on negative numbers", "above the exclusive minimum is valid" },
+    { 6, "optional/bignum.json", "integer", nullptr },
     { 7, "optional/bignum.json", "integer", nullptr },
+    { 6, "optional/bignum.json", "maximum integer comparison", "just above the maximum is invalid" },
     { 7, "optional/bignum.json", "maximum integer comparison", "just above the maximum is invalid" },
+    { 6, "optional/bignum.json", "minimum integer comparison", "just below the minimum is invalid" },
     { 7, "optional/bignum.json", "minimum integer comparison", "just below the minimum is invalid" },
+    { 6, "optional/bignum.json", "uniqueItems comparison with high precision", "arrays containing distinct decimals are unique" },
     { 7, "optional/bignum.json", "uniqueItems comparison with high precision", "arrays containing distinct decimals are unique" },
+    { 6, "optional/bignum.json", "uniqueItems comparison with high precision", "distinct high-precision decimals are unique" },
     { 7, "optional/bignum.json", "uniqueItems comparison with high precision", "distinct high-precision decimals are unique" },
+    { 6, "optional/bignum.json", "uniqueItems comparison with high precision", "objects containing distinct decimals are unique" },
     { 7, "optional/bignum.json", "uniqueItems comparison with high precision", "objects containing distinct decimals are unique" },
     { 3, "optional/zero-terminated-floats.json", nullptr, nullptr },
     { 4, "optional/zero-terminated-floats.json", nullptr, nullptr },
@@ -396,6 +432,8 @@ constexpr CrashingTestCase kCrashingTestCases[] = {
     { 3, "id-legacy.json", "simple base URI using an arbitrary URI scheme with $ref to that URI (id)" },
     { 4, "id-legacy.json", "simple tag URI base URI with $ref via the tag URI (id)" },
     { 4, "id-legacy.json", "simple base URI using an arbitrary URI scheme with $ref to that URI (id)" },
+    { 6, "id.json", "simple tag URI base URI with $ref via the tag URI" },
+    { 6, "id.json", "simple base URI using an arbitrary URI scheme with $ref to that URI" },
     { 7, "id.json", "simple tag URI base URI with $ref via the tag URI" },
     { 7, "id.json", "simple base URI using an arbitrary URI scheme with $ref to that URI" },
 };
