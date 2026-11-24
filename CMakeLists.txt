@@ -88,6 +88,10 @@ if(valijson_USE_FAST_FLOAT)
             VALIJSON_HAS_STD_FROM_CHARS=0)
 endif()
 
+if(valijson_USE_BOOST_REGEX)
+    add_compile_definitions(VALIJSON_USE_BOOST_REGEX=1)
+endif()
+
 if(valijson_USE_EXCEPTIONS)
     add_compile_definitions(VALIJSON_USE_EXCEPTIONS=1)
 else()
