@@ -32,16 +32,13 @@ void runOneTest(const AdapterType &test, const Schema &schema,
     }
 }
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+void runTestCases(const AdapterType &testCases, size_t size)
 {
-    AdapterTraits<AdapterType>::DocumentType document;
-    document.template Parse<rapidjson::kParseIterativeFlag>(reinterpret_cast<const char *>(data), size);
-
-    if (document.HasParseError() || !document.IsArray()) {
-        return 0;
+    if (!testCases.isArray()) {
+        return;
     }
 
-    for (const auto &testCase : AdapterType(document).getArray()) {
+    for (const auto &testCase : testCases.getArray()) {
         if (!testCase.isObject()) {
             continue;
         }
@@ -72,6 +69,31 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
         for (const AdapterType test : testsItr->second.getArray()) {
             runOneTest(test, schema, mode);
         }
+    }
+}
+
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+{
+    AdapterTraits<AdapterType>::DocumentType document;
+    document.template Parse<rapidjson::kParseIterativeFlag>(
+        reinterpret_cast<const char *>(data), size);
+
+    if (document.HasParseError()) {
+        return 0;
+    }
+
+    // Test cases are contained in the 'tests' property of each file in the
+    // JSON-Schema-Test-Suite. A top-level array of test cases, as used by
+    // earlier versions of the test suite, is also accepted.
+    const AdapterType root(document);
+    if (root.isObject()) {
+        const AdapterType::Object rootObject = root.getObject();
+        const auto testCasesItr = rootObject.find("tests");
+        if (testCasesItr != rootObject.end()) {
+            runTestCases(testCasesItr->second, size);
+        }
+    } else {
+        runTestCases(root, size);
     }
 
     return 0;
