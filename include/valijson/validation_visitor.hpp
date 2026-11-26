@@ -927,15 +927,20 @@ public:
         // Determine whether 'd' is an exact multiple of 'divisor' using
         // d / divisor, with a relative tolerance to absorb floating-point
         // error. This handles edge cases such as a large integer being a
-        // multiple of a very small fraction (e.g. 12391239123 and 1e-8),
-        // while still rejecting values where the precision is exhausted
-        // (e.g. 1e308 divided by 0.123456789 overflows to infinity).
+        // multiple of a very small fraction (e.g. 12391239123 and 1e-8).
         const double quotient = d / divisor;
         if (!std::isfinite(quotient)) {
-            if (m_results) {
-                m_results->pushError(m_path, "Value should be a multiple of " + std::to_string(divisor));
+            // The quotient overflows, for example 1e308 divided by 0.5. The
+            // remainder is computed exactly, so check that it is zero instead:
+            // 1e308 is a multiple of 0.5, but not of 0.123456789.
+            if (std::fmod(d, divisor) != 0) {
+                if (m_results) {
+                    m_results->pushError(m_path, "Value should be a multiple of " + std::to_string(divisor));
+                }
+                return false;
             }
-            return false;
+
+            return true;
         }
 
         const double rounded = std::round(quotient);
