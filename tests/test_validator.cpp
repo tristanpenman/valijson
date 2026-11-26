@@ -273,8 +273,6 @@ constexpr KnownFailure kKnownFailures[] = {
     { 7, "format-uri.json", nullptr, nullptr },
     { 6, "format-uri-reference.json", nullptr, nullptr },
     { 7, "format-uri-reference.json", nullptr, nullptr },
-    { 6, "format-uri-template.json", nullptr, nullptr },
-    { 7, "format-uri-template.json", nullptr, nullptr },
 
     // A-labels are only checked against the syntax of RFC 1123, and are not
     // decoded to check them against the rules of IDNA2008

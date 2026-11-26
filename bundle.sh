@@ -78,6 +78,7 @@ common_headers=(
   include/valijson/internal/json_reference.hpp
   include/valijson/internal/regex.hpp
   include/valijson/internal/uri.hpp
+  include/valijson/internal/uri_template.hpp
   include/valijson/utils/file_utils.hpp
   include/valijson/utils/utf8_utils.hpp
   include/valijson/constraints/constraint.hpp
