@@ -1107,11 +1107,17 @@ public:
         } else if (isBool() || (!strict && maybeBool())) {
             return (other.isBool() || (!strict && other.maybeBool())) && other.asBool() == asBool();
         } else if (isNumber() && strict) {
-            return other.isNumber() && other.getNumber() == getNumber();
+            double thisNumber, otherNumber;
+            return other.isNumber() && getNumber(thisNumber) && other.getNumber(otherNumber) &&
+                thisNumber == otherNumber;
         } else if (!strict && maybeDouble()) {
-            return (other.maybeDouble() && other.asDouble() == asDouble());
+            double thisDouble, otherDouble;
+            return other.maybeDouble() && asDouble(thisDouble) && other.asDouble(otherDouble) &&
+                thisDouble == otherDouble;
         } else if (!strict && maybeInteger()) {
-            return (other.maybeInteger() && other.asInteger() == asInteger());
+            int64_t thisInteger, otherInteger;
+            return other.maybeInteger() && asInteger(thisInteger) && other.asInteger(otherInteger) &&
+                thisInteger == otherInteger;
         } else if (isString() || (!strict && maybeString())) {
             return (other.isString() || (!strict && other.maybeString())) &&
                 other.asString() == asString();
@@ -7063,12 +7069,14 @@ private:
         const AdapterType &node,
         const AdapterType *exclusiveMaximum)
     {
-        if (!node.maybeDouble()) {
-            throwRuntimeError("Expected numeric value for maximum constraint.");
-        }
-
         constraints::MaximumConstraint constraint;
-        constraint.setMaximum(node.asDouble());
+        {
+            double maximum = 0;
+            if (!node.asDouble(maximum)) {
+                throwRuntimeError("Expected numeric value for maximum constraint.");
+            }
+            constraint.setMaximum(maximum);
+        }
 
         if (exclusiveMaximum) {
             if (!exclusiveMaximum->maybeBool()) {
@@ -7091,12 +7099,12 @@ private:
     template<typename AdapterType>
     constraints::MaximumConstraint makeMaximumConstraintExclusive(const AdapterType &node)
     {
-        if (!node.maybeDouble()) {
+        constraints::MaximumConstraint constraint;
+        double maximum = 0;
+        if (!node.asDouble(maximum)) {
             throwRuntimeError("Expected numeric value for exclusiveMaximum constraint.");
         }
-
-        constraints::MaximumConstraint constraint;
-        constraint.setMaximum(node.asDouble());
+        constraint.setMaximum(maximum);
         constraint.setExclusiveMaximum(true);
         return constraint;
     }
@@ -7113,8 +7121,8 @@ private:
     constraints::MaxItemsConstraint makeMaxItemsConstraint(
         const AdapterType &node)
     {
-        if (node.maybeInteger()) {
-            const int64_t value = node.asInteger();
+        int64_t value = 0;
+        if (node.asInteger(value)) {
             if (value >= 0) {
                 constraints::MaxItemsConstraint constraint;
                 constraint.setMaxItems(static_cast<uint64_t>(value));
@@ -7137,8 +7145,8 @@ private:
     constraints::MaxLengthConstraint makeMaxLengthConstraint(
         const AdapterType &node)
     {
-        if (node.maybeInteger()) {
-            const int64_t value = node.asInteger();
+        int64_t value = 0;
+        if (node.asInteger(value)) {
             if (value >= 0) {
                 constraints::MaxLengthConstraint constraint;
                 constraint.setMaxLength(static_cast<uint64_t>(value));
@@ -7163,8 +7171,8 @@ private:
     constraints::MaxPropertiesConstraint makeMaxPropertiesConstraint(
         const AdapterType &node)
     {
-        if (node.maybeInteger()) {
-            int64_t value = node.asInteger();
+        int64_t value = 0;
+        if (node.asInteger(value)) {
             if (value >= 0) {
                 constraints::MaxPropertiesConstraint constraint;
                 constraint.setMaxProperties(static_cast<uint64_t>(value));
@@ -7192,12 +7200,14 @@ private:
         const AdapterType &node,
         const AdapterType *exclusiveMinimum)
     {
-        if (!node.maybeDouble()) {
-            throwRuntimeError("Expected numeric value for minimum constraint.");
-        }
-
         constraints::MinimumConstraint constraint;
-        constraint.setMinimum(node.asDouble());
+        {
+            double minimum = 0;
+            if (!node.asDouble(minimum)) {
+                throwRuntimeError("Expected numeric value for minimum constraint.");
+            }
+            constraint.setMinimum(minimum);
+        }
 
         if (exclusiveMinimum) {
             if (!exclusiveMinimum->maybeBool()) {
@@ -7220,12 +7230,12 @@ private:
     template<typename AdapterType>
     constraints::MinimumConstraint makeMinimumConstraintExclusive(const AdapterType &node)
     {
-        if (!node.maybeDouble()) {
+        constraints::MinimumConstraint constraint;
+        double minimum = 0;
+        if (!node.asDouble(minimum)) {
             throwRuntimeError("Expected numeric value for exclusiveMinimum constraint.");
         }
-
-        constraints::MinimumConstraint constraint;
-        constraint.setMinimum(node.asDouble());
+        constraint.setMinimum(minimum);
         constraint.setExclusiveMinimum(true);
         return constraint;
     }
@@ -7241,8 +7251,8 @@ private:
     template<typename AdapterType>
     constraints::MinItemsConstraint makeMinItemsConstraint(const AdapterType &node)
     {
-        if (node.maybeInteger()) {
-            const int64_t value = node.asInteger();
+        int64_t value = 0;
+        if (node.asInteger(value)) {
             if (value >= 0) {
                 constraints::MinItemsConstraint constraint;
                 constraint.setMinItems(static_cast<uint64_t>(value));
@@ -7264,8 +7274,8 @@ private:
     template<typename AdapterType>
     constraints::MinLengthConstraint makeMinLengthConstraint(const AdapterType &node)
     {
-        if (node.maybeInteger()) {
-            const int64_t value = node.asInteger();
+        int64_t value = 0;
+        if (node.asInteger(value)) {
             if (value >= 0) {
                 constraints::MinLengthConstraint constraint;
                 constraint.setMinLength(static_cast<uint64_t>(value));
@@ -7290,8 +7300,8 @@ private:
     template<typename AdapterType>
     constraints::MinPropertiesConstraint makeMinPropertiesConstraint(const AdapterType &node)
     {
-        if (node.maybeInteger()) {
-            int64_t value = node.asInteger();
+        int64_t value = 0;
+        if (node.asInteger(value)) {
             if (value >= 0) {
                 constraints::MinPropertiesConstraint constraint;
                 constraint.setMinProperties(static_cast<uint64_t>(value));
@@ -7314,7 +7324,11 @@ private:
     constraints::MultipleOfDoubleConstraint makeMultipleOfDoubleConstraint(const AdapterType &node)
     {
         constraints::MultipleOfDoubleConstraint constraint;
-        constraint.setDivisor(node.asDouble());
+        double divisor = 0;
+        if (!node.asDouble(divisor)) {
+            throwRuntimeError("Expected a numeric value for 'multipleOf' constraint.");
+        }
+        constraint.setDivisor(divisor);
         return constraint;
     }
 
@@ -7330,7 +7344,11 @@ private:
     constraints::MultipleOfIntConstraint makeMultipleOfIntConstraint(const AdapterType &node)
     {
         constraints::MultipleOfIntConstraint constraint;
-        constraint.setDivisor(node.asInteger());
+        int64_t divisor = 0;
+        if (!node.asInteger(divisor)) {
+            throwRuntimeError("Expected a numeric value for 'multipleOf' constraint.");
+        }
+        constraint.setDivisor(divisor);
         return constraint;
     }
 
@@ -8862,10 +8880,18 @@ public:
             return true;
         }
 
+        double value = 0.;
+        if (!m_target.asDouble(value)) {
+            if (m_results) {
+                m_results->pushError(m_path, "Value could not be converted to a number to check the maximum constraint");
+            }
+            return false;
+        }
+
         const double maximum = constraint.getMaximum();
 
         if (constraint.getExclusiveMaximum()) {
-            if (m_target.asDouble() >= maximum) {
+            if (value >= maximum) {
                 if (m_results) {
                     m_results->pushError(m_path, "Expected number less than " + std::to_string(maximum));
                 }
@@ -8873,7 +8899,7 @@ public:
                 return false;
             }
 
-        } else if (m_target.asDouble() > maximum) {
+        } else if (value > maximum) {
             if (m_results) {
                 m_results->pushError(m_path, "Expected number less than or equal to " + std::to_string(maximum));
             }
@@ -8979,17 +9005,25 @@ public:
             return true;
         }
 
+        double value = 0.;
+        if (!m_target.asDouble(value)) {
+            if (m_results) {
+                m_results->pushError(m_path, "Value could not be converted to a number to check the minimum constraint");
+            }
+            return false;
+        }
+
         const double minimum = constraint.getMinimum();
 
         if (constraint.getExclusiveMinimum()) {
-            if (m_target.asDouble() <= minimum) {
+            if (value <= minimum) {
                 if (m_results) {
                     m_results->pushError(m_path, "Expected number greater than " + std::to_string(minimum));
                 }
 
                 return false;
             }
-        } else if (m_target.asDouble() < minimum) {
+        } else if (value < minimum) {
             if (m_results) {
                 m_results->pushError(m_path, "Expected number greater than or equal to " + std::to_string(minimum));
             }
@@ -9126,15 +9160,20 @@ public:
         // Determine whether 'd' is an exact multiple of 'divisor' using
         // d / divisor, with a relative tolerance to absorb floating-point
         // error. This handles edge cases such as a large integer being a
-        // multiple of a very small fraction (e.g. 12391239123 and 1e-8),
-        // while still rejecting values where the precision is exhausted
-        // (e.g. 1e308 divided by 0.123456789 overflows to infinity).
+        // multiple of a very small fraction (e.g. 12391239123 and 1e-8).
         const double quotient = d / divisor;
         if (!std::isfinite(quotient)) {
-            if (m_results) {
-                m_results->pushError(m_path, "Value should be a multiple of " + std::to_string(divisor));
+            // The quotient overflows, for example 1e308 divided by 0.5. The
+            // remainder is computed exactly, so check that it is zero instead:
+            // 1e308 is a multiple of 0.5, but not of 0.123456789.
+            if (std::fmod(d, divisor) != 0) {
+                if (m_results) {
+                    m_results->pushError(m_path, "Value should be a multiple of " + std::to_string(divisor));
+                }
+                return false;
             }
-            return false;
+
+            return true;
         }
 
         const double rounded = std::round(quotient);
