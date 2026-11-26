@@ -44,6 +44,8 @@
 
 #define TEST_SUITE_DIR "../thirdparty/JSON-Schema-Test-Suite/validation/tests/"
 
+#define LOCAL_TEST_SUITE_DIR "../tests/data/test_suite/"
+
 using valijson::Schema;
 using valijson::SchemaParser;
 using valijson::Validator;
@@ -200,6 +202,18 @@ constexpr const char *kTestSuiteFiles[] = {
     "optional/zero-terminated-floats.json",
 };
 // clang-format on
+
+//
+// Local test files
+// ------------------------------------------------------------------------------------------------
+//
+// Test cases that are not part of the JSON-Schema-Test-Suite, such as
+// regression tests for bugs in Valijson. They are in the same format as the
+// test suite, in tests/data/test_suite, and are run in the same way.
+//
+
+const std::vector<const char *> kLocalTestFiles = {
+};
 
 //
 // Known failures
@@ -605,11 +619,16 @@ struct TestSuiteFile
 {
     const Dialect *dialect;
     const char *file;
+
+    /// Whether the file is a local test file, rather than part of the test
+    /// suite
+    bool local;
 };
 
 void PrintTo(const TestSuiteFile &testSuiteFile, std::ostream *os)
 {
-    *os << testSuiteFile.dialect->name << ", " << testSuiteFile.file;
+    *os << testSuiteFile.dialect->name << ", "
+        << (testSuiteFile.local ? "local " : "") << testSuiteFile.file;
 }
 
 std::vector<TestSuiteFile> allTestSuiteFiles()
@@ -619,7 +638,12 @@ std::vector<TestSuiteFile> allTestSuiteFiles()
         std::transform(std::begin(kTestSuiteFiles), std::end(kTestSuiteFiles),
                        std::back_inserter(result),
                        [&dialect](const char *file) {
-                           return TestSuiteFile{&dialect, file};
+                           return TestSuiteFile{&dialect, file, false};
+                       });
+        std::transform(kLocalTestFiles.begin(), kLocalTestFiles.end(),
+                       std::back_inserter(result),
+                       [&dialect](const char *file) {
+                           return TestSuiteFile{&dialect, file, true};
                        });
     }
 
@@ -631,7 +655,8 @@ std::string testSuiteFileName(const testing::TestParamInfo<TestSuiteFile> &info)
     // Remove the '.json' extension, and replace characters that are not
     // permitted in test names
     const std::string file(info.param.file);
-    std::string name = std::string(info.param.dialect->name) + "_";
+    std::string name = std::string(info.param.dialect->name) +
+                       (info.param.local ? "_local_" : "_");
     std::transform(
         file.begin(), file.end() - 5, std::back_inserter(name), [](char c) {
             return std::isalnum(static_cast<unsigned char>(c)) ? c : '_';
@@ -942,7 +967,8 @@ TEST_P(TestValidator, TestSuiteFile)
 {
     const Dialect &dialect = *GetParam().dialect;
     const std::string file = GetParam().file;
-    const std::string path = TEST_SUITE_DIR + file;
+    const std::string path =
+        (GetParam().local ? LOCAL_TEST_SUITE_DIR : TEST_SUITE_DIR) + file;
 
     const std::vector<TestCaseInfo> testCases = loadTestCases(path, dialect);
     checkKnownFailures(dialect, file, testCases);
