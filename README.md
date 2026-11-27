@@ -119,6 +119,17 @@ Validator validator(Validator::kWeakTypes);
 
 This will create a validator that will attempt to cast values to satisfy a schema. The original motivation for this was to support the Boost Property Tree library, which can parse JSON, but stores values as strings.
 
+### Integers With a Zero Fractional Part
+
+JSON Schema Draft 6 and later consider a number with a zero fractional part, such as `1.0`, to be an integer. Drafts 3 and 4 do not, so by default, `1.0` only satisfies `"type": "integer"` in a draft 3 or 4 schema with weak typing. To accept it with strong typing too, as in Valijson v1.1.1, configure the parser before parsing the schema:
+
+```cpp
+SchemaParser parser(SchemaParser::kDraft4);
+parser.setIntegralNumbersAreIntegers(true);
+```
+
+This relies on the adapter telling integers apart from other numbers. json11 stores every number as a double, so with `Json11Adapter`, `1.0` is always an integer.
+
 ### Strict vs Permissive Date/Time Formats
 
 JSON Schema supports validation of certain types using the `format` keyword. Supported formats include `time`, `date`, and `date-time`. When `date-time` is used, the input is validated according to [RFC 3339](./doc/specifications/rfc3339-timestamps.txt). By default, RFC 3339 requires that all date/time strings are unambiguous - i.e. are defined in terms of a local time zone. This is controlled by the `Z` suffix (for UTC) or a `+01:00` style modifier.
