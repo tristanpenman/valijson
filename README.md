@@ -434,6 +434,16 @@ Other versions of these libraries may work, but have not been tested. In particu
 
 When compiling with older versions of Boost (< 1.76.0) you may see compiler warnings from the `boost::property_tree` headers. This has been addressed in version 1.76.0 of Boost.
 
+### yaml-cpp Support
+
+yaml-cpp keeps every scalar as a string, so `YamlCppAdapter` resolves the type of a scalar with the [YAML 1.2 core schema](https://yaml.org/spec/1.2.2/#103-core-schema):
+
+ - a plain scalar such as `true`, `42`, `0x2a`, `4.2` or `.inf` is a boolean or a number, and `~`, `null` or an empty value is null;
+ - any other plain scalar, and any quoted or block scalar, such as `"42"`, is a string;
+ - a scalar with a `!!str`, `!!bool`, `!!int`, `!!float` or `!!null` tag is resolved as that type, and a scalar with any other tag is a string.
+
+YAML 1.1 booleans such as `yes` and `on` are strings. Scalars created in code, such as `YAML::Node(42)`, are resolved in the same way as plain scalars.
+
 ### Qt Support
 
 Valijson provides two adapters for Qt Core types:
