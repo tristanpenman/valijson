@@ -259,20 +259,10 @@ constexpr KnownFailure kKnownFailures[] = {
     { 3, "format-time.json", "validation of time strings (hh:mm:ss)", "a valid time string" },
 
     // Formats that are not supported
-    { 3, "format-email.json", nullptr, nullptr },
-    { 4, "format-email.json", nullptr, nullptr },
-    { 6, "format-email.json", nullptr, nullptr },
-    { 7, "format-email.json", nullptr, nullptr },
     { 7, "format-idn-email.json", nullptr, nullptr },
     { 7, "format-idn-hostname.json", nullptr, nullptr },
     { 7, "format-iri-reference.json", nullptr, nullptr },
     { 7, "format-iri.json", nullptr, nullptr },
-    { 3, "format-uri.json", nullptr, nullptr },
-    { 4, "format-uri.json", nullptr, nullptr },
-    { 6, "format-uri.json", nullptr, nullptr },
-    { 7, "format-uri.json", nullptr, nullptr },
-    { 6, "format-uri-reference.json", nullptr, nullptr },
-    { 7, "format-uri-reference.json", nullptr, nullptr },
     { 6, "format-uri-template.json", nullptr, nullptr },
     { 7, "format-uri-template.json", nullptr, nullptr },
 
