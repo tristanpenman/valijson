@@ -1,5 +1,7 @@
 #pragma once
 
+#include <valijson/exceptions.hpp>
+#include <valijson/internal/regex.hpp>
 #include <valijson/schema.hpp>
 #include <valijson/validation_visitor.hpp>
 
@@ -101,8 +103,20 @@ private:
  */
 struct DefaultRegexEngine
 {
+    /**
+     * @brief  Compile a regular expression
+     *
+     * @throws std::runtime_error if the regular expression is too complex to
+     *         be compiled by std::regex without risking a stack overflow, as
+     *         determined by internal::isRegexTooComplex(), or if it has a
+     *         quantifier that follows another quantifier (see
+     *         internal::hasRepeatedQuantifier()), for which matching with
+     *         libstdc++ takes exponential time. These checks do not apply to
+     *         Boost.Regex, which has limits of its own, and for which
+     *         quantifiers such as "a++" are valid possessive quantifiers.
+     */
     DefaultRegexEngine(const std::string& pattern)
-      : regex(pattern) { }
+      : regex(checkComplexity(pattern)) { }
 
     static bool search(const std::string& s, const DefaultRegexEngine& r)
     {
@@ -110,6 +124,23 @@ struct DefaultRegexEngine
     }
 
 private:
+    static const std::string & checkComplexity(const std::string &pattern)
+    {
+#if !(defined(VALIJSON_USE_BOOST_REGEX) && VALIJSON_USE_BOOST_REGEX)
+        if (internal::isRegexTooComplex(pattern)) {
+            throwRuntimeError("Regular expression is too complex to be "
+                    "compiled safely");
+        }
+
+        if (internal::hasRepeatedQuantifier(pattern)) {
+            throwRuntimeError("Regular expression has a quantifier that "
+                    "follows another quantifier");
+        }
+#endif
+
+        return pattern;
+    }
+
     internal::regex regex;
 };
 

@@ -376,6 +376,10 @@ Valijson supports the validation keywords defined in [JSON Schema Draft 7](https
 
 The `default` keyword is annotation-only and does not affect validation. Valijson validates the `date`, `time`, `date-time`, `hostname`, `ipv4`, `ipv6`, `json-pointer`, `relative-json-pointer`, and `regex` formats; other formats are not currently enforced. The `regex` format checks that the configured regular expression engine can compile the string, and is only enforced when exceptions are enabled.
 
+By default, regular expressions are evaluated with `std::regex`. To avoid stack overflows and the worst cases of slow matching, the default engine rejects regular expressions that are very long or deeply nested, and those with a quantifier that follows another quantifier, such as `a++`, which ECMA 262 does not allow. However, `std::regex` uses backtracking, so a valid regular expression such as `(a+)+$` can still take time that is exponential in the length of the string being matched. When validating against schemas that are not trusted, use a regular expression engine with linear time matching, such as RE2, by providing it as the template parameter of `ValidatorT` (see `tests/test_validator_with_custom_regular_expression_engine.cpp`).
+
+When Valijson is built with `VALIJSON_USE_BOOST_REGEX`, these checks are not applied, as Boost.Regex has limits of its own: it rejects groups nested more than 400 levels deep, and throws an exception when matching becomes too complex, rather than taking exponential time. As that exception can be thrown while matching, it can be thrown by `Validator::validate()` for the `pattern` and `patternProperties` keywords.
+
 Local JSON References are supported. Remote references are supported when document-fetch and document-release callbacks are supplied to `SchemaParser::populateSchema()`.
 
 ## JSON Inspector

@@ -88,6 +88,10 @@ if(valijson_USE_FAST_FLOAT)
             VALIJSON_HAS_STD_FROM_CHARS=0)
 endif()
 
+if(valijson_USE_BOOST_REGEX)
+    add_compile_definitions(VALIJSON_USE_BOOST_REGEX=1)
+endif()
+
 if(valijson_USE_EXCEPTIONS)
     add_compile_definitions(VALIJSON_USE_EXCEPTIONS=1)
 else()
@@ -180,6 +184,7 @@ if(valijson_BUILD_TESTS)
         tests/test_rapidjson_adapter.cpp
         tests/test_picojson_adapter.cpp
         tests/test_poly_constraint.cpp
+        tests/test_regex.cpp
         tests/test_uri.cpp
         tests/test_validation_errors.cpp
         tests/test_validator.cpp
