@@ -5508,6 +5508,43 @@ private:
         return false;
     }
 
+    /**
+     * @brief  Find the node that a fragment refers to in a fetched document
+     *
+     * The fragment of a JSON Reference is either a JSON Pointer, or a plain
+     * name that matches the identifier of a subschema (e.g. "#foo").
+     *
+     * @param  documentRoot     Root node of the fetched document
+     * @param  documentUri      URI of the fetched document
+     * @param  fragment         Fragment of the JSON Reference, without '#'
+     * @param  referencedScope  Set to the resolution scope of the parent of
+     *                          the referenced node
+     *
+     * @return JSON Pointer to the referenced node, relative to documentRoot
+     */
+    template<typename AdapterType>
+    std::string findReferencedPath(
+            const AdapterType &documentRoot,
+            const std::string &documentUri,
+            const std::string &fragment,
+            std::optional<std::string> &referencedScope) const
+    {
+        const std::optional<std::string> documentScope = documentUri;
+        referencedScope = documentScope;
+        if (fragment.empty() || fragment[0] == '/') {
+            return fragment;
+        }
+
+        const std::string idRef = documentUri + "#" + fragment;
+        std::string foundPath;
+        if (!findSchemaById(documentRoot, documentScope, idRef, "",
+                    foundPath, referencedScope)) {
+            throwRuntimeError("Cannot resolve reference \"" + idRef + "\".");
+        }
+
+        return foundPath;
+    }
+
     template<typename AdapterType>
     bool findScopeForPath(
             const AdapterType &node,
@@ -5805,16 +5842,21 @@ private:
             const AdapterType newRootNode(*newDoc);
 
             // Find where we need to be in the document
+            std::optional<std::string> referencedScope;
+            const std::string referencedPath = findReferencedPath(
+                    newRootNode, *actualDocumentUri, actualJsonPointer,
+                    referencedScope);
+
             const AdapterType &referencedAdapter =
                     internal::json_pointer::resolveJsonPointerStrict(newRootNode,
-                            actualJsonPointer);
+                            referencedPath);
 
             newRegistryKeys.push_back(queryKey);
 
             // Populate the schema, starting from the referenced node, with
             // nested JSON References resolved relative to the new root node
             return makeOrReuseSchema(rootSchema, newRootNode, referencedAdapter,
-                    actualDocumentUri, actualJsonPointer, fetchDoc, parentSubschema,
+                    referencedScope, referencedPath, fetchDoc, parentSubschema,
                     ownName, docCache, schemaRegistry, newRegistryKeys);
 
         }
@@ -6446,12 +6488,17 @@ private:
 
             const AdapterType newRootNode(*newDoc);
 
+            std::optional<std::string> referencedScope;
+            const std::string referencedPath = findReferencedPath(
+                    newRootNode, *actualDocumentUri, actualJsonPointer,
+                    referencedScope);
+
             const AdapterType &referencedAdapter =
-                internal::json_pointer::resolveJsonPointerStrict(newRootNode, actualJsonPointer);
+                internal::json_pointer::resolveJsonPointerStrict(newRootNode, referencedPath);
 
             // TODO: Need to detect degenerate circular references
             resolveThenPopulateSchema(rootSchema, newRootNode, referencedAdapter,
-                    subschema, actualDocumentUri, actualJsonPointer, fetchDoc,
+                    subschema, referencedScope, referencedPath, fetchDoc,
                     parentSchema, ownName, docCache, schemaRegistry);
 
         } else if (!actualJsonPointer.empty()) {
