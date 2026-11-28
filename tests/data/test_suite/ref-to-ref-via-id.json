@@ -1,0 +1,86 @@
+{
+    "tests": [
+        {
+            "description": "reference through an identifier to a node that is itself a reference (id)",
+            "compatibility": "<=4",
+            "schema": {
+                "id": "http://example.com/root.json",
+                "properties": {
+                    "foo": {
+                        "id": "http://example.com/other.json",
+                        "allOf": [
+                            {
+                                "$ref": "root.json#/definitions/a"
+                            }
+                        ]
+                    }
+                },
+                "definitions": {
+                    "a": {
+                        "$ref": "#/definitions/b"
+                    },
+                    "b": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "tests": [
+                {
+                    "description": "integer is valid",
+                    "data": {
+                        "foo": 1
+                    },
+                    "valid": true
+                },
+                {
+                    "description": "string is invalid",
+                    "data": {
+                        "foo": "a"
+                    },
+                    "valid": false
+                }
+            ]
+        },
+        {
+            "description": "reference through an identifier to a node that is itself a reference",
+            "compatibility": "6",
+            "schema": {
+                "$id": "http://example.com/root.json",
+                "properties": {
+                    "foo": {
+                        "$id": "http://example.com/other.json",
+                        "allOf": [
+                            {
+                                "$ref": "root.json#/definitions/a"
+                            }
+                        ]
+                    }
+                },
+                "definitions": {
+                    "a": {
+                        "$ref": "#/definitions/b"
+                    },
+                    "b": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "tests": [
+                {
+                    "description": "integer is valid",
+                    "data": {
+                        "foo": 1
+                    },
+                    "valid": true
+                },
+                {
+                    "description": "string is invalid",
+                    "data": {
+                        "foo": "a"
+                    },
+                    "valid": false
+                }
+            ]
+        }
+    ]
+}

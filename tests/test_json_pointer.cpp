@@ -350,6 +350,19 @@ TEST_F(TestJsonPointer, CircularReferences)
     EXPECT_THROW(parser.populateSchema(schemaAdapter, schema), std::runtime_error);
 }
 
+TEST_F(TestJsonPointer, CircularReferencesThroughIdentifiers)
+{
+    // Load schema document
+    rapidjson::Document schemaDocument;
+    ASSERT_TRUE( loadDocument(TEST_DATA_DIR "/schemas/circular_reference_through_id.schema.json", schemaDocument) );
+    RapidJsonAdapter schemaAdapter(schemaDocument);
+
+    // Attempt to parse schema
+    Schema schema;
+    SchemaParser parser;
+    EXPECT_THROW(parser.populateSchema(schemaAdapter, schema), std::runtime_error);
+}
+
 #if VALIJSON_USE_EXCEPTIONS
 TEST(TestJsonPointerDeathTest, CircularReferencesFromRootReference)
 {
