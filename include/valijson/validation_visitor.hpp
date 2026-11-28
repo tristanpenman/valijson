@@ -13,6 +13,7 @@
 #include <valijson/internal/ip_address.hpp>
 #include <valijson/internal/json_pointer.hpp>
 #include <valijson/internal/regex.hpp>
+#include <valijson/internal/uri_template.hpp>
 #include <valijson/adapters/std_string_adapter.hpp>
 #include <valijson/constraints/concrete_constraints.hpp>
 #include <valijson/constraints/constraint_visitor.hpp>
@@ -501,6 +502,17 @@ public:
             if (m_results) {
                 m_results->pushError(
                     m_path, "String should be a valid Relative JSON Pointer");
+            }
+            return false;
+        } else if (format == "uri-template") {
+            // Matches URI Templates like: http://example.com/{term:1}/{term}
+            if (internal::uri_template::isUriTemplate(s)) {
+                return true;
+            }
+
+            if (m_results) {
+                m_results->pushError(m_path,
+                                     "String should be a valid URI Template");
             }
             return false;
         } else if (format == "regex") {
