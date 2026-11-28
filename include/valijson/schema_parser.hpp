@@ -44,7 +44,37 @@ public:
      * @param  version  Version of JSON Schema that will be expected
      */
     explicit SchemaParser(const Version version = kDraft7)
-      : m_version(version) { }
+      : m_version(version),
+        m_integralNumbersAreIntegers(version != kDraft3 && version != kDraft4) { }
+
+    /**
+     * @brief  Return whether a number with a zero fractional part, such as
+     *         1.0, satisfies the 'integer' type
+     */
+    bool getIntegralNumbersAreIntegers() const
+    {
+        return m_integralNumbersAreIntegers;
+    }
+
+    /**
+     * @brief  Set whether a number with a zero fractional part, such as 1.0,
+     *         satisfies the 'integer' type in schemas parsed after this call
+     *
+     * JSON Schema Draft 6 and later consider such a number to be an integer,
+     * while drafts 3 and 4 only consider a number written without a fraction
+     * or exponent part to be an integer. The default follows the version of
+     * JSON Schema that the parser was constructed with. Setting this to true
+     * for drafts 3 and 4 accepts 1.0 as an integer, as in v1.1.1.
+     *
+     * With weak types, 1.0 satisfies the 'integer' type regardless of this
+     * setting.
+     *
+     * @param  integralNumbersAreIntegers  whether 1.0 is an integer
+     */
+    void setIntegralNumbersAreIntegers(bool integralNumbersAreIntegers)
+    {
+        m_integralNumbersAreIntegers = integralNumbersAreIntegers;
+    }
 
     /**
      * @brief  Release memory associated with custom ConstraintBuilders
@@ -2583,6 +2613,8 @@ private:
 
         TypeConstraint constraint;
 
+        constraint.setIntegralNumbersAreIntegers(m_integralNumbersAreIntegers);
+
         if (node.maybeString()) {
             const TypeConstraint::JsonType type = TypeConstraint::jsonTypeFromString(node.getString());
             if (type == TypeConstraint::kAny && m_version == kDraft4) {
@@ -2656,6 +2688,9 @@ private:
 
     /// Version of JSON Schema that should be expected when parsing
     Version m_version;
+
+    /// Whether a number with a zero fractional part satisfies 'integer'
+    bool m_integralNumbersAreIntegers;
 };
 
 }  // namespace valijson

@@ -5019,12 +5019,32 @@ public:
 
     TypeConstraint()
       : m_namedTypes(std::less<JsonType>(), m_allocator),
-        m_schemaTypes(Allocator::rebind<const Subschema *>::other(m_allocator)) { }
+        m_schemaTypes(Allocator::rebind<const Subschema *>::other(m_allocator)),
+        m_integralNumbersAreIntegers(true) { }
 
     TypeConstraint(CustomAlloc allocFn, CustomFree freeFn)
       : BasicConstraint(allocFn, freeFn),
         m_namedTypes(std::less<JsonType>(), m_allocator),
-        m_schemaTypes(Allocator::rebind<const Subschema *>::other(m_allocator)) { }
+        m_schemaTypes(Allocator::rebind<const Subschema *>::other(m_allocator)),
+        m_integralNumbersAreIntegers(true) { }
+
+    /**
+     * @brief  Whether a number with a zero fractional part, such as 1.0,
+     *         satisfies the 'integer' type when strict types are used
+     *
+     * JSON Schema Draft 6 and later consider such a number to be an integer.
+     * Drafts 3 and 4 only consider a number written without a fraction or
+     * exponent part to be an integer.
+     */
+    bool getIntegralNumbersAreIntegers() const
+    {
+        return m_integralNumbersAreIntegers;
+    }
+
+    void setIntegralNumbersAreIntegers(bool integralNumbersAreIntegers)
+    {
+        m_integralNumbersAreIntegers = integralNumbersAreIntegers;
+    }
 
     void addNamedType(JsonType type)
     {
@@ -5097,6 +5117,9 @@ private:
 
     /// Set of sub-schemas that serve as valid types
     SchemaTypes m_schemaTypes;
+
+    /// Whether a number with a zero fractional part satisfies 'integer'
+    bool m_integralNumbersAreIntegers;
 };
 
 /**
@@ -5174,7 +5197,37 @@ public:
      * @param  version  Version of JSON Schema that will be expected
      */
     explicit SchemaParser(const Version version = kDraft7)
-      : m_version(version) { }
+      : m_version(version),
+        m_integralNumbersAreIntegers(version != kDraft3 && version != kDraft4) { }
+
+    /**
+     * @brief  Return whether a number with a zero fractional part, such as
+     *         1.0, satisfies the 'integer' type
+     */
+    bool getIntegralNumbersAreIntegers() const
+    {
+        return m_integralNumbersAreIntegers;
+    }
+
+    /**
+     * @brief  Set whether a number with a zero fractional part, such as 1.0,
+     *         satisfies the 'integer' type in schemas parsed after this call
+     *
+     * JSON Schema Draft 6 and later consider such a number to be an integer,
+     * while drafts 3 and 4 only consider a number written without a fraction
+     * or exponent part to be an integer. The default follows the version of
+     * JSON Schema that the parser was constructed with. Setting this to true
+     * for drafts 3 and 4 accepts 1.0 as an integer, as in v1.1.1.
+     *
+     * With weak types, 1.0 satisfies the 'integer' type regardless of this
+     * setting.
+     *
+     * @param  integralNumbersAreIntegers  whether 1.0 is an integer
+     */
+    void setIntegralNumbersAreIntegers(bool integralNumbersAreIntegers)
+    {
+        m_integralNumbersAreIntegers = integralNumbersAreIntegers;
+    }
 
     /**
      * @brief  Release memory associated with custom ConstraintBuilders
@@ -7713,6 +7766,8 @@ private:
 
         TypeConstraint constraint;
 
+        constraint.setIntegralNumbersAreIntegers(m_integralNumbersAreIntegers);
+
         if (node.maybeString()) {
             const TypeConstraint::JsonType type = TypeConstraint::jsonTypeFromString(node.getString());
             if (type == TypeConstraint::kAny && m_version == kDraft4) {
@@ -7786,6 +7841,9 @@ private:
 
     /// Version of JSON Schema that should be expected when parsing
     Version m_version;
+
+    /// Whether a number with a zero fractional part satisfies 'integer'
+    bool m_integralNumbersAreIntegers;
 };
 
 }  // namespace valijson
@@ -9627,7 +9685,8 @@ public:
         {
             // ValidateNamedTypes functor assumes target is invalid
             bool validated = false;
-            constraint.applyToNamedTypes(ValidateNamedTypes(m_target, false, true, m_strictTypes, &validated));
+            constraint.applyToNamedTypes(ValidateNamedTypes(m_target, false, true, m_strictTypes,
+                    constraint.getIntegralNumbersAreIntegers(), &validated));
             if (validated) {
                 return true;
             }
@@ -9934,11 +9993,13 @@ private:
                 bool continueOnSuccess,
                 bool continueOnFailure,
                 bool strictTypes,
+                bool integralNumbersAreIntegers,
                 bool *validated)
           : m_target(target),
             m_continueOnSuccess(continueOnSuccess),
             m_continueOnFailure(continueOnFailure),
             m_strictTypes(strictTypes),
+            m_integralNumbersAreIntegers(integralNumbersAreIntegers),
             m_validated(validated) { }
 
         bool operator()(constraints::TypeConstraint::JsonType jsonType) const
@@ -9958,12 +10019,13 @@ private:
                 valid = m_target.isBool() || (!m_strictTypes && m_target.maybeBool());
                 break;
             case TypeConstraint::kInteger:
-                // JSON Schema considers a JSON number with a zero fractional
-                // part to be an integer regardless of representation, so an
-                // exact-integer double satisfies the integer type even in
-                // strict mode.
-                valid = m_target.isInteger() || detail::isDoubleAnInteger(m_target)
-                        || (!m_strictTypes && m_target.maybeInteger());
+                // JSON Schema Draft 6 and later consider a JSON number with
+                // a zero fractional part to be an integer regardless of
+                // representation, so an exact-integer double satisfies the
+                // integer type even in strict mode. Drafts 3 and 4 do not.
+                valid = m_target.isInteger() ||
+                        (m_integralNumbersAreIntegers && detail::isDoubleAnInteger(m_target)) ||
+                        (!m_strictTypes && m_target.maybeInteger());
                 break;
             case TypeConstraint::kNull:
                 valid = m_target.isNull() || (!m_strictTypes && m_target.maybeNull());
@@ -9993,6 +10055,7 @@ private:
         const bool m_continueOnSuccess;
         const bool m_continueOnFailure;
         const bool m_strictTypes;
+        const bool m_integralNumbersAreIntegers;
         bool * const m_validated;
     };
 

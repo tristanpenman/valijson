@@ -1180,12 +1180,32 @@ public:
 
     TypeConstraint()
       : m_namedTypes(std::less<JsonType>(), m_allocator),
-        m_schemaTypes(Allocator::rebind<const Subschema *>::other(m_allocator)) { }
+        m_schemaTypes(Allocator::rebind<const Subschema *>::other(m_allocator)),
+        m_integralNumbersAreIntegers(true) { }
 
     TypeConstraint(CustomAlloc allocFn, CustomFree freeFn)
       : BasicConstraint(allocFn, freeFn),
         m_namedTypes(std::less<JsonType>(), m_allocator),
-        m_schemaTypes(Allocator::rebind<const Subschema *>::other(m_allocator)) { }
+        m_schemaTypes(Allocator::rebind<const Subschema *>::other(m_allocator)),
+        m_integralNumbersAreIntegers(true) { }
+
+    /**
+     * @brief  Whether a number with a zero fractional part, such as 1.0,
+     *         satisfies the 'integer' type when strict types are used
+     *
+     * JSON Schema Draft 6 and later consider such a number to be an integer.
+     * Drafts 3 and 4 only consider a number written without a fraction or
+     * exponent part to be an integer.
+     */
+    bool getIntegralNumbersAreIntegers() const
+    {
+        return m_integralNumbersAreIntegers;
+    }
+
+    void setIntegralNumbersAreIntegers(bool integralNumbersAreIntegers)
+    {
+        m_integralNumbersAreIntegers = integralNumbersAreIntegers;
+    }
 
     void addNamedType(JsonType type)
     {
@@ -1258,6 +1278,9 @@ private:
 
     /// Set of sub-schemas that serve as valid types
     SchemaTypes m_schemaTypes;
+
+    /// Whether a number with a zero fractional part satisfies 'integer'
+    bool m_integralNumbersAreIntegers;
 };
 
 /**

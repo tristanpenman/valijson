@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include <cmath>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <json11.hpp>
@@ -329,7 +331,7 @@ public:
     bool getInteger(int64_t &result) const
     {
         if (isInteger()) {
-            result = m_value.int_value();
+            result = static_cast<int64_t>(m_value.number_value());
             return true;
         }
         return false;
@@ -406,7 +408,16 @@ public:
 
     bool isInteger() const
     {
-        return m_value.is_number() && m_value.int_value() == m_value.number_value();
+        // json11 stores every number as a double, so any number without a
+        // fractional part that fits in an int64_t is an integer. Comparing
+        // with int_value() would exclude integers that do not fit in an int.
+        if (!m_value.is_number()) {
+            return false;
+        }
+
+        const double value = m_value.number_value();
+        return std::isfinite(value) && std::trunc(value) == value &&
+                value >= -9223372036854775808.0 && value < 9223372036854775808.0;
     }
 
     bool isNull() const

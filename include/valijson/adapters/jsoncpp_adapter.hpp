@@ -327,8 +327,11 @@ public:
 
     bool getInteger(int64_t &result) const
     {
-        if (m_value.isIntegral()) {
-            result = static_cast<int64_t>(m_value.asInt());
+        // isInt64() is also true for a real value such as 1.0, so check the
+        // type of the value as well. Using asInt64() rather than asInt() means
+        // that integers outside the range of an int are not truncated.
+        if (isInteger() && m_value.isInt64()) {
+            result = static_cast<int64_t>(m_value.asInt64());
             return true;
         }
 
@@ -406,7 +409,11 @@ public:
 
     bool isInteger() const
     {
-        return m_value.isIntegral() && !m_value.isBool();
+        // JsonCpp keeps numbers written with a fraction or exponent part, such
+        // as 1.0, as real values, so only check the type of the value.
+        // isIntegral() would also be true for such numbers.
+        return m_value.type() == Json::intValue ||
+                m_value.type() == Json::uintValue;
     }
 
     bool isNull() const
