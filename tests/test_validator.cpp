@@ -425,17 +425,7 @@ struct CrashingTestCase
 };
 
 // clang-format off
-constexpr CrashingTestCase kCrashingTestCases[] = {
-    // Identifiers using URI schemes without an authority component are
-    // resolved as relative references, resulting in unbounded recursion
-    { 3, "id-legacy.json", "simple tag URI base URI with $ref via the tag URI (id)" },
-    { 3, "id-legacy.json", "simple base URI using an arbitrary URI scheme with $ref to that URI (id)" },
-    { 4, "id-legacy.json", "simple tag URI base URI with $ref via the tag URI (id)" },
-    { 4, "id-legacy.json", "simple base URI using an arbitrary URI scheme with $ref to that URI (id)" },
-    { 6, "id.json", "simple tag URI base URI with $ref via the tag URI" },
-    { 6, "id.json", "simple base URI using an arbitrary URI scheme with $ref to that URI" },
-    { 7, "id.json", "simple tag URI base URI with $ref via the tag URI" },
-    { 7, "id.json", "simple base URI using an arbitrary URI scheme with $ref to that URI" },
+const std::vector<CrashingTestCase> kCrashingTestCases = {
 };
 // clang-format on
 
