@@ -25,6 +25,9 @@
 
 #pragma once
 
+#include <charconv>
+#include <cstdint>
+#include <limits>
 #include <optional>
 #include <string>
 #include <yaml-cpp/yaml.h>
@@ -32,6 +35,7 @@
 #include <utility>
 #include <valijson/internal/adapter.hpp>
 #include <valijson/internal/basic_adapter.hpp>
+#include <valijson/internal/double_parser.hpp>
 #include <valijson/internal/frozen_value.hpp>
 #include <valijson/exceptions.hpp>
 
@@ -310,8 +314,9 @@ class YamlCppValue
 
     bool getBool(bool &result) const
     {
-        if (m_value.IsScalar()) {
-            result = m_value.as<bool>();
+        const Scalar scalar = resolveScalar();
+        if (scalar.type == ScalarType::kBool) {
+            result = scalar.boolValue;
             return true;
         }
 
@@ -320,8 +325,9 @@ class YamlCppValue
 
     bool getDouble(double &result) const
     {
-        if (m_value.IsScalar()) {
-            result = m_value.as<double>();
+        const Scalar scalar = resolveScalar();
+        if (scalar.type == ScalarType::kDouble) {
+            result = scalar.doubleValue;
             return true;
         }
 
@@ -330,10 +336,12 @@ class YamlCppValue
 
     bool getInteger(int64_t &result) const
     {
-        if (m_value.IsScalar()) {
-            result = m_value.as<int64_t>();
+        const Scalar scalar = resolveScalar();
+        if (scalar.type == ScalarType::kInteger) {
+            result = scalar.integerValue;
             return true;
         }
+
         return false;
     }
 
@@ -378,8 +386,8 @@ class YamlCppValue
 
     bool getString(std::string &result) const
     {
-        if (m_value.IsScalar()) {
-            result = m_value.as<std::string>();
+        if (resolveScalar().type == ScalarType::kString) {
+            result = m_value.Scalar();
             return true;
         }
 
@@ -388,7 +396,7 @@ class YamlCppValue
 
     static bool hasStrictTypes()
     {
-        return false;
+        return true;
     }
 
     bool isArray() const
@@ -398,27 +406,28 @@ class YamlCppValue
 
     bool isBool() const
     {
-        return false;
+        return resolveScalar().type == ScalarType::kBool;
     }
 
     bool isDouble() const
     {
-        return false;
+        return resolveScalar().type == ScalarType::kDouble;
     }
 
     bool isInteger() const
     {
-        return false;
+        return resolveScalar().type == ScalarType::kInteger;
     }
 
     bool isNull() const
     {
-        return m_value.IsNull();
+        return m_value.IsNull() || resolveScalar().type == ScalarType::kNull;
     }
 
     bool isNumber() const
     {
-        return false;
+        const ScalarType type = resolveScalar().type;
+        return type == ScalarType::kInteger || type == ScalarType::kDouble;
     }
 
     bool isObject() const
@@ -428,10 +437,244 @@ class YamlCppValue
 
     bool isString() const
     {
-        return m_value.IsScalar();
+        return resolveScalar().type == ScalarType::kString;
     }
 
   private:
+    /// Type of a scalar, as resolved by the YAML 1.2 core schema
+    enum class ScalarType
+    {
+        kNotScalar,
+        kNull,
+        kBool,
+        kInteger,
+        kDouble,
+        kString
+    };
+
+    /// Scalar value, with its resolved type
+    struct Scalar
+    {
+        ScalarType type = ScalarType::kNotScalar;
+        bool boolValue = false;
+        int64_t integerValue = 0;
+        double doubleValue = 0;
+    };
+
+    /**
+     * @brief   Resolve the type and value of the referenced scalar
+     *
+     * yaml-cpp keeps every scalar as a string, along with its tag. A plain
+     * scalar, which has the non-specific tag '?', is resolved with the YAML
+     * 1.2 core schema, so 'true', '42' and '4.2' are a boolean, an integer
+     * and a number, while any other plain scalar is a string. A scalar
+     * created in code, such as YAML::Node(42), has no tag, and is resolved
+     * in the same way, as yaml-cpp stores it as a string too. A quoted or
+     * block scalar, which has the non-specific tag '!', is always a string.
+     * A scalar with a 'str', 'bool', 'int', 'float' or 'null' tag from the
+     * YAML tag repository, such as '!!int 42', is resolved as that type, and
+     * a scalar with any other tag is a string.
+     */
+    Scalar resolveScalar() const
+    {
+        Scalar scalar;
+        if (!m_value.IsScalar()) {
+            return scalar;
+        }
+
+        const std::string &tag = m_value.Tag();
+        const std::string &value = m_value.Scalar();
+        static const std::string tagPrefix = "tag:yaml.org,2002:";
+
+        // parseBool(), parseInteger() and parseFloat() set the type and value
+        // of the scalar when they succeed, and leave it unchanged otherwise.
+        // A scalar that does not match its tag is a string.
+        if (tag == "?" || tag.empty()) {
+            if (isNullString(value)) {
+                scalar.type = ScalarType::kNull;
+            } else if (!parseBool(value, scalar) && !parseInteger(value, scalar) &&
+                    !parseFloat(value, scalar)) {
+                scalar.type = ScalarType::kString;
+            }
+        } else if (tag == tagPrefix + "null") {
+            scalar.type = value.empty() || isNullString(value)
+                    ? ScalarType::kNull : ScalarType::kString;
+        } else if (tag == tagPrefix + "bool") {
+            if (!parseBool(value, scalar)) {
+                scalar.type = ScalarType::kString;
+            }
+        } else if (tag == tagPrefix + "int") {
+            // An integer that does not fit in an int64_t is a number
+            if (!parseInteger(value, scalar)) {
+                scalar.type = ScalarType::kString;
+            }
+        } else if (tag == tagPrefix + "float") {
+            if (parseInteger(value, scalar)) {
+                if (scalar.type == ScalarType::kInteger) {
+                    scalar.type = ScalarType::kDouble;
+                    scalar.doubleValue = static_cast<double>(scalar.integerValue);
+                }
+            } else if (!parseFloat(value, scalar)) {
+                scalar.type = ScalarType::kString;
+            }
+        } else {
+            scalar.type = ScalarType::kString;
+        }
+
+        return scalar;
+    }
+
+    static bool isNullString(const std::string &value)
+    {
+        return value == "~" || value == "null" || value == "Null" || value == "NULL";
+    }
+
+    static bool isDigit(char c, int base)
+    {
+        if (c >= '0' && c <= '9') {
+            return c - '0' < base;
+        }
+
+        return base == 16 && ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
+    }
+
+    static bool parseBool(const std::string &value, Scalar &scalar)
+    {
+        if (value == "true" || value == "True" || value == "TRUE") {
+            scalar.boolValue = true;
+        } else if (value == "false" || value == "False" || value == "FALSE") {
+            scalar.boolValue = false;
+        } else {
+            return false;
+        }
+
+        scalar.type = ScalarType::kBool;
+        return true;
+    }
+
+    /**
+     * @brief   Parse an integer: [-+]?[0-9]+, 0o[0-7]+ or 0x[0-9a-fA-F]+
+     *
+     * An integer that does not fit in an int64_t is a number, as it is for
+     * adapters for JSON parsers.
+     */
+    static bool parseInteger(const std::string &value, Scalar &scalar)
+    {
+        size_t pos = 0;
+        int base = 10;
+        bool negative = false;
+        if (value.size() > 2 && value[0] == '0' && (value[1] == 'o' || value[1] == 'x')) {
+            base = value[1] == 'o' ? 8 : 16;
+            pos = 2;
+        } else if (!value.empty() && (value[0] == '-' || value[0] == '+')) {
+            negative = value[0] == '-';
+            pos = 1;
+        }
+
+        if (pos == value.size()) {
+            return false;
+        }
+        for (size_t i = pos; i < value.size(); i++) {
+            if (!isDigit(value[i], base)) {
+                return false;
+            }
+        }
+
+        // from_chars accepts a leading minus sign, but not a plus sign
+        const char *begin = value.data() + (negative ? 0 : pos);
+        const char *end = value.data() + value.size();
+        int64_t integerValue = 0;
+        const auto conversion = std::from_chars(begin, end, integerValue, base);
+        if (conversion.ec == std::errc() && conversion.ptr == end) {
+            scalar.type = ScalarType::kInteger;
+            scalar.integerValue = integerValue;
+            return true;
+        }
+
+        double doubleValue = 0;
+        for (size_t i = pos; i < value.size(); i++) {
+            const char c = value[i];
+            const int digit = c <= '9' ? c - '0' : (c | 0x20) - 'a' + 10;
+            doubleValue = doubleValue * base + digit;
+        }
+
+        scalar.type = ScalarType::kDouble;
+        scalar.doubleValue = negative ? -doubleValue : doubleValue;
+        return true;
+    }
+
+    /**
+     * @brief   Parse a number:
+     *          [-+]?(\.[0-9]+|[0-9]+(\.[0-9]*)?)([eE][-+]?[0-9]+)?,
+     *          [-+]?\.(inf|Inf|INF) or \.(nan|NaN|NAN)
+     */
+    static bool parseFloat(const std::string &value, Scalar &scalar)
+    {
+        if (value == ".nan" || value == ".NaN" || value == ".NAN") {
+            scalar.type = ScalarType::kDouble;
+            scalar.doubleValue = std::numeric_limits<double>::quiet_NaN();
+            return true;
+        }
+
+        size_t pos = 0;
+        const bool negative = !value.empty() && value[0] == '-';
+        if (!value.empty() && (value[0] == '-' || value[0] == '+')) {
+            pos = 1;
+        }
+
+        const std::string unsignedValue = value.substr(pos);
+        if (unsignedValue == ".inf" || unsignedValue == ".Inf" || unsignedValue == ".INF") {
+            scalar.type = ScalarType::kDouble;
+            scalar.doubleValue = negative ? -std::numeric_limits<double>::infinity()
+                                          : std::numeric_limits<double>::infinity();
+            return true;
+        }
+
+        // Check the syntax, as parseDouble() also accepts other forms, such
+        // as 'inf' and hexadecimal numbers
+        size_t i = 0;
+        size_t digits = 0;
+        while (i < unsignedValue.size() && isDigit(unsignedValue[i], 10)) {
+            i++;
+            digits++;
+        }
+        if (i < unsignedValue.size() && unsignedValue[i] == '.') {
+            i++;
+            while (i < unsignedValue.size() && isDigit(unsignedValue[i], 10)) {
+                i++;
+                digits++;
+            }
+        }
+        if (digits == 0) {
+            return false;
+        }
+        if (i < unsignedValue.size() && (unsignedValue[i] == 'e' || unsignedValue[i] == 'E')) {
+            i++;
+            if (i < unsignedValue.size() && (unsignedValue[i] == '-' || unsignedValue[i] == '+')) {
+                i++;
+            }
+            const size_t exponentStart = i;
+            while (i < unsignedValue.size() && isDigit(unsignedValue[i], 10)) {
+                i++;
+            }
+            if (i == exponentStart) {
+                return false;
+            }
+        }
+        if (i != unsignedValue.size()) {
+            return false;
+        }
+
+        double doubleValue = 0;
+        if (!internal::parseDouble(unsignedValue, doubleValue)) {
+            return false;
+        }
+
+        scalar.type = ScalarType::kDouble;
+        scalar.doubleValue = negative ? -doubleValue : doubleValue;
+        return true;
+    }
+
     /// Shared YAML map node used to represent an empty object
     static inline const YAML::Node emptyObject =
         YAML::Node(YAML::NodeType::Map);

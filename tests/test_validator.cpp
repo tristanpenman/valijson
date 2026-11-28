@@ -36,6 +36,11 @@
 #include <valijson/utils/rapidjson_utils.hpp>
 #include <valijson/validation_results.hpp>
 #include <valijson/validator.hpp>
+#if VALIJSON_USE_EXCEPTIONS
+// yaml-cpp reports errors with exceptions
+#include <valijson/adapters/yaml_cpp_adapter.hpp>
+#include <valijson/utils/yaml_cpp_utils.hpp>
+#endif
 
 #ifdef VALIJSON_BUILD_POCO_ADAPTER
 #include <valijson/adapters/poco_json_adapter.hpp>
@@ -460,6 +465,13 @@ constexpr UnparseableFile kUnparseableFiles[] = {
     // Poco::JSON rejects some integers that do not fit in a 64-bit integer,
     // such as -18446744073709551616, with "Not a valid unsigned integer"
     { "PocoJsonAdapter", "optional/bignum.json" },
+
+    // yaml-cpp rejects escaped surrogate pairs, such as "\ud83d\udca9", with
+    // "invalid unicode"
+    { "YamlCppAdapter", "format-idn-email.json" },
+    { "YamlCppAdapter", "format-uri-template.json" },
+    { "YamlCppAdapter", "maxLength.json" },
+    { "YamlCppAdapter", "minLength.json" },
 };
 // clang-format on
 
@@ -635,6 +647,18 @@ bool parseJson(const std::string &text, nlohmann::json &document)
     document = nlohmann::json::parse(text, nullptr, false);
     return !document.is_discarded();
 }
+
+#if VALIJSON_USE_EXCEPTIONS
+bool parseJson(const std::string &text, YAML::Node &document)
+{
+    try {
+        document = YAML::Load(text);
+        return true;
+    } catch (const YAML::Exception &) {
+        return false;
+    }
+}
+#endif
 
 #ifdef VALIJSON_BUILD_POCO_ADAPTER
 bool parseJson(const std::string &text, Poco::Dynamic::Var &document)
@@ -1023,6 +1047,10 @@ TEST_P(TestValidator, TestSuiteFile)
                                                           testCases, failed);
     processTestCases<valijson::adapters::NlohmannJsonAdapter>(
         path, dialect, file, testCases, failed);
+#if VALIJSON_USE_EXCEPTIONS
+    processTestCases<valijson::adapters::YamlCppAdapter>(path, dialect, file,
+                                                         testCases, failed);
+#endif
 #ifdef VALIJSON_BUILD_POCO_ADAPTER
     processTestCases<valijson::adapters::PocoJsonAdapter>(path, dialect, file,
                                                           testCases, failed);
