@@ -5140,9 +5140,11 @@ public:
 }  // namespace valijson
 #pragma once
 
+#include <algorithm>
 #include <functional>
 #include <iostream>
 #include <optional>
+#include <utility>
 #include <vector>
 
 
@@ -5249,11 +5251,12 @@ public:
 
         typename DocumentCache<AdapterType>::Type docCache;
         SchemaRegistry schemaRegistry;
+        FollowedReferences followedReferences;
 #if VALIJSON_USE_EXCEPTIONS
         try {
 #endif
             resolveThenPopulateSchema(schema, node, node, schema, std::optional<std::string>(), "", fetchDoc, nullptr,
-                    nullptr, docCache, schemaRegistry);
+                    nullptr, docCache, schemaRegistry, followedReferences);
 #if VALIJSON_USE_EXCEPTIONS
         } catch (...) {
             freeDocumentCache<AdapterType>(docCache, freeDoc);
@@ -5278,6 +5281,11 @@ private:
 
         typedef std::map<std::string, const DocumentType*> Type;
     };
+
+    /// JSON References that have been followed while resolving a chain of
+    /// JSON References, each with the resolution scope it was found in
+    typedef std::vector<std::pair<std::optional<std::string>, std::string>>
+        FollowedReferences;
 
     /**
      * @brief  Free memory used by fetched documents
@@ -5740,6 +5748,14 @@ private:
             return registeredPtr;
         }
 
+        // A chain of JSON References, whether within the current document or
+        // across remote documents, that leads back to a reference that has
+        // already been followed would never reach a concrete schema
+        if (std::find(newRegistryKeys.begin(), newRegistryKeys.end(),
+                      queryKey) != newRegistryKeys.end()) {
+            throwRuntimeError("found cycle while resolving JSON reference");
+        }
+
         if (actualDocumentUri && (!currentScope || *actualDocumentUri != *currentScope)) {
             std::string registeredPath;
             std::optional<std::string> registeredScope;
@@ -5817,10 +5833,6 @@ private:
                     actualDocumentUri, actualJsonPointer, fetchDoc, parentSubschema,
                     ownName, docCache, schemaRegistry, newRegistryKeys);
 
-        }
-
-        if (std::find(newRegistryKeys.begin(), newRegistryKeys.end(), queryKey) != newRegistryKeys.end()) {
-            throwRuntimeError("found cycle while resolving JSON reference");
         }
 
         // JSON References in nested schema will be resolved relative to the
@@ -6354,6 +6366,8 @@ private:
      *                        the 'required' keyword in Draft 3
      * @param  docCache       Cache of resolved and fetched remote documents
      * @param  schemaRegistry Registry of populated schemas
+     * @param  followedReferences  JSON References followed so far in the
+     *                        current chain, used to detect cycles
      */
     template<typename AdapterType>
     void resolveThenPopulateSchema(
@@ -6367,7 +6381,8 @@ private:
         const Subschema *parentSchema,
         const std::string *ownName,
         typename DocumentCache<AdapterType>::Type &docCache,
-        SchemaRegistry &schemaRegistry)
+        SchemaRegistry &schemaRegistry,
+        FollowedReferences &followedReferences)
     {
         std::string jsonRef;
         if (!extractJsonReference(node, jsonRef)) {
@@ -6375,6 +6390,16 @@ private:
                     ownName, docCache, schemaRegistry);
             return;
         }
+
+        // A chain of JSON References that leads back to a reference that has
+        // already been followed would never reach a concrete schema
+        auto followedReference = std::make_pair(currentScope, jsonRef);
+        if (std::find(followedReferences.begin(), followedReferences.end(),
+                      followedReference) != followedReferences.end()) {
+            throwRuntimeError("found cycle while resolving JSON reference \"" +
+                              jsonRef + "\"");
+        }
+        followedReferences.push_back(std::move(followedReference));
 
         // Returns a document URI if the reference points somewhere
         // other than the current document
@@ -6402,7 +6427,7 @@ private:
                 resolveThenPopulateSchema(rootSchema, registeredRoot,
                         registeredRoot, subschema, registeredScope,
                         "", fetchDoc, parentSchema, ownName,
-                        docCache, schemaRegistry);
+                        docCache, schemaRegistry, followedReferences);
                 return;
             }
         }
@@ -6423,7 +6448,8 @@ private:
                 resolveThenPopulateSchema(rootSchema, registeredRoot,
                         referencedAdapter, subschema, registeredScope,
                         actualJsonPointer, fetchDoc,
-                        parentSchema, ownName, docCache, schemaRegistry);
+                        parentSchema, ownName, docCache, schemaRegistry,
+                        followedReferences);
                 return;
             }
 
@@ -6449,10 +6475,10 @@ private:
             const AdapterType &referencedAdapter =
                 internal::json_pointer::resolveJsonPointerStrict(newRootNode, actualJsonPointer);
 
-            // TODO: Need to detect degenerate circular references
             resolveThenPopulateSchema(rootSchema, newRootNode, referencedAdapter,
                     subschema, actualDocumentUri, actualJsonPointer, fetchDoc,
-                    parentSchema, ownName, docCache, schemaRegistry);
+                    parentSchema, ownName, docCache, schemaRegistry,
+                    followedReferences);
 
         } else if (!actualJsonPointer.empty()) {
             const AdapterType &referencedAdapter =
@@ -6464,7 +6490,8 @@ private:
 
             resolveThenPopulateSchema(rootSchema, rootNode, referencedAdapter,
                     subschema, referencedScope, actualJsonPointer, fetchDoc,
-                    parentSchema, ownName, docCache, schemaRegistry);
+                    parentSchema, ownName, docCache, schemaRegistry,
+                    followedReferences);
         } else {
             throwRuntimeError("Cannot resolve reference \"" + jsonRef + "\".");
         }

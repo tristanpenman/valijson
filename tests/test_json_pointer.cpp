@@ -351,36 +351,69 @@ TEST_F(TestJsonPointer, CircularReferences)
 }
 
 #if VALIJSON_USE_EXCEPTIONS
-TEST(TestJsonPointerDeathTest, CircularReferencesFromRootReference)
+namespace {
+
+const rapidjson::Document *
+fetchCircularReferenceDocument(const std::string &uri)
 {
-    // Regression test for issue #200, comment 2887816751.
-    testing::FLAGS_gtest_death_test_style = "threadsafe";
+    // Two remote documents that refer to each other
+    const char *json = nullptr;
+    if (uri == "http://a.example/a.json") {
+        json = R"({"$ref": "http://b.example/b.json"})";
+    } else if (uri == "http://b.example/b.json") {
+        json = R"({"$ref": "http://a.example/a.json"})";
+    } else {
+        return nullptr;
+    }
 
-    // TODO: Replace EXPECT_DEATH with EXPECT_THROW when issue #200 is fixed.
-    EXPECT_DEATH(
-        {
-            rapidjson::Document schemaDocument;
-            schemaDocument.Parse(R"({
-                "$ref": "#/foo",
-                "foo": {"$ref": "#/bar"},
-                "bar": {"$ref": "#/foo"}
-            })");
-            if (schemaDocument.HasParseError()) {
-                std::exit(0);
-            }
-            RapidJsonAdapter schemaAdapter(schemaDocument);
+    auto *document = new rapidjson::Document();
+    document->Parse(json);
+    return document;
+}
 
-            Schema schema;
-            SchemaParser parser;
-            try {
-                parser.populateSchema(schemaAdapter, schema);
-            } catch (const std::runtime_error &) {
-                std::exit(0);
-            } catch (...) {
-                std::exit(0);
-            }
-            std::exit(0);
-        }, "");
+void freeCircularReferenceDocument(const rapidjson::Document *document)
+{
+    delete document;
+}
+
+} // namespace
+
+TEST_F(TestJsonPointer, CircularReferencesFromRootReference)
+{
+    // Regression tests for issue #200: cycles of JSON References used to
+    // cause unbounded recursion while parsing the schema
+    const char *schemas[] = {
+        // Comment 2887816751: cycle reached from a reference at the root
+        R"({
+            "$ref": "#/foo",
+            "foo": {"$ref": "#/bar"},
+            "bar": {"$ref": "#/foo"}
+        })",
+        // Root schema referring to itself through its $id
+        R"({
+            "$id": "http://example.com/root.json",
+            "$ref": "http://example.com/root.json"
+        })",
+        // Cycle across remote documents, reached from the root
+        R"({"$ref": "http://a.example/a.json"})",
+        // Cycle across remote documents, reached from a subschema
+        R"({"properties": {"foo": {"$ref": "http://a.example/a.json"}}})",
+    };
+
+    for (const char *json : schemas) {
+        rapidjson::Document schemaDocument;
+        schemaDocument.Parse(json);
+        ASSERT_FALSE(schemaDocument.HasParseError()) << json;
+        RapidJsonAdapter schemaAdapter(schemaDocument);
+
+        Schema schema;
+        SchemaParser parser(SchemaParser::kDraft7);
+        EXPECT_THROW(parser.populateSchema(schemaAdapter, schema,
+                                           fetchCircularReferenceDocument,
+                                           freeCircularReferenceDocument),
+                     std::runtime_error)
+            << json;
+    }
 }
 #endif
 
