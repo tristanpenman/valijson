@@ -170,6 +170,50 @@ private:
     }
 
     /**
+     * @brief  Return a remote document, fetching it if it is not cached yet
+     *
+     * Each document is fetched at most once, so that every fetched document
+     * is in the cache, and is freed by freeDocumentCache().
+     *
+     * @param  uri       URI of the document
+     * @param  fetchDoc  function to fetch the document
+     * @param  docCache  cache of fetched documents
+     *
+     * @return pointer to the document, owned by the cache
+     */
+    template<typename AdapterType>
+    const typename DocumentCache<AdapterType>::DocumentType * fetchDocument(
+        const std::string &uri,
+        const typename FunctionPtrs<AdapterType>::FetchDoc fetchDoc,
+        typename DocumentCache<AdapterType>::Type &docCache)
+    {
+        // Have we seen this document before?
+        const typename DocumentCache<AdapterType>::Type::const_iterator
+                docCacheItr = docCache.find(uri);
+        if (docCacheItr != docCache.end()) {
+            return docCacheItr->second;
+        }
+
+        if (!fetchDoc) {
+            throwRuntimeError("Fetching of remote JSON References not enabled.");
+        }
+
+        // Returns a pointer to the remote document that was retrieved, or
+        // null if retrieval failed. This class will take ownership of the
+        // pointer, and call freeDoc when it is no longer needed.
+        const typename DocumentCache<AdapterType>::DocumentType *newDoc = fetchDoc(uri);
+
+        // Can't proceed without the remote document
+        if (!newDoc) {
+            throwRuntimeError("Failed to fetch referenced schema document: " + uri);
+        }
+
+        docCache.emplace(uri, newDoc);
+
+        return newDoc;
+    }
+
+    /**
      * @brief  Find the complete URI for a document, within a resolution scope
      *
      * This function captures five different cases that can occur when
@@ -641,36 +685,8 @@ private:
                 return subschema;
             }
 
-            const typename FunctionPtrs<AdapterType>::DocumentType *newDoc = nullptr;
-
-            // Have we seen this document before?
-            typename DocumentCache<AdapterType>::Type::iterator docCacheItr =
-                    docCache.find(*actualDocumentUri);
-            if (docCacheItr == docCache.end()) {
-                // Resolve reference against remote document
-                if (!fetchDoc) {
-                    throwRuntimeError("Fetching of remote JSON References not enabled.");
-                }
-
-                // Returns a pointer to the remote document that was
-                // retrieved, or null if retrieval failed. This class
-                // will take ownership of the pointer, and call freeDoc
-                // when it is no longer needed.
-                newDoc = fetchDoc(*actualDocumentUri);
-
-                // Can't proceed without the remote document
-                if (!newDoc) {
-                    throwRuntimeError("Failed to fetch referenced schema document: " + *actualDocumentUri);
-                }
-
-                typedef typename DocumentCache<AdapterType>::Type::value_type
-                        DocCacheValueType;
-
-                docCache.insert(DocCacheValueType(*actualDocumentUri, newDoc));
-
-            } else {
-                newDoc = docCacheItr->second;
-            }
+            const typename FunctionPtrs<AdapterType>::DocumentType *newDoc =
+                    fetchDocument<AdapterType>(*actualDocumentUri, fetchDoc, docCache);
 
             const AdapterType newRootNode(*newDoc);
 
@@ -1298,21 +1314,8 @@ private:
             }
 
             // Resolve reference against remote document
-            if (!fetchDoc) {
-                throwRuntimeError("Fetching of remote JSON References not enabled.");
-            }
-
-            const typename DocumentCache<AdapterType>::DocumentType *newDoc = fetchDoc(*actualDocumentUri);
-
-            // Can't proceed without the remote document
-            if (!newDoc) {
-                throwRuntimeError("Failed to fetch referenced schema document: " + *actualDocumentUri);
-            }
-
-            // Add to document cache
-            typedef typename DocumentCache<AdapterType>::Type::value_type DocCacheValueType;
-
-            docCache.insert(DocCacheValueType(*actualDocumentUri, newDoc));
+            const typename DocumentCache<AdapterType>::DocumentType *newDoc =
+                    fetchDocument<AdapterType>(*actualDocumentUri, fetchDoc, docCache);
 
             const AdapterType newRootNode(*newDoc);
 
